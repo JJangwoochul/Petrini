@@ -75,15 +75,24 @@ public class HospitalController extends BizBaseController {
         return "biz/hospital/reviews";
     }
 
-    //정산내역
+    /*//정산내역
     @GetMapping("/settlement")
     public String hospitalSettlement(HttpSession session) {
         if (getBizMember(session) == null) 
             return "redirect:/login";
 
         return "biz/hospital/settlement";
-    }
+    }*/
 
+     //계약관리
+     @GetMapping("/contract")
+     public String hospitalContract(HttpSession session) {
+         if (getBizMember(session) == null) 
+             return "redirect:/login";
+ 
+         return "biz/hospital/contract";
+     }
+     
     //업체정보
     @GetMapping("/info")
     public String hospitalInfo(HttpSession session) {
