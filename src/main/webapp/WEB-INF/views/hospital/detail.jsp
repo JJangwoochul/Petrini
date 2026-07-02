@@ -1,0 +1,118 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="contextPath" value="${pageContext.request.contextPath}" />
+<c:set var="pageId" value="hospital" />
+<%@ include file="/WEB-INF/views/common/header.jsp" %>
+<style>
+.hdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
+.hdetail-main{}
+.hdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
+.hdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
+.hdetail-photos img:first-child{height:100%;grid-row:span 2}
+.hdetail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.hdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.hdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.hdtag.type{background:var(--primary-light);color:var(--primary-dark)}
+.hdtag.open{background:#DCFCE7;color:#16A34A}
+.hdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
+.hdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
+.hdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
+.hdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.hdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
+.hdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.hdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
+.dept-tags{display:flex;flex-wrap:wrap;gap:6px}
+.dept-tag{font-size:12px;background:#fff;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-sub)}
+/* 리뷰 */
+.review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
+.review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
+.reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
+.review-item-stars{display:flex;gap:2px}
+.review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
+.review-item-date{font-size:12px;color:var(--text-muted)}
+.review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
+/* 사이드 예약 카드 */
+.reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
+.reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
+.reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
+.reserve-info-row strong{color:var(--text-main)}
+.btn-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
+.btn-reserve-big:hover{background:var(--primary-dark)}
+.btn-call{width:100%;padding:12px;border:2px solid var(--primary);border-radius:var(--radius-sm);background:#fff;color:var(--primary);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+<div class="hdetail-wrap">
+  <div class="hdetail-main">
+    <div class="hdetail-photos">
+      <img src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&q=70&auto=format&fit=crop" alt="병원메인" onerror="this.src='https://placehold.co/600x400/E0F2FE/0284C7?text=병원'">
+      <img src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=300&q=70&auto=format&fit=crop" alt="병원2" onerror="this.src='https://placehold.co/300x200/E0F2FE/0284C7?text=병원'">
+      <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=300&q=70&auto=format&fit=crop" alt="병원3" onerror="this.src='https://placehold.co/300x200/E0F2FE/0284C7?text=병원'">
+    </div>
+    <div class="hdetail-head">
+      <div>
+        <div class="hdetail-tags"><span class="hdtag type">동물병원</span><span class="hdtag open">진료중</span></div>
+        <div class="hdetail-name">행복 동물병원</div>
+        <div class="hdetail-rating">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(128개 리뷰)</span>
+        </div>
+      </div>
+    </div>
+    <div class="hdetail-info-grid">
+      <div class="hdinfo-card">
+        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>주소</div>
+        <div class="hdinfo-val">서울특별시 마포구 합정동 123-4<br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small></div>
+      </div>
+      <div class="hdinfo-card">
+        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>운영시간</div>
+        <div class="hdinfo-val">평일 09:00 ~ 19:00<br>토요일 09:00 ~ 14:00<br>일·공휴일 휴무</div>
+      </div>
+      <div class="hdinfo-card">
+        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>전화번호</div>
+        <div class="hdinfo-val">02-1234-5678</div>
+      </div>
+      <div class="hdinfo-card">
+        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>진료과목</div>
+        <div class="dept-tags">
+          <span class="dept-tag">내과</span><span class="dept-tag">외과</span><span class="dept-tag">피부과</span>
+          <span class="dept-tag">안과</span><span class="dept-tag">치과</span><span class="dept-tag">정형외과</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--bg-page);border-radius:var(--radius-md);overflow:hidden;height:200px;margin-bottom:28px">
+      <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" style="width:100%;height:100%;object-fit:cover" alt="지도" onerror="this.src='https://placehold.co/900x200/EAF7F2/2BAB82?text=카카오맵+위치'">
+    </div>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">진료 리뷰 (128)</h3>
+    <div class="review-item">
+      <div class="review-item-head">
+        <div><span class="reviewer-name">김민준</span> <span style="color:var(--text-muted);font-size:12px">· 골든 리트리버</span></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+          <div class="review-item-stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <span class="review-item-date">2025.06.20</span>
+        </div>
+      </div>
+      <div class="review-item-text">수의사 선생님이 매우 친절하고 상세하게 설명해주셨습니다. 우리 몽이가 피부 트러블로 갔는데 정확히 진단하고 처방해주셔서 금방 좋아졌어요.</div>
+    </div>
+    <div class="review-item">
+      <div class="review-item-head">
+        <div><span class="reviewer-name">이서연</span> <span style="color:var(--text-muted);font-size:12px">· 페르시안 고양이</span></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+          <div class="review-item-stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <span class="review-item-date">2025.06.15</span>
+        </div>
+      </div>
+      <div class="review-item-text">예약하고 갔는데 대기 없이 바로 진료받았어요. 고양이 전문 선생님이 계셔서 안심이 됐습니다. 접수 직원분들도 친절하고 병원이 깔끔해요.</div>
+    </div>
+  </div>
+
+  <div class="reserve-card">
+    <h3>예약하기</h3>
+    <div class="reserve-info-row"><span>진료 대기시간</span><strong>약 10분</strong></div>
+    <div class="reserve-info-row"><span>오늘 예약 가능</span><strong style="color:var(--primary)">8슬롯 남음</strong></div>
+    <div class="reserve-info-row"><span>진료비</span><strong>기본 15,000원~</strong></div>
+    <button class="btn-reserve-big" onclick="location.href='${contextPath}/hospital/reserve?id=1'">예약하기</button>
+    <button class="btn-call"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>02-1234-5678</button>
+  </div>
+</div>
+<%@ include file="/WEB-INF/views/common/footer.jsp" %>
