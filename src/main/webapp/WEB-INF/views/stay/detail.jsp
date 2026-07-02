@@ -5,77 +5,77 @@
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <style>
-.sd-wrap { max-width: var(--inner-width); margin: 32px auto 80px; padding: 0 20px; display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: flex-start; }
-.sd-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); text-decoration:none; margin-bottom:18px; transition:var(--transition); }
-.sd-back:hover { color: var(--primary); }
-.sd-back svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .sd-wrap { max-width: var(--inner-width); margin: 32px auto 80px; padding: 0 20px; display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: flex-start; }
+  .sd-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); text-decoration:none; margin-bottom:18px; transition:var(--transition); }
+  .sd-back:hover { color: var(--primary); }
+  .sd-back svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
-/* 사진 갤러리 */
-.sd-gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; border-radius:var(--radius-md); overflow:hidden; height:360px; margin-bottom:22px; }
-.sd-gallery img { width:100%; height:100%; object-fit:cover; display:block; }
-.sd-gallery img:first-child { grid-row: span 2; }
+  /* 사진 갤러리 */
+  .sd-gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; border-radius:var(--radius-md); overflow:hidden; height:360px; margin-bottom:22px; }
+  .sd-gallery img { width:100%; height:100%; object-fit:cover; display:block; }
+  .sd-gallery img:first-child { grid-row: span 2; }
 
-/* 기본 정보 */
-.sd-badge { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; background:var(--primary-light); color:var(--primary-dark); margin-bottom:10px; }
-.sd-title { font-size:26px; font-weight:800; color:var(--text-main); margin-bottom:10px; line-height:1.3; }
-.sd-rating { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-main); font-weight:700; margin-bottom:14px; }
-.sd-rating svg { width:15px; height:15px; fill:var(--yellow); }
-.sd-tags { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:20px; }
-.sd-tag { font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px; background:var(--bg-page); border:1px solid var(--border); color:var(--text-sub); }
+  /* 기본 정보 */
+  .sd-badge { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; background:var(--primary-light); color:var(--primary-dark); margin-bottom:10px; }
+  .sd-title { font-size:26px; font-weight:800; color:var(--text-main); margin-bottom:10px; line-height:1.3; }
+  .sd-rating { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-main); font-weight:700; margin-bottom:14px; }
+  .sd-rating svg { width:15px; height:15px; fill:var(--yellow); }
+  .sd-tags { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:20px; }
+  .sd-tag { font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px; background:var(--bg-page); border:1px solid var(--border); color:var(--text-sub); }
 
-.sd-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; margin-bottom:16px; }
-.sd-section h3 { font-size:15px; font-weight:800; color:var(--text-main); margin:0 0 14px; display:flex; align-items:center; gap:8px; }
-.sd-section h3 svg { width:16px; height:16px; stroke:var(--primary); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-.sd-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.sd-info-row { background:var(--bg-page); border-radius:var(--radius-sm); padding:12px 14px; }
-.sd-info-row label { font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:3px; }
-.sd-info-row span { font-size:14px; font-weight:600; color:var(--text-main); }
-.sd-desc { font-size:14px; color:var(--text-sub); line-height:1.8; margin:0; }
-.sd-rule-list { display:flex; flex-direction:column; gap:8px; }
-.sd-rule-item { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text-sub); }
-.sd-rule-item svg { width:15px; height:15px; flex-shrink:0; margin-top:1px; stroke-linecap:round; stroke-linejoin:round; }
-.sd-rule-item.ok svg { stroke:#16A34A; fill:none; stroke-width:2; }
-.sd-rule-item.no svg { stroke:#DC2626; fill:none; stroke-width:2; }
-.sd-map { border-radius:var(--radius-sm); overflow:hidden; height:180px; }
-.sd-map img { width:100%; height:100%; object-fit:cover; display:block; }
+  .sd-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:20px; margin-bottom:16px; }
+  .sd-section h3 { font-size:15px; font-weight:800; color:var(--text-main); margin:0 0 14px; display:flex; align-items:center; gap:8px; }
+  .sd-section h3 svg { width:16px; height:16px; stroke:var(--primary); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .sd-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .sd-info-row { background:var(--bg-page); border-radius:var(--radius-sm); padding:12px 14px; }
+  .sd-info-row label { font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:3px; }
+  .sd-info-row span { font-size:14px; font-weight:600; color:var(--text-main); }
+  .sd-desc { font-size:14px; color:var(--text-sub); line-height:1.8; margin:0; }
+  .sd-rule-list { display:flex; flex-direction:column; gap:8px; }
+  .sd-rule-item { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text-sub); }
+  .sd-rule-item svg { width:15px; height:15px; flex-shrink:0; margin-top:1px; stroke-linecap:round; stroke-linejoin:round; }
+  .sd-rule-item.ok svg { stroke:#16A34A; fill:none; stroke-width:2; }
+  .sd-rule-item.no svg { stroke:#DC2626; fill:none; stroke-width:2; }
+  .sd-map { border-radius:var(--radius-sm); overflow:hidden; height:180px; }
+  .sd-map img { width:100%; height:100%; object-fit:cover; display:block; }
 
-/* 리뷰 */
-.review-summary { display:flex; gap:28px; align-items:center; background:var(--bg-page); border-radius:var(--radius-sm); padding:20px; margin-bottom:18px; }
-.rv-avg .big { font-size:44px; font-weight:800; color:var(--text-main); line-height:1; }
-.rv-avg small { font-size:13px; color:var(--text-muted); }
-.rv-stars { display:flex; gap:3px; margin:6px 0; }
-.rv-stars svg { width:16px; height:16px; fill:var(--yellow); }
-.rv-bars { flex:1; display:flex; flex-direction:column; gap:5px; }
-.rv-bar-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); }
-.rv-bar-bg { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
-.rv-bar-fill { height:100%; background:var(--yellow); border-radius:3px; }
-.review-card { border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px; }
-.rv-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.rv-name { font-size:14px; font-weight:700; color:var(--text-main); }
-.rv-date { font-size:12px; color:var(--text-muted); }
-.rv-text { font-size:14px; color:var(--text-sub); line-height:1.6; }
+  /* 리뷰 */
+  .review-summary { display:flex; gap:28px; align-items:center; background:var(--bg-page); border-radius:var(--radius-sm); padding:20px; margin-bottom:18px; }
+  .rv-avg .big { font-size:44px; font-weight:800; color:var(--text-main); line-height:1; }
+  .rv-avg small { font-size:13px; color:var(--text-muted); }
+  .rv-stars { display:flex; gap:3px; margin:6px 0; }
+  .rv-stars svg { width:16px; height:16px; fill:var(--yellow); }
+  .rv-bars { flex:1; display:flex; flex-direction:column; gap:5px; }
+  .rv-bar-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); }
+  .rv-bar-bg { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+  .rv-bar-fill { height:100%; background:var(--yellow); border-radius:3px; }
+  .review-card { border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px; }
+  .rv-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .rv-name { font-size:14px; font-weight:700; color:var(--text-main); }
+  .rv-date { font-size:12px; color:var(--text-muted); }
+  .rv-text { font-size:14px; color:var(--text-sub); line-height:1.6; }
 
-/* 예약 카드 */
-.reserve-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:22px; position:sticky; top:20px; }
-.reserve-card h3 { font-size:16px; font-weight:800; color:var(--text-main); margin:0 0 16px; }
-.rc-price { font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:16px; }
-.rc-price span { font-size:13px; font-weight:400; color:var(--text-muted); }
-.rc-form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
-.rc-form-group label { font-size:12px; font-weight:700; color:var(--text-muted); }
-.rc-form-group input, .rc-form-group select {
-    border:1px solid var(--border); border-radius:var(--radius-sm);
-    padding:10px 12px; font-size:14px; color:var(--text-main);
-    outline:none; font-family:inherit; width:100%; box-sizing:border-box;
-}
-.rc-form-group input:focus, .rc-form-group select:focus { border-color:var(--primary); }
-.rc-date-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.rc-divider { height:1px; background:var(--border); margin:14px 0; }
-.rc-price-row { display:flex; justify-content:space-between; font-size:14px; color:var(--text-sub); margin-bottom:8px; }
-.rc-price-row.total { font-size:16px; font-weight:800; color:var(--text-main); padding-top:12px; border-top:1px solid var(--border); margin-top:4px; }
-.rc-price-row.total span:last-child { color:var(--primary-dark); }
-.btn-reserve-big { width:100%; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--primary); color:#fff; font-size:16px; font-weight:800; cursor:pointer; margin-top:12px; transition:var(--transition); }
-.btn-reserve-big:hover { background:var(--primary-dark); }
-.rc-notice { font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; }
+  /* 예약 카드 */
+  .reserve-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:22px; position:sticky; top:20px; }
+  .reserve-card h3 { font-size:16px; font-weight:800; color:var(--text-main); margin:0 0 16px; }
+  .rc-price { font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:16px; }
+  .rc-price span { font-size:13px; font-weight:400; color:var(--text-muted); }
+  .rc-form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+  .rc-form-group label { font-size:12px; font-weight:700; color:var(--text-muted); }
+  .rc-form-group input, .rc-form-group select {
+      border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:10px 12px; font-size:14px; color:var(--text-main);
+      outline:none; font-family:inherit; width:100%; box-sizing:border-box;
+  }
+  .rc-form-group input:focus, .rc-form-group select:focus { border-color:var(--primary); }
+  .rc-date-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .rc-divider { height:1px; background:var(--border); margin:14px 0; }
+  .rc-price-row { display:flex; justify-content:space-between; font-size:14px; color:var(--text-sub); margin-bottom:8px; }
+  .rc-price-row.total { font-size:16px; font-weight:800; color:var(--text-main); padding-top:12px; border-top:1px solid var(--border); margin-top:4px; }
+  .rc-price-row.total span:last-child { color:var(--primary-dark); }
+  .btn-reserve-big { width:100%; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--primary); color:#fff; font-size:16px; font-weight:800; cursor:pointer; margin-top:12px; transition:var(--transition); }
+  .btn-reserve-big:hover { background:var(--primary-dark); }
+  .rc-notice { font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; }
 </style>
 
 <div style="max-width:var(--inner-width);margin:28px auto 0;padding:0 20px">
@@ -141,9 +141,11 @@
 
     <div class="sd-section">
       <h3><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>위치</h3>
-      <div class="sd-map">
+      <%-- <div class="sd-map">
         <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x180/EAF7F2/2BAB82?text=카카오맵+위치'">
-      </div>
+      </div> --%>
+      <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
+      <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
     </div>
 
     <div class="sd-section">

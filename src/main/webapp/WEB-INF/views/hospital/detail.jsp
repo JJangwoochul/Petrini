@@ -3,45 +3,47 @@
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="hospital" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
+
 <style>
-.hdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
-.hdetail-main{}
-.hdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
-.hdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
-.hdetail-photos img:first-child{height:100%;grid-row:span 2}
-.hdetail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-.hdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.hdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.hdtag.type{background:var(--primary-light);color:var(--primary-dark)}
-.hdtag.open{background:#DCFCE7;color:#16A34A}
-.hdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
-.hdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
-.hdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
-.hdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.hdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
-.hdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.hdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
-.dept-tags{display:flex;flex-wrap:wrap;gap:6px}
-.dept-tag{font-size:12px;background:#fff;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-sub)}
-/* 리뷰 */
-.review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
-.review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
-.review-item-stars{display:flex;gap:2px}
-.review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
-.review-item-date{font-size:12px;color:var(--text-muted)}
-.review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
-/* 사이드 예약 카드 */
-.reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
-.reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
-.reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
-.reserve-info-row strong{color:var(--text-main)}
-.btn-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
-.btn-reserve-big:hover{background:var(--primary-dark)}
-.btn-call{width:100%;padding:12px;border:2px solid var(--primary);border-radius:var(--radius-sm);background:#fff;color:var(--primary);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .hdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
+  .hdetail-main{}
+  .hdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
+  .hdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
+  .hdetail-photos img:first-child{height:100%;grid-row:span 2}
+  .hdetail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+  .hdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .hdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .hdtag.type{background:var(--primary-light);color:var(--primary-dark)}
+  .hdtag.open{background:#DCFCE7;color:#16A34A}
+  .hdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
+  .hdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
+  .hdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
+  .hdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+  .hdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
+  .hdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+  .hdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .hdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
+  .dept-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .dept-tag{font-size:12px;background:#fff;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-sub)}
+  /* 리뷰 */
+  .review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
+  .review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
+  .reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
+  .review-item-stars{display:flex;gap:2px}
+  .review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
+  .review-item-date{font-size:12px;color:var(--text-muted)}
+  .review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
+  /* 사이드 예약 카드 */
+  .reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
+  .reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
+  .reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
+  .reserve-info-row strong{color:var(--text-main)}
+  .btn-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
+  .btn-reserve-big:hover{background:var(--primary-dark)}
+  .btn-call{width:100%;padding:12px;border:2px solid var(--primary);border-radius:var(--radius-sm);background:#fff;color:var(--primary);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
+
 <div class="hdetail-wrap">
   <div class="hdetail-main">
     <div class="hdetail-photos">
@@ -80,9 +82,11 @@
         </div>
       </div>
     </div>
-    <div style="background:var(--bg-page);border-radius:var(--radius-md);overflow:hidden;height:200px;margin-bottom:28px">
+    <%-- <div style="background:var(--bg-page);border-radius:var(--radius-md);overflow:hidden;height:200px;margin-bottom:28px" id="map">
       <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" style="width:100%;height:100%;object-fit:cover" alt="지도" onerror="this.src='https://placehold.co/900x200/EAF7F2/2BAB82?text=카카오맵+위치'">
-    </div>
+    </div> --%>
+    <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
     <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">진료 리뷰 (128)</h3>
     <div class="review-item">
       <div class="review-item-head">

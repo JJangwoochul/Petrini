@@ -4,59 +4,59 @@
 <c:set var="pageId" value="studio" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 <style>
-.sdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
-.sdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
-.sdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
-.sdetail-photos img:first-child{height:100%;grid-row:span 2}
-.sdetail-head{margin-bottom:16px}
-.sdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.sdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.sdtag.type{background:#F3E8FF;color:#9333EA}
-.sdtag.open{background:#DCFCE7;color:#16A34A}
-.sdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
-.sdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
-.sdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
-.sdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
-.sdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
-.sdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.sdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.sdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
-/* 포트폴리오 갤러리 */
-.port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
-.port-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius-sm);display:block;cursor:pointer;transition:var(--transition)}
-.port-grid img:hover{opacity:.85}
-/* 패키지 */
-.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
-.pkg-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;text-align:center;transition:var(--transition)}
-.pkg-card.reco{border-color:#9333EA;box-shadow:0 4px 16px rgba(147,51,234,.15)}
-.pkg-card-head{padding:18px 18px 0}
-.pkg-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px}
-.pkg-badge.basic{background:#E0F2FE;color:#0284C7}
-.pkg-badge.profile{background:#F3E8FF;color:#9333EA}
-.pkg-badge.premium{background:#FFF8E1;color:#F59E0B}
-.pkg-name{font-size:17px;font-weight:800;color:var(--text-main);margin-bottom:4px}
-.pkg-price{font-size:22px;font-weight:800;color:#9333EA;margin-bottom:14px}
-.pkg-features{list-style:none;padding:0 18px;margin:0 0 16px;text-align:left;font-size:13px;color:var(--text-sub);line-height:2}
-.pkg-features li::before{content:"✓ ";color:#9333EA;font-weight:700}
-.pkg-select-btn{display:block;width:100%;padding:11px;border:none;border-top:1px solid var(--border);background:#FAFBFA;color:#555;font-size:13px;font-weight:700;cursor:pointer;transition:var(--transition)}
-.pkg-select-btn:hover{background:#9333EA;color:#fff}
-/* 리뷰 */
-.review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
-.review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
-.review-item-stars{display:flex;gap:2px}
-.review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
-.review-item-date{font-size:12px;color:var(--text-muted)}
-.review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
-/* 사이드 예약 카드 */
-.reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
-.reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
-.reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
-.reserve-info-row strong{color:var(--text-main)}
-.btn-st-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:#9333EA;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
-.btn-st-reserve-big:hover{background:#6B21A8}
-.btn-call{width:100%;padding:12px;border:2px solid #9333EA;border-radius:var(--radius-sm);background:#fff;color:#9333EA;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .sdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
+  .sdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
+  .sdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
+  .sdetail-photos img:first-child{height:100%;grid-row:span 2}
+  .sdetail-head{margin-bottom:16px}
+  .sdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .sdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .sdtag.type{background:#F3E8FF;color:#9333EA}
+  .sdtag.open{background:#DCFCE7;color:#16A34A}
+  .sdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
+  .sdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
+  .sdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
+  .sdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
+  .sdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
+  .sdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+  .sdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .sdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
+  /* 포트폴리오 갤러리 */
+  .port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+  .port-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius-sm);display:block;cursor:pointer;transition:var(--transition)}
+  .port-grid img:hover{opacity:.85}
+  /* 패키지 */
+  .pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+  .pkg-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;text-align:center;transition:var(--transition)}
+  .pkg-card.reco{border-color:#9333EA;box-shadow:0 4px 16px rgba(147,51,234,.15)}
+  .pkg-card-head{padding:18px 18px 0}
+  .pkg-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+  .pkg-badge.basic{background:#E0F2FE;color:#0284C7}
+  .pkg-badge.profile{background:#F3E8FF;color:#9333EA}
+  .pkg-badge.premium{background:#FFF8E1;color:#F59E0B}
+  .pkg-name{font-size:17px;font-weight:800;color:var(--text-main);margin-bottom:4px}
+  .pkg-price{font-size:22px;font-weight:800;color:#9333EA;margin-bottom:14px}
+  .pkg-features{list-style:none;padding:0 18px;margin:0 0 16px;text-align:left;font-size:13px;color:var(--text-sub);line-height:2}
+  .pkg-features li::before{content:"✓ ";color:#9333EA;font-weight:700}
+  .pkg-select-btn{display:block;width:100%;padding:11px;border:none;border-top:1px solid var(--border);background:#FAFBFA;color:#555;font-size:13px;font-weight:700;cursor:pointer;transition:var(--transition)}
+  .pkg-select-btn:hover{background:#9333EA;color:#fff}
+  /* 리뷰 */
+  .review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
+  .review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
+  .reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
+  .review-item-stars{display:flex;gap:2px}
+  .review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
+  .review-item-date{font-size:12px;color:var(--text-muted)}
+  .review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
+  /* 사이드 예약 카드 */
+  .reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
+  .reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
+  .reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
+  .reserve-info-row strong{color:var(--text-main)}
+  .btn-st-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:#9333EA;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
+  .btn-st-reserve-big:hover{background:#6B21A8}
+  .btn-call{width:100%;padding:12px;border:2px solid #9333EA;border-radius:var(--radius-sm);background:#fff;color:#9333EA;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <div class="sdetail-wrap">
   <div>
@@ -92,6 +92,9 @@
       </div>
     </div>
 
+    <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
+    
     <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">포트폴리오</h3>
     <div class="port-grid">
       <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300&q=70&auto=format&fit=crop" alt="작품1" onerror="this.src='https://placehold.co/300x300/F3E8FF/9333EA?text=사진'">

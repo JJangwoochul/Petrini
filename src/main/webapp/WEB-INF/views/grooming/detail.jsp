@@ -4,48 +4,48 @@
 <c:set var="pageId" value="grooming" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 <style>
-.gdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
-.gdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
-.gdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
-.gdetail-photos img:first-child{height:100%;grid-row:span 2}
-.gdetail-head{margin-bottom:16px}
-.gdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.gdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.gdtag.type{background:#FDF2F8;color:#DB2777}
-.gdtag.open{background:#DCFCE7;color:#16A34A}
-.gdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
-.gdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
-.gdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
-.gdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.gdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
-.gdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.gdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.gdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
-.svc-tags{display:flex;flex-wrap:wrap;gap:6px}
-.svc-tag{font-size:12px;background:#fff;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-sub)}
-/* 시술 메뉴 & 가격 */
-.menu-table{width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px}
-.menu-table th{text-align:left;padding:10px 4px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:12px;font-weight:700}
-.menu-table td{padding:13px 4px;border-bottom:1px solid var(--border);color:var(--text-sub)}
-.menu-table td.mt-name{color:var(--text-main);font-weight:700}
-.menu-table td.mt-price{color:#DB2777;font-weight:800;text-align:right}
-/* 리뷰 */
-.review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
-.review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
-.reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
-.review-item-stars{display:flex;gap:2px}
-.review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
-.review-item-date{font-size:12px;color:var(--text-muted)}
-.review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
-/* 사이드 예약 카드 */
-.reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
-.reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
-.reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
-.reserve-info-row strong{color:var(--text-main)}
-.btn-gr-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:#DB2777;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
-.btn-gr-reserve-big:hover{background:#9D174D}
-.btn-call{width:100%;padding:12px;border:2px solid #DB2777;border-radius:var(--radius-sm);background:#fff;color:#DB2777;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .gdetail-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
+  .gdetail-photos{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:24px;border-radius:var(--radius-md);overflow:hidden}
+  .gdetail-photos img{width:100%;height:200px;object-fit:cover;display:block}
+  .gdetail-photos img:first-child{height:100%;grid-row:span 2}
+  .gdetail-head{margin-bottom:16px}
+  .gdetail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .gdtag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .gdtag.type{background:#FDF2F8;color:#DB2777}
+  .gdtag.open{background:#DCFCE7;color:#16A34A}
+  .gdetail-name{font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:8px}
+  .gdetail-rating{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--text-main)}
+  .gdetail-rating svg{width:16px;height:16px;fill:var(--yellow)}
+  .gdetail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+  .gdinfo-card{background:var(--bg-page);border-radius:var(--radius-sm);padding:16px}
+  .gdinfo-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+  .gdinfo-label svg{width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .gdinfo-val{font-size:14px;color:var(--text-main);line-height:1.5}
+  .svc-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .svc-tag{font-size:12px;background:#fff;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-sub)}
+  /* 시술 메뉴 & 가격 */
+  .menu-table{width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px}
+  .menu-table th{text-align:left;padding:10px 4px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:12px;font-weight:700}
+  .menu-table td{padding:13px 4px;border-bottom:1px solid var(--border);color:var(--text-sub)}
+  .menu-table td.mt-name{color:var(--text-main);font-weight:700}
+  .menu-table td.mt-price{color:#DB2777;font-weight:800;text-align:right}
+  /* 리뷰 */
+  .review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
+  .review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
+  .reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
+  .review-item-stars{display:flex;gap:2px}
+  .review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
+  .review-item-date{font-size:12px;color:var(--text-muted)}
+  .review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
+  /* 사이드 예약 카드 */
+  .reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
+  .reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
+  .reserve-info-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:var(--text-sub)}
+  .reserve-info-row strong{color:var(--text-main)}
+  .btn-gr-reserve-big{width:100%;padding:15px;border:none;border-radius:var(--radius-sm);background:#DB2777;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:var(--transition)}
+  .btn-gr-reserve-big:hover{background:#9D174D}
+  .btn-call{width:100%;padding:12px;border:2px solid #DB2777;border-radius:var(--radius-sm);background:#fff;color:#DB2777;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn-call svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <div class="gdetail-wrap">
   <div>
@@ -84,6 +84,9 @@
       </div>
     </div>
 
+    <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
+    
     <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">시술 메뉴 &amp; 가격</h3>
     <table class="menu-table">
       <thead><tr><th>메뉴</th><th>소요시간</th><th style="text-align:right">가격</th></tr></thead>

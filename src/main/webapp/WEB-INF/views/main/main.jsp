@@ -19,7 +19,7 @@
                     <span class="hero-badge">반려동물 통합 케어</span>
                     <h2 class="hero-title">우리 아이의<br>모든 순간을 함께해요</h2>
                     <p class="hero-desc">쇼핑부터 병원 예약, 여가까지<br>펫케어 하나로 간편하게!</p>
-                    <a href="/store" class="hero-cta">지금 시작하기</a>
+                    <%-- <a href="/store" class="hero-cta">지금 시작하기</a> --%>
                 </div>
                 <div class="hero-image">
                     <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=480&q=80"
@@ -50,7 +50,7 @@
                     <span class="hero-badge">🏥 병원 예약 서비스</span>
                     <h2 class="hero-title">가까운 동물병원<br>빠르게 예약하세요</h2>
                     <p class="hero-desc">검증된 전문의와 함께<br>우리 아이 건강을 지켜드려요</p>
-                    <a href="/hospital" class="hero-cta">병원 예약하기</a>
+                    <%-- <a href="/hospital" class="hero-cta">병원 예약하기</a> --%>
                 </div>
                 <div class="hero-image">
                     <img src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=480&q=80"
@@ -80,7 +80,7 @@
                     <span class="hero-badge">🛍️ 반려동물 용품 쇼핑</span>
                     <h2 class="hero-title">우리 아이를 위한<br>최고의 선물</h2>
                     <p class="hero-desc">사료부터 장난감, 의류까지<br>엄선된 프리미엄 상품만 모았어요</p>
-                    <a href="/store" class="hero-cta">쇼핑 시작하기</a>
+                    <%-- <a href="/store" class="hero-cta">쇼핑 시작하기</a> --%>
                 </div>
                 <div class="hero-image">
                     <img src="https://images.unsplash.com/photo-1601758003122-53c40e686a19?w=480&q=80"

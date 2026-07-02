@@ -95,9 +95,11 @@
   </aside>
 
   <div>
-    <div class="hosp-map-area" id="map">
-      <%-- <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x280/EAF7F2/2BAB82?text=카카오맵+API+연동+예정'"> --%>
-    </div>
+    <%-- <div class="hosp-map-area" id="map">
+      <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x280/EAF7F2/2BAB82?text=카카오맵+API+연동+예정'">
+    </div> --%>
+    <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
     <div class="hosp-list-head">
       <span>검색 결과 <strong>24개</strong> 병원</span>
       <div style="display:flex;gap:8px">
@@ -165,20 +167,6 @@
     this.closest('.hosp-filter-chips,.hosp-list-head div').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
     this.classList.add('on');
   }));
-
-var container = document.getElementById('map');
-
-var options = {
-    center : new kakao.maps.LatLng(${lat}, ${lng}),
-    level : 3
-};
-
-var map = new kakao.maps.Map(container, options);
-var marker = new kakao.maps.Marker({
-    position : new kakao.maps.LatLng(${lat}, ${lng})
-});
-marker.setMap(map);
-
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

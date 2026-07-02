@@ -23,11 +23,7 @@
   .toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s}
   .toggle-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
   .toggle input:checked+.toggle-slider{background:#9333EA}
-  .toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
-  /* 지도 영역 */
-  .st-map-area{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--radius-md);height:280px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;overflow:hidden}
-  .st-map-area img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md)}
-  
+  .toggle input:checked+.toggle-slider:before{transform:translateX(18px)} 
   .st-list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .st-list-head span{font-size:14px;color:var(--text-sub)}
   .st-list-head strong{color:var(--text-main);font-weight:700}
@@ -103,9 +99,11 @@
   </aside>
 
   <div>
-    <div class="st-map-area" id="map">
-      <%-- <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x280/EAF7F2/2BAB82?text=카카오맵+API+연동+예정'"> --%>
-    </div>  
+    <%-- <div style="background:var(--bg-page);border-radius:var(--radius-md);overflow:hidden;height:280px;margin-bottom:28px" id="map">
+      <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x280/EAF7F2/2BAB82?text=카카오맵+API+연동+예정'">
+    </div>   --%>
+    <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
     <div class="st-list-head">
       <span>검색 결과 <strong>12개</strong> 사진관</span>
       <div style="display:flex;gap:8px">
@@ -194,19 +192,6 @@
     this.closest('.st-chips,.st-list-head div').querySelectorAll('.st-chip').forEach(x=>x.classList.remove('on'));
     this.classList.add('on');
   }));
-
-  var container = document.getElementById('map');
-
-  var options = {
-      center : new kakao.maps.LatLng(${lat}, ${lng}),
-      level : 3
-  };
-
-  var map = new kakao.maps.Map(container, options);
-  var marker = new kakao.maps.Marker({
-      position : new kakao.maps.LatLng(${lat}, ${lng})
-  });
-  marker.setMap(map);
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

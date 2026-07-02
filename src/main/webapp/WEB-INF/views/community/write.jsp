@@ -4,24 +4,24 @@
 <c:set var="pageId" value="community" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 <style>
-.write-wrap{max-width:780px;margin:32px auto 80px;padding:0 20px}
-.write-title{font-size:22px;font-weight:800;color:var(--text-main);margin-bottom:24px}
-.write-form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.write-form-group label{font-size:13px;font-weight:700;color:var(--text-sub)}
-.write-form-group select,.write-form-group input{border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s;font-family:inherit}
-.write-form-group select:focus,.write-form-group input:focus{border-color:var(--primary)}
-.write-editor{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.write-toolbar{background:var(--bg-page);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:6px;flex-wrap:wrap}
-.toolbar-btn{padding:5px 10px;border:1px solid var(--border);border-radius:4px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;color:var(--text-sub);transition:var(--transition)}
-.toolbar-btn:hover{border-color:var(--primary);color:var(--primary)}
-.write-textarea{width:100%;min-height:300px;border:none;padding:16px;font-size:14px;color:var(--text-main);outline:none;resize:vertical;font-family:inherit;line-height:1.7;box-sizing:border-box}
-.write-img-upload{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;cursor:pointer;transition:var(--transition);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-muted)}
-.write-img-upload:hover{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark)}
-.write-img-upload svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.write-btn-row{display:flex;justify-content:flex-end;gap:12px;margin-top:20px}
-.btn-cancel-write{padding:12px 28px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text-sub);font-size:15px;font-weight:700;cursor:pointer}
-.btn-submit-write{padding:12px 32px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:var(--transition)}
-.btn-submit-write:hover{background:var(--primary-dark)}
+  .write-wrap{max-width:780px;margin:32px auto 80px;padding:0 20px}
+  .write-title{font-size:22px;font-weight:800;color:var(--text-main);margin-bottom:24px}
+  .write-form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+  .write-form-group label{font-size:13px;font-weight:700;color:var(--text-sub)}
+  .write-form-group select,.write-form-group input{border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s;font-family:inherit}
+  .write-form-group select:focus,.write-form-group input:focus{border-color:var(--primary)}
+  .write-editor{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .write-toolbar{background:var(--bg-page);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:6px;flex-wrap:wrap}
+  .toolbar-btn{padding:5px 10px;border:1px solid var(--border);border-radius:4px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;color:var(--text-sub);transition:var(--transition)}
+  .toolbar-btn:hover{border-color:var(--primary);color:var(--primary)}
+  .write-textarea{width:100%;min-height:300px;border:none;padding:16px;font-size:14px;color:var(--text-main);outline:none;resize:vertical;font-family:inherit;line-height:1.7;box-sizing:border-box}
+  .write-img-upload{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;cursor:pointer;transition:var(--transition);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-muted)}
+  .write-img-upload:hover{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark)}
+  .write-img-upload svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .write-btn-row{display:flex;justify-content:flex-end;gap:12px;margin-top:20px}
+  .btn-cancel-write{padding:12px 28px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text-sub);font-size:15px;font-weight:700;cursor:pointer}
+  .btn-submit-write{padding:12px 32px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:var(--transition)}
+  .btn-submit-write:hover{background:var(--primary-dark)}
 </style>
 <div class="write-wrap">
   <h1 class="write-title">게시글 작성</h1>

@@ -12,4 +12,9 @@ public class CommunityController {
     public String community() {
         return "community/list";
     }
+
+    @GetMapping("/write")
+    public String write() {
+        return "community/write";
+    }
 }
