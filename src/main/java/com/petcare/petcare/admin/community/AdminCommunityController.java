@@ -15,8 +15,16 @@ public class AdminCommunityController extends AdminBaseController {
     @GetMapping("/list")
     public String communityList(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/community/list";
-    }    
+    }
+
+    @GetMapping("/detail")
+    public String communityDetail(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/community/detail";
+    }
 }

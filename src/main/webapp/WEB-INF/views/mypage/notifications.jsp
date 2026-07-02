@@ -14,7 +14,7 @@
 <%-- ── 알림함 ── --%>
 <div class="mp-section active">
     <h2 class="mp-title">알림함</h2>
-    <p class="mp-desc">읽지 않은 알림 <strong style="color:var(--accent)">3개</strong></p>
+    <p class="mp-desc">주문, 예약, 공지 알림을 확인하세요.</p>
     <div class="noti-actions">
         <button class="btn-sm">전체 읽음</button>
         <button class="btn-sm danger">전체 삭제</button>
@@ -26,7 +26,7 @@
         <button class="mp-tab">공지</button>
     </div>
     <div class="noti-list">
-        <div class="noti-item unread">
+        <div class="noti-item unread" style="cursor:pointer" onclick="location.href='${contextPath}/mypage/notifications/detail?type=order'">
             <div class="noti-dot"></div>
             <div class="noti-icon order">
                 <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -36,7 +36,7 @@
                 <div class="noti-time">방금 전</div>
             </div>
         </div>
-        <div class="noti-item unread">
+        <div class="noti-item unread" style="cursor:pointer" onclick="location.href='${contextPath}/mypage/notifications/detail?type=resv'">
             <div class="noti-dot"></div>
             <div class="noti-icon resv">
                 <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
@@ -46,7 +46,7 @@
                 <div class="noti-time">1시간 전</div>
             </div>
         </div>
-        <div class="noti-item unread">
+        <div class="noti-item unread" style="cursor:pointer" onclick="location.href='${contextPath}/mypage/notifications/detail?type=notice'">
             <div class="noti-dot"></div>
             <div class="noti-icon notice">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -56,7 +56,7 @@
                 <div class="noti-time">3시간 전</div>
             </div>
         </div>
-        <div class="noti-item">
+        <div class="noti-item" style="cursor:pointer" onclick="location.href='${contextPath}/mypage/notifications/detail?type=chat'">
             <div class="noti-dot read"></div>
             <div class="noti-icon chat">
                 <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -66,7 +66,7 @@
                 <div class="noti-time">어제 오후 4:22</div>
             </div>
         </div>
-        <div class="noti-item">
+        <div class="noti-item" style="cursor:pointer" onclick="location.href='${contextPath}/mypage/notifications/detail?type=order-cancel'">
             <div class="noti-dot read"></div>
             <div class="noti-icon order">
                 <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>

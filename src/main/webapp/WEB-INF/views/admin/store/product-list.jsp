@@ -11,6 +11,9 @@
             <h1 class="adm-page-title">상품 관리</h1>
             <p class="adm-page-desc">사업자 등록 상품을 승인·반려하고 관리하세요.</p>
         </div>
+        <div class="adm-page-actions">
+            <a href="${contextPath}/admin/store/product-form" class="adm-btn blue">+ 상품 등록</a>
+        </div>
     </div>
 
     <div class="adm-card">
@@ -80,7 +83,7 @@
                         <td><span class="adm-badge active">승인</span></td>
                         <td>2025.06.20</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">수정</button>
+                            <a href="${contextPath}/admin/store/product-form?mode=edit" class="adm-btn blue">수정</a>
                             <button class="adm-btn red" style="margin-left:4px">삭제</button>
                         </td>
                     </tr>

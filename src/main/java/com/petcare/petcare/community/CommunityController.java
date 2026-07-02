@@ -13,6 +13,11 @@ public class CommunityController {
         return "community/list";
     }
 
+    @GetMapping("/detail")
+    public String detail() {
+        return "community/detail";
+    }
+
     @GetMapping("/write")
     public String write() {
         return "community/write";

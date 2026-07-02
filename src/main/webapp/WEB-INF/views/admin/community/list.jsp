@@ -55,7 +55,7 @@
                         <td><span class="adm-badge wait">신고 대기</span></td>
                         <td>2025.06.25</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">보기</button>
+                            <a href="${contextPath}/admin/community/detail?id=4821" class="adm-btn blue">보기</a>
                             <button class="adm-btn gray" style="margin-left:4px">숨김</button>
                             <button class="adm-btn red" style="margin-left:4px">삭제</button>
                         </td>
@@ -68,7 +68,8 @@
                         <td><span class="adm-badge active">정상</span></td>
                         <td>2025.06.25</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">보기</button>
+                            <a href="${contextPath}/admin/community/detail?id=4820" class="adm-btn blue">보기</a>
+                            <button class="adm-btn gray" style="margin-left:4px">숨김</button>
                             <button class="adm-btn red" style="margin-left:4px">삭제</button>
                         </td>
                     </tr>
@@ -80,7 +81,7 @@
                         <td><span class="adm-badge wait">신고 대기</span></td>
                         <td>2025.06.24</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">보기</button>
+                            <a href="${contextPath}/admin/community/detail?id=4819" class="adm-btn blue">보기</a>
                             <button class="adm-btn gray" style="margin-left:4px">숨김</button>
                             <button class="adm-btn red" style="margin-left:4px">삭제</button>
                         </td>
@@ -93,7 +94,7 @@
                         <td><span class="adm-badge cancel">숨김</span></td>
                         <td>2025.06.23</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">보기</button>
+                            <a href="${contextPath}/admin/community/detail?id=4818" class="adm-btn blue">보기</a>
                             <button class="adm-btn green" style="margin-left:4px">복원</button>
                         </td>
                     </tr>

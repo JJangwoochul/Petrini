@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class StoreController {
     
     @GetMapping({"", "/"})
-    public String store() {
+    public String store(@RequestParam(required = false) String q) {
+        if (q != null && !q.isBlank()) {
+            return "redirect:/search?q=" + java.net.URLEncoder.encode(q.trim(), java.nio.charset.StandardCharsets.UTF_8);
+        }
         return "store/list";
     }
 

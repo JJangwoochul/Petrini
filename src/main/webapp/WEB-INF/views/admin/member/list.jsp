@@ -71,7 +71,7 @@
                         <td><span class="adm-badge active">활성</span></td>
                         <td>2025.06.25</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">상세</button>
+                            <a href="${contextPath}/admin/member/detail?id=12847" class="adm-btn blue">상세</a>
                             <button class="adm-btn gray" style="margin-left:4px">정지</button>
                         </td>
                     </tr>
@@ -85,7 +85,7 @@
                         <td><span class="adm-badge active">활성</span></td>
                         <td>2025.06.24</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">상세</button>
+                            <a href="${contextPath}/admin/member/detail?id=12846" class="adm-btn blue">상세</a>
                             <button class="adm-btn gray" style="margin-left:4px">정지</button>
                         </td>
                     </tr>
@@ -99,7 +99,7 @@
                         <td><span class="adm-badge active">활성</span></td>
                         <td>2025.06.20</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">상세</button>
+                            <a href="${contextPath}/admin/member/detail?id=12845" class="adm-btn blue">상세</a>
                             <button class="adm-btn gray" style="margin-left:4px">정지</button>
                         </td>
                     </tr>
@@ -113,7 +113,7 @@
                         <td><span class="adm-badge banned">정지</span></td>
                         <td>2025.06.15</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">상세</button>
+                            <a href="${contextPath}/admin/member/detail?id=12844" class="adm-btn blue">상세</a>
                             <button class="adm-btn green" style="margin-left:4px">해제</button>
                         </td>
                     </tr>
@@ -127,7 +127,7 @@
                         <td><span class="adm-badge cancel">탈퇴</span></td>
                         <td>2025.05.10</td>
                         <td style="white-space:nowrap">
-                            <button class="adm-btn blue">상세</button>
+                            <a href="${contextPath}/admin/member/detail?id=12843" class="adm-btn blue">상세</a>
                         </td>
                     </tr>
                 </tbody>

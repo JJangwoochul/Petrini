@@ -215,7 +215,7 @@
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         반려하기
                     </button>
-                    <button class="adm-btn gray" style="width:100%;padding:11px;font-size:14px" onclick="history.back()">목록으로</button>
+                    <button class="adm-btn gray" style="width:100%;padding:11px;font-size:14px" onclick="location.href='${contextPath}/admin/biz/list'">목록으로</button>
                 </div>
             </div>
         </div>

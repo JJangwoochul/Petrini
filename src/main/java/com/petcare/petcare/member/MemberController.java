@@ -1,7 +1,10 @@
 package com.petcare.petcare.member;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.member.vo.MemberVO;
 
@@ -14,10 +17,76 @@ public class MemberController {
         return "member/login";
     }
 
+    @PostMapping("/login")
+    public String loginPost(
+            @RequestParam(required = false) String loginId,
+            @RequestParam(required = false) String loginPw,
+            @RequestParam(required = false) String redirect,
+            HttpSession session) {
+
+        if (loginId == null || loginId.isBlank() || loginPw == null || loginPw.isBlank()) {
+            return "redirect:/login?error=empty";
+        }
+
+        String id = loginId.trim();
+
+        MemberVO member = new MemberVO();
+        member.setMemberId(id);
+        member.setEmail(id);
+        member.setMemberName(resolveDisplayName(id));
+        member.setRole("USER");
+        session.setAttribute("memberInfo", member);
+
+        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/") && !redirect.startsWith("//")) {
+            return "redirect:" + redirect;
+        }
+        return "redirect:/";
+    }
+
+    private String resolveDisplayName(String loginId) {
+        int at = loginId.indexOf('@');
+        if (at > 0) {
+            return loginId.substring(0, at);
+        }
+        return loginId;
+    }
+
     @GetMapping("/join")
     public String join() {
         return "member/join";
-    }   
+    }
+
+    @GetMapping("/member/join")
+    public String joinAlias() {
+        return "redirect:/join";
+    }
+
+    @GetMapping("/member/cs")
+    public String cs() {
+        return "member/cs";
+    }
+
+    @GetMapping("/member/cs/notice")
+    public String csNotice(@RequestParam(defaultValue = "1") String id, Model model) {
+        model.addAttribute("noticeId", id);
+        return "member/cs-notice";
+    }
+
+    @GetMapping("/find/id")
+    public String findId() {
+        return "member/find-id";
+    }
+
+    @GetMapping("/find/pw")
+    public String findPw() {
+        return "member/find-pw";
+    }
+
+    @GetMapping("/member/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/";
+    }
 
     //http://localhost:8080/
     @GetMapping("/")

@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="adminPage"   value="product-list" />
+<c:set var="adminPage"   value="category" />
 <%@ include file="/WEB-INF/views/admin/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/admin/common/sidebar.jsp" %>
 

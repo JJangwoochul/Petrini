@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<link rel="stylesheet" href="${contextPath}/resources/css/join.css">
+<link rel="stylesheet" href="${contextPath}/resources/css/join.css?v=2">
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
@@ -112,16 +112,8 @@
             <!-- 이름 -->
             <div class="form-field">
               <label class="form-label" for="memberName">이름 <span class="req">*</span></label>
-              <div style="position:relative;">
-                <span class="field-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                </span>
-                <input type="text" id="memberName" name="memberName"
-                       class="form-input" placeholder="이름을 입력해 주세요">
-              </div>
+              <input type="text" id="memberName" name="memberName"
+                     class="form-input no-icon" placeholder="이름을 입력해 주세요">
               <p class="field-error" id="errName">이름을 입력해 주세요.</p>
             </div>
 
@@ -129,16 +121,8 @@
             <div class="form-field">
               <label class="form-label" for="email">이메일 <span class="req">*</span></label>
               <div class="field-btn-wrap">
-                <div style="position:relative; flex:1;">
-                  <span class="field-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                      <polyline points="22,6 12,13 2,6"/>
-                    </svg>
-                  </span>
-                  <input type="email" id="email" name="email"
-                         class="form-input" placeholder="example@email.com">
-                </div>
+                <input type="email" id="email" name="email"
+                       class="form-input no-icon" placeholder="example@email.com">
                 <button type="button" class="btn-check" id="btnCheckEmail">중복 확인</button>
               </div>
               <p class="field-hint">로그인 아이디로 사용됩니다.</p>
@@ -150,14 +134,9 @@
             <div class="form-field">
               <label class="form-label" for="password">비밀번호 <span class="req">*</span></label>
               <div style="position:relative;">
-                <span class="field-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </span>
                 <input type="password" id="password" name="password"
-                       class="form-input" placeholder="8자 이상, 영문+숫자+특수문자">
+                       class="form-input no-icon" placeholder="8자 이상, 영문+숫자+특수문자"
+                       style="padding-right:44px">
                 <button type="button" class="pw-toggle" id="pwToggle1" aria-label="비밀번호 보기">
                   <svg id="eye1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -179,14 +158,9 @@
             <div class="form-field">
               <label class="form-label" for="passwordConfirm">비밀번호 확인 <span class="req">*</span></label>
               <div style="position:relative;">
-                <span class="field-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </span>
                 <input type="password" id="passwordConfirm" name="passwordConfirm"
-                       class="form-input" placeholder="비밀번호를 다시 입력해 주세요">
+                       class="form-input no-icon" placeholder="비밀번호를 다시 입력해 주세요"
+                       style="padding-right:44px">
                 <button type="button" class="pw-toggle" id="pwToggle2" aria-label="비밀번호 확인 보기">
                   <svg id="eye2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -201,16 +175,9 @@
             <!-- 전화번호 -->
             <div class="form-field">
               <label class="form-label" for="phone">전화번호 <span class="req">*</span></label>
-              <div style="position:relative;">
-                <span class="field-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.5 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.44 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.4a16 16 0 0 0 5.55 5.55l1.67-1.67a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                  </svg>
-                </span>
-                <input type="tel" id="phone" name="phone"
-                       class="form-input" placeholder="010-0000-0000"
-                       oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3')">
-              </div>
+              <input type="tel" id="phone" name="phone"
+                     class="form-input no-icon" placeholder="010-0000-0000"
+                     oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3')">
               <p class="field-error" id="errPhone">올바른 전화번호를 입력해 주세요.</p>
             </div>
 
@@ -218,37 +185,16 @@
             <div class="form-row">
               <div class="form-field">
                 <label class="form-label" for="birthDate">생년월일 <span class="req">*</span></label>
-                <div style="position:relative;">
-                  <span class="field-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8"  y1="2" x2="8"  y2="6"/>
-                      <line x1="3"  y1="10" x2="21" y2="10"/>
-                    </svg>
-                  </span>
-                  <input type="date" id="birthDate" name="birthDate" class="form-input">
-                </div>
+                <input type="date" id="birthDate" name="birthDate" class="form-input no-icon">
                 <p class="field-error" id="errBirth">생년월일을 입력해 주세요.</p>
               </div>
               <div class="form-field">
                 <label class="form-label" for="gender">성별</label>
-                <div style="position:relative;">
-                  <span class="field-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="4"/>
-                      <line x1="12" y1="2"  x2="12" y2="8"/>
-                      <line x1="12" y1="16" x2="12" y2="22"/>
-                      <line x1="2"  y1="12" x2="8"  y2="12"/>
-                      <line x1="16" y1="12" x2="22" y2="12"/>
-                    </svg>
-                  </span>
-                  <select id="gender" name="gender" class="form-select">
+                  <select id="gender" name="gender" class="form-select no-icon">
                     <option value="">선택 안함</option>
                     <option value="M">남성</option>
                     <option value="F">여성</option>
                   </select>
-                </div>
               </div>
             </div>
 

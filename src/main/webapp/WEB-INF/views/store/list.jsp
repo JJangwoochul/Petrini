@@ -104,7 +104,7 @@
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&q=70&auto=format&fit=crop" alt="사료" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
           <span class="product-badge">BEST</span>
-          <button class="product-wish"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
         </div>
         <div class="product-body">
           <div class="product-brand">로얄캐닌</div>
@@ -125,7 +125,7 @@
       <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=2'">
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=70&auto=format&fit=crop" alt="장난감" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <button class="product-wish"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
         </div>
         <div class="product-body">
           <div class="product-brand">PetPlay</div>
@@ -143,7 +143,7 @@
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=400&q=70&auto=format&fit=crop" alt="간식" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
           <span class="product-badge">NEW</span>
-          <button class="product-wish"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
         </div>
         <div class="product-body">
           <div class="product-brand">냥냥</div>
@@ -160,7 +160,7 @@
       <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=4'">
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1596854407944-bf87f6fdd049?w=400&q=70&auto=format&fit=crop" alt="하네스" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <button class="product-wish"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
         </div>
         <div class="product-body">
           <div class="product-brand">WalkMe</div>
@@ -177,7 +177,7 @@
       <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=5'">
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=70&auto=format&fit=crop" alt="침대" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <button class="product-wish"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
         </div>
         <div class="product-body">
           <div class="product-brand">PetNest</div>
@@ -195,7 +195,7 @@
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1516750105099-4b8a83e217ee?w=400&q=70&auto=format&fit=crop" alt="샴푸" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
           <span class="product-badge">SALE</span>
-          <button class="product-wish"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
         </div>
         <div class="product-body">
           <div class="product-brand">PetClean</div>

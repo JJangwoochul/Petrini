@@ -76,6 +76,14 @@ public class MypageController {
         return "mypage/notifications";
     }
 
+    /** 알림 상세 */
+    @GetMapping("/notifications/detail")
+    public String notificationDetail(HttpSession session) {
+        if (session.getAttribute("memberInfo") == null)
+            return "redirect:/login";
+        return "mypage/notification-detail";
+    }
+
     /** 회원정보 수정 */
     @GetMapping("/edit")
     public String edit(HttpSession session) {

@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
+<c:set var="productId" value="${empty param.id ? '1' : param.id}" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 <style>
 .detail-wrap { max-width:var(--inner-width); margin:32px auto 80px; padding:0 20px; }
@@ -128,7 +129,7 @@
         <strong id="totalPrice">48,900원</strong>
       </div>
       <div class="detail-btn-row">
-        <button class="btn-wish-detail"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>찜</button>
+        <button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>찜</button>
         <button class="btn-cart-detail" onclick="alert('장바구니에 담았습니다.')">장바구니</button>
         <button class="btn-buy-detail" onclick="location.href='${contextPath}/store/order'">바로구매</button>
       </div>

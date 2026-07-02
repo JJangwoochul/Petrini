@@ -120,11 +120,11 @@
                 <table class="adm-table">
                     <thead><tr><th>주문번호</th><th>회원</th><th>금액</th><th>상태</th></tr></thead>
                     <tbody>
-                        <tr><td>#ORD-2025-0892</td><td>김민준</td><td>74,900원</td><td><span class="adm-badge shipping">배송중</span></td></tr>
-                        <tr><td>#ORD-2025-0891</td><td>이서연</td><td>18,500원</td><td><span class="adm-badge done">배송완료</span></td></tr>
-                        <tr><td>#ORD-2025-0890</td><td>박지호</td><td>22,000원</td><td><span class="adm-badge done">배송완료</span></td></tr>
-                        <tr><td>#ORD-2025-0889</td><td>최유나</td><td>26,000원</td><td><span class="adm-badge wait">결제완료</span></td></tr>
-                        <tr><td>#ORD-2025-0888</td><td>정태양</td><td>55,800원</td><td><span class="adm-badge cancel">취소</span></td></tr>
+                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0892'"><td>#ORD-2025-0892</td><td>김민준</td><td>74,900원</td><td><span class="adm-badge shipping">배송중</span></td></tr>
+                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0891'"><td>#ORD-2025-0891</td><td>이서연</td><td>18,500원</td><td><span class="adm-badge done">배송완료</span></td></tr>
+                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0890'"><td>#ORD-2025-0890</td><td>박지호</td><td>22,000원</td><td><span class="adm-badge done">배송완료</span></td></tr>
+                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0889'"><td>#ORD-2025-0889</td><td>최유나</td><td>26,000원</td><td><span class="adm-badge wait">결제완료</span></td></tr>
+                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0888'"><td>#ORD-2025-0888</td><td>정태양</td><td>55,800원</td><td><span class="adm-badge cancel">취소</span></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -146,19 +146,19 @@
                             <td><strong>행복 동물병원</strong></td>
                             <td>동물병원</td>
                             <td>06.25</td>
-                            <td><a href="${contextPath}/admin/biz/list" class="adm-btn blue">검토</a></td>
+                            <td><a href="${contextPath}/admin/biz/detail?id=1" class="adm-btn blue">검토</a></td>
                         </tr>
                         <tr>
                             <td><strong>강아지숲 펫호텔</strong></td>
                             <td>반려동물 숙소</td>
                             <td>06.24</td>
-                            <td><a href="${contextPath}/admin/biz/list" class="adm-btn blue">검토</a></td>
+                            <td><a href="${contextPath}/admin/biz/detail?id=2" class="adm-btn blue">검토</a></td>
                         </tr>
                         <tr>
                             <td><strong>냥냥 그루밍샵</strong></td>
                             <td>애견미용실</td>
                             <td>06.23</td>
-                            <td><a href="${contextPath}/admin/biz/list" class="adm-btn blue">검토</a></td>
+                            <td><a href="${contextPath}/admin/biz/detail?id=3" class="adm-btn blue">검토</a></td>
                         </tr>
                     </tbody>
                 </table>

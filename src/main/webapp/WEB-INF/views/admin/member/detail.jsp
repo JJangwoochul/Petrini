@@ -110,10 +110,10 @@
             </div>
         </div>
         <div class="mem-profile-actions">
-            <button class="adm-btn gray" onclick="history.back()">
+            <a href="${contextPath}/admin/member/list" class="adm-btn gray" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">
                 <svg viewBox="0 0 24 24"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
                 목록으로
-            </button>
+            </a>
         </div>
     </div>
 

@@ -11,16 +11,53 @@
             <p class="adm-page-desc">메인 배너를 등록·수정·삭제하세요.</p>
         </div>
         <div class="adm-page-actions">
-            <button class="adm-filter-btn primary" onclick="alert('등록 화면 — 구현 예정')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <a href="${contextPath}/admin/cms/banner/form" class="adm-filter-btn primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 배너 등록
-            </button>
+            </a>
         </div>
     </div>
-    <div class="adm-empty">
-        <div class="adm-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-        <p>구현 예정입니다.</p>
-        <small>배너 이미지 등록·순서 관리·노출 토글</small>
+    <div class="adm-card">
+        <div class="adm-card-head">
+            <span class="adm-card-head-title">배너 목록</span>
+            <span class="adm-card-head-sub">총 3건</span>
+        </div>
+        <div class="adm-table-wrap">
+            <table class="adm-table">
+                <thead>
+                    <tr><th>순서</th><th>미리보기</th><th>제목</th><th>링크</th><th>노출</th><th>기간</th><th>관리</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=120&q=70" alt="" style="width:80px;height:40px;object-fit:cover;border-radius:6px"></td>
+                        <td><strong>여름맞이 반려동물 케어 특가</strong></td>
+                        <td>/store</td>
+                        <td><span class="adm-badge active">노출</span></td>
+                        <td>2025.06.01 ~ 2025.08.31</td>
+                        <td><a href="${contextPath}/admin/cms/banner/form?mode=edit&id=1" class="adm-btn blue">수정</a></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=120&q=70" alt="" style="width:80px;height:40px;object-fit:cover;border-radius:6px"></td>
+                        <td><strong>동물병원 예약 10% 할인</strong></td>
+                        <td>/hospital</td>
+                        <td><span class="adm-badge active">노출</span></td>
+                        <td>2025.07.01 ~ 2025.07.31</td>
+                        <td><a href="${contextPath}/admin/cms/banner/form?mode=edit&id=2" class="adm-btn blue">수정</a></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><img src="https://images.unsplash.com/photo-1615789591457-74a63395c990?w=120&q=70" alt="" style="width:80px;height:40px;object-fit:cover;border-radius:6px"></td>
+                        <td><strong>유기동물 입양 캠페인</strong></td>
+                        <td>/give/animal/list</td>
+                        <td><span class="adm-badge cancel">숨김</span></td>
+                        <td>2025.05.01 ~ 2025.06.30</td>
+                        <td><a href="${contextPath}/admin/cms/banner/form?mode=edit&id=3" class="adm-btn blue">수정</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </main>
 <%@ include file="/WEB-INF/views/admin/common/footer.jsp" %>

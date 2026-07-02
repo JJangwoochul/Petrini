@@ -13,4 +13,14 @@ public class GiveReportController extends GiveController {
     public String reportList() {
         return "give/report/list";
     }
+
+    @GetMapping("/detail")
+    public String reportDetail() {
+        return "give/report/detail";
+    }
+
+    @GetMapping("/write")
+    public String reportWrite() {
+        return "give/report/write";
+    }
 }

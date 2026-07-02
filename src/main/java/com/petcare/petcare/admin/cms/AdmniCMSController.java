@@ -15,7 +15,7 @@ public class AdmniCMSController extends AdminBaseController {
     @GetMapping("/banner")
     public String cmsBanner(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/cms/banner";
     }
@@ -23,7 +23,7 @@ public class AdmniCMSController extends AdminBaseController {
     @GetMapping("/notice")
     public String cmsNotice(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/cms/notice";
     }
@@ -31,8 +31,32 @@ public class AdmniCMSController extends AdminBaseController {
     @GetMapping("/faq")
     public String cmsFaq(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/cms/faq";
-    }     
+    }
+
+    @GetMapping("/banner/form")
+    public String bannerForm(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/cms/banner-form";
+    }
+
+    @GetMapping("/notice/form")
+    public String noticeForm(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/cms/notice-form";
+    }
+
+    @GetMapping("/faq/form")
+    public String faqForm(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/cms/faq-form";
+    }
 }

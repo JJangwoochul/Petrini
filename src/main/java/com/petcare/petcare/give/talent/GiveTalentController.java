@@ -13,4 +13,9 @@ public class GiveTalentController extends GiveController {
     public String talentList() {
         return "give/talent/list";
     }
+
+    @GetMapping("/detail")
+    public String talentDetail() {
+        return "give/talent/detail";
+    }
 }

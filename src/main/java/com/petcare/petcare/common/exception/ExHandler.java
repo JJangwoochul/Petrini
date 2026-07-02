@@ -4,17 +4,31 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class ExHandler {
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> handleNoResource(NoResourceFoundException e, HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String path = e.getResourcePath();
+        if (uri.contains(".well-known")
+                || uri.endsWith("/favicon.ico")
+                || (path != null && path.endsWith("favicon.ico"))) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleAjaxException(Exception e, HttpServletRequest request) {
 
         String uri = request.getRequestURI();
-        // Chrome devtools 자동 요청은 무시
-        if (uri.contains(".well-known")) {
+        // 브라우저·개발도구 자동 요청은 무시
+        if (uri.contains(".well-known") || uri.endsWith("/favicon.ico")) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not_found");
         }
 
@@ -25,7 +39,7 @@ public class ExHandler {
         StackTraceElement[] stackTrace = e.getStackTrace();
 
         for (StackTraceElement element : stackTrace) {
-            if (element.getClassName().startsWith("com.example.bookmarket")) {
+            if (element.getClassName().startsWith("com.petcare.petcare")) {
                 System.out.println("오류 위치 : " + element.getClassName() 
                     + "." + element.getMethodName() 
                     + " (line " + element.getLineNumber() + ")");

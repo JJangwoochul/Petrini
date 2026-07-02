@@ -16,8 +16,16 @@ public class AdminMemberController extends AdminBaseController {
     @GetMapping("/list")
     public String memberList(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/member/list";
-    }    
+    }
+
+    @GetMapping("/detail")
+    public String memberDetail(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/member/detail";
+    }
 }

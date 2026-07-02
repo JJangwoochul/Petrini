@@ -87,6 +87,7 @@
                 <span class="biz-doc-link" style="margin-left:14px" onclick="alert('서류 미리보기')">영업신고증 보기</span>
             </div>
             <div class="biz-action-area">
+                <a href="${contextPath}/admin/biz/detail?id=1" class="adm-btn blue">상세 검토</a>
                 <input type="text" class="biz-reject-input" id="reject1" placeholder="반려 사유를 입력하세요">
                 <button class="adm-btn gray" onclick="var el=document.getElementById('reject1');el.style.display=el.style.display==='none'?'block':'none'">반려</button>
                 <button class="adm-btn green" onclick="if(confirm('행복 동물병원을 승인하시겠습니까?\n승인 시 사업자 권한이 부여되고 이메일이 발송됩니다.'))alert('승인 처리되었습니다.')">승인</button>
@@ -118,6 +119,7 @@
                 <span class="biz-doc-link" onclick="alert('서류 미리보기')">사업자등록증 보기</span>
             </div>
             <div class="biz-action-area">
+                <a href="${contextPath}/admin/biz/detail?id=2" class="adm-btn blue">상세 검토</a>
                 <input type="text" class="biz-reject-input" id="reject2" placeholder="반려 사유를 입력하세요">
                 <button class="adm-btn gray" onclick="var el=document.getElementById('reject2');el.style.display=el.style.display==='none'?'block':'none'">반려</button>
                 <button class="adm-btn green" onclick="if(confirm('강아지숲 펫호텔을 승인하시겠습니까?'))alert('승인 처리되었습니다.')">승인</button>
@@ -150,6 +152,7 @@
                 <span class="biz-doc-link" style="margin-left:14px" onclick="alert('서류 미리보기')">영업신고증 보기</span>
             </div>
             <div class="biz-action-area">
+                <a href="${contextPath}/admin/biz/detail?id=3" class="adm-btn blue">상세 검토</a>
                 <input type="text" class="biz-reject-input" id="reject3" placeholder="반려 사유를 입력하세요">
                 <button class="adm-btn gray" onclick="var el=document.getElementById('reject3');el.style.display=el.style.display==='none'?'block':'none'">반려</button>
                 <button class="adm-btn green" onclick="if(confirm('냥냥 그루밍샵을 승인하시겠습니까?'))alert('승인 처리되었습니다.')">승인</button>

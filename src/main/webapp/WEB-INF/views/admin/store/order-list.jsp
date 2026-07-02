@@ -50,7 +50,7 @@
                         <td>74,900원</td><td>카드</td>
                         <td><span class="adm-badge shipping">배송중</span></td>
                         <td>2025.06.25</td>
-                        <td><button class="adm-btn blue">상세</button></td>
+                        <td><a href="${contextPath}/admin/store/order-detail?id=ORD-2025-0892" class="adm-btn blue">상세</a></td>
                     </tr>
                     <tr>
                         <td>#ORD-2025-0891</td><td>이서연</td>
@@ -58,7 +58,7 @@
                         <td>18,500원</td><td>카카오페이</td>
                         <td><span class="adm-badge done">배송완료</span></td>
                         <td>2025.06.24</td>
-                        <td><button class="adm-btn blue">상세</button></td>
+                        <td><a href="${contextPath}/admin/store/order-detail?id=ORD-2025-0891" class="adm-btn blue">상세</a></td>
                     </tr>
                     <tr>
                         <td>#ORD-2025-0890</td><td>박지호</td>
@@ -67,7 +67,7 @@
                         <td><span class="adm-badge wait">결제완료</span></td>
                         <td>2025.06.24</td>
                         <td>
-                            <button class="adm-btn blue">상세</button>
+                            <a href="${contextPath}/admin/store/order-detail?id=ORD-2025-0890" class="adm-btn blue">상세</a>
                             <button class="adm-btn green" style="margin-left:4px">배송처리</button>
                         </td>
                     </tr>
@@ -77,7 +77,7 @@
                         <td>26,000원</td><td>네이버페이</td>
                         <td><span class="adm-badge cancel">취소</span></td>
                         <td>2025.06.23</td>
-                        <td><button class="adm-btn blue">상세</button></td>
+                        <td><a href="${contextPath}/admin/store/order-detail?id=ORD-2025-0889" class="adm-btn blue">상세</a></td>
                     </tr>
                 </tbody>
             </table>

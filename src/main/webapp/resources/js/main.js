@@ -37,37 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* =============================================
-       WISH (HEART) TOGGLE
-       ============================================= */
-    document.querySelectorAll('.hospital-wish').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.preventDefault();
-            const svg = btn.querySelector('svg');
-            const isActive = btn.classList.toggle('wished');
-            if (svg) {
-                svg.style.fill = isActive ? '#FF6B6B' : 'none';
-                svg.style.stroke = isActive ? '#FF6B6B' : 'var(--text-sub)';
-            }
-        });
-    });
-
-    /* =============================================
-       SEARCH INPUT
-       ============================================= */
-    const searchInput = document.querySelector('.search-input');
-    const searchBtn   = document.querySelector('.search-btn');
-    searchInput?.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-            const q = searchInput.value.trim();
-            if (q) window.location.href = `/store?q=${encodeURIComponent(q)}`;
-        }
-    });
-    searchBtn?.addEventListener('click', () => {
-        const q = searchInput?.value.trim();
-        if (q) window.location.href = `/store?q=${encodeURIComponent(q)}`;
-    });
-
-    /* =============================================
        LAZY IMAGE FALLBACK
        ============================================= */
     document.querySelectorAll('img').forEach(img => {

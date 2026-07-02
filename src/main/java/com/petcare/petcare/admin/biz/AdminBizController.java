@@ -16,7 +16,7 @@ public class AdminBizController extends AdminBaseController {
     @GetMapping("/list")
     public String bizList(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/biz/list";
     }
@@ -25,8 +25,16 @@ public class AdminBizController extends AdminBaseController {
     @GetMapping("/talent")
     public String cmsTalent(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/biz/talent";
-    } 
+    }
+
+    @GetMapping("/detail")
+    public String bizDetail(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/biz/detail";
+    }
 }

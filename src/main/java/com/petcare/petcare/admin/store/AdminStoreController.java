@@ -16,7 +16,7 @@ public class AdminStoreController extends AdminBaseController {
     @GetMapping("/product-list")
     public String productList(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/store/product-list";
     }
@@ -25,7 +25,7 @@ public class AdminStoreController extends AdminBaseController {
     @GetMapping("/order-list")
     public String orderList(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/store/order-list";
     }  
@@ -34,8 +34,24 @@ public class AdminStoreController extends AdminBaseController {
     @GetMapping("/category")
     public String category(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/store/category";
-    } 
+    }
+
+    @GetMapping("/order-detail")
+    public String orderDetail(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/store/order-detail";
+    }
+
+    @GetMapping("/product-form")
+    public String productForm(HttpSession session) {
+        if (getAdmin(session) == null)
+            return redirectToLogin();
+
+        return "admin/store/product-form";
+    }
 }

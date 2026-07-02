@@ -23,23 +23,27 @@
         <h1 class="member-title">로그인</h1>
         <p class="member-desc">반려동물과의 행복한 일상을<br>PetCare와 함께 시작하세요</p>
 
+        <c:if test="${param.error eq 'empty'}">
+            <p class="login-error-msg">아이디와 비밀번호를 입력해 주세요.</p>
+        </c:if>
+
         <%-- 소셜 로그인 --%>
         <div class="social-login-group">
-            <a href="/oauth2/authorization/kakao" class="social-btn-full kakao">
+            <a href="${contextPath}/oauth2/authorization/kakao" class="social-btn-full kakao">
                 <%-- 카카오 아이콘 --%>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.73 5.32 4.35 6.85L5.5 21l4.03-2.12C10.3 19.27 11.14 19.4 12 19.4c5.52 0 10-3.58 10-8.4S17.52 3 12 3z" fill="#3A1D1D"/>
                 </svg>
                 카카오로 시작하기
             </a>
-            <a href="/oauth2/authorization/naver" class="social-btn-full naver">
+            <a href="${contextPath}/oauth2/authorization/naver" class="social-btn-full naver">
                 <%-- 네이버 아이콘 --%>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M4 4h5.5l5 8V4H20v16h-5.5l-5-8v8H4z" fill="white"/>
                 </svg>
                 네이버로 시작하기
             </a>
-            <a href="/oauth2/authorization/google" class="social-btn-full google">
+            <a href="${contextPath}/oauth2/authorization/google" class="social-btn-full google">
                 <%-- 구글 아이콘 --%>
                 <svg width="20" height="20" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -54,7 +58,10 @@
         <div class="divider-or">또는 이메일로 로그인</div>
 
         <%-- 로그인 폼 --%>
-        <form class="member-form" action="/login" method="post" id="loginForm">
+        <form class="member-form" action="${contextPath}/login" method="post" id="loginForm">
+            <c:if test="${not empty param.redirect}">
+                <input type="hidden" name="redirect" value="${param.redirect}">
+            </c:if>
             <div class="form-group">
                 <label class="form-label" for="loginId">아이디 (이메일)</label>
                 <input type="text" id="loginId" name="loginId"
@@ -92,7 +99,10 @@
         <%-- 하단 링크 --%>
         <p class="member-footer-link">
             아직 회원이 아니신가요?
-            <a href="${contextPath}/member/join">회원가입</a>
+            <a href="${contextPath}/join">회원가입</a>
+        </p>
+        <p class="member-footer-link" style="margin-top:12px">
+            <a href="${contextPath}/admin/login" style="color:#888;font-size:13px">관리자 로그인</a>
         </p>
 
         <div class="find-links">

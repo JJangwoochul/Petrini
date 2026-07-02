@@ -16,7 +16,7 @@ public class AdminMainController extends AdminBaseController {
     @GetMapping({"", "/"})
     public String dashboard(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
 
         return "admin/dashboard";
     }
@@ -25,7 +25,7 @@ public class AdminMainController extends AdminBaseController {
     @GetMapping("/stats")
     public String stats(HttpSession session) {
         if (getAdmin(session) == null) 
-            return "redirect:/login";
+            return redirectToLogin();
         
         return "admin/stats/index";
     }    
