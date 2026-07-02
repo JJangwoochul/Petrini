@@ -32,13 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
-### properties (Git 제외, 팀 내부 복붙 공유) ###
-application.properties
-application-local.properties
-application-prod.properties
-**/application.properties
-**/application-local.properties
-**/application-prod.properties
+### properties (src/main/resources 만 제외) ###
+/src/main/resources/application.properties
+/src/main/resources/application-local.properties
+/src/main/resources/application-prod.properties
 .env
 .env.*
 
