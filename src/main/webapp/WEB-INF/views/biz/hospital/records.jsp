@@ -280,23 +280,25 @@
     </div>
 
     <%-- 검색 바 --%>
+ 
     <div class="rec-search-bar">
-        <input type="text" class="rec-search-input" placeholder="보호자명 또는 반려동물명으로 검색">
-        <select class="rec-search-select">
+        <input type="text" class="rec-search-input" id="rec-search-input" placeholder="보호자명 또는 반려동물명으로 검색">
+        <select class="rec-search-select" id="rec-type-filter">
             <option value="">진료 유형 전체</option>
-            <option>정기검진</option>
-            <option>진료</option>
-            <option>예방접종</option>
-            <option>수술</option>
+            <option value="정기검진">정기검진</option>
+            <option value="진료">진료</option>
+            <option value="예방접종">예방접종</option>
+            <option value="수술">수술</option>
         </select>
-        <select class="rec-search-select">
+        <select class="rec-search-select" id="rec-period-filter">
             <option value="">기간 전체</option>
-            <option>최근 1개월</option>
-            <option>최근 3개월</option>
-            <option>최근 6개월</option>
-            <option>최근 1년</option>
+            <option value="1">최근 1개월</option>
+            <option value="3">최근 3개월</option>
+            <option value="6">최근 6개월</option>
+            <option value="12">최근 1년</option>
         </select>
-        <button class="rec-search-btn">
+        <button class="rec-search-btn" onclick="filterRecords()">
+
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             조회
         </button>
@@ -307,7 +309,7 @@
     </div>
 
     <%-- 진료기록 카드 1 --%>
-    <div class="rec-card">
+    <div class="rec-card" data-pet="몽이" data-guardian="최유나" data-type="진료" data-date="2025-06-26">
         <div class="rec-card-head">
             <img class="rec-pet-thumb"
                  src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=88&q=70&auto=format&fit=crop"
@@ -334,20 +336,20 @@
                 김철수 수의사
             </span>
             <div class="rec-action-btns">
-                <button class="biz-btn">상세보기</button>
+                
                 <button class="biz-btn" onclick="openRecordModal({
                     thumb:'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=128&q=80&auto=format&fit=crop',
                     name:'몽이', meta:'골든 리트리버 · 수컷 · 4세 · 보호자: 최유나', date:'2025.06.26',
                     type:'진료', symptom:'피부 트러블, 긁음', diagnosis:'알레르기성 피부염',
                     exam:'', prescription:'덱사메타손 5일치', weight:'28.2', temp:'38.5',
                     heartRate:'', breath:'', memo:'', nextVisit:'', vet:'김철수 수의사'
-                })">수정</button>
+                })">상세보기</button>
             </div>
         </div>
     </div>
 
     <%-- 진료기록 카드 2 --%>
-    <div class="rec-card">
+    <div class="rec-card" data-pet="루비" data-guardian="최유나" data-type="수술" data-date="2025-06-24">
         <div class="rec-card-head">
             <img class="rec-pet-thumb"
                  src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=88&q=70&auto=format&fit=crop"
@@ -374,20 +376,20 @@
                 이영희 수의사
             </span>
             <div class="rec-action-btns">
-                <button class="biz-btn">상세보기</button>
+               
                 <button class="biz-btn" onclick="openRecordModal({
                     thumb:'https://images.unsplash.com/photo-1552053831-71594a27632d?w=128&q=80&auto=format&fit=crop',
                     name:'루비', meta:'푸들 · 암컷 · 1세 · 보호자: 최유나', date:'2025.06.24',
                     type:'수술', symptom:'중성화 수술', diagnosis:'수술 완료 (이상 없음)',
                     exam:'', prescription:'항생제 7일치, 소염제', weight:'3.8', temp:'38.2',
                     heartRate:'', breath:'', memo:'', nextVisit:'', vet:'이영희 수의사'
-                })">수정</button>
+                })">상세보기</button>
             </div>
         </div>
     </div>
 
     <%-- 진료기록 카드 3 --%>
-    <div class="rec-card">
+    <div class="rec-card" data-pet="나비" data-guardian="이서연" data-type="예방접종" data-date="2025-06-20">
         <div class="rec-card-head">
             <img class="rec-pet-thumb"
                  src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=88&q=70&auto=format&fit=crop"
@@ -414,50 +416,19 @@
                 김철수 수의사
             </span>
             <div class="rec-action-btns">
-                <button class="biz-btn">상세보기</button>
+                
                 <button class="biz-btn" onclick="openRecordModal({
                     thumb:'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=128&q=70&auto=format&fit=crop',
                     name:'나비', meta:'페르시안 · 암컷 · 2세 · 보호자: 이서연', date:'2025.06.20',
                     type:'예방접종', symptom:'고양이 종합백신 3차', diagnosis:'이상반응 없음',
                     exam:'', prescription:'', weight:'4.2', temp:'38.6',
                     heartRate:'', breath:'', memo:'', nextVisit:'2026-06-20', vet:'김철수 수의사'
-                })">수정</button>
+                })">상세보기</button>
             </div>
         </div>
     </div>
 
-    <%-- 진료기록 카드 4 --%>
-    <div class="rec-card">
-        <div class="rec-card-head">
-            <img class="rec-pet-thumb"
-                 src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=88&q=70&auto=format&fit=crop"
-                 alt="몽이"
-                 onerror="this.src='https://placehold.co/44x44/EAF7F2/2BAB82?text=DOG'">
-            <div class="rec-pet-info">
-                <div class="pet-name">몽이</div>
-                <div class="pet-meta">골든 리트리버 / 수컷 / 4세 · 보호자: 최유나</div>
-            </div>
-            <div class="rec-head-right">
-                <span class="rec-date">2025.04.15</span>
-                <span class="rec-type rec-vaccine">예방접종</span>
-            </div>
-        </div>
-        <div class="rec-card-body">
-            <div class="rec-field"><label>접종 항목</label><span>종합백신 (DHPPL) 5차</span></div>
-            <div class="rec-field"><label>이상반응</label><span>없음</span></div>
-            <div class="rec-field"><label>다음 접종</label><span>2026.04.15</span></div>
-            <div class="rec-field"><label>체중 / 체온</label><span>27.8 kg / 38.3 ℃</span></div>
-        </div>
-        <div class="rec-card-foot">
-            <span class="rec-foot-vet">
-                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                김철수 수의사
-            </span>
-            <div class="rec-action-btns">
-                <button class="biz-btn">상세보기</button>
-            </div>
-        </div>
-    </div>
+<p id="rec-empty-state" style="display:none; text-align:center; color:#aaa; padding:40px 0; font-size:14px;">검색 조건에 맞는 진료기록이 없습니다.</p>
 
     <%-- 페이지네이션 --%>
     <div class="rec-pagination">
@@ -589,7 +560,7 @@
 
     function openRecordModal(data) {
         const isEdit = !!data;
-        document.getElementById('rm-title').textContent = isEdit ? '진료기록 수정' : '진료기록 작성';
+        document.getElementById('rm-title').textContent = isEdit ? '진료기록 상세보기' : '진료기록 작성';
         document.getElementById('rm-patient-card').style.display = isEdit ? 'flex' : 'none';
         document.getElementById('rm-patient-search').style.display = isEdit ? 'none' : 'flex';
 
@@ -657,6 +628,41 @@
             closeRecordModal();
             alert('진료기록이 저장되었습니다.');
         }
+    }
+
+    function filterRecords() {
+        const keyword = document.getElementById('rec-search-input').value.trim().toLowerCase();
+        const type = document.getElementById('rec-type-filter').value;
+        const months = parseInt(document.getElementById('rec-period-filter').value, 10);
+        const cards = document.querySelectorAll('.rec-card');
+
+        let maxDate = null;
+        cards.forEach(c => {
+            const d = new Date(c.dataset.date);
+            if (!maxDate || d > maxDate) maxDate = d;
+        });
+
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const pet = (card.dataset.pet || '').toLowerCase();
+            const guardian = (card.dataset.guardian || '').toLowerCase();
+            const cType = card.dataset.type || '';
+            const cDate = new Date(card.dataset.date);
+
+            let show = true;
+            if (keyword && !pet.includes(keyword) && !guardian.includes(keyword)) show = false;
+            if (type && cType !== type) show = false;
+            if (months && maxDate) {
+                const cutoff = new Date(maxDate);
+                cutoff.setMonth(cutoff.getMonth() - months);
+                if (cDate < cutoff) show = false;
+            }
+
+            card.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        document.getElementById('rec-empty-state').style.display = visibleCount === 0 ? 'block' : 'none';
     }
 </script>
 

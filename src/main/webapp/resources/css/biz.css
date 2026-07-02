@@ -320,3 +320,313 @@
 }
 .biz-placeholder p     { font-size: 15px; color: #555; margin: 0; font-weight: 600; }
 .biz-placeholder small { font-size: 13px; color: #aaa; }
+
+
+/* ================================================================
+   병원 대시보드 (dashboard.jsp "after" 버전) 전용 CSS , 7/2 지윤
+================================================================ */
+.dashboard-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 22px;
+}
+.dashboard-top h1 { font-size: 20px; font-weight: 800; color: #1A1A2E; margin: 0 0 4px; }
+.dashboard-top p  { font-size: 13px; color: #999; margin: 0; }
+.date-select {
+    border: 1px solid #E2E8E4; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; color: #555;
+    background: #fff; cursor: pointer;
+}
+
+.summary-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 20px;
+}
+.summary-card {
+    background: #fff; border: 1px solid #E2E8E4; border-radius: 12px;
+    padding: 18px; display: flex; align-items: flex-start; gap: 12px;
+}
+.summary-icon {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+}
+.summary-icon.green  { background: #EAF7F2; }
+.summary-icon.purple { background: #F3E8FF; }
+.summary-icon.blue   { background: #E0F2FE; }
+.summary-icon.orange { background: #FFF7ED; }
+.summary-card p { font-size: 12px; color: #999; margin: 0 0 4px; }
+.summary-card strong { font-size: 20px; font-weight: 800; color: #1A1A2E; }
+.summary-card strong span { font-size: 12px; font-weight: 400; color: #888; margin-left: 2px; }
+.summary-card small { display: block; font-size: 11px; color: #aaa; margin-top: 3px; }
+
+.dashboard-grid {
+    display: grid; grid-template-columns: 1.7fr 1fr;
+    gap: 16px; margin-bottom: 16px;
+}
+.dash-card {
+    background: #fff; border: 1px solid #E2E8E4; border-radius: 12px;
+    padding: 20px;
+}
+.card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+}
+.card-head h3 { font-size: 15px; font-weight: 700; color: #1A1A2E; margin: 0; }
+
+.tab-btns { display: flex; gap: 4px; background: #F5F7F6; padding: 3px; border-radius: 8px; }
+.tab-btns button {
+    border: none; background: none; padding: 5px 12px; border-radius: 6px;
+    font-size: 12px; color: #888; cursor: pointer;
+}
+.tab-btns button.active { background: #2BAB82; color: #fff; font-weight: 700; }
+
+.chart-legend { display: flex; gap: 16px; font-size: 12px; color: #888; margin-bottom: 10px; }
+.chart-legend .green-dot, .chart-legend .blue-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;
+}
+.chart-legend .green-dot { background: #2BAB82; }
+.chart-legend .blue-dot  { background: #0284C7; }
+
+.fake-line-chart { width: 100%; }
+.fake-line-chart svg { width: 100%; height: 220px; display: block; overflow: visible; }
+.fake-line-chart line { stroke: #F0F2F0; stroke-width: 1; }
+.fake-line-chart .line-green { fill: none; stroke: #2BAB82; stroke-width: 2.5; }
+.fake-line-chart .line-blue  { fill: none; stroke: #0284C7; stroke-width: 2.5; }
+.fake-line-chart .dot-green  { fill: #2BAB82; stroke: #fff; stroke-width: 2; }
+.fake-line-chart .dot-blue   { fill: #0284C7; stroke: #fff; stroke-width: 2; }
+
+.chart-days {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #aaa; margin-top: 6px; padding: 0 6px;
+}
+
+.donut-wrap { display: flex; align-items: center; gap: 22px; }
+.donut-chart {
+    position: relative; width: 120px; height: 120px; border-radius: 50%; flex-shrink: 0;
+    background: conic-gradient(
+        #2BAB82 0% 55%,
+        #0284C7 55% 81%,
+        #F59E0B 81% 94%,
+        #D1D5D1 94% 100%
+    );
+}
+.donut-chart::after {
+    content: ""; position: absolute; inset: 16px;
+    background: #fff; border-radius: 50%;
+}
+.donut-chart div {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 1;
+}
+.donut-chart span { font-size: 11px; color: #999; }
+.donut-chart strong { font-size: 16px; font-weight: 800; color: #1A1A2E; }
+
+.status-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.status-list li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+.status-list b { margin-left: auto; color: #1A1A2E; font-weight: 700; }
+.status-list .box { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.status-list .green-box  { background: #2BAB82; }
+.status-list .blue-box   { background: #0284C7; }
+.status-list .orange-box { background: #F59E0B; }
+.status-list .gray-box   { background: #D1D5D1; }
+
+.bottom-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 16px; }
+
+.outline-btn {
+    border: 1px solid #E2E8E4; background: #fff; color: #666;
+    font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    text-decoration: none; display: inline-block; /*사업자 대시보드 버튼 활성화*/
+}
+.outline-btn:hover { background: #F5F5F5; }
+.detail-btn {
+    border: 1px solid #2BAB82; background: #fff; color: #2BAB82;
+    font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+}
+.detail-btn:hover { background: #2BAB82; color: #fff; }
+
+.badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+.badge.confirm { background: #EAF7F2; color: #1F8464; }
+.badge.wait    { background: #E0F2FE; color: #0284C7; }
+
+.review-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid #F0F2F0;
+}
+.review-item:last-child { border-bottom: none; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: #E2E8E4; flex-shrink: 0; }
+.review-item p { margin: 0 0 3px; font-size: 13px; }
+.review-item small { color: #888; font-size: 12px; }
+.review-item .stars { color: #F59E0B; font-size: 12px; margin-left: 4px; }
+.review-item em { font-style: normal; font-size: 11px; color: #bbb; margin-left: auto; white-space: nowrap; }
+
+/* ================================================================
+   리뷰 답글 인라인 박스 (모달 대신 카드 안에서 펼쳐지는 방식) 7/2 지윤
+================================================================ */
+.biz-reply-box {
+    background: #FAFBFA; border: 1px solid #E2E8E4; border-radius: 8px;
+    padding: 12px; margin-top: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.biz-reply-box textarea {
+    width: 100%; min-height: 70px; padding: 10px;
+    border: 1px solid #E2E8E4; border-radius: 8px;
+    font-family: inherit; font-size: 13px; resize: vertical;
+}
+.biz-reply-box-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.biz-reply-box-actions button {
+    padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.biz-reply-box-actions .btn-submit { border: none; background: #2BAB82; color: #fff; }
+.biz-reply-box-actions .btn-cancel { border: 1px solid #E2E8E4; background: #fff; color: #555; }
+
+/* ================================================================
+   7/2, [지윤] — info.jsp (업체정보 수정) 화면 전용
+   좌측 이미지 + 우측 폼 필드 레이아웃, 저장/취소 버튼
+================================================================ */
+.biz-form-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 32px;
+    padding: 28px;
+}
+.biz-form-image-box {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #F0F4F2 center/cover no-repeat;
+    border: 1px solid #E2E8E4;
+    display: flex; align-items: center; justify-content: center;
+    color: #bbb; font-size: 13px;
+    margin-bottom: 10px;
+}
+.biz-form-image-box img { width: 100%; height: 100%; object-fit: cover; }
+.biz-form-image-hint { font-size: 11px; color: #aaa; text-align: center; margin-top: 6px; }
+
+.biz-form-fields { display: flex; flex-direction: column; gap: 16px; }
+.biz-form-row { display: flex; flex-direction: column; gap: 6px; }
+.biz-form-row label {
+    font-size: 13px; font-weight: 700; color: #1A1A2E;
+}
+.biz-form-row .req { color: #FF6B6B; margin-left: 2px; }
+.biz-form-row input[type="text"],
+.biz-form-row input[type="tel"],
+.biz-form-row select,
+.biz-form-row textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #E2E8E4;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #333;
+    background: #fff;
+    transition: border-color .15s;
+}
+.biz-form-row input:focus,
+.biz-form-row select:focus,
+.biz-form-row textarea:focus {
+    outline: none;
+    border-color: #2BAB82;
+}
+.biz-form-row textarea { resize: vertical; min-height: 70px; }
+.biz-form-hint { font-size: 12px; color: #aaa; }
+.biz-form-hashtags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.biz-form-hashtag {
+    font-size: 12px; color: #2BAB82; background: #EAF7F2;
+    padding: 3px 10px; border-radius: 20px; font-weight: 600;
+}
+.biz-form-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 6px;
+}
+.biz-btn-primary {
+    padding: 10px 26px;
+    border: none; border-radius: 8px;
+    background: #2BAB82; color: #fff;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+}
+.biz-btn-primary:hover { background: #1F8464; }
+.biz-btn-ghost {
+    padding: 10px 22px;
+    border: 1px solid #E2E8E4; border-radius: 8px;
+    background: #fff; color: #666;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.biz-btn-ghost:hover { background: #F5F5F5; }
+
+/* ================================================================
+   7/2, [지윤] — info.jsp 저장 완료 / reviews.jsp 답글 등록 완료
+   화면 하단에 잠깐 떴다 사라지는 토스트 알림 (두 화면 공용)
+================================================================ */
+.biz-toast {
+    position: fixed; bottom: 32px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1A2E22; color: #fff;
+    padding: 12px 24px; border-radius: 30px;
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 9999;
+}
+.biz-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.biz-toast svg { width: 16px; height: 16px; stroke: #4ADE80; }
+
+/* ================================================================
+   7/2, [지윤] — reviews.jsp 상단 "전체 / 신고관리" 탭 + 정렬 드롭다운
+================================================================ */
+.biz-tabs {
+    display: flex; gap: 26px;
+    border-bottom: 1px solid #E2E8E4;
+    margin-bottom: 18px;
+    align-items: center;
+}
+.biz-tab {
+    padding: 0 0 12px;
+    font-size: 15px; font-weight: 700; color: #999;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; background: none; border-left: none; border-right: none; border-top: none;
+}
+.biz-tab.active { color: #1A1A2E; border-bottom-color: #2BAB82; }
+.biz-tab .biz-tab-count { color: #bbb; font-weight: 600; margin-left: 3px; }
+.biz-tab.active .biz-tab-count { color: #2BAB82; }
+.biz-tabs-right { margin-left: auto; margin-bottom: 8px; }
+.biz-select-sm {
+    padding: 7px 12px; border: 1px solid #E2E8E4; border-radius: 8px;
+    font-size: 13px; color: #555; background: #fff;
+}
+
+/* ================================================================
+   7/2, [지윤] — reviews.jsp 리뷰 카드 리스트 (별점/작성자/내용/답글 표시)
+   "답글쓰기" 눌렀을 때 펼쳐지는 입력창(.biz-reply-box)은 이미 파일에 있음
+================================================================ */
+.biz-review-list { display: flex; flex-direction: column; }
+.biz-review-item {
+    display: flex; justify-content: space-between; gap: 20px;
+    padding: 22px 4px; border-bottom: 1px solid #E2E8E4;
+}
+.biz-review-item:last-child { border-bottom: none; }
+.biz-review-main { flex: 1; min-width: 0; }
+.biz-review-stars { display: flex; gap: 2px; margin-bottom: 8px; }
+.biz-review-stars svg { width: 15px; height: 15px; }
+.biz-review-stars svg.on { fill: #F59E0B; stroke: #F59E0B; }
+.biz-review-stars svg.off { fill: none; stroke: #E2E8E4; }
+.biz-review-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.biz-review-author { font-size: 13px; font-weight: 700; color: #1A1A2E; }
+.biz-review-date { font-size: 12px; color: #aaa; }
+.biz-review-reported {
+    font-size: 11px; font-weight: 700; color: #DC2626;
+    background: #FEE2E2; padding: 2px 8px; border-radius: 20px;
+}
+.biz-review-content { font-size: 14px; color: #555; line-height: 1.55; }
+.biz-review-reply {
+    background: #FAFBFA; border: 1px solid #E2E8E4; border-radius: 8px;
+    padding: 12px 14px; margin-top: 12px; font-size: 13px; color: #555;
+}
+.biz-review-reply b { color: #2BAB82; margin-right: 6px; }
+.biz-review-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.biz-review-actions .biz-btn { width: 84px; text-align: center; }
+.biz-review-empty { text-align: center; padding: 60px 20px; color: #aaa; font-size: 14px; }

@@ -34,7 +34,7 @@
       </svg>
       예약 관리<span class="biz-nav-badge">5</span>
     </a>
-    <%-- <a href="${contextPath}/biz/hospital/treatments" class="biz-nav-link ${bizPage eq 'treatments' ? 'active' : ''}">
+    <%-- <a href="${contextPath}/biz/hospital/treatments" class="biz-nav-linㄴk ${bizPage eq 'treatments' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
       진료 항목 관리
     </a> --%>
@@ -55,9 +55,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       리뷰 관리
     </a>
-    <a href="${contextPath}/biz/hospital/settlement" class="biz-nav-link ${bizPage eq 'settlement' ? 'active' : ''}">
+    <a href="${contextPath}/biz/hospital/contract" class="biz-nav-link ${bizPage eq 'contract' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-      정산 내역
+      계약 관리
     </a>
     <a href="${contextPath}/biz/hospital/info" class="biz-nav-link ${bizPage eq 'info' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
