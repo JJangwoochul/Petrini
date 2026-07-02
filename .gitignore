@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### properties (src/main/resources 만 제외) ###
+/src/main/resources/application.properties
+/src/main/resources/application-local.properties
+/src/main/resources/application-prod.properties
+.env
+.env.*
+
+### 기타 ###
+*.zip
+~$*
