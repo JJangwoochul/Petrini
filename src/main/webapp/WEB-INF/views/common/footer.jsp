@@ -32,3 +32,4 @@
 </footer>
 <script>window.__CONTEXT_PATH__ = '${contextPath}';</script>
 <script src="${contextPath}/resources/js/search.js?v=20260705"></script>
+<script src="${contextPath}/resources/js/wishlist.js?v=20260705"></script>
