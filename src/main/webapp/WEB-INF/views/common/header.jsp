@@ -2,11 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
-<<<<<<< HEAD
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=e7433bf8a345b0044ed62663faec792e"></script>
-=======
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9dd4881b6589cf4c0fa61514aff5ff80"></script>
->>>>>>> bd05bd3b90ea85700658913c56e6090c9a2bed23
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -14,7 +10,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
     <title>펫린이 - 반려동물 통합 플랫폼</title>
     <link rel="icon" href="${contextPath}/favicon.ico" sizes="any">
     <link rel="icon" href="${contextPath}/favicon.svg" type="image/svg+xml">
@@ -22,12 +17,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css?v=20260705">
-=======
-    <title>PetCare - 반려동물 통합 플랫폼</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css">
->>>>>>> bd05bd3b90ea85700658913c56e6090c9a2bed23
 </head>
 <body>
 <header class="pc-header">
@@ -61,22 +50,13 @@
                     <ellipse cx="24" cy="12" rx="3.2" ry="3.8" fill="#2BAB82"/>
                     <path d="M14.5 20.5 C14.5 19 16 18 16 18 C16 18 17.5 19 17.5 20.5 C17.5 22 16 23 16 23 C16 23 14.5 22 14.5 20.5Z" fill="white" opacity="0.85"/>
                 </svg>
-<<<<<<< HEAD
                 <span class="logo-text">펫린이</span>
-=======
-                <span class="logo-text">PetCare</span>
->>>>>>> bd05bd3b90ea85700658913c56e6090c9a2bed23
             </a>
 
             <!-- 검색 -->
             <div class="header-search">
-<<<<<<< HEAD
                 <input type="text" class="search-input" placeholder="검색어를 입력하세요" value="${param.q}">
                 <button type="button" class="search-btn" aria-label="검색">
-=======
-                <input type="text" class="search-input" placeholder="검색어를 입력하세요">
-                <button class="search-btn" aria-label="검색">
->>>>>>> bd05bd3b90ea85700658913c56e6090c9a2bed23
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"/>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -108,7 +88,6 @@
                     </svg>
                     <span>마이페이지</span>
                 </a>
-<<<<<<< HEAD
                 <a href="${contextPath}/mypage/notifications" class="util-btn noti-btn" aria-label="알림함">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -116,8 +95,6 @@
                     </svg>
                     <span>알림</span>
                 </a>
-=======
->>>>>>> bd05bd3b90ea85700658913c56e6090c9a2bed23
             </div>
         </div>
     </div>
@@ -125,7 +102,6 @@
     <!-- GNB -->
     <nav class="gnb">
         <div class="gnb-inner">
-<<<<<<< HEAD
             <a href="${contextPath}/hotel" class="gnb-item ${pageId eq 'hotel' ? 'active' : ''}">숙소</a>
             <a href="${contextPath}/store" class="gnb-item ${pageId eq 'store' ? 'active' : ''}">쇼핑</a>
             <a href="${contextPath}/hospital" class="gnb-item ${pageId eq 'hospital' ? 'active' : ''}">병원</a>
@@ -136,17 +112,3 @@
         </div>
     </nav>
 </header>
-=======
-            <a href="${contextPath}/hospital" class="gnb-item ${pageId eq 'hospital' ? 'active' : ''}">동물병원</a>
-            <a href="${contextPath}/grooming" class="gnb-item ${pageId eq 'grooming' ? 'active' : ''}">애견미용</a>
-            <a href="${contextPath}/studio" class="gnb-item ${pageId eq 'studio' ? 'active' : ''}">스튜디오</a>
-            <a href="${contextPath}/stay" class="gnb-item ${pageId eq 'stay' ? 'active' : ''}">여가/서비스</a>
-            <a href="${contextPath}/store" class="gnb-item ${pageId eq 'store' ? 'active' : ''}">쇼핑</a>
-            <a href="${contextPath}/give" class="gnb-item ${pageId eq 'give' ? 'active' : ''}">나눔</a>
-            <a href="${contextPath}/community" class="gnb-item ${pageId eq 'community' ? 'active' : ''}">커뮤니티</a>
-            <a href="${contextPath}/event" class="gnb-item ${pageId eq 'event' ? 'active' : ''}">이벤트/혜택</a>
-        </div>
-    </nav>
-</header>
-</body>
->>>>>>> bd05bd3b90ea85700658913c56e6090c9a2bed23
