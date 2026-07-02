@@ -1,0 +1,16 @@
+<!--
+  역할: BizHospitalMapper SQL 정의
+
+  쿼리 id 예시
+  - selectReservationList
+  - updateReservationStatus
+  - selectTreatmentList
+  - selectPatientList
+  - selectMedicalRecords
+
+  테이블
+  - TB_RESERVATION
+  - TB_TREATMENT
+  - TB_MEDICAL_RECORD
+  - TB_REVIEW
+-->

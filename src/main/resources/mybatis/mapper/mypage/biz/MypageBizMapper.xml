@@ -1,0 +1,10 @@
+<!--
+  역할: MypageBizMapper SQL 정의
+
+  쿼리 id 예시
+  - selectBusinessByMember
+  - insertBusinessApply
+
+  테이블
+  - TB_BUSINESS
+-->

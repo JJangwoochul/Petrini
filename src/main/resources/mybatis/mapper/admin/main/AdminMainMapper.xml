@@ -1,0 +1,13 @@
+<!--
+  역할: AdminMainMapper SQL 정의
+
+  쿼리 id 예시
+  - selectDashboardSummary
+  - selectMemberStats
+  - selectOrderStats
+
+  테이블
+  - TB_MEMBER
+  - TB_ORDER
+  - TB_RESERVATION
+-->

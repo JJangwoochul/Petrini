@@ -1,0 +1,11 @@
+<!--
+  역할: PetHealthMapper SQL 정의
+
+  쿼리 id 예시
+  - selectHealthList
+  - insertHealthRecord
+  - updateHealthRecord
+
+  테이블
+  - TB_PET_HEALTH
+-->

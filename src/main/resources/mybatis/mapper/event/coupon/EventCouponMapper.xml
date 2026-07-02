@@ -1,0 +1,13 @@
+<!--
+  역할: EventCouponMapper SQL 정의
+
+  쿼리 id 예시
+  - selectCouponList
+  - selectMemberCoupons
+  - insertMemberCoupon
+  - updateCouponUsed
+
+  테이블
+  - TB_COUPON
+  - TB_MEMBER_COUPON
+-->

@@ -1,0 +1,11 @@
+<!--
+  역할: MypageOrderMapper SQL 정의
+
+  쿼리 id 예시
+  - selectOrderList
+  - selectOrderDetail
+
+  테이블
+  - TB_ORDER
+  - TB_ORDER_ITEM
+-->

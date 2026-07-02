@@ -1,0 +1,11 @@
+<!--
+  역할: MypagePointMapper SQL 정의
+
+  쿼리 id 예시
+  - selectPointBalance
+  - selectPointHistory
+
+  테이블
+  - TB_POINT
+  - TB_POINT_HISTORY
+-->

@@ -1,0 +1,10 @@
+<!--
+  역할: MemberFindMapper SQL 정의
+
+  쿼리 id 예시
+  - selectMemberByEmail
+  - updatePassword
+
+  테이블
+  - TB_MEMBER
+-->

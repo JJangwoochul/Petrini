@@ -1,0 +1,42 @@
+/**
+ * 역할: 마이페이지 홈 URL 처리 → Service 호출 → JSP 반환
+ *
+ * 연결
+ * - Service: MypageHomeService
+ *
+ * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
+ * return 경로는 담당 JSP와 동일하게 맞출 것
+ */
+
+package com.petcare.petcare.mypage.home.controller;
+
+import jakarta.servlet.http.HttpSession;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller("mypageController")
+@RequestMapping("/mypage")
+public class MypageHomeController {
+
+    @GetMapping({"", "/"})
+    public String dashboard(HttpSession session) {
+        if (session.getAttribute("memberInfo") == null)
+            return "redirect:/login";
+        return "mypage/dashboard";
+    }
+
+    @GetMapping("/pets")
+    public String pets(HttpSession session) {
+        if (session.getAttribute("memberInfo") == null)
+            return "redirect:/login";
+        return "mypage/pets";
+    }
+
+    @GetMapping("/health")
+    public String health(HttpSession session) {
+        if (session.getAttribute("memberInfo") == null)
+            return "redirect:/login";
+        return "mypage/health";
+    }
+}

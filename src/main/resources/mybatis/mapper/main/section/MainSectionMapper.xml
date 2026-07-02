@@ -1,0 +1,11 @@
+<!--
+  역할: MainSectionMapper SQL 정의
+
+  쿼리 id 예시
+  - selectPopularProducts
+  - selectCommunityPreview
+
+  테이블
+  - TB_PRODUCT
+  - TB_COMMUNITY_POST
+-->

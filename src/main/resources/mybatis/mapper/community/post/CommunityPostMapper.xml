@@ -1,0 +1,13 @@
+<!--
+  역할: CommunityPostMapper SQL 정의
+
+  쿼리 id 예시
+  - selectPostList
+  - selectPostDetail
+  - insertPost
+  - updatePost
+  - deletePost
+
+  테이블
+  - TB_COMMUNITY_POST
+-->

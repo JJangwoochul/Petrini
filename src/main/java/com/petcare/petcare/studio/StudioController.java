@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.petcare.petcare.common.service.KakaoMapService;
+import com.petcare.petcare.common.external.service.KakaoMapService;
 
 @Controller("userStudioController")
 @RequestMapping("/studio")

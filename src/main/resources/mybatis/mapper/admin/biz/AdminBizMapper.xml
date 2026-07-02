@@ -1,0 +1,14 @@
+<!--
+  역할: AdminBizMapper SQL 정의
+
+  쿼리 id 예시
+  - selectBizApplyList
+  - selectBizApplyDetail
+  - updateBizStatus
+  - selectTalentApplyList
+  - updateTalentStatus
+
+  테이블
+  - TB_BUSINESS
+  - (재능나눔) 관련 테이블
+-->

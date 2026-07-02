@@ -1,0 +1,19 @@
+/**
+ * 역할: 공통 유틸 DB 접근 (MyBatis interface)
+ *
+ * XML: resources/mybatis/mapper/common/util/CommonUtilMapper.xml
+ * namespace: com.petcare.petcare.common.util.mapper.CommonUtilMapper
+ *
+ * 쿼리 예시
+ * - (쿼리 없음 — 외부 API 연동)
+ *
+ * 참고 테이블
+ * - (해당 없음)
+ *
+ * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
+ * 메서드명은 Service에서 호출하는 이름과 동일하게
+ */
+
+package com.petcare.petcare.common.util.mapper;
+
+public interface CommonUtilMapper {}

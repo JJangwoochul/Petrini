@@ -1,0 +1,12 @@
+<!--
+  역할: HospitalHospitalMapper SQL 정의
+
+  쿼리 id 예시
+  - selectHospitalList
+  - selectHospitalDetail
+  - insertReservation
+
+  테이블
+  - TB_HOSPITAL
+  - TB_RESERVATION
+-->

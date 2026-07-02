@@ -1,0 +1,20 @@
+<!--
+  역할: AdminStoreMapper SQL 정의
+
+  쿼리 id 예시
+  - selectProductList
+  - selectProductDetail
+  - insertProduct
+  - updateProduct
+  - selectOrderList
+  - selectOrderDetail
+  - updateOrderStatus
+  - selectCategoryList
+  - insertCategory
+
+  테이블
+  - TB_PRODUCT
+  - TB_ORDER
+  - TB_ORDER_ITEM
+  - TB_CATEGORY
+-->
