@@ -102,7 +102,7 @@
     <!-- GNB -->
     <nav class="gnb">
         <div class="gnb-inner">
-            <a href="${contextPath}/hotel" class="gnb-item ${pageId eq 'hotel' ? 'active' : ''}">숙소</a>
+            <a href="${contextPath}/stay" class="gnb-item ${pageId eq 'stay' ? 'active' : ''}">숙소</a>
             <a href="${contextPath}/store" class="gnb-item ${pageId eq 'store' ? 'active' : ''}">쇼핑</a>
             <a href="${contextPath}/hospital" class="gnb-item ${pageId eq 'hospital' ? 'active' : ''}">병원</a>
             <a href="${contextPath}/walk" class="gnb-item ${pageId eq 'walk' ? 'active' : ''}">산책</a>
