@@ -37,6 +37,13 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/reserve";
     }
 
+    @GetMapping("/calendar")
+    public String hospitalCalendar(HttpSession session) {
+        if (getBizMember(session) == null)
+            return "redirect:/login";
+        return "biz/hospital/calendar";
+    }
+
     @GetMapping("/treatments")
     public String hospitalTreatments(HttpSession session) {
         if (getBizMember(session) == null)
@@ -84,5 +91,12 @@ public class BizHospitalController extends BizBaseController {
         if (getBizMember(session) == null)
             return "redirect:/login";
         return "biz/hospital/info";
+    }
+
+    @GetMapping("/profile")
+    public String hospitalProfile(HttpSession session) {
+        if (getBizMember(session) == null)
+            return "redirect:/login";
+        return "biz/hospital/profile";
     }
 }

@@ -58,11 +58,11 @@ public class BizStayController extends BizBaseController {
         return "biz/stay/reviews";
     }
 
-    @GetMapping("/settlement")
-    public String staySettlement(HttpSession session) {
+    @GetMapping("/contract")
+    public String stayContract(HttpSession session) {
         if (getBizMember(session) == null)
             return "redirect:/login";
-        return "biz/stay/settlement";
+        return "biz/stay/contract";
     }
 
     @GetMapping("/info")
@@ -70,5 +70,15 @@ public class BizStayController extends BizBaseController {
         if (getBizMember(session) == null)
             return "redirect:/login";
         return "biz/stay/info";
+
+    }    
+/*사업자 숙소관리 메뉴 0702지윤*/
+    @GetMapping("/lodge")
+    public String stayLodge(HttpSession session) {
+        if (getBizMember(session) == null) 
+            return "redirect:/login";
+
+        return "biz/stay/lodge";
+
     }
 }

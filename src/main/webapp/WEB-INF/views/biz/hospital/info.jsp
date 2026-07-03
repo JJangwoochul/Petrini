@@ -7,62 +7,56 @@
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
 
-<%-- 7/2, [이름] — 사업자(병원) 업체 정보 수정 UI 구성 --%>
+<%-- 7/3, 사업자(병원) 사업자 정보 UI 구성 — 병원 자체 정보(profile.jsp)와 별개로,
+     사업자 등록 정보(대표자명/사업자등록번호/업종/사업장 주소·전화번호/사업자등록증)를 관리하는 화면 --%>
 <main class="biz-main">
   <div class="biz-page-head">
-    <h1 class="biz-page-title">병원 정보 등록</h1>
-    <p class="biz-page-desc">병원명·주소·운영시간 등 유저에게 노출되는 병원 정보를 관리하세요.</p>
+    <h1 class="biz-page-title">사업자 정보 등록</h1>
+    <p class="biz-page-desc">사업자 등록 정보를 확인하고 수정하세요.</p>
   </div>
 
   <div class="biz-card">
-    <div class="biz-card-head"><span>병원 정보</span><small>* 표시 항목은 필수 입력입니다</small></div>
+    <div class="biz-card-head"><span>사업자 정보</span><small>* 표시 항목은 필수 입력입니다</small></div>
 
-    <form class="biz-form-grid" id="hospitalInfoForm">
-      <div>
-        <div class="biz-form-image-box" id="imgPreviewBox">
-          <img id="imgPreview"
-               src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&q=80"
-               alt="병원 대표 이미지">
-        </div>
-        <input type="file" id="imgFile" accept="image/*" style="display:none">
-        <button type="button" class="biz-btn-ghost" style="width:100%" onclick="document.getElementById('imgFile').click()">이미지 변경</button>
-        <p class="biz-form-image-hint">권장 사이즈 1200×800 / JPG, PNG</p>
-      </div>
-
+    <form id="bizInfoForm" style="padding:20px;max-width:640px">
       <div class="biz-form-fields">
         <div class="biz-form-row">
-          <label>병원명<span class="req">*</span></label>
-          <input type="text" id="hName" value="행복동물병원" placeholder="병원명을 입력하세요">
+          <label>대표자 명<span class="req">*</span></label>
+          <input type="text" id="bOwner" value="이수의" placeholder="대표자 명을 입력하세요">
         </div>
         <div class="biz-form-row">
-          <label>주소<span class="req">*</span></label>
-          <input type="text" id="hAddress" value="대전광역시 서구 둔산로 020" placeholder="사업장 주소를 입력하세요">
+          <label>사업자 등록번호<span class="req">*</span></label>
+          <input type="text" id="bRegNo" value="111-22-33333" placeholder="000-00-00000">
         </div>
         <div class="biz-form-row">
-          <label>전화번호<span class="req">*</span></label>
-          <input type="tel" id="hPhone" value="042-000-000" placeholder="예) 042-000-0000">
+          <label>업종<span class="req">*</span></label>
+          <select id="bType">
+            <option value="stay">반려동물 숙박업</option>
+            <option value="hospital" selected>동물병원</option>
+            <option value="grooming">미용업</option>
+            <option value="store">반려용품 판매업</option>
+          </select>
         </div>
         <div class="biz-form-row">
-          <label>운영시간<span class="req">*</span></label>
-          <input type="text" id="hHours" value="평일 09:00~18:00 / 토 09:00~14:00" placeholder="예) 평일 09:00~18:00">
+          <label>사업장 주소<span class="req">*</span></label>
+          <input type="text" id="bAddress" value="대전광역시 서구 둔산로 020" placeholder="사업장 주소를 입력하세요">
         </div>
         <div class="biz-form-row">
-          <label>진료과목</label>
-          <input type="text" id="hDept" value="내과, 외과, 예방접종" placeholder="예) 내과, 외과, 예방접종">
+          <label>사업장 전화번호<span class="req">*</span></label>
+          <input type="tel" id="bPhone" value="042-000-000" placeholder="예) 042-000-0000">
         </div>
         <div class="biz-form-row">
-          <label>병원소개</label>
-          <textarea id="hIntro" placeholder="병원을 소개하는 문구를 입력하세요">반려동물의 건강을 최우선으로 진료하는 병원입니다.</textarea>
+          <label>사업자 등록증 첨부</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" id="bFileName" value="사업자등록증.pdf" readonly style="flex:1;background:#FAFBFA">
+            <button type="button" class="biz-btn-ghost" style="white-space:nowrap" onclick="document.getElementById('bFile').click()">파일선택</button>
+            <input type="file" id="bFile" accept="image/*,.pdf" style="display:none">
+          </div>
         </div>
-        <div class="biz-form-row">
-          <label>해시태그</label>
-          <input type="text" id="hTagInput" value="#예방접종 #예방가능 #내과 #외과" placeholder="공백으로 구분해서 입력하세요 (예: #예방접종 #내과)">
-          <div class="biz-form-hashtags" id="hTagPreview"></div>
-        </div>
+      </div>
 
-        <div class="biz-form-actions">
-          <button type="button" class="biz-btn-primary" onclick="saveInfo()">저장</button>
-        </div>
+      <div class="biz-form-actions" style="margin-top:20px">
+        <button type="button" class="biz-btn-primary" onclick="saveInfo()">저장</button>
       </div>
     </form>
   </div>
@@ -70,38 +64,22 @@
 
 <div class="biz-toast" id="saveToast">
   <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-  병원 정보가 저장되었습니다.
+  사업자 정보가 저장되었습니다.
 </div>
 
 <script>
-  document.getElementById('imgFile').addEventListener('change', function (e) {
+  document.getElementById('bFile').addEventListener('change', function (e) {
     var file = e.target.files[0];
     if (!file) return;
-    document.getElementById('imgPreview').src = URL.createObjectURL(file);
+    document.getElementById('bFileName').value = file.name;
   });
-
-  function renderTags() {
-    var raw = document.getElementById('hTagInput').value.trim();
-    var box = document.getElementById('hTagPreview');
-    box.innerHTML = '';
-    if (!raw) return;
-    raw.split(/\s+/).forEach(function (t) {
-      if (!t) return;
-      var span = document.createElement('span');
-      span.className = 'biz-form-hashtag';
-      span.textContent = t.startsWith('#') ? t : '#' + t;
-      box.appendChild(span);
-    });
-  }
-  document.getElementById('hTagInput').addEventListener('input', renderTags);
-  renderTags();
 
   function saveInfo() {
     var required = [
-      { id: 'hName',   label: '병원명' },
-      { id: 'hAddress',label: '주소' },
-      { id: 'hPhone',  label: '전화번호' },
-      { id: 'hHours',  label: '운영시간' }
+      { id: 'bOwner',   label: '대표자 명' },
+      { id: 'bRegNo',   label: '사업자 등록번호' },
+      { id: 'bAddress', label: '사업장 주소' },
+      { id: 'bPhone',   label: '사업장 전화번호' }
     ];
     for (var i = 0; i < required.length; i++) {
       var el = document.getElementById(required[i].id);

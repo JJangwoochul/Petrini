@@ -1,13 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="bizTypeLabel" value="반려동물 숙소" />
+<c:set var="bizTypeLabel" value="동물병원" />
 <c:set var="bizPage"      value="calendar" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
-<%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
+<%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
 
-<%-- 7/3, 사업자(숙박) 예약 캘린더 UI 구성 — 월별 그리드에 예약 현황을 칩으로 표시, 날짜 클릭 시 하단에 상세 리스트 --%>
+<%-- 7/3, 사업자(병원) 예약 캘린더 UI 구성 — 숙박 calendar.jsp와 동일 구조, 상태는 병원 예약관리(reserve.jsp)와 용어 통일(예약대기/진료완료) --%>
 <style>
   .cal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px}
   .cal-nav{display:flex;align-items:center;gap:10px}
@@ -29,9 +29,8 @@
   .cal-cell.sun-col .cal-daynum{color:#E24B4A}
   .cal-events{margin-top:4px;display:flex;flex-direction:column;gap:3px}
   .cal-event{font-size:10.5px;padding:2px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
-  .cal-event.confirm{background:#4F6BC4}
   .cal-event.wait{background:#F5A623}
-  .cal-event.stay{background:#2BAB82}
+  .cal-event.done{background:#2BAB82}
   .cal-more{font-size:10px;color:#999;padding-left:4px}
 
   .cal-detail{padding:18px 20px}
@@ -46,7 +45,7 @@
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">예약 캘린더</h1>
-    <p class="biz-page-desc">월별 예약 현황을 한눈에 확인하세요.</p>
+    <p class="biz-page-desc">월별 진료 예약 현황을 한눈에 확인하세요.</p>
   </div>
 
   <div class="biz-card" style="margin-bottom:16px">
@@ -60,8 +59,7 @@
     </div>
     <div class="cal-legend">
       <span><span class="dot" style="background:#F5A623"></span>예약대기</span>
-      <span><span class="dot" style="background:#4F6BC4"></span>예약확정</span>
-      <span><span class="dot" style="background:#2BAB82"></span>숙박중</span>
+      <span><span class="dot" style="background:#2BAB82"></span>진료완료</span>
     </div>
     <div class="cal-grid" id="calGrid"></div>
   </div>
@@ -74,13 +72,14 @@
 
 <script>
   var reservations = [
-    { name:'이성민', pet:'두부 (포메)',   room:'A-01호 스탠다드', checkIn: offset(-3), checkOut: offset(-1), status:'stay'    },
-    { name:'박소현', pet:'몽이 (골든)',   room:'B-02호 디럭스',   checkIn: offset(-1), checkOut: offset(2),  status:'stay'    },
-    { name:'정아린', pet:'보리 (말티푸)', room:'B-01호 디럭스',   checkIn: offset(0),  checkOut: offset(1),  status:'confirm' },
-    { name:'한지우', pet:'달이 (사모예드)', room:'C-01호 스위트',  checkIn: offset(2),  checkOut: offset(4),  status:'confirm' },
-    { name:'최민준', pet:'하루 (시츄)',    room:'독채 풀빌라',     checkIn: offset(4),  checkOut: offset(6),  status:'wait'    },
-    { name:'김하늘', pet:'초코 (푸들)',    room:'A-02호 스탠다드', checkIn: offset(7),  checkOut: offset(9),  status:'confirm' },
-    { name:'오세훈', pet:'별이 (비숑)',    room:'B-02호 디럭스',   checkIn: offset(-8), checkOut: offset(-6), status:'stay'    }
+    { name:'홍길동', pet:'초코 (강아지)', time:'09:00', date: offset(-2), status:'done' },
+    { name:'이서연', pet:'나비 (고양이)', time:'10:30', date: offset(-1), status:'done' },
+    { name:'박도현', pet:'두부 (강아지)', time:'11:00', date: offset(0),  status:'wait' },
+    { name:'최아린', pet:'몽이 (고양이)', time:'14:00', date: offset(0),  status:'wait' },
+    { name:'정하율', pet:'뽀삐 (강아지)', time:'15:30', date: offset(1),  status:'wait' },
+    { name:'김민서', pet:'루비 (고양이)', time:'09:30', date: offset(3),  status:'wait' },
+    { name:'오세훈', pet:'별이 (강아지)', time:'13:00', date: offset(3),  status:'wait' },
+    { name:'한지우', pet:'달이 (강아지)', time:'16:00', date: offset(5),  status:'wait' }
   ];
 
   function offset(days) {
@@ -92,7 +91,7 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  var statusLabel = { wait:'예약대기', confirm:'예약확정', stay:'숙박중' };
+  var statusLabel = { wait:'예약대기', done:'진료완료' };
   var today = new Date();
   var viewYear = today.getFullYear();
   var viewMonth = today.getMonth(); // 0-based
@@ -113,7 +112,8 @@
   }
 
   function eventsOnDay(key) {
-    return reservations.filter(function (r) { return key >= r.checkIn && key <= r.checkOut; });
+    return reservations.filter(function (r) { return r.date === key; })
+                        .sort(function (a, b) { return a.time.localeCompare(b.time); });
   }
 
   function selectDay(key) {
@@ -170,7 +170,7 @@
       var html = '<span class="cal-daynum">' + dayNum + '</span><div class="cal-events">';
       var dayEvents = eventsOnDay(key);
       dayEvents.slice(0, 2).forEach(function (ev) {
-        html += '<span class="cal-event ' + ev.status + '">' + ev.name + ' · ' + ev.room + '</span>';
+        html += '<span class="cal-event ' + ev.status + '">' + ev.time + ' ' + ev.name + '</span>';
       });
       if (dayEvents.length > 2) {
         html += '<span class="cal-more">+' + (dayEvents.length - 2) + '건 더보기</span>';
@@ -198,12 +198,12 @@
 
     box.innerHTML = '';
     list.forEach(function (r) {
-      var badgeClass = r.status === 'wait' ? 'bs-wait' : (r.status === 'confirm' ? 'bs-ready' : 'bs-done');
+      var badgeClass = r.status === 'wait' ? 'bs-wait' : 'bs-done';
       var item = document.createElement('div');
       item.className = 'cal-detail-item';
       item.innerHTML =
         '<span class="bs-badge ' + badgeClass + ' badge">' + statusLabel[r.status] + '</span>' +
-        '<div class="info"><b>' + r.name + ' · ' + r.pet + '</b><small>' + r.room + ' · ' + r.checkIn + ' ~ ' + r.checkOut + '</small></div>';
+        '<div class="info"><b>' + r.time + ' · ' + r.name + '</b><small>' + r.pet + '</small></div>';
       box.appendChild(item);
     });
   }

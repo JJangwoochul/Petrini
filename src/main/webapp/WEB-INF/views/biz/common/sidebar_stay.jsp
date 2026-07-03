@@ -22,8 +22,17 @@
       </svg>
       홈
     </a>
+    <%--사업자(숙박) 숙소관리 왼쪽 메뉴사이드바에 추가(지윤)--%>
     <div class="biz-nav-group">숙소 관리</div>
+    <a href="${contextPath}/biz/stay/lodge" class="biz-nav-link ${bizPage eq 'lodge' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <path d="M9 22V12h6v10"/>
+      </svg>
+      숙소 관리
+    </a>
     <a href="${contextPath}/biz/stay/reserve" class="biz-nav-link ${bizPage eq 'reserve' ? 'active' : ''}">
+
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
         <line x1="3" y1="10" x2="21" y2="10"/>
@@ -31,6 +40,12 @@
         <line x1="16" y1="2" x2="16" y2="6"/>
       </svg>
       예약 관리<span class="biz-nav-badge">3</span>
+    </a>
+    <a href="${contextPath}/biz/hospital/calendar" class="biz-nav-link ${bizPage eq 'calendar' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      예약 캘린더
     </a>
     <a href="${contextPath}/biz/stay/rooms" class="biz-nav-link ${bizPage eq 'rooms' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -49,20 +64,22 @@
       </svg>
       리뷰 관리
     </a>
-    <a href="${contextPath}/biz/stay/settlement" class="biz-nav-link ${bizPage eq 'settlement' ? 'active' : ''}">
+    
+    <a href="${contextPath}/biz/stay/contract" class="biz-nav-link ${bizPage eq 'contract' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="1" x2="12" y2="23"/>
         <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
       </svg>
-      정산 내역
+      계약 관리
     </a>
+
     <a href="${contextPath}/biz/stay/info" class="biz-nav-link ${bizPage eq 'info' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      업체 정보 수정
+      사업자 정보
     </a>
   </nav>
 </aside>
