@@ -7,32 +7,14 @@
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
 
-<%-- 7/3, 사업자(숙박) 예약 캘린더 UI 구성 — 월별 그리드에 예약 현황을 칩으로 표시, 날짜 클릭 시 하단에 상세 리스트 --%>
-<style>
-  .cal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px}
-  .cal-nav{display:flex;align-items:center;gap:10px}
-  .cal-nav button{width:30px;height:30px;border:1px solid var(--biz-border);background:#fff;border-radius:6px;cursor:pointer;font-size:13px;color:#555}
-  .cal-nav .cal-today{width:auto;padding:0 12px;font-weight:700;color:var(--biz-primary);border-color:var(--biz-primary)}
-  .cal-title{font-size:16px;font-weight:800;color:#1A1A2E;min-width:110px;text-align:center}
-  .cal-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:0 20px 16px;font-size:12px;color:#666}
-  .cal-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+<%-- 7/3, 사업자(숙박) 예약 캘린더 — FullCalendar 라이브러리 적용 버전 --%>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--biz-border);border-left:1px solid var(--biz-border)}
-  .cal-dow{padding:8px 10px;font-size:12px;font-weight:700;color:#888;text-align:left;border-right:1px solid var(--biz-border);border-bottom:1px solid var(--biz-border);background:#FAFBFA}
-  .cal-dow.sun{color:#E24B4A}
-  .cal-cell{min-height:96px;padding:6px 8px;border-right:1px solid var(--biz-border);border-bottom:1px solid var(--biz-border);vertical-align:top;cursor:pointer;transition:background .12s}
-  .cal-cell:hover{background:#FAFBFA}
-  .cal-cell.other-month{background:#FCFCFB;color:#ccc}
-  .cal-cell.today .cal-daynum{background:var(--biz-primary);color:#fff;border-radius:50%}
-  .cal-cell.selected{background:#F1F6FF}
-  .cal-daynum{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:12px;font-weight:700;color:#333}
-  .cal-cell.sun-col .cal-daynum{color:#E24B4A}
-  .cal-events{margin-top:4px;display:flex;flex-direction:column;gap:3px}
-  .cal-event{font-size:10.5px;padding:2px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
-  .cal-event.confirm{background:#4F6BC4}
-  .cal-event.wait{background:#F5A623}
-  .cal-event.stay{background:#2BAB82}
-  .cal-more{font-size:10px;color:#999;padding-left:4px}
+<style>
+  .cal-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:18px 20px 0;font-size:12px;color:#666}
+  .cal-legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+  #calendar{padding:20px}
 
   .cal-detail{padding:18px 20px}
   .cal-detail-empty{text-align:center;color:#aaa;font-size:13px;padding:24px 0}
@@ -41,6 +23,13 @@
   .cal-detail-item .badge{flex-shrink:0}
   .cal-detail-item .info b{font-size:13px;color:#1A1A2E}
   .cal-detail-item .info small{display:block;font-size:12px;color:#888;margin-top:2px}
+
+  /* FullCalendar 기본 폰트/버튼을 biz 톤에 맞게 살짝 조정 */
+  .fc{font-family:inherit}
+  .fc .fc-button-primary{background:var(--biz-primary);border-color:var(--biz-primary)}
+  .fc .fc-button-primary:hover{background:#238f6c;border-color:#238f6c}
+  .fc .fc-daygrid-event{border:none;padding:1px 4px;font-size:11px}
+  .fc .fc-toolbar-title{font-size:16px;font-weight:800;color:#1A1A2E}
 </style>
 
 <main class="biz-main">
@@ -50,20 +39,12 @@
   </div>
 
   <div class="biz-card" style="margin-bottom:16px">
-    <div class="cal-head">
-      <div class="cal-nav">
-        <button onclick="moveMonth(-1)">&lt;</button>
-        <span class="cal-title" id="calTitle"></span>
-        <button onclick="moveMonth(1)">&gt;</button>
-      </div>
-      <button class="cal-today" onclick="goToday()">오늘</button>
-    </div>
     <div class="cal-legend">
       <span><span class="dot" style="background:#F5A623"></span>예약대기</span>
       <span><span class="dot" style="background:#4F6BC4"></span>예약확정</span>
       <span><span class="dot" style="background:#2BAB82"></span>숙박중</span>
     </div>
-    <div class="cal-grid" id="calGrid"></div>
+    <div id="calendar"></div>
   </div>
 
   <div class="biz-card">
@@ -73,16 +54,6 @@
 </main>
 
 <script>
-  var reservations = [
-    { name:'이성민', pet:'두부 (포메)',   room:'A-01호 스탠다드', checkIn: offset(-3), checkOut: offset(-1), status:'stay'    },
-    { name:'박소현', pet:'몽이 (골든)',   room:'B-02호 디럭스',   checkIn: offset(-1), checkOut: offset(2),  status:'stay'    },
-    { name:'정아린', pet:'보리 (말티푸)', room:'B-01호 디럭스',   checkIn: offset(0),  checkOut: offset(1),  status:'confirm' },
-    { name:'한지우', pet:'달이 (사모예드)', room:'C-01호 스위트',  checkIn: offset(2),  checkOut: offset(4),  status:'confirm' },
-    { name:'최민준', pet:'하루 (시츄)',    room:'독채 풀빌라',     checkIn: offset(4),  checkOut: offset(6),  status:'wait'    },
-    { name:'김하늘', pet:'초코 (푸들)',    room:'A-02호 스탠다드', checkIn: offset(7),  checkOut: offset(9),  status:'confirm' },
-    { name:'오세훈', pet:'별이 (비숑)',    room:'B-02호 디럭스',   checkIn: offset(-8), checkOut: offset(-6), status:'stay'    }
-  ];
-
   function offset(days) {
     var d = new Date();
     d.setDate(d.getDate() + days);
@@ -93,103 +64,47 @@
   }
 
   var statusLabel = { wait:'예약대기', confirm:'예약확정', stay:'숙박중' };
-  var today = new Date();
-  var viewYear = today.getFullYear();
-  var viewMonth = today.getMonth(); // 0-based
-  var selectedKey = toKey(today);
+  var statusColor  = { wait:'#F5A623', confirm:'#4F6BC4', stay:'#2BAB82' };
+  var statusBadgeClass = { wait:'bs-wait', confirm:'bs-ready', stay:'bs-done' };
 
-  function moveMonth(diff) {
-    viewMonth += diff;
-    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
-    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-    renderCalendar();
+  var reservations = [
+    { name:'이성민', pet:'두부 (포메)',    room:'A-01호 스탠다드', checkIn: offset(-3), checkOut: offset(-1), status:'stay'    },
+    { name:'박소현', pet:'몽이 (골든)',    room:'B-02호 디럭스',   checkIn: offset(-1), checkOut: offset(2),  status:'stay'    },
+    { name:'정아린', pet:'보리 (말티푸)',  room:'B-01호 디럭스',   checkIn: offset(0),  checkOut: offset(1),  status:'confirm' },
+    { name:'한지우', pet:'달이 (사모예드)',room:'C-01호 스위트',   checkIn: offset(2),  checkOut: offset(4),  status:'confirm' },
+    { name:'최민준', pet:'하루 (시츄)',    room:'독채 풀빌라',     checkIn: offset(4),  checkOut: offset(6),  status:'wait'    },
+    { name:'김하늘', pet:'초코 (푸들)',    room:'A-02호 스탠다드', checkIn: offset(7),  checkOut: offset(9),  status:'confirm' },
+    { name:'오세훈', pet:'별이 (비숑)',    room:'B-02호 디럭스',   checkIn: offset(-8), checkOut: offset(-6), status:'stay'    }
+  ];
+
+  // FullCalendar는 end가 "그 날짜 미포함(exclusive)"이라, 체크아웃 다음날로 하루 더해서 넘겨줌
+  function addOneDay(dateStr) {
+    var d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return toKey(d);
   }
 
-  function goToday() {
-    viewYear = today.getFullYear();
-    viewMonth = today.getMonth();
-    selectedKey = toKey(today);
-    renderCalendar();
-  }
+  var events = reservations.map(function (r) {
+    return {
+      title: r.name + ' · ' + r.room,
+      start: r.checkIn,
+      end: addOneDay(r.checkOut),
+      color: statusColor[r.status],
+      extendedProps: r
+    };
+  });
 
   function eventsOnDay(key) {
     return reservations.filter(function (r) { return key >= r.checkIn && key <= r.checkOut; });
   }
 
-  function selectDay(key) {
-    selectedKey = key;
-    renderCalendar();
-  }
-
-  function renderCalendar() {
-    document.getElementById('calTitle').textContent = viewYear + '년 ' + (viewMonth + 1) + '월';
-
-    var firstDay = new Date(viewYear, viewMonth, 1);
-    var startWeekday = firstDay.getDay();
-    var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    var daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
-
-    var grid = document.getElementById('calGrid');
-    grid.innerHTML = '';
-
-    var dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-    dows.forEach(function (d, i) {
-      var el = document.createElement('div');
-      el.className = 'cal-dow' + (i === 0 ? ' sun' : '');
-      el.textContent = d;
-      grid.appendChild(el);
-    });
-
-    var totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
-
-    for (var i = 0; i < totalCells; i++) {
-      var cell = document.createElement('div');
-      var dayNum, cellYear = viewYear, cellMonth = viewMonth, isOther = false;
-
-      if (i < startWeekday) {
-        dayNum = daysInPrevMonth - startWeekday + 1 + i;
-        cellMonth = viewMonth - 1;
-        isOther = true;
-      } else if (i >= startWeekday + daysInMonth) {
-        dayNum = i - startWeekday - daysInMonth + 1;
-        cellMonth = viewMonth + 1;
-        isOther = true;
-      } else {
-        dayNum = i - startWeekday + 1;
-      }
-      if (cellMonth < 0) { cellMonth = 11; cellYear--; }
-      if (cellMonth > 11) { cellMonth = 0; cellYear++; }
-
-      var key = cellYear + '-' + String(cellMonth + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
-      var isToday = key === toKey(today);
-      var isSun = (i % 7) === 0;
-
-      cell.className = 'cal-cell' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '') + (key === selectedKey ? ' selected' : '') + (isSun ? ' sun-col' : '');
-      cell.onclick = function (k) { return function () { selectDay(k); }; }(key);
-
-      var html = '<span class="cal-daynum">' + dayNum + '</span><div class="cal-events">';
-      var dayEvents = eventsOnDay(key);
-      dayEvents.slice(0, 2).forEach(function (ev) {
-        html += '<span class="cal-event ' + ev.status + '">' + ev.name + ' · ' + ev.room + '</span>';
-      });
-      if (dayEvents.length > 2) {
-        html += '<span class="cal-more">+' + (dayEvents.length - 2) + '건 더보기</span>';
-      }
-      html += '</div>';
-      cell.innerHTML = html;
-      grid.appendChild(cell);
-    }
-
-    renderDetail();
-  }
-
-  function renderDetail() {
-    var d = new Date(selectedKey);
+  function renderDetail(key) {
+    var d = new Date(key);
     document.getElementById('detailTitle').textContent =
-      (d.getMonth() + 1) + '월 ' + d.getDate() + '일 예약 (' + eventsOnDay(selectedKey).length + '건)';
+      (d.getMonth() + 1) + '월 ' + d.getDate() + '일 예약 (' + eventsOnDay(key).length + '건)';
 
     var box = document.getElementById('calDetail');
-    var list = eventsOnDay(selectedKey);
+    var list = eventsOnDay(key);
 
     if (list.length === 0) {
       box.innerHTML = '<div class="cal-detail-empty">해당 날짜에 예약이 없습니다.</div>';
@@ -198,17 +113,35 @@
 
     box.innerHTML = '';
     list.forEach(function (r) {
-      var badgeClass = r.status === 'wait' ? 'bs-wait' : (r.status === 'confirm' ? 'bs-ready' : 'bs-done');
       var item = document.createElement('div');
       item.className = 'cal-detail-item';
       item.innerHTML =
-        '<span class="bs-badge ' + badgeClass + ' badge">' + statusLabel[r.status] + '</span>' +
+        '<span class="bs-badge ' + statusBadgeClass[r.status] + ' badge">' + statusLabel[r.status] + '</span>' +
         '<div class="info"><b>' + r.name + ' · ' + r.pet + '</b><small>' + r.room + ' · ' + r.checkIn + ' ~ ' + r.checkOut + '</small></div>';
       box.appendChild(item);
     });
   }
 
-  renderCalendar();
+  document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'ko',
+      height: 'auto',
+      headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+      buttonText: { today: '오늘' },
+      events: events,
+      dateClick: function (info) {
+        renderDetail(info.dateStr);
+      },
+      eventClick: function (info) {
+        renderDetail(info.event.startStr);
+      }
+    });
+    calendar.render();
+
+    renderDetail(toKey(new Date()));
+  });
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

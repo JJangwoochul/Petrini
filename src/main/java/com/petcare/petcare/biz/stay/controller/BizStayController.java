@@ -64,6 +64,13 @@ public class BizStayController extends BizBaseController {
             return "redirect:/login";
         return "biz/stay/contract";
     }
+/*사업자(상점) 정산관리 추가*/
+    @GetMapping("/settlement")
+    public String staySettlement(HttpSession session) {
+        if (getBizMember(session) == null)
+            return "redirect:/login";
+        return "biz/stay/settlement";
+    }
 
     @GetMapping("/info")
     public String stayInfo(HttpSession session) {

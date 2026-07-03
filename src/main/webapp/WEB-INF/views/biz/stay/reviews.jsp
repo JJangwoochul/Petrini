@@ -96,7 +96,7 @@
       if (openReplyId === r.id) {
         replyBoxHtml =
           '<div class="biz-reply-box">' +
-            '<textarea id="replyInput-' + r.id + '" placeholder="답글을 입력하세요">' + (r.reply || '') + '</textarea>' +
+            '<textarea id="replyInput-' + r.id + '" placeholder="답글 내용을 입력해주세요">' + (r.reply || '') + '</textarea>' +
             '<div class="biz-reply-box-actions">' +
               '<button class="btn-cancel" onclick="toggleReply(' + r.id + ')">취소</button>' +
               '<button class="btn-submit" onclick="submitReply(' + r.id + ')">등록</button>' +

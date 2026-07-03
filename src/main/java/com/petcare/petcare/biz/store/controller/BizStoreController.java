@@ -37,13 +37,6 @@ public class BizStoreController extends BizBaseController {
         return "biz/store/products";
     }
 
-    @GetMapping("/inventory")
-    public String storeInventory(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
-        return "biz/store/inventory";
-    }
-
     @GetMapping("/orders")
     public String storeOrders(HttpSession session) {
         if (getBizMember(session) == null)
@@ -77,5 +70,13 @@ public class BizStoreController extends BizBaseController {
         if (getBizMember(session) == null)
             return "redirect:/login";
         return "biz/store/info";
+    }
+
+    /*사업자(샵) 계약관리*/
+    @GetMapping("/contract")
+    public String storeContract(HttpSession session) {
+        if (getBizMember(session) == null)
+            return "redirect:/login";
+        return "biz/store/contract";
     }
 }

@@ -1,15 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="bizTypeLabel" value="반려동물 쇼핑몰" />
+<c:set var="bizTypeLabel" value="반려동물 숙소" />
 <c:set var="bizPage"      value="settlement" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
-<%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
+<%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
 
-<%-- 7/3, 사업자(쇼핑몰) 정산 내역 UI 구성 — 계약관리(수수료율 규칙)와 별개로,
-     실제 매출/수수료/지급 실적을 월별로 보여주는 화면. 정산 방식: 플랫폼 매입 정산(방식1)
-     - 구매확정(반품기한 경과) 전까지는 "정산예정", 확정 이후 정산배치 처리되면 "정산완료" --%>
+<%-- 7/3, 사업자(숙박) 정산 내역 UI 구성 — 스토어 settlement.jsp와 동일 구조, 정산 방식: 플랫폼 매입 정산(방식1)
+     - 체크아웃 완료 전까지는 "정산예정", 체크아웃 완료 후 정산배치 처리되면 "정산완료" --%>
 <style>
   .settle-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
   .settle-summary-card{background:#fff;border:1px solid var(--biz-border);border-radius:12px;padding:16px 18px}
@@ -32,7 +31,7 @@
 
   <div class="settle-summary">
     <div class="settle-summary-card">
-      <div class="label">정산 예정액 (구매확정 대기중)</div>
+      <div class="label">정산 예정액 (체크아웃 대기중)</div>
       <div class="val" id="sumPending">0<span>원</span></div>
     </div>
     <div class="settle-summary-card">
@@ -68,21 +67,21 @@
       <div class="biz-card-head" style="padding:20px 0 12px"><span>정산 내역</span><small>총 <span id="totalCount">0</span>건</small></div>
     </div>
     <table class="biz-table">
-      <thead><tr><th>정산기간</th><th>확정 매출</th><th>플랫폼 수수료(10%)</th><th>정산금액</th><th>정산상태</th><th>지급일</th></tr></thead>
+      <thead><tr><th>정산기간</th><th>확정 매출</th><th>플랫폼 수수료(12%)</th><th>정산금액</th><th>정산상태</th><th>지급일</th></tr></thead>
       <tbody id="settleBody"></tbody>
     </table>
   </div>
 </main>
 
 <script>
-  var FEE_RATE = 0.10;
+  var FEE_RATE = 0.12;
 
   var settlements = [
-    { period:'2026-07-01 ~ 2026-07-15', month:'2026-07', revenue:6800000, status:'pending', payDate:'' },
-    { period:'2026-06-16 ~ 2026-06-30', month:'2026-06', revenue:6300000, status:'pending', payDate:'' },
-    { period:'2026-06-01 ~ 2026-06-15', month:'2026-06', revenue:5900000, status:'done',    payDate:'2026-06-20' },
-    { period:'2026-05-16 ~ 2026-05-31', month:'2026-05', revenue:5100000, status:'done',    payDate:'2026-06-05' },
-    { period:'2026-05-01 ~ 2026-05-15', month:'2026-05', revenue:4700000, status:'done',    payDate:'2026-05-20' }
+    { period:'2026-07-01 ~ 2026-07-15', month:'2026-07', revenue:3200000, status:'pending', payDate:'' },
+    { period:'2026-06-16 ~ 2026-06-30', month:'2026-06', revenue:2900000, status:'pending', payDate:'' },
+    { period:'2026-06-01 ~ 2026-06-15', month:'2026-06', revenue:2650000, status:'done',    payDate:'2026-06-20' },
+    { period:'2026-05-16 ~ 2026-05-31', month:'2026-05', revenue:2400000, status:'done',    payDate:'2026-06-05' },
+    { period:'2026-05-01 ~ 2026-05-15', month:'2026-05', revenue:2100000, status:'done',    payDate:'2026-05-20' }
   ];
 
   settlements.forEach(function (s) {

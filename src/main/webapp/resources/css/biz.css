@@ -515,6 +515,7 @@
 .biz-form-row .req { color: #FF6B6B; margin-left: 2px; }
 .biz-form-row input[type="text"],
 .biz-form-row input[type="tel"],
+.biz-form-row input[type="number"],
 .biz-form-row select,
 .biz-form-row textarea {
     width: 100%;
@@ -527,6 +528,17 @@
     background: #fff;
     transition: border-color .15s;
 }
+/* 사업자(상점) 상품등록 숫자 입력창 스피너 제거 */
+.biz-form-row input[type="number"]::-webkit-outer-spin-button,
+.biz-form-row input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.biz-form-row input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
 .biz-form-row input:focus,
 .biz-form-row select:focus,
 .biz-form-row textarea:focus {
