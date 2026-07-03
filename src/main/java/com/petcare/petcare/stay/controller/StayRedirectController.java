@@ -1,11 +1,5 @@
 /**
- * 역할: /stay → /hotel URL 리다이렉트 처리
- *
- * 연결
- * - 리다이렉트: StayStayController (/hotel)
- *
- * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
- * return 경로는 담당 JSP와 동일하게 맞출 것
+ * 역할: 구 URL /hotel → /stay 리다이렉트 (북마크·예전 링크 호환)
  */
 package com.petcare.petcare.stay.controller;
 
@@ -16,15 +10,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@RequestMapping("/stay")
+@RequestMapping("/hotel")
 public class StayRedirectController {
 
     @GetMapping({"", "/", "/detail", "/reserve", "/complete"})
-    public String redirectRoot(HttpServletRequest request) {
+    public String redirectToStay(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        String suffix = uri.substring(uri.indexOf("/stay") + "/stay".length());
+        String suffix = uri.substring(uri.indexOf("/hotel") + "/hotel".length());
         String query = request.getQueryString();
-        String target = "/hotel" + suffix;
+        String target = "/stay" + suffix;
         if (query != null && !query.isBlank()) {
             target += "?" + query;
         }

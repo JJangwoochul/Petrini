@@ -157,7 +157,7 @@
       <span>주변 장소 <strong id="petmapCount">5</strong>곳</span>
     </div>
 
-    <a href="${contextPath}/hotel/detail?id=1" class="petmap-card" data-cat="hotel">
+    <a href="${contextPath}/stay/detail?id=1" class="petmap-card" data-cat="hotel">
       <div class="petmap-icon hotel">🏨</div>
       <div class="petmap-body">
         <div class="petmap-name">강아지숲 펫 빌라</div>

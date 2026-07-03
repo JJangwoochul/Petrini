@@ -36,7 +36,7 @@
         }
 
         if (card.classList.contains('stay-card')) {
-            return 'hotel:' + match[1];
+            return 'stay:' + match[1];
         }
         if (card.classList.contains('product-card')) {
             return 'store:' + match[1];
@@ -61,8 +61,8 @@
             image = image || card.querySelector('.stay-card-thumb img, .product-thumb, .wish-thumb, .detail-main-img, .hospital-thumb')?.getAttribute('src');
         }
 
-        if (!link && id.indexOf('hotel:') === 0) {
-            link = '/hotel/detail?id=' + id.split(':')[1];
+        if (!link && (id.indexOf('stay:') === 0 || id.indexOf('hotel:') === 0)) {
+            link = '/stay/detail?id=' + id.split(':')[1];
         }
         if (!link && id.indexOf('store:') === 0) {
             link = '/store/detail?id=' + id.split(':')[1];

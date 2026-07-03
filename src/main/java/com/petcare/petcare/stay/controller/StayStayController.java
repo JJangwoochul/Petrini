@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.petcare.petcare.common.external.service.KakaoMapService;
 
 @Controller("stayController")
-@RequestMapping("/hotel")
+@RequestMapping("/stay")
 public class StayStayController {
 
     @Autowired
@@ -28,7 +28,7 @@ public class StayStayController {
 
     @GetMapping({"", "/"})
     public String stay() {
-        return "hotel/list";
+        return "stay/list";
     }
 
     @GetMapping("/detail")
@@ -41,11 +41,11 @@ public class StayStayController {
     @GetMapping("/reserve")
     public String reserve(@RequestParam(defaultValue = "1") String id, Model model) {
         model.addAttribute("id", id);
-        return "hotel/reserve";
+        return "stay/reserve";
     }
 
     @GetMapping("/complete")
     public String complete() {
-        return "hotel/complete";
+        return "stay/complete";
     }
 }
