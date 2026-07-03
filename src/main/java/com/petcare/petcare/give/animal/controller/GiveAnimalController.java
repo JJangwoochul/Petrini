@@ -25,23 +25,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petcare.petcare.give.controller.GiveBaseController;
+import com.petcare.petcare.common.util.controller.CommonUtilController;
 import com.petcare.petcare.give.vo.AbandonmentVO;
 
 @Controller("giveAnimalController")
 @RequestMapping("/give/animal")
-public class GiveAnimalController extends GiveBaseController {
+public class GiveAnimalController extends CommonUtilController {
+    String baseUrl = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 
     @GetMapping("/list")
     public String animalList(
-            @RequestParam(defaultValue = "") String sido,
-            @RequestParam(defaultValue = "") String sigungu,
-            @RequestParam(defaultValue = "") String upkind,
-            @RequestParam(defaultValue = "") String state,
-            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "")  String sido,
+            @RequestParam(defaultValue = "")  String sigungu,
+            @RequestParam(defaultValue = "")  String upkind,
+            @RequestParam(defaultValue = "")  String state,
+            @RequestParam(defaultValue = "1") int    pageNo,
             Model model) {
 
         try {
+
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
             String bgnde = LocalDate.now().minusDays(30).format(fmt);
             String endde = LocalDate.now().format(fmt);
@@ -53,12 +55,12 @@ public class GiveAnimalController extends GiveBaseController {
             sb.append("&pageNo=").append(pageNo);
             sb.append("&numOfRows=").append(pageSize);
             sb.append("&_type=json");
-            if (!sido.isEmpty()) sb.append("&sidoLikeCd=").append(URLEncoder.encode(sido, "UTF-8"));
-            if (!sigungu.isEmpty()) sb.append("&sigunguLikeCd=").append(URLEncoder.encode(sigungu, "UTF-8"));
-            if (!upkind.isEmpty()) sb.append("&upkind=").append(upkind);
-            if (!state.isEmpty()) sb.append("&state=").append(state);
+            if (!sido.isEmpty())    sb.append("&sidoLikeCd=").append(URLEncoder.encode(sido,    "UTF-8"));
+            if (!sigungu.isEmpty()) sb.append("&sigunguLikeCd=").append(URLEncoder.encode(sigungu,"UTF-8"));
+            if (!upkind.isEmpty())  sb.append("&upkind=").append(upkind);
+            if (!state.isEmpty())   sb.append("&state=").append(state);
 
-            String json = callApi(sb.toString());
+            String json   = callApi(sb.toString());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             JsonNode body = root.path("response").path("body");
@@ -67,32 +69,33 @@ public class GiveAnimalController extends GiveBaseController {
 
             List<AbandonmentVO> animals = new ArrayList<>();
             if (items.isArray()) {
-                for (JsonNode item : items) animals.add(parseItem(item, fmt));
+                for (JsonNode item : items) animals.add(AbandonmentVO.parseItem(item, fmt));
             } else if (items.isObject() && !items.isEmpty()) {
-                animals.add(parseItem(items, fmt));
+                animals.add(AbandonmentVO.parseItem(items, fmt));
             }
 
-            model.addAttribute("animals", animals);
+            model.addAttribute("animals",    animals);
             model.addAttribute("totalCount", totalCount);
-            model.addAttribute("pageNo", pageNo);
+            model.addAttribute("pageNo",     pageNo);
             model.addAttribute("totalPages", (int) Math.ceil((double) totalCount / pageSize));
-            model.addAttribute("sido", sido);
-            model.addAttribute("upkind", upkind);
-            model.addAttribute("state", state);
-            model.addAttribute("apiError", false);
+            model.addAttribute("sido",       sido);
+            model.addAttribute("upkind",     upkind);
+            model.addAttribute("state",      state);
+            model.addAttribute("apiError",   false);
 
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("animals", new ArrayList<>());
+            model.addAttribute("animals",    new ArrayList<>());
             model.addAttribute("totalCount", 0);
-            model.addAttribute("pageNo", 1);
+            model.addAttribute("pageNo",     1);
             model.addAttribute("totalPages", 0);
-            model.addAttribute("apiError", true);
-            model.addAttribute("errorMsg", e.getMessage());
+            model.addAttribute("apiError",   true);
+            model.addAttribute("errorMsg",   e.getMessage());
         }
         return "give/animal/list";
     }
-
+    
+    // ── 유기동물 상세 ─────────────────────────────────────
     @GetMapping("/detail")
     public String animalDetail(@RequestParam String desertionNo, Model model) {
         try {
@@ -101,18 +104,21 @@ public class GiveAnimalController extends GiveBaseController {
             sb.append("&desertion_no=").append(URLEncoder.encode(desertionNo, "UTF-8"));
             sb.append("&_type=json");
 
-            String json = callApi(sb.toString());
+            String json   = callApi(sb.toString());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             JsonNode items = root.path("response").path("body").path("items").path("item");
+
+            // 결과가 1건이면 객체로, 여러 건이면 배열로 내려오는 경우가 있어 둘 다 처리
             JsonNode item = items.isArray() ? items.get(0) : items;
 
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
-            model.addAttribute("animal", parseItem(item, fmt));
+            model.addAttribute("animal",   AbandonmentVO.parseItem(item, fmt));
             model.addAttribute("apiError", false);
-        } catch (Exception e) {
+        } 
+        catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("animal", null);
+            model.addAttribute("animal",   null);
             model.addAttribute("apiError", true);
         }
         return "give/animal/detail";
