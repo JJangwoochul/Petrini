@@ -41,12 +41,7 @@
       </svg>
       예약 관리<span class="biz-nav-badge">3</span>
     </a>
-    <a href="${contextPath}/biz/hospital/calendar" class="biz-nav-link ${bizPage eq 'calendar' ? 'active' : ''}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-      예약 캘린더
-    </a>
+    
     <a href="${contextPath}/biz/stay/rooms" class="biz-nav-link ${bizPage eq 'rooms' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>객실 관리
@@ -71,6 +66,14 @@
         <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
       </svg>
       계약 관리
+    </a>
+
+    <a href="${contextPath}/biz/stay/settlement" class="biz-nav-link ${bizPage eq 'settlement' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+      </svg>
+      정산 내역
     </a>
 
     <a href="${contextPath}/biz/stay/info" class="biz-nav-link ${bizPage eq 'info' ? 'active' : ''}">

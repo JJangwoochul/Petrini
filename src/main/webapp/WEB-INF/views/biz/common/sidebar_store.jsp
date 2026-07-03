@@ -27,13 +27,7 @@
       </svg>
       상품 관리
     </a>
-    <a href="${contextPath}/biz/store/inventory" class="biz-nav-link ${bizPage eq 'inventory' ? 'active' : ''}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="7" width="20" height="14" rx="2"/>
-        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-      </svg>
-      재고 관리
-    </a>
+    
     <div class="biz-nav-group">주문 관리</div>
     <a href="${contextPath}/biz/store/orders" class="biz-nav-link ${bizPage eq 'orders' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -65,6 +59,15 @@
       </svg>
       정산 내역
     </a>
+
+    <a href="${contextPath}/biz/store/contract" class="biz-nav-link ${bizPage eq 'contract' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+      </svg>
+      계약 관리
+    </a>
+    
     <a href="${contextPath}/biz/store/info" class="biz-nav-link ${bizPage eq 'info' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>

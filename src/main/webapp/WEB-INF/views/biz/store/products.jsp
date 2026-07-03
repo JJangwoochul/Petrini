@@ -7,8 +7,7 @@
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
 
-<%-- 7/3, 사업자(쇼핑몰) 상품 관리 UI 구성 — 스토리보드(Biz_Product_Manage + Biz_Product_Register) 기준,
-     객실관리(rooms.jsp)와 동일하게 목록+등록/수정 폼을 한 화면 안에서 토글로 처리 --%>
+<%-- 7/3, 사업자(쇼핑몰) 상품 관리 UI 구성 v2 — 카테고리/정가·할인가/상품설명/정렬 추가 --%>
 <style>
   .prod-filter{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:18px 20px}
   .prod-filter select,.prod-filter input{border:1px solid var(--biz-border);border-radius:8px;padding:8px 10px;font-size:13px;color:#333}
@@ -16,13 +15,20 @@
   .prod-filter .btn-search{background:var(--biz-primary);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer}
   .prod-filter .btn-reset{background:#fff;border:1px solid var(--biz-border);border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;color:#555;cursor:pointer}
   .prod-table-head{display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+  .prod-table-head .right{display:flex;align-items:center;gap:8px}
+  .prod-sort{border:1px solid var(--biz-border);border-radius:8px;padding:7px 10px;font-size:12px;color:#555}
   .prod-thumb{width:52px;height:52px;border-radius:6px;object-fit:cover;display:block;background:#F5F6F4}
+  .prod-cat{display:inline-block;font-size:11px;color:#666;background:#F0F2EE;border-radius:20px;padding:2px 10px;margin-bottom:3px}
+  .prod-price .orig{display:block;font-size:11px;color:#bbb;text-decoration:line-through}
+  .prod-price .sale{font-weight:700;color:#1A1A2E}
+  .prod-price .discount{color:#E24B4A;font-size:11px;font-weight:700;margin-right:4px}
   .prod-pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 0 20px}
   .prod-pagination button{width:28px;height:28px;border:1px solid var(--biz-border);background:#fff;border-radius:6px;cursor:pointer;font-size:12px;color:#555}
   .prod-pagination button.active{background:var(--biz-primary);border-color:var(--biz-primary);color:#fff;font-weight:700}
   .prod-pagination button:disabled{opacity:.4;cursor:default}
   .prod-form-actions{display:flex;justify-content:center;gap:10px;margin-top:22px}
   .prod-form-actions .biz-btn-primary{min-width:180px}
+  .prod-price-row{display:grid;grid-template-columns:250px 250px;column-gap:24px;}
 </style>
 
 <main class="biz-main">
@@ -37,6 +43,14 @@
         <option value="name">상품명</option>
       </select>
       <input type="text" id="fKeyword" placeholder="상품명을 입력하세요.">
+      <span style="font-size:13px;color:#666;margin-left:6px">카테고리</span>
+      <select id="fCategory">
+        <option value="all">전체</option>
+        <option value="food">사료</option>
+        <option value="snack">간식</option>
+        <option value="toy">장난감</option>
+        <option value="hygiene">위생용품</option>
+      </select>
       <span style="font-size:13px;color:#666;margin-left:6px">상태</span>
       <select id="fStatus">
         <option value="all">전체</option>
@@ -51,10 +65,18 @@
   <div class="biz-card" style="margin-bottom:16px">
     <div class="prod-table-head">
       <div class="biz-card-head" style="padding:20px 0 12px"><span>상품목록</span><small>총 <span id="totalCount">0</span>개</small></div>
-      <button type="button" class="biz-btn-primary" onclick="openForm('add')">+ 상품등록</button>
+      <div class="right">
+        <select class="prod-sort" id="fSort" onchange="applySort()">
+          <option value="latest">최신순</option>
+          <option value="lowstock">재고 적은순</option>
+          <option value="priceAsc">가격 낮은순</option>
+          <option value="priceDesc">가격 높은순</option>
+        </select>
+        <button type="button" class="biz-btn-primary" onclick="openForm('add')">+ 상품등록</button>
+      </div>
     </div>
     <table class="biz-table">
-      <thead><tr><th>상품이미지</th><th>상품명</th><th>판매가</th><th>재고</th><th>상태</th><th>관리</th></tr></thead>
+      <thead><tr><th>상품이미지</th><th>상품명 / 카테고리</th><th>판매가</th><th>재고</th><th>등록일</th><th>상태</th><th>관리</th></tr></thead>
       <tbody id="prodBody"></tbody>
     </table>
     <div class="prod-pagination" id="pagination"></div>
@@ -69,20 +91,42 @@
           <input type="text" id="pName" placeholder="상품명을 입력하세요">
         </div>
         <div class="biz-form-row">
-          <label>상품단가<span class="req">*</span></label>
-          <input type="number" id="pPrice" placeholder="숫자만 입력하세요 (예: 29900)">
+          <label>카테고리<span class="req">*</span></label>
+          <select id="pCategory">
+            <option value="food">사료</option>
+            <option value="snack">간식</option>
+            <option value="toy">장난감</option>
+            <option value="hygiene">위생용품</option>
+          </select>
         </div>
+
+        <div class="biz-form-row">
+        <label>정가<span class="req">*</span></label>
+        <input type="number" id="pOrigPrice" placeholder="예: 35000">
+        </div>
+
+        <div class="biz-form-row">
+        <label>판매가(할인가)<span class="req">*</span></label>
+        <input type="number" id="pPrice" placeholder="예: 29900">
+        </div>
+
         <div class="biz-form-row">
           <label>수량(재고)<span class="req">*</span></label>
           <input type="number" id="pStock" placeholder="재고 수량을 입력하세요">
         </div>
+        
         <div class="biz-form-row">
           <label>용량/중량/사이즈</label>
           <input type="text" id="pSize" placeholder="예) 4kg, 200g, M 사이즈 등">
         </div>
+        
         <div class="biz-form-row">
           <label>유통기한</label>
           <input type="text" id="pExpire" placeholder="예) 2027-06-30 (해당 없으면 비워두세요)">
+        </div>
+        <div class="biz-form-row">
+          <label>상품설명</label>
+          <textarea id="pDesc" placeholder="상품에 대한 설명을 입력하세요"></textarea>
         </div>
 
         <div class="biz-form-row">
@@ -112,15 +156,16 @@
 </div>
 
 <script>
-  var products = [
-    { id:1, name:'로얄캐닌 인도어 사료', price:29900, stock:32, status:'sale', size:'4kg', expire:'2027-03-31', img:'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=200&q=80' },
-    { id:2, name:'수제 닭가슴살 져키', price:8500, stock:0, status:'soldout', size:'200g', expire:'2026-12-31', img:'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=200&q=80' },
-    { id:3, name:'노즈워크 매트 오렌지', price:18500, stock:14, status:'sale', size:'L 사이즈', expire:'', img:'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=200&q=80' },
-    { id:4, name:'H형 하네스 블루', price:22000, stock:9, status:'sale', size:'M 사이즈', expire:'', img:'https://images.unsplash.com/photo-1601758125946-6ac8acf9758f?w=200&q=80' }
-  ];
-
+  var categoryLabel = { food:'사료', snack:'간식', toy:'장난감', hygiene:'위생용품' };
   var statusLabel = { sale:'판매중', soldout:'품절' };
   var statusBadgeClass = { sale:'bs-done', soldout:'bs-cancel' };
+
+  var products = [
+    { id:1, name:'로얄캐닌 인도어 사료', category:'food', origPrice:35000, price:29900, stock:32, status:'sale', size:'4kg', expire:'2027-03-31', desc:'실내 생활 반려묘를 위한 저칼로리 사료입니다.', regDate:'2026-06-20', img:'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=200&q=80' },
+    { id:2, name:'수제 닭가슴살 져키', category:'snack', origPrice:8500, price:8500, stock:0, status:'soldout', size:'200g', expire:'2026-12-31', desc:'국내산 닭가슴살로 만든 무첨가 수제 간식입니다.', regDate:'2026-06-15', img:'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=200&q=80' },
+    { id:3, name:'노즈워크 매트 오렌지', category:'toy', origPrice:22000, price:18500, stock:14, status:'sale', size:'L 사이즈', expire:'', desc:'후각 발달과 스트레스 해소에 좋은 노즈워크 매트입니다.', regDate:'2026-06-10', img:'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=200&q=80' },
+    { id:4, name:'H형 하네스 블루', category:'hygiene', origPrice:25000, price:22000, stock:9, status:'sale', size:'M 사이즈', expire:'', desc:'가슴 압박이 적은 편안한 착용감의 하네스입니다.', regDate:'2026-06-05', img:'https://images.unsplash.com/photo-1601758125946-6ac8acf9758f?w=200&q=80' }
+  ];
 
   var filtered = products.slice();
   var page = 1;
@@ -132,22 +177,35 @@
 
   function applyFilter() {
     var keyword = document.getElementById('fKeyword').value.trim();
+    var category = document.getElementById('fCategory').value;
     var status = document.getElementById('fStatus').value;
 
     filtered = products.filter(function (p) {
       var matchName = !keyword || p.name.indexOf(keyword) !== -1;
+      var matchCategory = category === 'all' || p.category === category;
       var matchStatus = status === 'all' || p.status === status;
-      return matchName && matchStatus;
+      return matchName && matchCategory && matchStatus;
     });
     page = 1;
-    render();
+    applySort();
   }
 
   function resetFilter() {
     document.getElementById('fKeyword').value = '';
+    document.getElementById('fCategory').value = 'all';
     document.getElementById('fStatus').value = 'all';
+    document.getElementById('fSort').value = 'latest';
     filtered = products.slice();
     page = 1;
+    render();
+  }
+
+  function applySort() {
+    var sort = document.getElementById('fSort').value;
+    if (sort === 'latest') filtered.sort(function (a, b) { return b.regDate.localeCompare(a.regDate); });
+    else if (sort === 'lowstock') filtered.sort(function (a, b) { return a.stock - b.stock; });
+    else if (sort === 'priceAsc') filtered.sort(function (a, b) { return a.price - b.price; });
+    else if (sort === 'priceDesc') filtered.sort(function (a, b) { return b.price - a.price; });
     render();
   }
 
@@ -171,11 +229,14 @@
       editingId = id;
       document.getElementById('formTitle').textContent = '상품수정';
       document.getElementById('submitBtn').textContent = '수정완료';
-      document.getElementById('pName').value   = p.name;
-      document.getElementById('pPrice').value  = p.price;
-      document.getElementById('pStock').value  = p.stock;
-      document.getElementById('pSize').value   = p.size;
-      document.getElementById('pExpire').value = p.expire;
+      document.getElementById('pName').value      = p.name;
+      document.getElementById('pCategory').value  = p.category;
+      document.getElementById('pOrigPrice').value = p.origPrice;
+      document.getElementById('pPrice').value     = p.price;
+      document.getElementById('pStock').value     = p.stock;
+      document.getElementById('pSize').value      = p.size;
+      document.getElementById('pExpire').value    = p.expire;
+      document.getElementById('pDesc').value      = p.desc;
       previewSrc = p.img;
       document.getElementById('pImgName').value = '기존 이미지 사용중';
       document.getElementById('imgPreview').src = previewSrc;
@@ -202,11 +263,32 @@
     document.getElementById('imgPreviewBox').style.display = 'block';
   });
 
+/*사업자(상점) 숫자 마이너스 제한*/
+  ['pStock', 'pOrigPrice', 'pPrice'].forEach(function (id) {
+    var el = document.getElementById(id);
+    el.addEventListener('input', function () {
+      if (this.value.indexOf('-') !== -1) {
+        this.value = this.value.replace(/-/g, '');
+      }
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === '-' || e.key === 'Subtract') {
+        e.preventDefault();
+      }
+    });
+  });
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   function submitProduct() {
     var required = [
-      { id: 'pName',  label: '상품명' },
-      { id: 'pPrice', label: '상품단가' },
-      { id: 'pStock', label: '수량(재고)' }
+      { id: 'pName',      label: '상품명' },
+      { id: 'pOrigPrice', label: '정가' },
+      { id: 'pPrice',     label: '판매가(할인가)' },
+      { id: 'pStock',     label: '수량(재고)' }
     ];
     for (var i = 0; i < required.length; i++) {
       var el = document.getElementById(required[i].id);
@@ -220,11 +302,14 @@
     var stockVal = Number(document.getElementById('pStock').value);
     var data = {
       name: document.getElementById('pName').value.trim(),
+      category: document.getElementById('pCategory').value,
+      origPrice: Number(document.getElementById('pOrigPrice').value),
       price: Number(document.getElementById('pPrice').value),
       stock: stockVal,
       status: stockVal > 0 ? 'sale' : 'soldout',
       size: document.getElementById('pSize').value.trim(),
       expire: document.getElementById('pExpire').value.trim(),
+      desc: document.getElementById('pDesc').value.trim(),
       img: previewSrc || 'https://images.unsplash.com/photo-1601758124096-1f7e1b3b0c6e?w=200&q=80'
     };
 
@@ -234,13 +319,14 @@
       showToast('상품 정보가 수정되었습니다.');
     } else {
       data.id = products.length ? Math.max.apply(null, products.map(function (x) { return x.id; })) + 1 : 1;
+      data.regDate = todayStr();
       products.push(data);
       showToast('상품 등록 신청이 완료되었습니다.');
     }
 
     filtered = products.slice();
     closeForm();
-    render();
+    applySort();
   }
 
   function showToast(msg) {
@@ -260,15 +346,26 @@
     var body = document.getElementById('prodBody');
     body.innerHTML = '';
     if (pageItems.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:24px 0">등록된 상품이 없습니다.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px 0">등록된 상품이 없습니다.</td></tr>';
     } else {
       pageItems.forEach(function (p) {
+        var discountRate = p.origPrice > p.price ? Math.round((1 - p.price / p.origPrice) * 100) : 0;
+        var priceHtml = '<div class="prod-price">';
+        if (discountRate > 0) {
+          priceHtml += '<span class="orig">' + fmtWon(p.origPrice) + '</span>';
+          priceHtml += '<span class="discount">' + discountRate + '%</span><span class="sale">' + fmtWon(p.price) + '</span>';
+        } else {
+          priceHtml += '<span class="sale">' + fmtWon(p.price) + '</span>';
+        }
+        priceHtml += '</div>';
+
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td><img class="prod-thumb" src="' + p.img + '" alt="' + p.name + '"></td>' +
-          '<td>' + p.name + '</td>' +
-          '<td>' + fmtWon(p.price) + '</td>' +
+          '<td><span class="prod-cat">' + categoryLabel[p.category] + '</span><br>' + p.name + '</td>' +
+          '<td>' + priceHtml + '</td>' +
           '<td>' + p.stock + '개</td>' +
+          '<td>' + p.regDate + '</td>' +
           '<td><span class="bs-badge ' + statusBadgeClass[p.status] + '">' + statusLabel[p.status] + '</span></td>' +
           '<td>' +
             '<button class="biz-btn" onclick="openForm(\'edit\',' + p.id + ')">수정</button> ' +
@@ -299,7 +396,7 @@
     pg.appendChild(next);
   }
 
-  render();
+  applySort();
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>
