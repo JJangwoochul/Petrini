@@ -497,23 +497,18 @@ ul, ol { list-style: none; }
 }
 .section-more:hover { color: var(--primary); }
 
-/* 홈 인기상품 — 작은 썸네일 + 가로 나열 */
+/* 홈 인기상품 — 4열 그리드, 세로 카드 (TOP 8) */
 .home-product-grid {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
     width: 100%;
 }
 .home-product-card {
-    flex: 1 1 0;
-    min-width: 0;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -525,42 +520,53 @@ ul, ol { list-style: none; }
 .home-product-card:hover {
     box-shadow: var(--shadow-md);
     border-color: var(--primary);
+    transform: translateY(-2px);
 }
 .home-product-thumb {
-    width: 64px;
-    height: 64px;
-    flex: 0 0 64px;
-    border-radius: var(--radius-sm);
+    width: 100%;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     display: block;
 }
 .home-product-body {
-    padding: 0;
+    padding: 12px 14px 14px;
     flex: 1 1 auto;
     min-width: 0;
 }
 .home-product-name {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-main);
-    margin-bottom: 4px;
-    line-height: 1.35;
+    margin-bottom: 8px;
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    word-break: keep-all;
 }
 .home-product-price {
-    font-size: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 6px;
+    font-size: 15px;
     font-weight: 800;
     color: var(--text-main);
-    white-space: nowrap;
+    line-height: 1.3;
 }
 .home-product-rate {
     font-size: 14px;
     font-weight: 700;
     color: var(--accent);
-    margin-right: 6px;
+    flex-shrink: 0;
+}
+.section-empty {
+    grid-column: 1 / -1;
+    padding: 32px 0;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-muted);
 }
 .section-more::after { content: '›'; font-size: 16px; }
 
@@ -872,16 +878,13 @@ ul, ol { list-style: none; }
     .category-grid { grid-template-columns: repeat(3, 1fr); }
     .hospital-grid { grid-template-columns: 1fr 1fr; }
     .home-product-grid {
-        gap: 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
     }
-    .home-product-card {
-        flex: 0 0 200px;
-    }
-    .home-product-thumb { width: 52px; height: 52px; flex: 0 0 52px; }
-    .home-product-name { font-size: 12px; }
-    .home-product-price { font-size: 13px; }
+    .home-product-body { padding: 10px; }
+    .home-product-name { font-size: 13px; margin-bottom: 6px; }
+    .home-product-price { font-size: 14px; }
+    .home-product-rate { font-size: 13px; }
     .footer-inner { gap: 16px; min-width: 680px; }
     .footer-desc { font-size: 11px; }
     .footer-nav a { font-size: 11px; padding: 2px 4px; }
