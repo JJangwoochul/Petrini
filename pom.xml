@@ -80,7 +80,7 @@
             <version>2.43.1</version>
         </dependency>
 
-        <!-- 선택: API 결과 캐싱 -->
+        <!-- API 결과 캐싱 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>

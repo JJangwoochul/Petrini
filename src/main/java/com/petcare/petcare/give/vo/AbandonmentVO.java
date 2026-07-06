@@ -24,7 +24,10 @@ public class AbandonmentVO {
     private String filename;       // 이미지 URL
     private String happenDt;       // 접수일 (YYYYMMDD)
     private String happenPlace;    // 발견 장소
-    private String kindCd;         // 품종 (ex: "[개] 골든 리트리버")
+    private String kindCd;         // 품종 코드 (ex: "000114")
+    private String upKindCd;       // 축종 코드 (개:417000, 고양이:422400, 기타:429900)
+    private String kindNm;         // 품종명 (ex: "믹스견")
+    private String kindFullNm;     // 종+품종 (ex: "[개] 믹스견")
     private String colorCd;        // 색상
     private String age;            // 나이 (ex: "2023(년생)")
     private String weight;         // 체중 (ex: "8.0(Kg)")
@@ -59,19 +62,27 @@ public class AbandonmentVO {
         return "미상";
     }
 
-    /** 품종에서 동물 종류만 추출: "[개] 골든 리트리버" → "개" */
+    /** 동물 종류: v2 API는 upKindCd 로 구분 */
     public String getSpecies() {
-        if (kindCd == null) return "";
-        if (kindCd.contains("[개]"))    return "개";
-        if (kindCd.contains("[고양이]")) return "고양이";
+        if ("417000".equals(upKindCd)) return "개";
+        if ("422400".equals(upKindCd)) return "고양이";
+        if ("429900".equals(upKindCd)) return "기타";
+
+        String src = (kindFullNm != null && !kindFullNm.isBlank()) ? kindFullNm : kindCd;
+        if (src == null || src.isBlank()) return "";
+        if (src.contains("[개]"))     return "개";
+        if (src.contains("[고양이]")) return "고양이";
         return "기타";
     }
 
-    /** 품종명만 추출: "[개] 골든 리트리버" → "골든 리트리버" */
+    /** 품종명만 추출 */
     public String getBreedName() {
-        if (kindCd == null) return "";
-        int idx = kindCd.indexOf(']');
-        return idx >= 0 ? kindCd.substring(idx + 1).trim() : kindCd;
+        if (kindNm != null && !kindNm.isBlank()) return kindNm;
+
+        String src = (kindFullNm != null && !kindFullNm.isBlank()) ? kindFullNm : kindCd;
+        if (src == null || src.isBlank()) return "";
+        int idx = src.indexOf(']');
+        return idx >= 0 ? src.substring(idx + 1).trim() : src;
     }
 
     /** 공고 종료일 포맷 변환: "20250629" → "2025.06.29" */
@@ -89,6 +100,9 @@ public class AbandonmentVO {
         vo.setHappenDt    (item.path("happenDt").asText(""));
         vo.setHappenPlace (item.path("happenPlace").asText(""));
         vo.setKindCd      (item.path("kindCd").asText(""));
+        vo.setUpKindCd    (item.path("upKindCd").asText(""));
+        vo.setKindNm      (item.path("kindNm").asText(""));
+        vo.setKindFullNm  (item.path("kindFullNm").asText(""));
         vo.setColorCd     (item.path("colorCd").asText(""));
         vo.setAge         (item.path("age").asText(""));
         vo.setWeight      (item.path("weight").asText(""));
