@@ -68,9 +68,17 @@
                      + 'style="color:inherit;text-decoration:none">' + h.name + '</a></div>'
           });
 
-          kakao.maps.event.addListener(marker, 'click', function() {
-              infowindow.open(map, marker);
-          });
+          // kakao.maps.event.addListener(marker, 'click', function() {
+          //     infowindow.open(map, marker);
+          // });
+          (function(m, iw) {
+              kakao.maps.event.addListener(m, 'mouseover', function() {
+                  iw.open(map, m);
+              });
+              kakao.maps.event.addListener(m, 'mouseout', function() {
+                  iw.close();
+              });
+          })(marker, infowindow);
       }
 
       // 모든 마커가 보이도록 지도 범위 자동 조정
