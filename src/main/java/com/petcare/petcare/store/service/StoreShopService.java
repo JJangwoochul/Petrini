@@ -26,4 +26,18 @@
 
 package com.petcare.petcare.store.service;
 
-public interface StoreShopService {}
+import java.util.List;
+
+import com.petcare.petcare.store.vo.StoreShopVO;
+import com.petcare.petcare.store.vo.CategoryVO;
+
+public interface StoreShopService {
+//지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
+List<StoreShopVO> getProductList(Long categoryId, String keyword, String sort, int pageNo);
+
+//지윤 26.07.06 페이지네이션용 총 페이지 수 계산
+int getTotalPages(Long categoryId, String keyword);
+
+//지윤 26.07.06 카테고리 트리 조회
+List<CategoryVO> getCategoryTree();
+}

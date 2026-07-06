@@ -10,6 +10,7 @@
 
 package com.petcare.petcare.store.controller;
 
+import org.springframework.beans.factory.annotation.Autowired; 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+//지윤 26.07.06 상품목록 조회용 Service 클래스 import
+import com.petcare.petcare.store.service.StoreShopService;
+import com.petcare.petcare.store.vo.CategoryVO;
+
 @Controller("storeController")
 @RequestMapping("/store")
 public class StoreShopController {
@@ -25,15 +30,48 @@ public class StoreShopController {
     //HYJ 26.07.03 토스결제 api key
     @Value("${toss.client-key}")
     private String tossApiKey;
-    
+
+    //지윤 26.07.06 상품목록 조회용 Service 주입
+    @Autowired
+    private StoreShopService storeShopService;
+
+    // ----- 수정 전 원본 -----
+    // @GetMapping({"", "/"})
+    // public String store(@RequestParam(required = false) String q) {
+    //     if (q != null && !q.isBlank()) {
+    //         return "redirect:/search?q=" + java.net.URLEncoder.encode(q.trim(), java.nio.charset.StandardCharsets.UTF_8);}
+    //     return "store/list";}
+    // ----- 수정 전 원본 -----
+    //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
+    //지윤 26.07.06 카테고리 트리(species/category/age 3단계) 적용
+    // 우선순위: age > category > species (더 세부적으로 고른 게 있으면 그걸로 필터링)
     @GetMapping({"", "/"})
-    public String store(@RequestParam(required = false) String q) {
+    public String store(@RequestParam(required = false) String q,
+                         @RequestParam(required = false, defaultValue = "5") Long species,
+                         @RequestParam(required = false) Long category,
+                         @RequestParam(required = false) Long age,
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false, defaultValue = "popular") String sort,
+                         @RequestParam(required = false, defaultValue = "1") int page,
+                         Model model) {
         if (q != null && !q.isBlank()) {
             return "redirect:/search?q=" + java.net.URLEncoder.encode(q.trim(), java.nio.charset.StandardCharsets.UTF_8);
         }
+        Long effectiveCategoryId = (age != null) ? age : (category != null ? category : species);
+
+        model.addAttribute("productList", storeShopService.getProductList(effectiveCategoryId, keyword, sort, page));
+        model.addAttribute("categoryTree", storeShopService.getCategoryTree());
+        model.addAttribute("selectedSpecies", species);
+        model.addAttribute("selectedCategory", category);
+        model.addAttribute("selectedAge", age);
+        model.addAttribute("selectedKeyword", keyword);
+        model.addAttribute("selectedSort", sort);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword));
         return "store/list";
     }
 
+    
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") String id, Model model) {
         model.addAttribute("id", id);
