@@ -47,14 +47,19 @@
 <div class="hdetail-wrap">
   <div class="hdetail-main">
     <div class="hdetail-photos">
-      <img src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&q=70&auto=format&fit=crop" alt="병원메인" onerror="this.src='https://placehold.co/600x400/E0F2FE/0284C7?text=병원'">
+      <%-- <img src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&q=70&auto=format&fit=crop" alt="병원메인" onerror="this.src='https://placehold.co/600x400/E0F2FE/0284C7?text=병원'">
       <img src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=300&q=70&auto=format&fit=crop" alt="병원2" onerror="this.src='https://placehold.co/300x200/E0F2FE/0284C7?text=병원'">
-      <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=300&q=70&auto=format&fit=crop" alt="병원3" onerror="this.src='https://placehold.co/300x200/E0F2FE/0284C7?text=병원'">
+      <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=300&q=70&auto=format&fit=crop" alt="병원3" onerror="this.src='https://placehold.co/300x200/E0F2FE/0284C7?text=병원'"> --%>
+      <c:forEach var="img" items="${imgList}">
+        <div class="swiper-slide">
+            <img src="${contextPath}/upload/${img.fileUrl}" alt="${hospital.hospitalName}">
+        </div>
+      </c:forEach>
     </div>
     <div class="hdetail-head">
       <div>
         <div class="hdetail-tags"><span class="hdtag type">동물병원</span><span class="hdtag open">진료중</span></div>
-        <div class="hdetail-name">행복 동물병원</div>
+        <div class="hdetail-name">${hospital.hospitalName}</div>
         <div class="hdetail-rating">
           <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(128개 리뷰)</span>
@@ -64,7 +69,7 @@
     <div class="hdetail-info-grid">
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>주소</div>
-        <div class="hdinfo-val">서울특별시 마포구 합정동 123-4<br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small></div>
+        <div class="hdinfo-val">${hospital.addr}<br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small></div>
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>운영시간</div>
@@ -72,7 +77,7 @@
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>전화번호</div>
-        <div class="hdinfo-val">02-1234-5678</div>
+        <div class="hdinfo-val">${hospital.phone}</div>
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>진료과목</div>

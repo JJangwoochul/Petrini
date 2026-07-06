@@ -15,4 +15,4 @@
 
 package com.petcare.petcare.hospital.service;
 
-public class HospitalHospitalServiceImpl implements HospitalHospitalService {}
+public class HospitalServiceImpl implements HospitalService {}

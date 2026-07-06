@@ -25,12 +25,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petcare.petcare.common.config.controller.CommonConfigController;
 import com.petcare.petcare.common.util.controller.CommonUtilController;
 import com.petcare.petcare.give.vo.AbandonmentVO;
 
 @Controller("giveAnimalController")
 @RequestMapping("/give/animal")
-public class GiveAnimalController extends CommonUtilController {
+public class GiveAnimalController extends CommonConfigController {
     String baseUrl = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
 
     @GetMapping("/list")
@@ -49,18 +50,18 @@ public class GiveAnimalController extends CommonUtilController {
             String endde = LocalDate.now().format(fmt);
 
             StringBuilder sb = new StringBuilder(baseUrl);
-            sb.append("?serviceKey=").append(URLEncoder.encode(serviceKey, "UTF-8"));
+            sb.append("?serviceKey=").append(URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8"));
             sb.append("&bgnde=").append(bgnde);
             sb.append("&endde=").append(endde);
             sb.append("&pageNo=").append(pageNo);
-            sb.append("&numOfRows=").append(pageSize);
+            sb.append("&numOfRows=").append(commonUtilController.pageSize);
             sb.append("&_type=json");
             if (!sido.isEmpty())    sb.append("&sidoLikeCd=").append(URLEncoder.encode(sido,    "UTF-8"));
             if (!sigungu.isEmpty()) sb.append("&sigunguLikeCd=").append(URLEncoder.encode(sigungu,"UTF-8"));
             if (!upkind.isEmpty())  sb.append("&upkind=").append(upkind);
             if (!state.isEmpty())   sb.append("&state=").append(state);
 
-            String json   = callApi(sb.toString());
+            String json   = apiService.callApi(sb.toString());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             JsonNode body = root.path("response").path("body");
@@ -77,7 +78,7 @@ public class GiveAnimalController extends CommonUtilController {
             model.addAttribute("animals",    animals);
             model.addAttribute("totalCount", totalCount);
             model.addAttribute("pageNo",     pageNo);
-            model.addAttribute("totalPages", (int) Math.ceil((double) totalCount / pageSize));
+            model.addAttribute("totalPages", (int) Math.ceil((double) totalCount / commonUtilController.pageSize));
             model.addAttribute("sido",       sido);
             model.addAttribute("upkind",     upkind);
             model.addAttribute("state",      state);
@@ -100,11 +101,11 @@ public class GiveAnimalController extends CommonUtilController {
     public String animalDetail(@RequestParam String desertionNo, Model model) {
         try {
             StringBuilder sb = new StringBuilder(baseUrl);
-            sb.append("?serviceKey=").append(URLEncoder.encode(serviceKey, "UTF-8"));
+            sb.append("?serviceKey=").append(URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8"));
             sb.append("&desertion_no=").append(URLEncoder.encode(desertionNo, "UTF-8"));
             sb.append("&_type=json");
 
-            String json   = callApi(sb.toString());
+            String json   = apiService.callApi(sb.toString());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             JsonNode items = root.path("response").path("body").path("items").path("item");

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petcare.petcare.hospital.mapper.HospitalMapper">
+
+<!--
+  역할: HospitalMapper SQL 정의
+
+  쿼리 id 예시
+  - selectHospitalList
+  - selectHospitalDetail
+  - insertReservation
+
+  테이블
+  - TB_HOSPITAL
+  - TB_RESERVATION
+-->
+    <!-- 병원 목록 전체 조회 -->
+    <select id="selectHospitalList" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
+        --SELECT      H.HOSPITAL_ID,
+        --            H.HOSPITAL_NAME,
+        --            H.PHONE,
+        --            H.ADDR,
+        --            H.LAT,
+        --            H.LNG,
+        --            H.AVG_RATING,
+        --            H.REVIEW_CNT,
+        --            H.DEPT_LIST,
+        --            F.FILE_URL AS THUMB_PATH 
+        --FROM        TB_HOSPITAL H
+        --LEFT JOIN   TB_FILE F
+        --ON          F.REF_TYPE = 'HOSPITAL'
+        --AND         F.REF_ID = H.HOSPITAL_ID
+        --AND         F.FILE_ORDER = 0 
+        --WHERE       H.STATUS_CD = 'ACTIVE'
+        --ORDER BY    H.HOSPITAL_ID DESC
+        SELECT      H.HOSPITAL_ID,
+                    H.HOSPITAL_NAME,
+                    H.PHONE,
+                    H.ADDR,
+                    H.LAT,
+                    H.LNG,
+                    H.AVG_RATING,
+                    H.REVIEW_CNT,
+                    H.DEPT_LIST,
+                    (SELECT F.FILE_URL
+                       FROM TB_FILE F
+                      WHERE F.REF_TYPE = 'HOSPITAL'
+                        AND F.REF_ID   = H.HOSPITAL_ID
+                        AND ROWNUM     = 1
+                    ) AS THUMB_PATH
+        FROM        TB_HOSPITAL H
+        WHERE       H.STATUS_CD = 'ACTIVE'
+        ORDER  BY   H.HOSPITAL_ID DESC
+    </select>
+
+    <!-- 병원 단건 조회 -->
+    <select id="selectHospitalById" parameterType="long" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
+        SELECT  HOSPITAL_ID,
+                BIZ_NO,
+                MEMBER_NO,
+                HOSPITAL_NAME,
+                PHONE,
+                ADDR,
+                LAT,
+                LNG,
+                AVG_RATING,
+                REVIEW_CNT,
+                STATUS_CD,
+                APPROVE_DATE,
+                HOURS_JSON,
+                DEPT_LIST
+          FROM  TB_HOSPITAL
+         WHERE  HOSPITAL_ID = #{hospitalId}
+    </select>
+</mapper>

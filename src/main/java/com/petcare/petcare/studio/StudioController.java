@@ -22,7 +22,7 @@ public class StudioController {
     @GetMapping({"", "/"})
     public String list(Model model) throws JsonMappingException, JsonProcessingException {
         //test
-        kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
+        //kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
         return "studio/list";
     }
 
@@ -32,7 +32,7 @@ public class StudioController {
         model.addAttribute("id", id);
 
         //test
-        kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
+        //kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
         return "studio/detail";
     }
 
