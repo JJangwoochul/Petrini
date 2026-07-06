@@ -95,79 +95,86 @@
   </aside>
 
   <div>
-    <div class="hosp-map-area" id="kakao-map">
-      <%-- <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x280/EAF7F2/2BAB82?text=카카오맵+API+연동+예정'"> --%>
-    </div>
-<c:set var="mapLevel"     value="3"/>
-<c:set var="mapAddMarker" value="${true}"/>
-<%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
+    <div class="hosp-map-area" id="kakao-map"></div>
+    <c:set var="mapLevel"     value="3"/>
+    <c:set var="mapAddMarker" value="${true}"/>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
     <div class="hosp-list-head">
-      <span>검색 결과 <strong>24개</strong> 병원</span>
+      <span>검색 결과 <strong>${hospitalList.size()}개</strong> 병원</span>
       <div style="display:flex;gap:8px">
         <span class="chip on" style="font-size:12px">거리순</span>
         <span class="chip" style="font-size:12px">별점순</span>
         <span class="chip" style="font-size:12px">리뷰순</span>
       </div>
     </div>
-    <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=1'">
-      <img class="hosp-thumb" src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=176&q=70&auto=format&fit=crop" alt="병원" onerror="this.src='https://placehold.co/88x88/E0F2FE/0284C7?text=병원'">
-      <div class="hosp-body">
-        <div class="hosp-tags"><span class="hosp-tag type">동물병원</span><span class="hosp-tag open">진료중</span></div>
-        <div class="hosp-name">행복 동물병원</div>
-        <div class="hosp-meta">
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 마포구 합정동 · 0.8km</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>평일 09:00~19:00 · 토 09:00~14:00</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>내과·외과·피부과·안과</div>
-        </div>
-      </div>
-      <div class="hosp-right">
-        <div class="hosp-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>4.9 (128)</div>
-        <div class="hosp-dist">0.8km</div>
-        <button class="btn-reserve" onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=1'">예약하기</button>
-      </div>
-    </div>
-    <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=2'">
-      <img class="hosp-thumb" src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=176&q=70&auto=format&fit=crop" alt="병원2" onerror="this.src='https://placehold.co/88x88/E0F2FE/0284C7?text=병원'">
-      <div class="hosp-body">
-        <div class="hosp-tags"><span class="hosp-tag type">동물병원</span><span class="hosp-tag open">진료중</span></div>
-        <div class="hosp-name">서울 24시 동물의료센터</div>
-        <div class="hosp-meta">
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 강남구 역삼동 · 1.4km</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>24시간 운영</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>응급·중환자·내과·외과·종양</div>
-        </div>
-      </div>
-      <div class="hosp-right">
-        <div class="hosp-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>4.7 (256)</div>
-        <div class="hosp-dist">1.4km</div>
-        <button class="btn-reserve" onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=2'">예약하기</button>
-      </div>
-    </div>
-    <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=3'">
-      <img class="hosp-thumb" src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=176&q=70&auto=format&fit=crop" alt="병원3" onerror="this.src='https://placehold.co/88x88/E0F2FE/0284C7?text=병원'">
-      <div class="hosp-body">
-        <div class="hosp-tags"><span class="hosp-tag type">동물병원</span><span class="hosp-tag close">진료종료</span></div>
-        <div class="hosp-name">미래 고양이 전문병원</div>
-        <div class="hosp-meta">
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 서초구 방배동 · 2.1km</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>평일 10:00~18:00 (점심 13~14시)</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>고양이 전문 · 내과·피부과·치과</div>
-        </div>
-      </div>
-      <div class="hosp-right">
-        <div class="hosp-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>4.8 (94)</div>
-        <div class="hosp-dist">2.1km</div>
-        <button class="btn-reserve" onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=3'" style="background:var(--text-muted)">예약하기</button>
-      </div>
-    </div>
+
+    <c:choose>
+      <c:when test="${not empty hospitalList}">
+        <c:forEach var="h" items="${hospitalList}">
+          <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=${h.hospitalId}'">
+            <%-- <img class="hosp-thumb" src="https://placehold.co/88x88/E0F2FE/0284C7?text=병원" alt="${h.hospitalName}"> --%>
+              <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${hospital.hospitalName}">
+            <div class="hosp-body">
+              <div class="hosp-tags">
+                <span class="hosp-tag type">동물병원</span>
+              </div>
+              <div class="hosp-name">${h.hospitalName}</div>
+              <div class="hosp-meta">
+                <div class="hosp-meta-row">
+                  <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${h.addr}
+                </div>
+                <div class="hosp-meta-row">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  ${h.deptList}
+                </div>
+              </div>
+            </div>
+            <div class="hosp-right">
+              <div class="hosp-rating">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <c:choose>
+                  <c:when test="${h.avgRating != null}">${h.avgRating} (${h.reviewCnt})</c:when>
+                  <c:otherwise>-</c:otherwise>
+                </c:choose>
+              </div>
+              <button class="btn-reserve"
+                      onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=${h.hospitalId}'">
+                예약하기
+              </button>
+            </div>
+          </div>
+        </c:forEach>
+      </c:when>
+      <c:otherwise>
+        <p style="font-size:15px;font-weight:600;color:var(--text-main);margin:0">등록된 병원이 없습니다.</p>
+      </c:otherwise>
+    </c:choose>
   </div>
 </div>
 
 <script>
-  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',function(){
-    this.closest('.hosp-filter-chips,.hosp-list-head div').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-    this.classList.add('on');
-  }));
+var chips = document.querySelectorAll('.chip');
+
+for (var i = 0; i < chips.length; i++) {
+
+    chips[i].addEventListener('click', function () {
+
+        // 같은 그룹의 chip들
+        var group = this.closest('.hosp-filter-chips, .hosp-list-head div');
+
+        var siblings = group.querySelectorAll('.chip');
+
+        for (var j = 0; j < siblings.length; j++) {
+            siblings[j].classList.remove('on');
+        }
+
+        // 클릭한 chip 활성화
+        this.classList.add('on');
+
+    });
+
+}
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

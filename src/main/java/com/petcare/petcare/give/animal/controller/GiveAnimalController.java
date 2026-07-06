@@ -51,13 +51,11 @@ public class GiveAnimalController {
             @RequestParam(defaultValue = "false") boolean search,
             Model model) {
 
-        // JSP 검색 폼·페이징에서 선택값 유지 + "조회 했는지" 여부 전달 (화면용 → Controller 담당)
         model.addAttribute("sido", sido);
         model.addAttribute("upkind", upkind);
         model.addAttribute("state", state);
         model.addAttribute("searched", search);
 
-        // 아직 [조회] 안 눌렀으면 API 스킵 (지역 첫 조회 10초+ 대기 방지)
         if (!search) {
             model.addAttribute("animals", Collections.emptyList());
             model.addAttribute("totalCount", 0);
@@ -67,7 +65,6 @@ public class GiveAnimalController {
             return "give/animal/list";
         }
 
-        // [조회] 눌렀을 때만 Service 호출 
         GiveAnimalListResult result = giveAnimalService.getAnimalList(sido, upkind, state, pageNo);
 
         model.addAttribute("animals", result.getAnimals());

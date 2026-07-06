@@ -2,8 +2,6 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=e7433bf8a345b0044ed62663faec792e"></script>
-
 <!DOCTYPE html>
 <html lang="ko">
 

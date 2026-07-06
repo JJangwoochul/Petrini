@@ -13,9 +13,9 @@
  * - 예약 등록
  *
  * 연결
- * - 구현: HospitalHospitalServiceImpl
- * - 호출: HospitalHospitalController
- * - DB: HospitalHospitalMapper
+ * - 구현: HospitalServiceImpl
+ * - 호출: HospitalController
+ * - DB: HospitalMapper
  *
  * 참고 테이블
  * - TB_HOSPITAL
@@ -24,4 +24,4 @@
 
 package com.petcare.petcare.hospital.service;
 
-public interface HospitalHospitalService {}
+public interface HospitalService {}
