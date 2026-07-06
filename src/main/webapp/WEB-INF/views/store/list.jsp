@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- 지윤 26.07.06 추가: 가격에 콤마(#,###) 찍으려고 fmt 태그 사용 필요해서 taglib 추가 --%>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -54,18 +56,48 @@
 .page-btn:hover { border-color:var(--primary); color:var(--primary); }
 .page-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:700; }
 .page-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+/* 지윤 26.07.06 검색창 스타일 추가 */
+.store-search-box { display:flex; gap:8px; margin-bottom:16px; }
+.store-search-box input[type=text] { flex:1; padding:9px 14px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:14px; }
+.store-search-box button { padding:9px 20px; border:none; border-radius:var(--radius-sm); background:var(--primary); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+.species-tabs { display:flex; gap:6px; margin-bottom:14px; }
+.species-tab { flex:1; text-align:center; padding:8px 0; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; color:var(--text-sub); text-decoration:none; }
+.species-tab.active { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:700; }
+.age-filter { display:flex; gap:6px; margin-bottom:14px; }
+.age-chip { padding:6px 14px; border:1px solid var(--border); border-radius:20px; font-size:12px; color:var(--text-sub); text-decoration:none; }
+.age-chip.active { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); font-weight:700; }
 </style>
 
 <div class="store-wrap">
   <%-- 사이드바 --%>
   <aside class="store-sidebar">
+    <%-- 지윤 26.07.06 카테고리 트리 적용: 강아지/고양이 탭 추가 --%>
+    <div class="species-tabs">
+      <c:forEach var="sp" items="${categoryTree}">
+        <c:if test="${sp.depth == 2}">
+          <c:url var="spUrl" value="/store">
+            <c:param name="species" value="${sp.categoryId}"/>
+          </c:url>
+          <a href="${spUrl}" class="species-tab ${selectedSpecies == sp.categoryId ? 'active' : ''}">${sp.categoryName}</a>
+        </c:if>
+      </c:forEach>
+    </div>
     <div class="store-sidebar-card">
       <div class="store-sidebar-title">카테고리</div>
       <ul class="store-cat-list">
-        <li><a href="#" class="active">전체<span class="cat-count">248</span></a></li>
-        <li><a href="#">사료<span class="cat-count">82</span></a></li>
-        <li><a href="#">간식<span class="cat-count">64</span></a></li>
-        <li><a href="#">용품<span class="cat-count">38</span></a></li>
+        <c:url var="allCatUrl" value="/store">
+          <c:param name="species" value="${selectedSpecies}"/>
+        </c:url>
+        <li><a href="${allCatUrl}" class="${empty selectedCategory ? 'active' : ''}">전체</a></li>
+        <c:forEach var="cat" items="${categoryTree}">
+          <c:if test="${cat.parentId == selectedSpecies && cat.depth == 3}">
+            <c:url var="catUrl" value="/store">
+              <c:param name="species" value="${selectedSpecies}"/>
+              <c:param name="category" value="${cat.categoryId}"/>
+            </c:url>
+            <li><a href="${catUrl}" class="${selectedCategory == cat.categoryId ? 'active' : ''}">${cat.categoryName}</a></li>
+          </c:if>
+        </c:forEach>
       </ul>
     </div>
     <div class="store-sidebar-card">
@@ -89,17 +121,75 @@
 
   <%-- 상품 목록 --%>
   <div class="store-content">
-    <div class="store-toolbar">
-      <div class="store-result-count">총 <strong>248</strong>개 상품</div>
-      <div class="store-sort">
-        <button class="sort-btn on">인기순</button>
-        <button class="sort-btn">최신순</button>
-        <button class="sort-btn">낮은가격</button>
-        <button class="sort-btn">높은가격</button>
+    <%-- 지윤 26.07.06 상품목록 전용 검색창 추가 --%>
+    <form method="get" action="${contextPath}/store" class="store-search-box">
+      <c:if test="${not empty selectedCategory}">
+        <input type="hidden" name="category" value="${selectedCategory}">
+      </c:if>
+      <input type="text" name="keyword" value="${selectedKeyword}" placeholder="상품명 또는 브랜드로 검색">
+      <button type="submit">검색</button>
+    </form>
+    <%-- 지윤 26.07.06 나이 필터: 선택된 카테고리에 나이 하위카테고리 있을 때만 표시 --%>
+    <c:set var="hasAgeOptions" value="false"/>
+    <c:forEach var="cat" items="${categoryTree}">
+      <c:if test="${not empty selectedCategory && cat.parentId == selectedCategory}">
+        <c:set var="hasAgeOptions" value="true"/>
+      </c:if>
+    </c:forEach>
+    <c:if test="${hasAgeOptions}">
+      <div class="age-filter">
+        <c:url var="ageAllUrl" value="/store">
+          <c:param name="species" value="${selectedSpecies}"/>
+          <c:param name="category" value="${selectedCategory}"/>
+        </c:url>
+        <a href="${ageAllUrl}" class="age-chip ${empty selectedAge ? 'active' : ''}">전체</a>
+        <c:forEach var="cat" items="${categoryTree}">
+          <c:if test="${cat.parentId == selectedCategory}">
+            <c:url var="ageUrl" value="/store">
+              <c:param name="species" value="${selectedSpecies}"/>
+              <c:param name="category" value="${selectedCategory}"/>
+              <c:param name="age" value="${cat.categoryId}"/>
+            </c:url>
+            <a href="${ageUrl}" class="age-chip ${selectedAge == cat.categoryId ? 'active' : ''}">${cat.categoryName}</a>
+          </c:if>
+        </c:forEach>
       </div>
+    </c:if>
+    <div class="store-toolbar">
+
+      <%--<div class="store-result-count">총 <strong>248</strong>개 상품</div>
+      26.07.06 지윤. 하드코딩된 숫자 -> productList.size()로 실제 조회된 상품 개수 자동 표시하도록 변경 --%>
+      <div class="store-result-count">총 <strong>${productList.size()}</strong>개 상품</div>
+      <%-- 지윤 26.07.06 정렬 기능 추가: 버튼 -> 링크로 변경, 카테고리/검색어 유지한 채 정렬만 바뀌게 처리 --%>
+<%--<c:url var="sortBaseUrl" value="/store">
+  <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
+  <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+</c:url>--%>
+<c:url var="sortBaseUrl" value="/store">
+  <c:param name="species" value="${selectedSpecies}"/>
+  <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
+  <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
+  <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+</c:url>
+
+<%--<div class="store-sort">
+  <a href="${sortBaseUrl}${empty selectedCategory && empty selectedKeyword ? '?' : '&'}sort=popular" class="sort-btn ${selectedSort == 'popular' ? 'on' : ''}">인기순</a>
+  <a href="${sortBaseUrl}${empty selectedCategory && empty selectedKeyword ? '?' : '&'}sort=latest" class="sort-btn ${selectedSort == 'latest' ? 'on' : ''}">최신순</a>
+  <a href="${sortBaseUrl}${empty selectedCategory && empty selectedKeyword ? '?' : '&'}sort=priceAsc" class="sort-btn ${selectedSort == 'priceAsc' ? 'on' : ''}">낮은가격</a>
+  <a href="${sortBaseUrl}${empty selectedCategory && empty selectedKeyword ? '?' : '&'}sort=priceDesc" class="sort-btn ${selectedSort == 'priceDesc' ? 'on' : ''}">높은가격</a>
+</div>--%>
+<%-- 지윤 26.07.06 수정: sortBaseUrl에 species가 항상 포함되어 이미 완성된 URL(?species=5...)로 나옴
+     기존 '?'/'&' 조건 분기를 두면 물음표가 두 번 붙어서 URL이 깨짐 -> 무조건 '&'로 고정 --%>
+<div class="store-sort">
+  <a href="${sortBaseUrl}&sort=popular" class="sort-btn ${selectedSort == 'popular' ? 'on' : ''}">인기순</a>
+  <a href="${sortBaseUrl}&sort=latest" class="sort-btn ${selectedSort == 'latest' ? 'on' : ''}">최신순</a>
+  <a href="${sortBaseUrl}&sort=priceAsc" class="sort-btn ${selectedSort == 'priceAsc' ? 'on' : ''}">낮은가격</a>
+  <a href="${sortBaseUrl}&sort=priceDesc" class="sort-btn ${selectedSort == 'priceDesc' ? 'on' : ''}">높은가격</a>
+</div>
+
     </div>
 
-    <div class="product-grid">
+    <%--<div class="product-grid">
       <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=1'">
         <div class="product-thumb-wrap">
           <img class="product-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&q=70&auto=format&fit=crop" alt="사료" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
@@ -208,9 +298,46 @@
         </div>
         <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
       </div>
-    </div>
+    </div>--%>
 
-    <div class="pagination">
+   <%-- 지윤 26.07.06: 하드코딩 카드 6개 -> productList 실데이터 forEach로 교체 (USER-03) --%>
+<div class="product-grid">
+  <c:forEach var="p" items="${productList}">
+    <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=${p.productId}'">
+      <div class="product-thumb-wrap">
+        <%-- 지윤 26.07.06: TB_PRODUCT.DESCRIPTION에 임시로 이미지 URL이 들어있어서 그대로 사용 (더미데이터 한정, TB_FILE 연동 전까지) --%>
+        <img class="product-thumb" src="${p.thumbnailUrl}" alt="${p.productName}" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
+        <%-- 지윤 26.07.06: 원래 있던 BEST/NEW/SALE 뱃지는 DB에 근거 데이터가 없어서, 할인율 있을 때만 SALE 뱃지 표시하도록 단순화 --%>
+        <c:if test="${p.discountRate > 0}"><span class="product-badge">SALE</span></c:if>
+        <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
+      </div>
+      <div class="product-body">
+        <div class="product-brand">${p.brandName}</div>
+        <div class="product-name">${p.productName}</div>
+        <div class="product-rating">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <%-- 지윤 26.07.06: TB_REVIEW 더미데이터가 아직 없어서 지금은 항상 0.0 (0)으로 뜸. 리뷰 기능 붙이면 자동으로 채워짐 --%>
+          <span>${p.avgRating} (${p.reviewCount})</span>
+        </div>
+        <div class="product-price">
+          <%-- 지윤 26.07.06: 할인율 있으면 정가+할인율 같이 표시, 없으면 판매가만 표시 --%>
+          <c:if test="${p.discountRate > 0}">
+            <span class="price-rate">${p.discountRate}%</span>
+            <span class="price-sale"><fmt:formatNumber value="${p.salePrice}" pattern="#,###"/>원</span>
+            <span class="price-origin"><fmt:formatNumber value="${p.price}" pattern="#,###"/>원</span>
+          </c:if>
+          <c:if test="${p.discountRate == 0}">
+            <span class="price-sale"><fmt:formatNumber value="${p.salePrice}" pattern="#,###"/>원</span>
+          </c:if>
+        </div>
+      </div>
+      <div class="product-footer"><button class="btn-cart" data-product-id="${p.productId}">장바구니 담기</button></div>
+    </div>
+  </c:forEach>
+</div>
+
+
+   <%-- <div class="pagination">
       <button class="page-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
       <button class="page-btn active">1</button>
       <button class="page-btn">2</button>
@@ -218,8 +345,38 @@
       <button class="page-btn">4</button>
       <button class="page-btn">5</button>
       <button class="page-btn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-    </div>
-  </div>
+    </div>--%>
+    <%-- 지윤 26.07.06 페이지네이션 기능 추가: 하드코딩 1~5 -> totalPages만큼 자동 생성 --%>
+<%--<c:url var="pageBaseUrl" value="/store">
+  <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
+  <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+  <c:if test="${not empty selectedSort}"><c:param name="sort" value="${selectedSort}"/></c:if>
+</c:url>--%>
+<c:url var="pageBaseUrl" value="/store">
+  <c:param name="species" value="${selectedSpecies}"/>
+  <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
+  <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
+  <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+  <c:if test="${not empty selectedSort}"><c:param name="sort" value="${selectedSort}"/></c:if>
+</c:url>
+
+<%--<c:set var="pageSep" value="${empty selectedCategory && empty selectedKeyword && empty selectedSort ? '?' : '&'}"/>--%>
+<%-- 지윤 26.07.06 수정: pageBaseUrl도 species가 항상 포함되어 이미 완성된 URL로 나옴 -> 무조건 '&'로 고정 --%>
+<c:set var="pageSep" value="&"/>
+
+<div class="pagination">
+  <c:if test="${currentPage > 1}">
+    <a class="page-btn" href="${pageBaseUrl}${pageSep}page=${currentPage - 1}"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></a>
+  </c:if>
+  <c:forEach var="p" begin="1" end="${totalPages}">
+    <a class="page-btn ${p == currentPage ? 'active' : ''}" href="${pageBaseUrl}${pageSep}page=${p}">${p}</a>
+  </c:forEach>
+  <c:if test="${currentPage < totalPages}">
+    <a class="page-btn" href="${pageBaseUrl}${pageSep}page=${currentPage + 1}"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></a>
+  </c:if>
+</div>
+
+</div>
 </div>
 
 <script>

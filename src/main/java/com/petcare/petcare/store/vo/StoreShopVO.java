@@ -14,4 +14,32 @@
 
 package com.petcare.petcare.store.vo;
 
-public class StoreShopVO {}
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Getter @Setter
+@ToString
+@NoArgsConstructor
+@Component("storeShopVO")
+public class StoreShopVO {
+
+    // ===== 상품 목록/상세 (TB_PRODUCT) =====
+    private Long productId;
+    private String productCd;
+    private String productName;
+    private String brandName;
+    private Long categoryId;
+    private String categoryName;
+    private Integer price;
+    private Integer salePrice;
+    private Integer discountRate;
+    private Integer stockQty;
+    private String thumbnailUrl;
+
+    // ===== 리뷰 (TB_REVIEW, 아직 더미데이터 없음 → 0으로 표시됨) =====
+    private Double avgRating;
+    private Integer reviewCount;
+}
