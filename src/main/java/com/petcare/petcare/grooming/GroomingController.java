@@ -10,19 +10,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.common.util.controller.CommonUtilController;
 
 @Controller("groomingController")
 @RequestMapping("/grooming")
-public class GroomingController {
-
-    @Autowired
-    private KakaoMapService kakaoMapService;
+public class GroomingController extends CommonUtilController {
 
     // ── 애견미용실 목록 ─────────────────────────────────────
     @GetMapping({"", "/"})
     public String list(Model model) throws JsonMappingException, JsonProcessingException {
         //test
-        kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
+        addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
         
         return "grooming/list";
     }
@@ -32,7 +30,7 @@ public class GroomingController {
     public String detail(@RequestParam(defaultValue = "1") String id, Model model) {
         model.addAttribute("id", id);
 
-        kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
+        addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
 
         return "grooming/detail";
     }

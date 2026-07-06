@@ -1,6 +1,12 @@
 package com.petcare.petcare.give.vo;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -72,5 +78,42 @@ public class AbandonmentVO {
     public String getNoticeEdtFormatted() {
         if (noticeEdt == null || noticeEdt.length() < 8) return noticeEdt;
         return noticeEdt.substring(0,4) + "." + noticeEdt.substring(4,6) + "." + noticeEdt.substring(6,8);
+    }
+
+    public static AbandonmentVO parseItem(JsonNode item, DateTimeFormatter fmt) {
+        AbandonmentVO vo = new AbandonmentVO();
+        vo.setDesertionNo (item.path("desertionNo").asText(""));
+        vo.setFilename    (item.path("filename").asText(""));
+        vo.setPopfile1     (item.path("popfile1").asText(""));
+        vo.setPopfile2     (item.path("popfile2").asText(""));
+        vo.setHappenDt    (item.path("happenDt").asText(""));
+        vo.setHappenPlace (item.path("happenPlace").asText(""));
+        vo.setKindCd      (item.path("kindCd").asText(""));
+        vo.setColorCd     (item.path("colorCd").asText(""));
+        vo.setAge         (item.path("age").asText(""));
+        vo.setWeight      (item.path("weight").asText(""));
+        vo.setNoticeNo    (item.path("noticeNo").asText(""));
+        vo.setNoticeSdt   (item.path("noticeSdt").asText(""));
+        vo.setNoticeEdt   (item.path("noticeEdt").asText(""));
+        vo.setProcessState(item.path("processState").asText(""));
+        vo.setSexCd       (item.path("sexCd").asText(""));
+        vo.setNeuterYn    (item.path("neuterYn").asText(""));
+        vo.setSpecialMark (item.path("specialMark").asText(""));
+        vo.setCareNm      (item.path("careNm").asText(""));
+        vo.setCareTel     (item.path("careTel").asText(""));
+        vo.setCareAddr    (item.path("careAddr").asText(""));
+        vo.setOrgNm       (item.path("orgNm").asText(""));
+        vo.setChargeNm    (item.path("chargeNm").asText(""));
+        vo.setOfficetel   (item.path("officetel").asText(""));
+        
+        // D-day 계산
+        String edt = vo.getNoticeEdt();
+        if (edt != null && edt.length() == 8) {
+            try {
+                long days = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.parse(edt, fmt));
+                vo.setDday((int) days);
+            } catch (Exception ignore) {}
+        }
+        return vo;
     }
 }

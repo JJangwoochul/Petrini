@@ -63,39 +63,8 @@
 
   <div class="order-section">
     <h3>결제 수단</h3>
-    <div class="pay-methods">
-      <input type="radio" name="pay" id="pay-card" class="pay-method" checked onchange="togglePay('card')">
-      <label for="pay-card" class="pay-label">
-        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        신용/체크카드
-      </label>
-      <input type="radio" name="pay" id="pay-kakao" class="pay-method" onchange="togglePay('kakao')">
-      <label for="pay-kakao" class="pay-label">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.58 2 10c0 2.76 1.63 5.19 4.1 6.67L5 21l4.8-2.6C10.5 18.8 11.24 19 12 19c5.52 0 10-3.58 10-9s-4.48-9-10-9z"/></svg>
-        카카오페이
-      </label>
-      <input type="radio" name="pay" id="pay-naver" class="pay-method" onchange="togglePay('naver')">
-      <label for="pay-naver" class="pay-label">
-        <svg viewBox="0 0 24 24"><path d="M4 4l7 8-7 8h2l6-7 6 7h2L13 12l7-8h-2l-6 7-6-7z"/></svg>
-        네이버페이
-      </label>
-      <input type="radio" name="pay" id="pay-transfer" class="pay-method" onchange="togglePay('transfer')">
-      <label for="pay-transfer" class="pay-label">
-        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 13h4M7 16h2"/></svg>
-        계좌이체
-      </label>
-    </div>
-
-    <div id="cardDetail" class="card-detail-row">
-      <div class="full"><label>카드 번호</label><input type="text" placeholder="0000 - 0000 - 0000 - 0000"></div>
-      <div><label>유효기간</label><input type="text" placeholder="MM / YY"></div>
-      <div><label>할부 개월</label>
-        <select><option>일시불</option><option>2개월</option><option>3개월</option><option>6개월</option></select>
-      </div>
-    </div>
-    <div id="simpleDetail" class="card-detail-row" style="display:none">
-      <div class="full" style="text-align:center;color:var(--text-muted);font-size:13px">결제하기 버튼을 누르면 간편결제 앱으로 이동합니다.</div>
-    </div>
+    <div id="payment-method"></div>
+    <div id="agreement"></div>
   </div>
 
   <div class="order-section">
@@ -110,15 +79,31 @@
       <input type="checkbox" id="agreePay" checked onchange="document.getElementById('btnPayFinal').disabled=!this.checked">
       <label for="agreePay">주문 내용을 확인했으며 결제에 동의합니다.<a href="#" onclick="event.preventDefault()">전자결제 이용약관 보기</a></label>
     </div>
-    <button id="btnPayFinal" class="btn-pay" onclick="location.href='${contextPath}/store/order-complete'">98,900원 결제하기</button>
+    <button id="btnPayFinal" class="btn-pay" onclick="requestPayment()">98,900원 결제하기</button>
   </div>
 </div>
+<script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
-function togglePay(type){
-  var card = document.getElementById('cardDetail');
-  var simple = document.getElementById('simpleDetail');
-  if(type === 'card'){ card.style.display='grid'; simple.style.display='none'; }
-  else { card.style.display='none'; simple.style.display='grid'; }
-}
+  const amount = 98900;
+  const clientKey = "${tossApiKey}"; // 토스 공개 테스트 키
+  const customerKey = "petcare_user_${memberInfo.memberId}";
+
+  const tossPayments = TossPayments(clientKey);
+  const widgets = tossPayments.widgets({ customerKey });
+
+  (async () => {
+    await widgets.setAmount({ currency: "KRW", value: amount });
+    await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
+    await widgets.renderAgreement({ selector: "#agreement" });
+  })();
+
+  async function requestPayment() {
+    await widgets.requestPayment({
+      orderId: "order-" + Date.now(),
+      orderName: "로얄캐닌 사료 4kg 외 2건",
+      successUrl: window.location.origin + "${contextPath}/store/order-complete",
+      failUrl: window.location.origin + "${contextPath}/store/payment"
+    });
+  }
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
