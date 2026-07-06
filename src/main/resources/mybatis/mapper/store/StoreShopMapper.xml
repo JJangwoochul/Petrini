@@ -18,4 +18,69 @@
   - TB_ORDER
 -->
 
+<sql id="productFilter">
+    p.STATUS_CD = 'NORMAL'
+    <!-- 지윤 26.07.06 카테고리 트리 구조 변경으로 하위카테고리까지 조회하도록 수정 -->
+    <if test="categoryId != null">
+        AND p.CATEGORY_ID IN (
+            SELECT CATEGORY_ID FROM TB_PRODUCT_CATEGORY
+            START WITH CATEGORY_ID = #{categoryId}
+            CONNECT BY PRIOR CATEGORY_ID = PARENT_ID
+        )
+    </if>
+    <if test="keyword != null and keyword != ''">
+        AND (UPPER(p.PRODUCT_NAME) LIKE '%' || UPPER(#{keyword}) || '%'
+             OR UPPER(p.BRAND_NAME) LIKE '%' || UPPER(#{keyword}) || '%')
+    </if>
+</sql>
+
+<select id="selectProductList" resultType="com.petcare.petcare.store.vo.StoreShopVO">
+    SELECT
+        p.PRODUCT_ID,
+        p.PRODUCT_CD,
+        p.PRODUCT_NAME,
+        p.BRAND_NAME,
+        p.CATEGORY_ID,
+        c.CATEGORY_NAME,
+        TO_NUMBER(p.PRICE)        AS PRICE,
+        TO_NUMBER(p.SALE_PRICE)   AS SALE_PRICE,
+        TO_NUMBER(p.STOCK_QTY)    AS STOCK_QTY,
+        p.DESCRIPTION             AS THUMBNAIL_URL,
+        NVL(rv.AVG_RATING, 0)     AS AVG_RATING,
+        NVL(rv.REVIEW_COUNT, 0)   AS REVIEW_COUNT
+    FROM TB_PRODUCT p
+    JOIN TB_PRODUCT_CATEGORY c ON c.CATEGORY_ID = p.CATEGORY_ID
+    LEFT JOIN (
+        SELECT TARGET_ID,
+               ROUND(AVG(RATING), 1) AS AVG_RATING,
+               COUNT(REVIEW_ID)      AS REVIEW_COUNT
+        FROM TB_REVIEW
+        WHERE REVIEW_TYPE = 'PRODUCT'
+        GROUP BY TARGET_ID
+    ) rv ON rv.TARGET_ID = p.PRODUCT_ID
+    WHERE <include refid="productFilter"/>
+    <choose>
+        <when test="sort == 'latest'">ORDER BY p.PRODUCT_ID DESC</when>
+        <when test="sort == 'priceAsc'">ORDER BY TO_NUMBER(p.SALE_PRICE) ASC</when>
+        <when test="sort == 'priceDesc'">ORDER BY TO_NUMBER(p.SALE_PRICE) DESC</when>
+        <otherwise>ORDER BY p.PRODUCT_ID ASC</otherwise>
+    </choose>
+    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+</select>
+
+<!-- 지윤 26.07.06: 페이지네이션용 전체 개수 조회 -->
+<select id="selectProductCount" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_PRODUCT p
+    WHERE <include refid="productFilter"/>
+</select>
+
+<!-- 지윤 26.07.06 카테고리 트리 전체 조회 -->
+<select id="selectCategoryTree" resultType="com.petcare.petcare.store.vo.CategoryVO">
+    SELECT CATEGORY_ID, PARENT_ID, CATEGORY_NAME, DEPTH
+    FROM TB_PRODUCT_CATEGORY
+    WHERE USE_YN = 'Y'
+    ORDER BY CATEGORY_ID
+</select>
+
 </mapper>
