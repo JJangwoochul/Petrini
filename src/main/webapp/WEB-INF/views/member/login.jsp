@@ -26,6 +26,9 @@
         <c:if test="${param.error eq 'empty'}">
             <p class="login-error-msg">아이디와 비밀번호를 입력해 주세요.</p>
         </c:if>
+        <c:if test="${param.error eq 'invalid'}">
+            <p class="login-error-msg">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+        </c:if>
 
         <%-- 소셜 로그인 --%>
         <div class="social-login-group">

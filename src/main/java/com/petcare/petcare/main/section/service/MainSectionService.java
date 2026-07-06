@@ -1,23 +1,20 @@
-/**
- * 역할: 메인 섹션 비즈니스 로직 (interface)
- *
- * 담당 화면
- * - main/main.jsp             인기상품·커뮤니티 (메인 내)
- *
- * 구현할 기능 예시
- * - 인기 상품 조회
- * - 커뮤니티 미리보기 조회
- *
- * 연결
- * - 구현: MainSectionServiceImpl
- * - 호출: MainSectionController
- * - DB: MainSectionMapper
- *
- * 참고 테이블
- * - TB_PRODUCT
- * - TB_COMMUNITY_POST
- */
-
 package com.petcare.petcare.main.section.service;
 
-public interface MainSectionService {}
+import java.util.List;
+
+import com.petcare.petcare.main.section.vo.MainCommunityPreviewVO;
+import com.petcare.petcare.main.section.vo.MainPopularProductVO;
+
+/*
+ *  2026/07/06 장우철
+ *  메인 섹션 인터페이스 
+ */
+
+public interface MainSectionService {
+
+    List<MainPopularProductVO> getPopularProducts(int limit);
+    // 인기상품 TOP N
+
+    List<MainCommunityPreviewVO> getLatestPosts(int limit);
+    // 커뮤니티 최신 N건 노출
+}

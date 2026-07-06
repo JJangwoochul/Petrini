@@ -2,17 +2,35 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.petcare.petcare.member.auth.mapper.MemberAuthMapper">
+<!-- 2026/07/06 장우철 -->
+    <!--
+        로그인: 이메일로 TB_MEMBER 1건 조회
+        - MEMBER_ID, EMAIL 둘 다 비교 (화면에서 이메일로 로그인)
+        - resultType: MemberAuthVO (camelCase 매핑)
+    -->
+    <select id="selectMemberByLoginId"
+            resultType="com.petcare.petcare.member.auth.vo.MemberAuthVO">
+        SELECT
+            MEMBER_NO   AS memberNo,
+            MEMBER_ID   AS memberId,
+            MEMBER_PWD  AS memberPwd,
+            MEMBER_NAME AS memberName,
+            NICKNAME    AS nickname,
+            EMAIL       AS email,
+            STATUS_CD   AS statusCd,
+            GRADE_CD    AS gradeCd
+        FROM TB_MEMBER
+        WHERE MEMBER_ID = #{loginId}
+           OR EMAIL = #{loginId}
+    </select>
 
-<!--
-  역할: MemberAuthMapper SQL 정의
-
-  쿼리 id 예시
-  - selectMemberByLoginId
-  - insertMember
-  - existsByEmail
-
-  테이블
-  - TB_MEMBER
--->
+    <!--
+        로그인 성공 시 LAST_LOGIN_DATE 갱신
+    -->
+    <update id="updateLastLoginDate">
+        UPDATE TB_MEMBER
+        SET LAST_LOGIN_DATE = SYSDATE
+        WHERE MEMBER_NO = #{memberNo}
+    </update>
 
 </mapper>

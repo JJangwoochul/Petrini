@@ -4,22 +4,26 @@
  * XML: resources/mybatis/mapper/member/auth/MemberAuthMapper.xml
  * namespace: com.petcare.petcare.member.auth.mapper.MemberAuthMapper
  *
- * 쿼리 예시
- * - selectMemberByLoginId
- * - insertMember
- * - existsByEmail
- *
- * 참고 테이블
- * - TB_MEMBER
+ * 참고 테이블: TB_MEMBER
  *
  * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
  */
 
 package com.petcare.petcare.member.auth.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 
 @Mapper
-public interface MemberAuthMapper {}
+public interface MemberAuthMapper {
+
+    // 로그인 ID(이메일)로 TB_MEMBER 1건 조회 — 없으면 null
+    MemberAuthVO selectMemberByLoginId(
+            @Param("loginId") String loginId);  // login.jsp에서 넘어온 로그인 아이디
+
+    // 로그인 성공 시 최종 로그인 일시(LAST_LOGIN_DATE) 갱신
+    int updateLastLoginDate(
+            @Param("memberNo") Long memberNo);  // 회원번호 PK
+}

@@ -1,5 +1,12 @@
+<%-- 2026/07/06 장우철 수정 
+    태그추가 , 인기상품 하드코딩 -> DB반복출력
+    커뮤니티 -> 6개 호출 -> 최신 3개를 DB에서 호출하는식으로 변경
+--%>
+
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- [변경 전] fmt 태그 없음 — 하드코딩 시 가격을 "48,900원"처럼 문자열로 직접 적었음 --%>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %> <%-- [변경 후] DB salePrice 숫자 → 천단위 콤마 포맷 --%>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="home" />
 
@@ -127,6 +134,7 @@
             <a href="${contextPath}/store" class="section-more">더보기</a>
         </div>
         <div class="home-product-grid">
+            <%-- ========== [변경 전] 인기상품 하드코딩 (더미 4건, id·이미지·가격 고정) ==========
             <a href="${contextPath}/store/detail?id=1" class="home-product-card">
                 <img class="home-product-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&q=70&auto=format&fit=crop" alt="로얄캐닌 사료"
                      onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
@@ -159,17 +167,45 @@
                     <div class="home-product-price">22,000원</div>
                 </div>
             </a>
+            ========== [변경 전] 끝 ========== --%>
+
+            <%-- [변경 후] MainSectionService → popularProducts (TB_PRODUCT TOP 8) --%>
+            <c:choose>
+            <c:when test="${not empty popularProducts}">
+                <c:forEach var="product" items="${popularProducts}">
+                    <a href="${contextPath}/store/detail?id=${product.productId}" class="home-product-card">
+                        <img class="home-product-thumb"
+                             src="${not empty product.imageUrl ? product.imageUrl : 'https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'}"
+                             alt="${product.productName}"
+                             onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
+                        <div class="home-product-body">
+                            <div class="home-product-name">${product.productName}</div>
+                            <div class="home-product-price">
+                                <c:if test="${product.discountRate > 0}">
+                                    <span class="home-product-rate">${product.discountRate}%</span>
+                                </c:if>
+                                <fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원
+                            </div>
+                        </div>
+                    </a>
+                </c:forEach>
+            </c:when>
+            <c:otherwise>
+                <p class="section-empty">등록된 인기 상품이 없습니다.</p>
+            </c:otherwise>
+            </c:choose>
         </div>
     </section>
 
 
-    <%-- 커뮤니티 --%>
+    <%-- 커뮤니티 미리보기 (최신 3건) --%>
     <section class="section-wrap">
         <div class="section-head">
             <h2 class="section-title">커뮤니티</h2>
             <a href="${contextPath}/community" class="section-more">더보기</a>
         </div>
         <div class="community-grid">
+            <%-- ========== [변경 전] 커뮤니티 하드코딩 (더미 6건, 제목·작성자·댓글수 고정) ==========
             <a href="${contextPath}/community/detail?id=1" class="community-item">
                 <div class="community-thumb">
                     <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&q=70"
@@ -289,6 +325,38 @@
                     </div>
                 </div>
             </a>
+            ========== [변경 전] 끝 ========== --%>
+
+            <%-- [변경 후] MainSectionService → communityPreview (TB_POST 최신 3건) --%>
+            <c:choose>
+            <c:when test="${not empty communityPreview}">
+                <c:forEach var="post" items="${communityPreview}">
+                    <a href="${contextPath}/community/detail?id=${post.postId}" class="community-item">
+                        <div class="community-thumb">
+                            <img src="https://placehold.co/120x120/EAF7F2/2BAB82?text=💬"
+                                 alt="커뮤니티"
+                                 onerror="this.src='https://placehold.co/120x120/EAF7F2/2BAB82?text=💬'">
+                        </div>
+                        <div class="community-content">
+                            <p class="community-title">${post.title}</p>
+                            <p class="community-desc">${post.bodyPreview}</p>
+                            <div class="community-meta">
+                                <span class="time">${post.nickname} · ${post.regDateLabel}</span>
+                                <span class="comment">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    ${post.commentCount}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </c:forEach>
+            </c:when>
+            <c:otherwise>
+                <p class="section-empty">등록된 게시글이 없습니다.</p>
+            </c:otherwise>
+            </c:choose>
         </div>
     </section>
 
