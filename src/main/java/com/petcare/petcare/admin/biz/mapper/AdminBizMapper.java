@@ -21,4 +21,8 @@
 
 package com.petcare.petcare.admin.biz.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface AdminBizMapper {}

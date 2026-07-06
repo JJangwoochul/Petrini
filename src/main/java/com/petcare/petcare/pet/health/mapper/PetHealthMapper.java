@@ -18,4 +18,8 @@
 
 package com.petcare.petcare.pet.health.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface PetHealthMapper {}

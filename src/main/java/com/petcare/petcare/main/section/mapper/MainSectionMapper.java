@@ -18,4 +18,8 @@
 
 package com.petcare.petcare.main.section.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface MainSectionMapper {}

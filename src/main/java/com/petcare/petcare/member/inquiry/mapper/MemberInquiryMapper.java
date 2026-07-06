@@ -18,4 +18,8 @@
 
 package com.petcare.petcare.member.inquiry.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface MemberInquiryMapper {}

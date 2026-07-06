@@ -23,4 +23,8 @@
 
 package com.petcare.petcare.biz.hospital.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface BizHospitalMapper {}

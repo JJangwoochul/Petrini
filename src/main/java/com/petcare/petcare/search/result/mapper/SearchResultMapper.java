@@ -20,4 +20,8 @@
 
 package com.petcare.petcare.search.result.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface SearchResultMapper {}

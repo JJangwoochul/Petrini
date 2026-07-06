@@ -18,4 +18,8 @@
 
 package com.petcare.petcare.give.talent.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface GiveTalentMapper {}

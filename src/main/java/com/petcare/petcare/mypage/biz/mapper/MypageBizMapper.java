@@ -17,4 +17,8 @@
 
 package com.petcare.petcare.mypage.biz.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface MypageBizMapper {}

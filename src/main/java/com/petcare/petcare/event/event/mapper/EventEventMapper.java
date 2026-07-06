@@ -17,4 +17,8 @@
 
 package com.petcare.petcare.event.event.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface EventEventMapper {}

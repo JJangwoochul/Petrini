@@ -21,4 +21,8 @@
 
 package com.petcare.petcare.store.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface StoreShopMapper {}

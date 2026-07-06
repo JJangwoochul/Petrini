@@ -24,4 +24,8 @@
 
 package com.petcare.petcare.biz.store.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface BizStoreMapper {}

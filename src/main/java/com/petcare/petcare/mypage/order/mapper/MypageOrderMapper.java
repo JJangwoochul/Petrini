@@ -18,4 +18,8 @@
 
 package com.petcare.petcare.mypage.order.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface MypageOrderMapper {}

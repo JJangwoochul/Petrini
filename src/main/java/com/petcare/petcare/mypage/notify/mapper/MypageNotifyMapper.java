@@ -18,4 +18,8 @@
 
 package com.petcare.petcare.mypage.notify.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface MypageNotifyMapper {}

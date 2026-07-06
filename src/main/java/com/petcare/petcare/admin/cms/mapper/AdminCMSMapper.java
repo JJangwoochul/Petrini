@@ -29,4 +29,8 @@
 
 package com.petcare.petcare.admin.cms.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface AdminCMSMapper {}

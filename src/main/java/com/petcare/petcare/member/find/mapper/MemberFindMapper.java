@@ -17,4 +17,8 @@
 
 package com.petcare.petcare.member.find.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+
+@Mapper
 public interface MemberFindMapper {}
