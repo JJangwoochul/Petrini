@@ -50,7 +50,7 @@
                         AND ROWNUM     = 1
                     ) AS THUMB_PATH
         FROM        TB_HOSPITAL H
-        WHERE       H.STATUS_CD = 'ACTIVE'
+        WHERE       H.STATUS_CD IN ('ACTIVE', 'NORMAL')
         ORDER  BY   H.HOSPITAL_ID DESC
     </select>
 
@@ -58,7 +58,6 @@
     <select id="selectHospitalById" parameterType="long" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
         SELECT  HOSPITAL_ID,
                 BIZ_NO,
-                MEMBER_NO,
                 HOSPITAL_NAME,
                 PHONE,
                 ADDR,
