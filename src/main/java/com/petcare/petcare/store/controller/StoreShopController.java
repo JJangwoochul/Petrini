@@ -72,9 +72,10 @@ public class StoreShopController {
     }
 
     
+   //지윤 26.07.07 상품 상세 실데이터 연동
     @GetMapping("/detail")
-    public String detail(@RequestParam(defaultValue = "1") String id, Model model) {
-        model.addAttribute("id", id);
+    public String detail(@RequestParam(defaultValue = "1") Long id, Model model) {
+        model.addAttribute("product", storeShopService.getProductDetail(id));
         return "store/detail";
     }
 
