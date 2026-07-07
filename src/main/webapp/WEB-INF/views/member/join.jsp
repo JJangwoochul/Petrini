@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<link rel="stylesheet" href="${contextPath}/resources/css/join.css?v=2">
+<link rel="stylesheet" href="${contextPath}/resources/css/join.css?v=3">
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
@@ -370,6 +370,7 @@
             </div>
           </div>
 
+          <%-- 2026/07/07 장우철 — Step3: 넘어가기(펫 없이 가입) + 가입완료(펫 포함) 50:50 --%>
           <div class="join-nav">
             <button type="button" class="btn-prev" id="btnStep3Prev">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -378,13 +379,26 @@
               </svg>
               이전
             </button>
-            <button type="button" class="btn-submit" id="btnSubmit">
-              가입 완료
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            </button>
+            <div class="join-nav-submit-row">
+              <button type="button" class="btn-submit-half" id="btnSkip">
+                넘어가기
+              </button>
+              <button type="button" class="btn-submit-half" id="btnSubmit">
+                가입 완료
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </button>
+            </div>
           </div>
+          <%--
+            [변경 전] Step3 버튼 — 가입 완료 단일 버튼 (UI 목업, DB 미연동)
+            변경 이유: 2026/07/07 서버 POST /join 연동 + 넘어가기(펫 선택) 2분할
+            <div class="join-nav">
+              <button type="button" class="btn-prev" id="btnStep3Prev">… 이전</button>
+              <button type="button" class="btn-submit" id="btnSubmit">가입 완료</button>
+            </div>
+          --%>
 
           <p style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:14px;">
             반려동물 정보는 나중에 마이페이지에서 추가하실 수 있습니다.
@@ -561,7 +575,44 @@
     else            err('errPwConfirm', 'okPwConfirm');
   });
 
-  /* 이메일 중복 확인 (시뮬레이션) */
+  /* ── 2026/07/07 장우철 — join(회원가입) 이메일 중복 확인 Ajax ──
+   * GET /join/check-email → EmailCheckResultVO JSON
+   */
+  document.getElementById('btnCheckEmail').addEventListener('click', function () {
+    var emailEl = document.getElementById('email');
+    var v = emailEl.value.trim();
+    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(v)) {
+      document.getElementById('errEmail').textContent = '올바른 이메일 형식을 입력해 주세요.';
+      err('errEmail', 'okEmail');
+      return;
+    }
+
+    var ctx = '${contextPath}';
+    fetch(ctx + '/join/check-email?email=' + encodeURIComponent(v))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.available) {
+          document.getElementById('okEmail').textContent = data.message;
+          ok('errEmail', 'okEmail');
+          emailChecked = true;
+          emailEl.classList.add('is-valid');
+        } else {
+          document.getElementById('errEmail').textContent = data.message;
+          err('errEmail', 'okEmail');
+          emailChecked = false;
+          emailEl.classList.remove('is-valid');
+        }
+      })
+      .catch(function () {
+        document.getElementById('errEmail').textContent = '중복 확인 중 오류가 발생했습니다.';
+        err('errEmail', 'okEmail');
+      });
+  });
+
+  /* ── [변경 전] 이메일 중복 확인 (시뮬레이션) ──
+   * 변경 이유: 2026/07/07 서버 GET /join/check-email 실조회로 교체
+   *
   document.getElementById('btnCheckEmail').addEventListener('click', function () {
     var emailEl = document.getElementById('email');
     var v = emailEl.value.trim();
@@ -570,12 +621,12 @@
       err('errEmail', 'okEmail');
       return;
     }
-    /* 실제 구현에서는 Ajax 호출 */
     clearMsg('errEmail', 'okEmail');
     ok('errEmail', 'okEmail');
     emailChecked = true;
     emailEl.classList.add('is-valid');
   });
+   */
 
   /* 이메일 변경 시 중복 확인 초기화 */
   document.getElementById('email').addEventListener('input', function () {
@@ -646,6 +697,7 @@
 
   /* ──────────────────────────────
      STEP 3 : 반려동물 등록
+     2026/07/07 장우철 — 서버 연동(POST /join), 넘어가기 버튼
   ────────────────────────────── */
 
   /* 동물 종류 버튼 */
@@ -671,12 +723,93 @@
     reader.readAsDataURL(this.files[0]);
   });
 
-  /* 가입 완료 */
+  /* ── 2026/07/07 장우철 — join(회원가입) POST /join 공통 처리 ──
+   * skipPet=true  → 반려동물 필드 미전송 (넘어가기) — Service 가 TB_PET INSERT 스킵
+   * skipPet=false → 펫 필드 전송 — petName 있을 때만 TB_PET INSERT (백엔드 hasPetInfo)
+   * Java 수정 불필요: MemberAuthServiceImpl.register() 가 petName 빈 값이면 펫 등록 안 함
+   */
+  function submitJoin(skipPet) {
+    var fd = new FormData();
+
+    function yn(id) {
+      var el = document.getElementById(id);
+      return el && el.checked ? 'Y' : 'N';
+    }
+
+    /* Step 1 약관 → TB_MEMBER_AGREEMENT */
+    fd.append('agreeService',   yn('agreeService'));
+    fd.append('agreePrivacy',   yn('agreePrivacy'));
+    fd.append('agreeLocation',  yn('agreeLocation'));
+    fd.append('agreeMarketing', yn('agreeMarketing'));
+
+    /* Step 2 회원 정보 → TB_MEMBER */
+    fd.append('memberName', document.getElementById('memberName').value.trim());
+    fd.append('email', document.getElementById('email').value.trim());
+    fd.append('password', document.getElementById('password').value);
+    fd.append('passwordConfirm', document.getElementById('passwordConfirm').value);
+    fd.append('phone', document.getElementById('phone').value.trim());
+    fd.append('zipcode', document.getElementById('zipcode').value);
+    fd.append('addr1', document.getElementById('addr1').value);
+    fd.append('addr2', document.getElementById('addr2').value);
+
+    /* Step 3 반려동물 — 넘어가기면 아예 안 보냄 */
+    if (!skipPet) {
+      fd.append('petType', document.getElementById('petType').value);
+      fd.append('petName', document.getElementById('petName').value.trim());
+      fd.append('petBreed', document.getElementById('petBreed').value.trim());
+      fd.append('petAge', document.getElementById('petAge').value);
+      fd.append('petWeight', document.getElementById('petWeight').value);
+    }
+
+    var ctx = '${contextPath}';
+    fetch(ctx + '/join', { method: 'POST', body: fd })
+      .then(function (res) { return res.text(); })
+      .then(function (text) {
+        if (text === 'OK') {
+          goStep(4);
+          return;
+        }
+        if (text.indexOf('ERROR:') === 0) {
+          var code = text.replace('ERROR:', '');
+          var msg = {
+            duplicate: '이미 가입된 이메일입니다.',
+            password: '비밀번호 규칙을 확인해 주세요.',
+            password_mismatch: '비밀번호가 일치하지 않습니다.',
+            terms: '필수 약관에 동의해 주세요.',
+            phone: '전화번호 형식을 확인해 주세요.',
+            email: '이메일 형식을 확인해 주세요.',
+            name: '이름을 입력해 주세요.'
+          };
+          alert(msg[code] || '가입 처리 중 오류가 발생했습니다. (' + code + ')');
+          return;
+        }
+        alert('가입 처리 중 알 수 없는 응답입니다.');
+      })
+      .catch(function () {
+        alert('서버와 통신하지 못했습니다.');
+      });
+  }
+
+  document.getElementById('btnStep3Prev').addEventListener('click', function () { goStep(2); });
+
+  /* 2026/07/07 장우철 — 넘어가기: 회원+약관만 가입, 반려동물은 마이페이지에서 추후 등록 */
+  document.getElementById('btnSkip').addEventListener('click', function () {
+    submitJoin(true);
+  });
+
+  /* 2026/07/07 장우철 — 가입 완료: 입력한 반려동물 정보가 있으면 함께 등록 */
+  document.getElementById('btnSubmit').addEventListener('click', function () {
+    submitJoin(false);
+  });
+
+  /* ── [변경 전] 가입 완료 — UI 목업만 (DB 저장 없이 step4 로 이동) ──
+   * 변경 이유: 2026/07/07 POST /join 서버 연동 (submitJoin 함수로 분리)
+   *
   document.getElementById('btnStep3Prev').addEventListener('click', function () { goStep(2); });
   document.getElementById('btnSubmit').addEventListener('click', function () {
-    /* 실제 프로젝트에서는 Ajax POST /member/register */
     goStep(4);
   });
+   */
 
 })();
 </script>

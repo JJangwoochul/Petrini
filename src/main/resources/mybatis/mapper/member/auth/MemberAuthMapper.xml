@@ -33,4 +33,107 @@
         WHERE MEMBER_NO = #{memberNo}
     </update>
 
+    <!-- 2026/07/07 장우철 — join(회원가입) -->
+
+    <!--
+        이메일 중복 확인 (join — checkEmail)
+        - 가입 시 이메일 = MEMBER_ID 이므로 MEMBER_ID / EMAIL 둘 다 검사
+    -->
+    <select id="countMemberByEmail" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_MEMBER
+         WHERE MEMBER_ID = #{email}
+            OR EMAIL     = #{email}
+    </select>
+
+    <!-- 회원 INSERT (join — register 1단계) -->
+    <insert id="insertMember" parameterType="com.petcare.petcare.member.auth.vo.MemberRegisterVO">
+        <selectKey keyProperty="memberNo" resultType="long" order="BEFORE">
+            SELECT SEQ_MEMBER.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TB_MEMBER (
+            MEMBER_NO,
+            MEMBER_ID,
+            MEMBER_PWD,
+            MEMBER_NAME,
+            NICKNAME,
+            EMAIL,
+            PHONE,
+            ZIP_CODE,
+            ADDR1,
+            ADDR2,
+            GRADE_CD,
+            POINT_BALANCE,
+            STATUS_CD,
+            MARKETING_YN,
+            JOIN_DATE
+        ) VALUES (
+            #{memberNo},
+            #{email},
+            #{password},
+            #{memberName},
+            #{memberName},
+            #{email},
+            #{phone},
+            #{zipcode, jdbcType=VARCHAR},
+            #{addr1, jdbcType=VARCHAR},
+            #{addr2, jdbcType=VARCHAR},
+            'BRONZE',
+            0,
+            'NORMAL',
+            #{agreeMarketing},
+            SYSDATE
+        )
+    </insert>
+
+    <!--
+        약관 동의 1건 INSERT (join — register 2단계, 종류별 반복 호출)
+        - AGREE_ID 는 SEQ_MEMBER_AGREEMENT 전역 증가 (회원별 1부터가 아님)
+    -->
+    <insert id="insertMemberAgreement">
+        INSERT INTO TB_MEMBER_AGREEMENT (
+            AGREE_ID,
+            MEMBER_NO,
+            TERMS_TYPE,
+            TERMS_VER,
+            AGREE_YN,
+            AGREE_DATE
+        ) VALUES (
+            SEQ_MEMBER_AGREEMENT.NEXTVAL,
+            #{memberNo},
+            #{termsType},
+            #{termsVer},
+            #{agreeYn},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 반려동물 INSERT (join — register 3단계, petName 있을 때만) -->
+    <insert id="insertPet" parameterType="com.petcare.petcare.member.auth.vo.MemberRegisterVO">
+        <selectKey keyProperty="petId" resultType="long" order="BEFORE">
+            SELECT SEQ_PET.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TB_PET (
+            PET_ID,
+            MEMBER_NO,
+            PET_NAME,
+            SPECIES,
+            BREED,
+            AGE,
+            WEIGHT,
+            IS_REPRESENT,
+            REG_DATE
+        ) VALUES (
+            #{petId},
+            #{memberNo},
+            #{petName},
+            #{petType},
+            #{petBreed, jdbcType=VARCHAR},
+            #{petAge, jdbcType=NUMERIC},
+            #{petWeight, jdbcType=NUMERIC},
+            'Y',
+            SYSDATE
+        )
+    </insert>
+
 </mapper>
