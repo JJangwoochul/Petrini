@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
+import com.petcare.petcare.member.auth.vo.AdminAuthVO;
 import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
 import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
@@ -30,6 +31,76 @@ public class MemberAuthServiceImpl implements MemberAuthService {
 
     // 2026/07/06 장우철 — login(로그인)
 
+    // 2026/07/07 장우철 — 관리자 로그인 확장
+    // 변경 이유:
+    // - 관리자도 별도 /admin/login 이 아니라 유저 홈(/login)에서 동일하게 로그인.
+    // - TB_MEMBER 에 없으면 TB_ADMIN 을 조회해서, 관리자면 세션 role=ADMIN 으로 반환.
+    // - 관리자 여부는 "어느 테이블에서 조회됐는지"로 구분 (TB_ADMIN 유지, ADMIN_NO FK 보존).
+    @Override
+    public MemberVO login(String loginId, String rawPassword) {
+
+        String id = loginId.trim();
+
+        // [1] 먼저 일반 회원 조회 (이메일 = MEMBER_ID 또는 EMAIL)
+        MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(id);
+
+        // [2] 회원이면 기존 회원 로그인 처리 (role=USER)
+        if (found != null) {
+
+            // [2-1] 정상 회원만 로그인 허용 (STATUS_CD = NORMAL)
+            if (!"NORMAL".equals(found.getStatusCd())) {
+                return null;
+            }
+
+            // [2-2] BCrypt 비밀번호 검증
+            if (found.getMemberPwd() == null
+                    || !passwordEncoder.matches(rawPassword, found.getMemberPwd())) {
+                return null;
+            }
+
+            // [2-3] 로그인 성공 → 최종 로그인 일시 갱신
+            memberAuthMapper.updateLastLoginDate(found.getMemberNo());
+
+            // [2-4] 세션용 MemberVO 변환 (비밀번호는 세션에 넣지 않음)
+            MemberVO sessionMember = new MemberVO();
+            sessionMember.setMemberNo(found.getMemberNo());
+            sessionMember.setMemberId(found.getMemberId());
+            sessionMember.setEmail(found.getEmail());
+            sessionMember.setMemberName(found.getMemberName());
+            sessionMember.setNickname(found.getNickname());
+            sessionMember.setRole("USER");
+            return sessionMember;
+        }
+
+        // [3] 회원이 아니면 관리자(TB_ADMIN) 조회 (ADMIN_ID 는 이메일 형식 아님)
+        AdminAuthVO admin = memberAuthMapper.selectAdminByLoginId(id);
+        if (admin == null) {
+            return null; // 회원도 관리자도 아님 → 로그인 실패
+        }
+
+        // [3-1] 정상 관리자만 로그인 허용 (STATUS_CD = NORMAL)
+        if (!"NORMAL".equals(admin.getStatusCd())) {
+            return null;
+        }
+
+        // [3-2] BCrypt 비밀번호 검증 (관리자도 회원과 동일한 PasswordEncoder 사용)
+        if (admin.getAdminPwd() == null
+                || !passwordEncoder.matches(rawPassword, admin.getAdminPwd())) {
+            return null;
+        }
+
+        // [3-3] 세션용 MemberVO 변환 — 관리자 (role=ADMIN)
+        MemberVO sessionAdmin = new MemberVO();
+        sessionAdmin.setAdminNo(admin.getAdminNo());
+        sessionAdmin.setMemberId(admin.getAdminId());
+        sessionAdmin.setMemberName(admin.getAdminName());
+        sessionAdmin.setRole("ADMIN");
+        return sessionAdmin;
+    }
+
+    /* ── [변경 전] login (2026/07/06) — TB_MEMBER 단독 조회, role=USER 고정 ──
+     * 변경 이유: 관리자도 유저 홈(/login)에서 로그인할 수 있도록 TB_ADMIN 조회 분기 추가
+     *
     @Override
     public MemberVO login(String loginId, String rawPassword) {
 
@@ -63,6 +134,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         sessionMember.setRole("USER");
         return sessionMember;
     }
+     */
 
     // 2026/07/07 장우철 — join(회원가입)
 

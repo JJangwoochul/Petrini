@@ -12,6 +12,7 @@ package com.petcare.petcare.member.auth.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.member.auth.vo.AdminAuthVO;
 import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
 
@@ -22,6 +23,11 @@ public interface MemberAuthMapper {
 
     /** 로그인 ID(이메일)로 TB_MEMBER 1건 조회 — 없으면 null */
     MemberAuthVO selectMemberByLoginId(
+            @Param("loginId") String loginId);
+
+    // 2026/07/07 장우철 — 관리자 로그인 확장
+    /** 로그인 ID(admin 등)로 TB_ADMIN 1건 조회 — 없으면 null */
+    AdminAuthVO selectAdminByLoginId(
             @Param("loginId") String loginId);
 
     /** 로그인 성공 시 최종 로그인 일시(LAST_LOGIN_DATE) 갱신 */
