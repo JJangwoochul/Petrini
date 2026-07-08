@@ -8,15 +8,19 @@
                                 REF_TYPE, 
                                 REF_ID, 
                                 FILE_URL, 
-                                --FILE_ORDER, 
+                                DRIVE_FILE_ID,
+                                <!-- FILE_ORDER, -->
+                                ORIGIN_NAME,
                                 REG_DATE
                             )
         VALUES              (
                                 SEQ_FILE.NEXTVAL, 
                                 #{refType}, 
                                 #{refId}, 
-                                #{filePath}, 
-                                --#{fileOrder}, 
+                                #{fileUrl}, 
+                                #{driveFileId, jdbcType=VARCHAR},
+                                <!--#{fileOrder}, --> 
+                                #{originName, jdbcType=VARCHAR},
                                 SYSDATE
                             )
     </insert>
@@ -26,7 +30,7 @@
                     REF_TYPE, 
                     REF_ID, 
                     FILE_URL, 
-                    --FILE_ORDER, 
+                    <!--FILE_ORDER, --> 
                     REG_DATE
         FROM        TB_FILE
         WHERE       REF_TYPE = #{refType}

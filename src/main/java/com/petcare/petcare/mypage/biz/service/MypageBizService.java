@@ -3,7 +3,7 @@
  *
  * 담당 화면
  * - mypage/biz.jsp            사업자 관리
- * - mypage/biz-apply.jsp      사업자 신청
+ * - mypage/biz/apply.jsp      사업자 신청
  *
  * 구현할 기능 예시
  * - 사업자 신청 등록
@@ -20,4 +20,12 @@
 
 package com.petcare.petcare.mypage.biz.service;
 
-public interface MypageBizService {}
+import java.util.List;
+
+import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
+
+public interface MypageBizService {
+    public void applyBusiness(MypageBizVO vo, List<FileVO> fileList) throws Exception;
+    public MypageBizVO getBizAuthStatus(String bizId) throws Exception;
+}

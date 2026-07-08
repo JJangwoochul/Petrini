@@ -19,7 +19,7 @@
     window.kakaoPs   – kakao.maps.services.Places  (장소 검색 등에 사용)
 --%>
 <script type="text/javascript"
-  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsApiKey}&autoload=false&libraries=services">
+  src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJsApiKey}&autoload=true&libraries=services">
 </script>
 <script>
   kakao.maps.load(function () {
