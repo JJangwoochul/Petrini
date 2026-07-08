@@ -6,7 +6,6 @@
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
-
 <style>
   .hosp-hero{background:linear-gradient(135deg,#0C4A6E 0%,#0284C7 60%,#38BDF8 100%);padding:40px 0;color:#fff;text-align:center}
   .hosp-hero-inner{max-width:var(--inner-width);margin:0 auto;padding:0 20px}
@@ -30,12 +29,25 @@
   /* 지도 영역 */
   .hosp-map-area{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--radius-md);height:280px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;overflow:hidden}
   .hosp-map-area img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md)}
+  /* 지도 위 검색바 */
+  .hosp-map-search{display:flex;gap:8px;margin-bottom:12px}
+  .hosp-map-search input{
+    flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:10px 14px;font-size:14px;outline:none;font-family:inherit
+  }
+  .hosp-map-search input:focus{border-color:var(--primary)}
+  .hosp-map-search button{
+    padding:10px 18px;border:none;border-radius:var(--radius-sm);
+    background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap
+  }
   /* 병원 목록 */
   .hosp-list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .hosp-list-head span{font-size:14px;color:var(--text-sub)}
   .hosp-list-head strong{color:var(--text-main);font-weight:700}
   .hosp-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start;transition:var(--transition);cursor:pointer}
   .hosp-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  /* 카드 활성화 (마커 클릭 시 해당 카드 강조) */
+  .hosp-card.active{border-color:var(--primary);box-shadow:0 0 0 2px rgba(2,132,199,.2)}
   .hosp-thumb{width:88px;height:88px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0}
   .hosp-body{flex:1;min-width:0}
   .hosp-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
@@ -95,10 +107,17 @@
   </aside>
 
   <div>
+    <%-- 검색바 --%>
+    <div class="hosp-map-search">
+      <input type="text" id="mapSearchInput" placeholder="장소명, 지역명 검색...">
+      <button onclick="searchPlace()">검색</button>
+    </div>
+
     <div class="hosp-map-area" id="kakao-map"></div>
-    <c:set var="mapLevel"     value="3"/>
+    <c:set var="mapLevel" value="3"/>
     <c:set var="mapAddMarker" value="${true}"/>
     <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
+    
     <div class="hosp-list-head">
       <span>검색 결과 <strong>${hospitalList.size()}개</strong> 병원</span>
       <div style="display:flex;gap:8px">
@@ -111,9 +130,9 @@
     <c:choose>
       <c:when test="${not empty hospitalList}">
         <c:forEach var="h" items="${hospitalList}">
-          <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=${h.hospitalId}'">
-            <%-- <img class="hosp-thumb" src="https://placehold.co/88x88/E0F2FE/0284C7?text=병원" alt="${h.hospitalName}"> --%>
-              <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${hospital.hospitalName}">
+          <%-- id 추가 + onclick을 selectHospital으로 --%>
+          <div class="hosp-card" id="card-${h.hospitalId}" onclick="selectHospital(${h.hospitalId})">
+            <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${h.hospitalName}">
             <div class="hosp-body">
               <div class="hosp-tags">
                 <span class="hosp-tag type">동물병원</span>
@@ -154,27 +173,149 @@
 </div>
 
 <script>
-var chips = document.querySelectorAll('.chip');
+  /* ── 1) JSTL → JS 배열 변환 ── */
+  var HOSPITALS = [
+    <c:forEach items="${hospitalList}" var="h" varStatus="st">
+      {
+        id: ${h.hospitalId},
+        name: "${h.hospitalName}",
+        lat: ${h.lat != null ? h.lat : 'null'},
+        lng: ${h.lng != null ? h.lng : 'null'}
+      }
+      <c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+  ];
 
-for (var i = 0; i < chips.length; i++) {
+  /* ── 2) 전역 변수 ── */
+  var map;
+  var markers = [];
+  var infowindows = [];
 
-    chips[i].addEventListener('click', function () {
+  /* ── 3) 페이지 로딩 → 마커 생성 ── */
+  document.addEventListener('DOMContentLoaded', function() {
+      map = window.kakaoMap;
+      if (!map) return;
 
-        // 같은 그룹의 chip들
-        var group = this.closest('.hosp-filter-chips, .hosp-list-head div');
+      var bounds = new kakao.maps.LatLngBounds();
+      var hasMarker = false;
 
-        var siblings = group.querySelectorAll('.chip');
+      for (var i = 0; i < HOSPITALS.length; i++) {
+          var h = HOSPITALS[i];
+          if (h.lat === null || h.lng === null) {
+              continue;
+          }
 
-        for (var j = 0; j < siblings.length; j++) {
-            siblings[j].classList.remove('on');
-        }
+          var position = new kakao.maps.LatLng(h.lat, h.lng);
+          var marker = new kakao.maps.Marker({ position: position, map: map });
 
-        // 클릭한 chip 활성화
-        this.classList.add('on');
+          var infowindow = new kakao.maps.InfoWindow({
+              content: '<div style="padding:8px 12px;font-size:13px;font-weight:800;'
+                     + 'color:#1A1A2E;white-space:nowrap;">'
+                     + '<a href="${contextPath}/hospital/detail?id=' + h.id + '" '
+                     + 'style="color:inherit;text-decoration:none">' + h.name + '</a></div>'
+          });
 
-    });
+          addMarkerEvents(marker, infowindow, h.id);
 
-}
+          markers.push(marker);
+          infowindows.push(infowindow);
+          bounds.extend(position);
+          hasMarker = true;
+      }
+
+      if (hasMarker) {
+          map.setBounds(bounds);
+      }
+  });
+
+
+  /* ── 4) 마커 이벤트 등록 (클로저 해결용 별도 함수) ── */
+  function addMarkerEvents(marker, infowindow, hospitalId) {
+      kakao.maps.event.addListener(marker, 'mouseover', function() {
+          infowindow.open(map, marker);
+      });
+      kakao.maps.event.addListener(marker, 'mouseout', function() {
+          infowindow.close();
+      });
+      kakao.maps.event.addListener(marker, 'click', function() {
+          highlightCard(hospitalId);
+      });
+  }
+
+  /* ── 5) 카드 클릭 → 지도 이동 + 말풍선 + 강조 ── */
+  function selectHospital(hospitalId) {
+      var hospital = null;
+      var hospitalIdx = -1;
+      var markerIdx = 0;
+  
+      for (var i = 0; i < HOSPITALS.length; i++) {
+          var h = HOSPITALS[i];
+          if (h.lat === null || h.lng === null) {
+              continue;
+          }
+          if (h.id === hospitalId) {
+              hospital = h;
+              hospitalIdx = markerIdx;
+              break;
+          }
+          markerIdx++;
+      }
+  
+      if (hospital !== null && hospitalIdx >= 0) {
+          map.setCenter(new kakao.maps.LatLng(hospital.lat, hospital.lng));
+          map.setLevel(4);
+  
+          for (var i = 0; i < infowindows.length; i++) {
+              infowindows[i].close();
+          }
+          infowindows[hospitalIdx].open(map, markers[hospitalIdx]);
+      }
+  
+      highlightCard(hospitalId);
+  }
+  
+  /* ── 6) 카드 강조 ── */
+  function highlightCard(hospitalId) {
+      var allCards = document.querySelectorAll('.hosp-card');
+      for (var i = 0; i < allCards.length; i++) {
+          allCards[i].classList.remove('active');
+      }
+      var card = document.getElementById('card-' + hospitalId);
+      if (card) {
+          card.classList.add('active');
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+  }
+  
+  /* ── 7) 검색 ── */
+  function searchPlace() {
+      var keyword = document.getElementById('mapSearchInput').value.trim();
+      if (!keyword) return;
+  
+      var kakaoPs = window.kakaoPs;
+      kakaoPs.keywordSearch(keyword, function(results, status) {
+          if (status === kakao.maps.services.Status.OK) {
+              var first = results[0];
+              map.setCenter(new kakao.maps.LatLng(first.y, first.x));
+              map.setLevel(5);
+          } else {
+              alert('검색 결과가 없습니다.');
+          }
+      });
+  }
+  
+  /* ── 8) 필터 chip 토글 ── */
+  var chips = document.querySelectorAll('.chip');
+  for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', function () {
+          var group = this.closest('.hosp-filter-chips, .hosp-list-head div');
+          var siblings = group.querySelectorAll('.chip');
+          for (var j = 0; j < siblings.length; j++) {
+              siblings[j].classList.remove('on');
+          }
+          this.classList.add('on');
+      });
+  }
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

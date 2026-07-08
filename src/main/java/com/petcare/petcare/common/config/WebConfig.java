@@ -4,12 +4,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.google.api.client.util.Value;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
     @Value("${file.upload-dir}")
-    private String uploadDir;
+    public String uploadDir;
     
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

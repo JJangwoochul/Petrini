@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <!DOCTYPE html>
 <html lang="ko">
 

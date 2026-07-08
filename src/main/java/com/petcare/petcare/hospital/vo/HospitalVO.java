@@ -15,11 +15,13 @@ package com.petcare.petcare.hospital.vo;
 
 import java.util.Date;
 
+import com.petcare.petcare.common.external.service.Mapperable;
+
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class HospitalVO {
+public class HospitalVO implements Mapperable{
     private Long   hospitalId;     // HOSPITAL_ID
     private Long   bizNo;          // BIZ_NO
     private Long   memberNo;       // MEMBER_NO
@@ -34,5 +36,14 @@ public class HospitalVO {
     private Date   approveDate;    // APPROVE_DATE
     private String hoursJson;      // HOURS_JSON
     private String deptList;       // DEPT_LIST    
-    private String thumbPath;        
+    private String thumbPath;    
+    
+    @Override
+    public String getMarkerId()   { return String.valueOf(hospitalId); }
+    @Override
+    public String getMarkerName() { return hospitalName; }
+    @Override
+    public Double getMarkerLat()  { return lat; }
+    @Override
+    public Double getMarkerLng()  { return lng; }
 }

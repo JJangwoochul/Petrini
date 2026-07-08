@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.petcare.petcare.mypage.biz.mapper.MypageBizMapper">
 
-<!--
+  <!--
   역할: MypageBizMapper SQL 정의
 
   쿼리 id 예시
@@ -14,4 +13,61 @@
   - TB_BUSINESS
 -->
 
+<mapper namespace="com.petcare.petcare.mypage.biz.mapper.MypageBizMapper">
+    <insert id="insertBusiness" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+        <selectKey keyProperty="bizNo" resultType="long" order="AFTER">
+            SELECT MAX(BIZ_NO) FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
+        </selectKey>
+        INSERT INTO TB_BUSINESS (
+                                    BIZ_ID, 
+                                    BIZ_TYPE, 
+                                    BIZ_REG_NO, 
+                                    BIZ_NAME, 
+                                    CEO_NAME, 
+                                    PHONE, 
+                                    STATUS_CD, 
+                                    JOIN_DATE
+                                ) 
+        VALUES                  (
+                                    #{bizId}, 
+                                    #{bizType}, 
+                                    #{bizRegNo}, 
+                                    #{bizName}, 
+                                    #{ceoName}, 
+                                    #{phone, jdbcType=VARCHAR}, 
+                                    'PENDING', 
+                                    SYSDATE
+                                )
+    </insert>
+
+    <insert id="insertBusinessAuth" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+        INSERT INTO TB_BUSINESS_AUTH (
+                                        BIZ_NO, 
+                                        BIZ_REG_NO, 
+                                        BIZ_TYPE, 
+                                        STATUS_CD, 
+                                        APPLY_DATE
+                                    ) 
+        VALUES                      (
+                                        #{bizNo}, 
+                                        #{bizRegNo}, 
+                                        #{bizType}, 
+                                        'PENDING', 
+                                        SYSDATE
+                                    )
+    </insert>
+
+    <!-- 사업자 신청 상태 조회 -->
+    <select id="selectBizAuthStatus" parameterType="string" resultType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+        SELECT      B.BIZ_NO,
+                    B.BIZ_NAME,
+                    B.BIZ_TYPE,
+                    B.BIZ_REG_NO,
+                    A.STATUS_CD
+        FROM        TB_BUSINESS B
+        JOIN        TB_BUSINESS_AUTH A ON A.BIZ_NO = B.BIZ_NO
+        WHERE       B.BIZ_ID = #{bizId}
+        ORDER BY    A.APPLY_DATE DESC
+        FETCH FIRST 1 ROW ONLY
+    </select>
 </mapper>

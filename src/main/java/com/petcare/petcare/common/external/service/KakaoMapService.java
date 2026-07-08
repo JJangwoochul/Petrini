@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petcare.petcare.hospital.vo.HospitalVO;
 
 @Service
 public class KakaoMapService {
@@ -33,61 +32,60 @@ public class KakaoMapService {
     @Value("${kakao.js-api-key}")
     private String kakaoJsApiKey; 
     
-    // Controller에서 한 줄로 호출하면 model에 지도 관련 속성 전부 세팅
-    //상세페이지 단일마커용
-    public void addMapAttributes(Model model, Double lat, Double lng, String bizName) {
-        model.addAttribute("kakaoJsApiKey", kakaoJsApiKey);
-        model.addAttribute("bizName", bizName);
+    // //상세페이지 단일마커용(다중마커와 통합-불필요X)
+    // public void addMapAttributes(Model model, Double lat, Double lng, String bizName) {
+    //     model.addAttribute("kakaoJsApiKey", kakaoJsApiKey);
+    //     model.addAttribute("bizName", bizName);
         
-        //주소 -> 위경도 변환
-        // try {
-        //     model.addAttribute("mapAddress", address);
-        //     String url = "https://dapi.kakao.com/v2/local/search/address.json?analyze_type=similar&page=1&size=10&query={query}";
+    //     //주소 -> 위경도 변환
+    //     // try {
+    //     //     model.addAttribute("mapAddress", address);
+    //     //     String url = "https://dapi.kakao.com/v2/local/search/address.json?analyze_type=similar&page=1&size=10&query={query}";
 
-        //     HttpHeaders headers = new HttpHeaders();
-        //     headers.set("Authorization", "KakaoAK " + kakaoRestApiKey);
+    //     //     HttpHeaders headers = new HttpHeaders();
+    //     //     headers.set("Authorization", "KakaoAK " + kakaoRestApiKey);
 
-        //     RestTemplate restTemplate = new RestTemplate();
-        //     ResponseEntity<String> response = restTemplate.exchange(
-        //         url, HttpMethod.GET, new HttpEntity<>(headers), String.class, address
-        //     );
+    //     //     RestTemplate restTemplate = new RestTemplate();
+    //     //     ResponseEntity<String> response = restTemplate.exchange(
+    //     //         url, HttpMethod.GET, new HttpEntity<>(headers), String.class, address
+    //     //     );
 
-        //     JsonNode documents = new ObjectMapper().readTree(response.getBody()).path("documents");
+    //     //     JsonNode documents = new ObjectMapper().readTree(response.getBody()).path("documents");
 
-        //     if (documents.isArray() && documents.size() > 0) {
-        //         model.addAttribute("mapLat", documents.get(0).path("y").asText());
-        //         model.addAttribute("mapLng", documents.get(0).path("x").asText());
-        //     } 
-        //     else {
-        //         setFallback(model);
-        //     }
-        // } catch (Exception e) {
-        //     setFallback(model);
-        // }
+    //     //     if (documents.isArray() && documents.size() > 0) {
+    //     //         model.addAttribute("mapLat", documents.get(0).path("y").asText());
+    //     //         model.addAttribute("mapLng", documents.get(0).path("x").asText());
+    //     //     } 
+    //     //     else {
+    //     //         setFallback(model);
+    //     //     }
+    //     // } catch (Exception e) {
+    //     //     setFallback(model);
+    //     // }
 
-        if (lat != null && lng != null) {
-            model.addAttribute("mapLat", lat);
-            model.addAttribute("mapLng", lng);
-        } else {
-            setFallback(model);
-        }
-    }
+    //     if (lat != null && lng != null) {
+    //         model.addAttribute("mapLat", lat);
+    //         model.addAttribute("mapLng", lng);
+    //     } else {
+    //         setFallback(model);
+    //     }
+    // }
 
     //리스트 다중마커용
-    public void addMapAttributes(Model model, List<HospitalVO> hospitalList) {
+    public void addMapAttributes(Model model, List<? extends Mapperable> list) {
         model.addAttribute("kakaoJsApiKey", kakaoJsApiKey);
 
         ObjectMapper mapper = new ObjectMapper();
         List<Map<String, Object>> markers = new ArrayList<>();
 
         //위치정보 있는 병원만 JSON 변환
-        for (HospitalVO hospital : hospitalList) {
-            if (hospital.getLat() != null && hospital.getLng() != null) {
+        for (Mapperable item : list) {
+            if (item.getMarkerLat() != null && item.getMarkerLng() != null) {
                 Map<String, Object> marker = new HashMap<>();
-                marker.put("id", hospital.getHospitalId());
-                marker.put("name", hospital.getHospitalName());
-                marker.put("lat", hospital.getLat());
-                marker.put("lng", hospital.getLng());
+                marker.put("id", item.getMarkerId());
+                marker.put("name", item.getMarkerName());
+                marker.put("lat", item.getMarkerLat());
+                marker.put("lng", item.getMarkerLng());
                 markers.add(marker);
             }
         }
@@ -104,17 +102,11 @@ public class KakaoMapService {
             model.addAttribute("markersJson", "[]");
         }
 
-        boolean found = false;
-        for (HospitalVO hospital : hospitalList) {
-            if (hospital.getLat() != null && hospital.getLng() != null) {
-                model.addAttribute("mapLat", hospital.getLat());
-                model.addAttribute("mapLng", hospital.getLng());
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
+        if (!markers.isEmpty()) {
+            model.addAttribute("mapLat", markers.get(0).get("lat"));
+            model.addAttribute("mapLng", markers.get(0).get("lng"));
+        } 
+        else {
             setFallback(model);
         }
     }
