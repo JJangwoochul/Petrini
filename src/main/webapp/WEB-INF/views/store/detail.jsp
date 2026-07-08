@@ -132,10 +132,13 @@
   <label>옵션 선택</label>
   <select id="optionSelect" onchange="onOptionChange()">
     <c:forEach var="opt" items="${product.optionList}">
-      <option value="${opt.addPrice}" data-stock="${opt.stockQty}">
-        <c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
-        <c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
-      </option>
+
+      <%-- 지윤 26.07.08 수정: data-option-id 추가 (장바구니 담을 때 어느 옵션인지 알아야 해서) --%>
+  <option value="${opt.addPrice}" data-stock="${opt.stockQty}" data-option-id="${opt.optionId}">
+  <c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
+  <c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
+  </option>
+
     </c:forEach>
   </select>
 </div>
@@ -149,18 +152,25 @@
   </div>
   <%-- 지윤 26.07.07 추가: 재고 초과 경고 --%>
   <div id="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
-</div>
+  </div>
 
-      <%-- 지윤 26.07.07 수정: 하드코딩 48,900원 -> 실제 판매가로 변경 --%>
-      <div class="detail-total">
-      <span>총 결제금액</span>
-      <strong id="totalPrice"><fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원</strong>
-      </div>
+  <%-- 지윤 26.07.07 수정: 하드코딩 48,900원 -> 실제 판매가로 변경 --%>
+  <div class="detail-total">
+  <span>총 결제금액</span>
+  <strong id="totalPrice"><fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원</strong>
+  </div>
 
-      <div class="detail-btn-row">
-        <button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>찜</button>
-        <button class="btn-cart-detail" onclick="alert('장바구니에 담았습니다.')">장바구니</button>
-        <button class="btn-buy-detail" onclick="location.href='${contextPath}/store/order'">바로구매</button>
+<div class="detail-btn-row">
+<button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기">찜</button>
+<%-- 지윤 26.07.08 수정: alert만 뜨던 가짜 버튼 -> 실제 TB_CART_ITEM에 저장하는 폼으로 변경 --%>
+<form id="cartForm" method="post" action="${contextPath}/store/cart/add" style="display:contents">
+  <input type="hidden" name="productId" value="${product.productId}">
+  <input type="hidden" name="optionId" id="cartOptionId">
+  <input type="hidden" name="qty" id="cartQty">
+  <input type="hidden" name="price" id="cartPrice">
+  <button type="submit" class="btn-cart-detail">장바구니</button>
+</form>
+<button class="btn-buy-now">바로구매</button>
       </div>
     </div>
   </div>
@@ -290,5 +300,16 @@ function showTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('on');
   btn.classList.add('on');
 }
+//지윤 26.07.08 장바구니 폼 제출 전, 선택된 옵션ID/수량/가격을 hidden input에 채워넣기
+document.getElementById('cartForm').addEventListener('submit', function () {
+  var sel = document.getElementById('optionSelect');
+  var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
+  var addPrice = (sel && sel.options.length > 0) ? (parseInt(sel.value) || 0) : 0;
+  var qty = parseInt(document.getElementById('qty').value);
+
+  document.getElementById('cartOptionId').value = optionId;
+  document.getElementById('cartQty').value = qty;
+  document.getElementById('cartPrice').value = ${product.salePrice} + addPrice;
+});
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

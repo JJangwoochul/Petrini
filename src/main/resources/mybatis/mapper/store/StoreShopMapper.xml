@@ -20,7 +20,7 @@
 
 <sql id="productFilter">
     p.STATUS_CD = 'NORMAL'
-    <!-- 지윤 26.07.06 카테고리 트리 구조 변경으로 하위카테고리까지 조회하도록 수정 -->
+<!-- 지윤 26.07.06 카테고리 트리 구조 변경으로 하위카테고리까지 조회하도록 수정 -->
     <if test="categoryId != null">
         AND p.CATEGORY_ID IN (
             SELECT CATEGORY_ID FROM TB_PRODUCT_CATEGORY
@@ -110,6 +110,7 @@
     ) rv ON rv.TARGET_ID = p.PRODUCT_ID
     WHERE p.PRODUCT_ID = #{productId}
 </select>
+
 <!-- 지윤 26.07.07 상품 이미지 목록 조회 (등록순) -->
 <select id="selectProductImages" resultType="String">
     SELECT FILE_URL
@@ -117,6 +118,7 @@
     WHERE REF_TYPE = 'PRODUCT' AND REF_ID = #{productId}
     ORDER BY FILE_ID
 </select>
+
 <!-- 지윤 26.07.07 상품 옵션 목록 조회 -->
 <select id="selectProductOptions" resultType="com.petcare.petcare.store.vo.OptionVO">
     SELECT OPTION_ID, PRODUCT_ID, OPTION_COLOR, OPTION_SIZE, ADD_PRICE, STOCK_QTY
@@ -142,4 +144,54 @@
     WHERE q.PRODUCT_ID = #{productId}
     ORDER BY q.QNA_ID DESC
 </select>
+
+<!-- 지윤 26.07.08 장바구니 목록 조회 (회원번호 기준, 상품/옵션 정보 조인) -->
+<select id="selectCartItems" resultType="com.petcare.petcare.store.vo.CartItemVO">
+    SELECT
+        ci.CART_ITEM_ID,
+        ci.CART_ID,
+        ci.PRODUCT_ID,
+        ci.OPTION_ID,
+        p.PRODUCT_NAME,
+        p.BRAND_NAME,
+        p.DESCRIPTION       AS THUMBNAIL_URL,
+        o.OPTION_COLOR,
+        o.OPTION_SIZE,
+        TO_NUMBER(ci.QTY)   AS QTY,
+        TO_NUMBER(ci.PRICE) AS PRICE,
+        o.STOCK_QTY
+    FROM TB_CART_ITEM ci
+    JOIN TB_CART c ON c.CART_ID = ci.CART_ID
+    JOIN TB_PRODUCT p ON p.PRODUCT_ID = ci.PRODUCT_ID
+    LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = ci.OPTION_ID
+    WHERE c.MEMBER_NO = #{memberNo}
+    ORDER BY ci.CART_ITEM_ID
+</select>
+
+<!-- 지윤 26.07.08 이 회원의 장바구니(CART_ID) 조회 -->
+<select id="selectCartIdByMember" resultType="Long">
+    SELECT CART_ID FROM TB_CART WHERE MEMBER_NO = #{memberNo}
+</select>
+<!-- 지윤 26.07.08 신규 장바구니 생성 (CART_ID는 기존 최대값+1로 간단 처리, 시퀀스 없음) -->
+<insert id="insertCart">
+    INSERT INTO TB_CART (CART_ID, MEMBER_NO, REG_DATE)
+    VALUES ((SELECT NVL(MAX(CART_ID), 0) + 1 FROM TB_CART), #{memberNo}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'))
+</insert>
+<!-- 지윤 26.07.08 같은 상품+옵션이 이미 담겨있는지 확인 -->
+<select id="selectExistingCartItemId" resultType="Long">
+    SELECT CART_ITEM_ID FROM TB_CART_ITEM
+    WHERE CART_ID = #{cartId} AND PRODUCT_ID = #{productId} AND OPTION_ID = #{optionId}
+    AND ROWNUM = 1
+</select>
+<!-- 지윤 26.07.08 기존 항목 수량 추가 -->
+<update id="updateCartItemQtyAdd">
+    UPDATE TB_CART_ITEM
+    SET QTY = TO_NUMBER(QTY) + #{addQty}
+    WHERE CART_ITEM_ID = #{cartItemId}
+</update>
+<!-- 지윤 26.07.08 새 장바구니 항목 추가 (CART_ITEM_ID는 최대값+1로 간단 처리) -->
+<insert id="insertCartItem">
+    INSERT INTO TB_CART_ITEM (CART_ITEM_ID, CART_ID, PRODUCT_ID, OPTION_ID, QTY, PRICE)
+    VALUES ((SELECT NVL(MAX(CART_ITEM_ID), 0) + 1 FROM TB_CART_ITEM), #{cartId}, #{productId}, #{optionId}, #{qty}, #{price})
+</insert>
 </mapper>

@@ -26,6 +26,7 @@ import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.QnaVO;
+import com.petcare.petcare.store.vo.CartItemVO;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
@@ -52,14 +53,14 @@ public class StoreShopServiceImpl implements StoreShopService {
         return list;
     }
 
-  //지윤 26.07.06 총 페이지 수 계산 (전체개수 / 12, 나머지 있으면 올림)
+//지윤 26.07.06 총 페이지 수 계산 (전체개수 / 12, 나머지 있으면 올림)
   @Override
   public int getTotalPages(Long categoryId, String keyword) {
       int totalCount = storeShopMapper.selectProductCount(categoryId, keyword);
       return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
   }
 
- //지윤 26.07.06 카테고리 트리는 가공 없이 그대로 전달
+//지윤 26.07.06 카테고리 트리는 가공 없이 그대로 전달
   @Override
   public List<CategoryVO> getCategoryTree() {
       return storeShopMapper.selectCategoryTree();
@@ -97,8 +98,30 @@ product.setRating1Percent(total == 0 ? 0 : count[1] * 100 / total);
 
 //지윤 26.07.07 Q&A 목록 조회
 product.setQnaList(storeShopMapper.selectProductQna(productId));
+    }
+    return product;
 }
-return product;
 
+//지윤 26.07.08 장바구니 목록은 가공 없이 그대로 전달
+@Override
+public List<CartItemVO> getCartItems(Long memberNo) {
+    return storeShopMapper.selectCartItems(memberNo);
+}
+
+//지윤 26.07.08 장바구니 담기 1)회원 장바구니 없으면 생성 2)같은 상품+옵션 있으면 수량합산 3)없으면 새 줄 추가
+@Override
+public void addToCart(Long memberNo, Long productId, Long optionId, int qty, int price) {
+    Long cartId = storeShopMapper.selectCartIdByMember(memberNo);
+    if (cartId == null) {
+        storeShopMapper.insertCart(memberNo);
+        cartId = storeShopMapper.selectCartIdByMember(memberNo);
+    }
+
+    Long existingItemId = storeShopMapper.selectExistingCartItemId(cartId, productId, optionId);
+    if (existingItemId != null) {
+        storeShopMapper.updateCartItemQtyAdd(existingItemId, qty);
+    } else {
+        storeShopMapper.insertCartItem(cartId, productId, optionId, qty, price);
+    }
 }
 }

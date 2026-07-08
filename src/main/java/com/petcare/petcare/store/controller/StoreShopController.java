@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.PostMapping;
 
 //지윤 26.07.06 상품목록 조회용 Service 클래스 import
 import com.petcare.petcare.store.service.StoreShopService;
@@ -72,17 +73,32 @@ public class StoreShopController {
     }
 
     
+    
    //지윤 26.07.07 상품 상세 실데이터 연동
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") Long id, Model model) {
-        model.addAttribute("product", storeShopService.getProductDetail(id));
-        return "store/detail";
-    }
+    model.addAttribute("product", storeShopService.getProductDetail(id));
+    return "store/detail";
+}
 
+//지윤 26.07.08 장바구니 담기 (POST). 로그인 기능 없어서 MEMBER_NO=1 임시 고정
+@PostMapping("/cart/add")
+public String addToCart(@RequestParam Long productId,
+                         @RequestParam(required = false) Long optionId,
+                         @RequestParam(defaultValue = "1") int qty,
+                         @RequestParam int price) {
+    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+    storeShopService.addToCart(memberNo, productId, optionId, qty, price);
+    return "redirect:/store/cart";
+}
+
+    //지윤 26.07.08 장바구니 실데이터 연동 (로그인 기능 없어서 MEMBER_NO=1 임시 고정)
     @GetMapping("/cart")
-    public String cart() {
-        return "store/cart";
-    }
+    public String cart(Model model) {
+    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+    model.addAttribute("cartItems", storeShopService.getCartItems(memberNo));
+    return "store/cart";
+}
 
     @GetMapping("/order")
     public String order() {

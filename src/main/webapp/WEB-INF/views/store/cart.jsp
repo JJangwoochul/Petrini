@@ -1,8 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- 지윤 26.07.08 가격 콤마 표시용 fmt 태그 --%>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
+
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
+
 <style>
 .cart-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:flex-start}
 .cart-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
@@ -41,47 +45,38 @@
 <div class="cart-wrap">
   <div>
     <div class="cart-section">
+
+      <%-- 지윤 26.07.08 수정: 카드 3개 하드코딩(로얄캐닌/노즈워크/냥냥) -> TB_CART_ITEM 실데이터로 변경
+           장바구니 CRUD 중 R(읽기) 구현 - Controller가 넘겨준 cartItems를 c:forEach로 개수만큼 자동 반복 --%>
       <div class="cart-section-head">
-        <input type="checkbox" class="cart-cb" checked>
+        <input type="checkbox" class="cart-cb" id="checkAll" checked>
         <h2>장바구니</h2>
-        <span class="cart-count">3</span>
+        <span class="cart-count">${cartItems.size()}</span>
       </div>
-      <div class="cart-item" data-price="48900">
-        <input type="checkbox" class="cart-cb" checked>
-        <img class="cart-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=160&q=70&auto=format&fit=crop" alt="사료" onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=IMG'">
-        <div class="cart-info">
-          <div class="cart-brand">로얄캐닌</div>
-          <div class="cart-name">미디엄 어덜트 사료 4kg</div>
-          <div class="cart-opt">옵션: 4kg</div>
+      <c:if test="${empty cartItems}">
+        <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">장바구니가 비어있습니다.</div>
+      </c:if>
+      <c:forEach var="item" items="${cartItems}">
+        <div class="cart-item" data-price="${item.price}" data-cart-item-id="${item.cartItemId}">
+          <input type="checkbox" class="cart-cb" checked>
+          <img class="cart-thumb" src="${item.thumbnailUrl}" alt="${item.productName}" onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=IMG'">
+          <div class="cart-info">
+            <div class="cart-brand">${item.brandName}</div>
+            <div class="cart-name">${item.productName}</div>
+            <div class="cart-opt">
+              <c:choose>
+                <c:when test="${not empty item.optionColor && item.optionColor != '기본'}">옵션: ${item.optionColor} / ${item.optionSize}</c:when>
+                <c:when test="${not empty item.optionSize}">옵션: ${item.optionSize}</c:when>
+                <c:otherwise>단일 옵션</c:otherwise>
+              </c:choose>
+            </div>
+          </div>
+          <div class="cart-qty-wrap"><button>−</button><input type="number" value="${item.qty}" readonly><button>+</button></div>
+          <div class="cart-price"><fmt:formatNumber value="${item.price * item.qty}" pattern="#,###"/>원</div>
+          <button class="cart-del">×</button>
         </div>
-        <div class="cart-qty-wrap"><button>−</button><input type="number" value="1" readonly><button>+</button></div>
-        <div class="cart-price">48,900원</div>
-        <button class="cart-del">×</button>
-      </div>
-      <div class="cart-item" data-price="18500">
-        <input type="checkbox" class="cart-cb" checked>
-        <img class="cart-thumb" src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=160&q=70&auto=format&fit=crop" alt="장난감" onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=IMG'">
-        <div class="cart-info">
-          <div class="cart-brand">PetPlay</div>
-          <div class="cart-name">노즈워크 매트 오렌지</div>
-          <div class="cart-opt">단일 옵션</div>
-        </div>
-        <div class="cart-qty-wrap"><button>−</button><input type="number" value="2" readonly><button>+</button></div>
-        <div class="cart-price">37,000원</div>
-        <button class="cart-del">×</button>
-      </div>
-      <div class="cart-item" data-price="13000">
-        <input type="checkbox" class="cart-cb" checked>
-        <img class="cart-thumb" src="https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=160&q=70&auto=format&fit=crop" alt="간식" onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=IMG'">
-        <div class="cart-info">
-          <div class="cart-brand">냥냥</div>
-          <div class="cart-name">수제 져키 트릿 200g</div>
-          <div class="cart-opt">단일 옵션</div>
-        </div>
-        <div class="cart-qty-wrap"><button>−</button><input type="number" value="1" readonly><button>+</button></div>
-        <div class="cart-price">13,000원</div>
-        <button class="cart-del">×</button>
-      </div>
+      </c:forEach>
+
     </div>
   </div>
   <div class="cart-summary">

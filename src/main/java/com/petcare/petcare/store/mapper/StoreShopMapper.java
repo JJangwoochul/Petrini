@@ -31,6 +31,7 @@ import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.QnaVO;
+import com.petcare.petcare.store.vo.CartItemVO;
 
 @Mapper
 public interface StoreShopMapper {
@@ -59,4 +60,22 @@ public interface StoreShopMapper {
 
    //지윤 26.07.07 상품 Q&A 목록 조회
    List<QnaVO> selectProductQna(@Param("productId") Long productId);
+
+   //지윤 26.07.08 장바구니 목록 조회 (상품/옵션 정보 조인)
+   List<CartItemVO> selectCartItems(@Param("memberNo") Long memberNo);
+
+   //지윤 26.07.08 이 회원의 장바구니(CART_ID) 조회, 없으면 null
+   Long selectCartIdByMember(@Param("memberNo") Long memberNo);
+
+   //지윤 26.07.08 신규 장바구니 생성
+   void insertCart(@Param("memberNo") Long memberNo);
+
+   //지윤 26.07.08 이미 담긴 상품+옵션인지 확인 (있으면 그 CART_ITEM_ID, 없으면 null)
+   Long selectExistingCartItemId(@Param("cartId") Long cartId, @Param("productId") Long productId, @Param("optionId") Long optionId);
+
+   //지윤 26.07.08 기존 항목 수량 추가
+   void updateCartItemQtyAdd(@Param("cartItemId") Long cartItemId, @Param("addQty") int addQty);
+
+   //지윤 26.07.08 새 항목 추가
+   void insertCartItem(@Param("cartId") Long cartId, @Param("productId") Long productId, @Param("optionId") Long optionId, @Param("qty") int qty, @Param("price") int price);
 }

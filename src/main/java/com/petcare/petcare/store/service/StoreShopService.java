@@ -30,6 +30,7 @@ import java.util.List;
 
 import com.petcare.petcare.store.vo.StoreShopVO;
 import com.petcare.petcare.store.vo.CategoryVO;
+import com.petcare.petcare.store.vo.CartItemVO;
 
 public interface StoreShopService {
 //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
@@ -43,4 +44,10 @@ List<CategoryVO> getCategoryTree();
 
 //지윤 26.07.07 상품 상세 조회
 StoreShopVO getProductDetail(Long productId);
+
+//지윤 26.07.08 장바구니 목록 조회
+List<CartItemVO> getCartItems(Long memberNo);
+
+//지윤 26.07.08 장바구니 담기 (같은 상품+옵션 있으면 수량 합침, 없으면 새로 추가)
+void addToCart(Long memberNo, Long productId, Long optionId, int qty, int price);
 }
