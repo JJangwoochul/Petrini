@@ -78,4 +78,16 @@ public interface StoreShopMapper {
 
    //지윤 26.07.08 새 항목 추가
    void insertCartItem(@Param("cartId") Long cartId, @Param("productId") Long productId, @Param("optionId") Long optionId, @Param("qty") int qty, @Param("price") int price);
+
+   //지윤 26.07.08 장바구니 수량 변경
+   void updateCartItemQty(@Param("cartItemId") Long cartItemId, @Param("qty") int qty);
+
+   //지윤 26.07.08 장바구니 항목 삭제
+   void deleteCartItem(@Param("cartItemId") Long cartItemId);
+
+   //지윤 26.07.08 장바구니 항목 여러 개 한번에 삭제 (선택삭제/전체삭제용)
+   void deleteCartItems(@Param("cartItemIds") java.util.List<Long> cartItemIds);
+
+   //지윤 26.07.08 헤더 장바구니 뱃지용 - 회원의 장바구니 항목 개수
+   int selectCartItemCount(@Param("memberNo") Long memberNo);
 }

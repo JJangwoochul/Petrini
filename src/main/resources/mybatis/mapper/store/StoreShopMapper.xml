@@ -178,9 +178,17 @@
     VALUES ((SELECT NVL(MAX(CART_ID), 0) + 1 FROM TB_CART), #{memberNo}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'))
 </insert>
 <!-- 지윤 26.07.08 같은 상품+옵션이 이미 담겨있는지 확인 -->
+<!-- 지윤 26.07.08 수정: optionId가 null일 때 ORA-17004(jdbcType 미지정) 나서 jdbcType=NUMERIC 명시.
+     'OPTION_ID = NULL'은 SQL에서 항상 거짓이라 옵션없는 상품은 매번 새 줄로 담기던 것도 IS NULL 분기로 수정 -->
 <select id="selectExistingCartItemId" resultType="Long">
     SELECT CART_ITEM_ID FROM TB_CART_ITEM
-    WHERE CART_ID = #{cartId} AND PRODUCT_ID = #{productId} AND OPTION_ID = #{optionId}
+    WHERE CART_ID = #{cartId} AND PRODUCT_ID = #{productId}
+    <if test="optionId != null">
+        AND OPTION_ID = #{optionId, jdbcType=NUMERIC}
+    </if>
+    <if test="optionId == null">
+        AND OPTION_ID IS NULL
+    </if>
     AND ROWNUM = 1
 </select>
 <!-- 지윤 26.07.08 기존 항목 수량 추가 -->
@@ -190,8 +198,40 @@
     WHERE CART_ITEM_ID = #{cartItemId}
 </update>
 <!-- 지윤 26.07.08 새 장바구니 항목 추가 (CART_ITEM_ID는 최대값+1로 간단 처리) -->
+<!-- 지윤 26.07.08 수정: optionId null 삽입 시 ORA-17004 방지용 jdbcType=NUMERIC 명시 -->
 <insert id="insertCartItem">
     INSERT INTO TB_CART_ITEM (CART_ITEM_ID, CART_ID, PRODUCT_ID, OPTION_ID, QTY, PRICE)
-    VALUES ((SELECT NVL(MAX(CART_ITEM_ID), 0) + 1 FROM TB_CART_ITEM), #{cartId}, #{productId}, #{optionId}, #{qty}, #{price})
+    VALUES ((SELECT NVL(MAX(CART_ITEM_ID), 0) + 1 FROM TB_CART_ITEM), #{cartId}, #{productId}, #{optionId, jdbcType=NUMERIC}, #{qty}, #{price})
 </insert>
+
+<!-- 지윤 26.07.08 장바구니 수량 변경 -->
+<update id="updateCartItemQty">
+    UPDATE TB_CART_ITEM
+    SET QTY = #{qty}
+    WHERE CART_ITEM_ID = #{cartItemId}
+</update>
+
+<!-- 지윤 26.07.08 장바구니 항목 삭제 -->
+<delete id="deleteCartItem">
+    DELETE FROM TB_CART_ITEM
+    WHERE CART_ITEM_ID = #{cartItemId}
+</delete>
+
+<!-- 지윤 26.07.08 장바구니 항목 여러 개 한번에 삭제 (선택삭제/전체삭제) -->
+<delete id="deleteCartItems">
+    DELETE FROM TB_CART_ITEM
+    WHERE CART_ITEM_ID IN
+    <foreach collection="cartItemIds" item="id" open="(" separator="," close=")">
+        #{id}
+    </foreach>
+</delete>
+
+<!-- 지윤 26.07.08 헤더 장바구니 뱃지용 - 회원의 장바구니 항목 개수 -->
+<select id="selectCartItemCount" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_CART_ITEM ci
+    JOIN TB_CART c ON c.CART_ID = ci.CART_ID
+    WHERE c.MEMBER_NO = #{memberNo}
+</select>
+
 </mapper>

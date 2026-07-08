@@ -50,4 +50,16 @@ List<CartItemVO> getCartItems(Long memberNo);
 
 //지윤 26.07.08 장바구니 담기 (같은 상품+옵션 있으면 수량 합침, 없으면 새로 추가)
 void addToCart(Long memberNo, Long productId, Long optionId, int qty, int price);
+
+//지윤 26.07.08 장바구니 수량 변경
+void updateCartItemQty(Long cartItemId, int qty);
+
+//지윤 26.07.08 장바구니 항목 삭제
+void deleteCartItem(Long cartItemId);
+
+//지윤 26.07.08 장바구니 항목 여러 개 한번에 삭제 (선택삭제/전체삭제용)
+void deleteCartItems(java.util.List<Long> cartItemIds);
+
+//장바구니 숫자뱃지
+int getCartItemCount(Long memberNo);
 }

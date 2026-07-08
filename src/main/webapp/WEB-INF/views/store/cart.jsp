@@ -7,6 +7,13 @@
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
+<%-- 지윤 26.07.08 추가: 상세페이지에서 장바구니 담기 성공 시 이 페이지로 리다이렉트되면서 뜨는 팝업 --%>
+<c:if test="${cartAddSuccess}">
+<script>alert('장바구니에 상품을 담았습니다.');</script>
+</c:if>
+
+
+
 <style>
 .cart-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:flex-start}
 .cart-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
@@ -46,13 +53,17 @@
   <div>
     <div class="cart-section">
 
-      <%-- 지윤 26.07.08 수정: 카드 3개 하드코딩(로얄캐닌/노즈워크/냥냥) -> TB_CART_ITEM 실데이터로 변경
-           장바구니 CRUD 중 R(읽기) 구현 - Controller가 넘겨준 cartItems를 c:forEach로 개수만큼 자동 반복 --%>
-      <div class="cart-section-head">
-        <input type="checkbox" class="cart-cb" id="checkAll" checked>
-        <h2>장바구니</h2>
-        <span class="cart-count">${cartItems.size()}</span>
-      </div>
+   <div class="cart-section-head">
+  <input type="checkbox" class="cart-cb" id="checkAll" checked>
+  <h2>장바구니</h2>
+  <span class="cart-count">${cartItems.size()}</span>
+  <%-- 지윤 26.07.08 추가: 선택삭제(체크된 것만) / 전체삭제(장바구니 통째로) 버튼 --%>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <button type="button" id="btnDeleteSelected" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">선택삭제</button>
+    <button type="button" id="btnDeleteAll" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">전체삭제</button>
+  </div>
+</div>
+
       <c:if test="${empty cartItems}">
         <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">장바구니가 비어있습니다.</div>
       </c:if>
@@ -111,12 +122,19 @@ function recalc(){
 
 document.querySelectorAll('.cart-qty-wrap button').forEach(function(btn){
   btn.addEventListener('click', function(){
+    var item = this.closest('.cart-item');
     var input = this.parentElement.querySelector('input');
     var val = parseInt(input.value, 10);
     var isPlus = this.textContent.trim() === '+';
     val = isPlus ? val + 1 : Math.max(1, val - 1);
     input.value = val;
     recalc();
+
+    fetch('${contextPath}/store/cart/updateQty', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: 'cartItemId=' + item.dataset.cartItemId + '&qty=' + val
+    });
   });
 });
 
@@ -132,8 +150,74 @@ document.querySelectorAll('.cart-cb').forEach(function(cb){
 
 document.querySelectorAll('.cart-del').forEach(function(btn){
   btn.addEventListener('click', function(){
-    this.closest('.cart-item').remove();
+    var item = this.closest('.cart-item');
+    var cartItemId = item.dataset.cartItemId;
+    item.remove();
     recalc();
+
+    fetch('${contextPath}/store/cart/delete', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: 'cartItemId=' + cartItemId
+    }).then(function(){ refreshCartCount(); });
+  });
+});
+
+//지윤 26.07.08 추가: 선택삭제/전체삭제 (체크된 항목 전부 서버에서 삭제 후 화면에서 제거)
+document.getElementById('btnDeleteSelected').addEventListener('click', function(){
+  var checkedItems = Array.from(document.querySelectorAll('.cart-item')).filter(function(item){
+    return item.querySelector('.cart-cb').checked;
+  });
+  if (checkedItems.length === 0) {
+    alert('삭제할 상품을 선택해주세요.');
+    return;
+  }
+  if (!confirm(checkedItems.length + '개 상품을 삭제하시겠습니까?')) return;
+
+  var params = new URLSearchParams();
+  checkedItems.forEach(function(item){
+    params.append('cartItemIds', item.dataset.cartItemId);
+  });
+
+ fetch('${contextPath}/store/cart/deleteAll', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: params.toString()
+  }).then(function(res){
+    if (res.ok) {
+      checkedItems.forEach(function(item){ item.remove(); });
+      recalc();
+    } else {
+      alert('삭제에 실패했습니다.');
+    }
+  });
+});
+
+//지윤 26.07.08 추가: 전체삭제 (체크 여부 상관없이 장바구니에 있는 항목 전부 삭제)
+document.getElementById('btnDeleteAll').addEventListener('click', function(){
+  var allItems = Array.from(document.querySelectorAll('.cart-item'));
+  if (allItems.length === 0) {
+    alert('장바구니가 비어있습니다.');
+    return;
+  }
+  if (!confirm('장바구니를 전체 삭제하시겠습니까?')) return;
+
+  var params = new URLSearchParams();
+  allItems.forEach(function(item){
+    params.append('cartItemIds', item.dataset.cartItemId);
+  });
+
+  fetch('${contextPath}/store/cart/deleteAll', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: params.toString()
+  }).then(function(res){
+    if (res.ok) {
+      allItems.forEach(function(item){ item.remove(); });
+      recalc();
+    } else {
+      alert('삭제에 실패했습니다.');
+    }
   });
 });
 

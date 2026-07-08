@@ -336,7 +336,7 @@
           </c:if>
         </div>
       </div>
-      <div class="product-footer"><button class="btn-cart" data-product-id="${p.productId}">장바구니 담기</button></div>
+      <div class="product-footer"><button class="btn-cart" data-product-id="${p.productId}" data-price="${p.salePrice}">장바구니 담기</button></div>
     </div>
   </c:forEach>
 </div>
@@ -385,13 +385,29 @@
 </div>
 
 <script>
+
 document.querySelectorAll('.sort-btn').forEach(b => b.addEventListener('click', function(){
   document.querySelectorAll('.sort-btn').forEach(x => x.classList.remove('on'));
   this.classList.add('on');
 }));
+//지윤 26.07.08 수정: 가짜 alert -> 실제 /store/cart/add 호출로 변경 (페이지 이동 없이 AJAX로 담기)
 document.querySelectorAll('.btn-cart').forEach(b => b.addEventListener('click', e => {
   e.stopPropagation();
-  alert('장바구니에 담았습니다!');
+  var productId = b.dataset.productId;
+  var price = b.dataset.price;
+  fetch('${contextPath}/store/cart/add', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: 'productId=' + productId + '&optionId=&qty=1&price=' + price
+  }).then(function(res){
+    if (res.ok) {
+      alert('장바구니에 담았습니다!');
+      refreshCartCount();
+    } else {
+      alert('장바구니 담기에 실패했습니다.');
+    }
+  });
 }));
 </script>
+
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

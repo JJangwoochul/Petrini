@@ -124,4 +124,30 @@ public void addToCart(Long memberNo, Long productId, Long optionId, int qty, int
         storeShopMapper.insertCartItem(cartId, productId, optionId, qty, price);
     }
 }
+
+//지윤 26.07.08 장바구니 수량 변경 (최소 1개)
+@Override
+public void updateCartItemQty(Long cartItemId, int qty) {
+    if (qty < 1) qty = 1;
+    storeShopMapper.updateCartItemQty(cartItemId, qty);
+}
+
+//지윤 26.07.08 장바구니 항목 삭제
+@Override
+public void deleteCartItem(Long cartItemId) {
+    storeShopMapper.deleteCartItem(cartItemId);
+}
+
+//지윤 26.07.08 장바구니 항목 여러 개 한번에 삭제
+@Override
+public void deleteCartItems(java.util.List<Long> cartItemIds) {
+    if (cartItemIds == null || cartItemIds.isEmpty()) return;
+    storeShopMapper.deleteCartItems(cartItemIds);
+}
+
+//지윤 26.07.08 헤더 장바구니 뱃지용
+@Override
+public int getCartItemCount(Long memberNo) {
+    return storeShopMapper.selectCartItemCount(memberNo);
+}
 }
