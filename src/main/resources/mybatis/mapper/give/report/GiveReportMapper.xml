@@ -5,15 +5,139 @@
 
 <!--
   역할: GiveReportMapper SQL 정의
+  - 박유정 / 2026-07-06~07
 
-  쿼리 id 예시
-  - selectReportList
-  - selectReportDetail
-  - insertReport
-  - updateReport
+  테이블: TB_POST (BOARD_TYPE = 'LOST'), TB_FILE (사진)
+  시퀀스: SEQ_TB_POST (POST_ID), SEQ_TB_FILE (FILE_ID)
 
-  테이블
-  - TB_ANIMAL_REPORT
+  [등록] insertReport → TB_POST
+  [사진] insertFile → TB_FILE (로컬 C:/upload/ 저장 후)
+  [조회] selectReportList / selectReportDetail / selectFileUrlsByPostId
 -->
+
+  <insert id="insertReport" parameterType="com.petcare.petcare.give.report.vo.GiveReportVO">
+    <selectKey keyProperty="postId" resultType="long" order="BEFORE">
+      SELECT SEQ_TB_POST.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO TB_POST (
+      POST_ID,
+      MEMBER_NO,
+      BOARD_TYPE,
+      TITLE,
+      BODY,
+      LOST_SPECIES,
+      LOST_FEATURE,
+      LOST_LAT,
+      LOST_LNG,
+      LOST_CONTACT,
+      REGION,
+      STATUS_CD,
+      REG_DATE,
+      TAGS,
+      VIEW_COUNT,
+      LIKE_CNT
+    ) VALUES (
+      #{postId},
+      #{memberNo},
+      #{boardType},
+      #{title},
+      #{body},
+      #{lostSpecies},
+      #{lostFeature},
+      #{lostLat},
+      #{lostLng},
+      #{lostContact},
+      #{region},
+      #{statusCd},
+      SYSDATE,
+      #{tags},
+      0,
+      0
+    )
+  </insert>
+
+  <select id="selectMemberNoByMemberId" resultType="long">
+    SELECT MEMBER_NO
+    FROM TB_MEMBER
+    WHERE MEMBER_ID = #{memberId}
+  </select>
+
+  <select id="selectMemberNoByEmail" resultType="long">
+    SELECT MEMBER_NO
+    FROM TB_MEMBER
+    WHERE EMAIL = #{email}
+  </select>
+
+  <sql id="reportColumns">
+    POST_ID      AS postId,
+    MEMBER_NO    AS memberNo,
+    BOARD_TYPE   AS boardType,
+    TITLE        AS title,
+    DBMS_LOB.SUBSTR(BODY, 32000, 1) AS body,
+    LOST_SPECIES AS lostSpecies,
+    LOST_FEATURE AS lostFeature,
+    LOST_LAT     AS lostLat,
+    LOST_LNG     AS lostLng,
+    LOST_CONTACT AS lostContact,
+    REGION       AS region,
+    STATUS_CD    AS statusCd,
+    REG_DATE     AS regDate,
+    TAGS         AS tags,
+    VIEW_COUNT   AS viewCount,
+    LIKE_CNT     AS likeCnt
+  </sql>
+
+  <select id="selectReportDetail"
+        parameterType="long"
+        resultType="com.petcare.petcare.give.report.vo.GiveReportVO">
+    SELECT
+    <include refid="reportColumns"/>
+    FROM TB_POST
+    WHERE POST_ID = #{postId}
+      AND BOARD_TYPE = 'LOST'
+  </select>
+
+  <select id="selectReportList"
+        resultType="com.petcare.petcare.give.report.vo.GiveReportVO">
+    SELECT
+    <include refid="reportColumns"/>
+    FROM TB_POST
+    WHERE BOARD_TYPE = 'LOST'
+      AND STATUS_CD = 'ACTIVE'
+    ORDER BY REG_DATE DESC
+  </select>
+
+  <!-- TB_FILE INSERT — 제보 사진 메타 (로컬 저장 후 호출) -->
+  <insert id="insertFile" parameterType="com.petcare.petcare.give.report.vo.GiveReportFileVO">
+    <selectKey keyProperty="fileId" resultType="long" order="BEFORE">
+      SELECT SEQ_TB_FILE.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO TB_FILE (
+      FILE_ID,
+      REF_TYPE,
+      REF_ID,
+      DRIVE_FILE_ID,
+      FILE_URL,
+      ORIGIN_NAME,
+      REG_DATE
+    ) VALUES (
+      #{fileId},
+      #{refType},
+      #{refId},
+      #{driveFileId},
+      #{fileUrl},
+      #{originName},
+      SYSDATE
+    )
+  </insert>
+
+  <!-- 게시글(postId)에 연결된 사진 URL 목록 — 상세·목록 썸네일 -->
+  <select id="selectFileUrlsByPostId" resultType="string">
+    SELECT FILE_URL
+    FROM TB_FILE
+    WHERE REF_TYPE = 'POST'
+      AND REF_ID = #{postId}
+    ORDER BY FILE_ID
+  </select>
 
 </mapper>

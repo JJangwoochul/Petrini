@@ -1,4 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  역할: 분실/보호 신고 작성 (give/report/write)
+
+  - 박유정 / 2026-07-06~07
+
+  [등록 화면 흐름]
+  1. 로그인 후 이 페이지 진입
+  2. 폼 작성 + 사진 최대 5장 (name="photos", multipart/form-data)
+  3. POST /give/report/write → Service → TB_POST + TB_FILE + C:/upload/ 저장
+--%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId"      value="give" />
@@ -30,11 +40,16 @@
 .map-pin-overlay{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:5px 14px;border-radius:20px}
 
 /* 사진 업로드 */
-.photo-upload-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.photo-add-box{aspect-ratio:1/1;border:2px dashed var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:var(--transition);color:#999;font-size:12px}
+.photo-upload-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.photo-slot{position:relative;aspect-ratio:1/1;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg-page)}
+.photo-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-slot-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:14px;line-height:1;cursor:pointer;padding:0}
+.photo-slot-remove:hover{background:rgba(220,38,38,.85)}
+.photo-add-box{aspect-ratio:1/1;border:2px dashed var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:var(--transition);color:#999;font-size:11px;min-height:0;text-align:center;padding:4px}
 .photo-add-box:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
-.photo-add-box svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.photo-slot img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius-sm);display:block}
+.photo-add-box svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.photo-count{font-size:12px;color:var(--text-muted);margin-top:8px}
+.rw-error{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px}
 
 .rw-btn-row{display:flex;justify-content:flex-end;gap:10px}
 .btn-cancel-rw{padding:12px 24px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text-sub);font-size:14px;font-weight:600;cursor:pointer}
@@ -46,6 +61,23 @@
   <h1 class="rw-title">유기동물 발견 신고</h1>
   <p class="rw-desc">발견한 동물의 정보를 등록해 주인을 찾거나 보호소 연계를 도와주세요.</p>
 
+  <c:if test="${param.error eq 'login'}">
+    <div class="rw-error">분실·보호 신고는 <strong>로그인한 회원만</strong> 등록할 수 있습니다. <a href="${contextPath}/login?redirect=/give/report/write" style="color:#B91C1C;text-decoration:underline">로그인</a> 또는 <a href="${contextPath}/join" style="color:#B91C1C;text-decoration:underline">회원가입</a> 후 다시 시도해 주세요.</div>
+  </c:if>
+  <c:if test="${param.error eq 'member'}">
+    <div class="rw-error">로그인은 되어 있지만 <strong>DB에 회원 정보가 없습니다.</strong> 테스트 로그인이 아닌, <strong>회원가입으로 만든 계정</strong>으로 로그인했는지 확인해 주세요.</div>
+  </c:if>
+  <c:if test="${param.error eq 'save'}">
+    <div class="rw-error">등록에 실패했습니다. 잠시 후 다시 시도해 주세요.</div>
+  </c:if>
+
+  <form method="post" action="${contextPath}/give/report/write" enctype="multipart/form-data" onsubmit="return collectFeatureTags()">
+  <input type="hidden" name="reportKind" value="FOUND">
+  <input type="hidden" name="featureTags" id="featureTags">
+  <input type="hidden" name="lostLat" value="37.5665">
+  <input type="hidden" name="lostLng" value="126.9780">
+  <!-- 기존 섹션들 (동물정보, 위치, 사진, 연락처) -->
+
   <%-- 기본 정보 --%>
   <div class="rw-section">
     <div class="rw-section-title">
@@ -55,19 +87,33 @@
     <div class="rw-grid">
       <div class="rw-group">
         <label>동물 종류 <span class="req">*</span></label>
-        <select><option value="">선택하세요</option><option>강아지</option><option>고양이</option><option>기타</option></select>
+        <select name="lostSpecies" required>
+          <option value="">선택하세요</option>
+          <option value="DOG">강아지</option>
+          <option value="CAT">고양이</option>
+          <option value="ETC">기타</option>
+        </select>
       </div>
       <div class="rw-group">
         <label>추정 크기</label>
-        <select><option value="">선택하세요</option><option>소형 (5kg 미만)</option><option>중형 (5~15kg)</option><option>대형 (15kg 이상)</option></select>
+        <select name="animalSize">
+          <option value="">선택하세요</option>
+          <option value="소형">소형 (5kg 미만)</option>
+          <option value="중형">중형 (5~15kg)</option>
+          <option value="대형">대형 (15kg 이상)</option>
+        </select>
       </div>
       <div class="rw-group">
         <label>털 색상</label>
-        <input type="text" placeholder="예) 황갈색, 검은색, 흰색">
+        <input type="text" name="furColor" placeholder="예) 황갈색, 검은색, 흰색">
       </div>
       <div class="rw-group">
         <label>성별 (추정)</label>
-        <select><option value="">모름</option><option>수컷</option><option>암컷</option></select>
+        <select name="gender">
+          <option value="UNKNOWN">모름</option>
+          <option value="M">수컷</option>
+          <option value="F">암컷</option>
+        </select>
       </div>
     </div>
     <div class="rw-group" style="margin-top:13px">
@@ -94,13 +140,13 @@
     <div class="rw-grid" style="margin-bottom:13px">
       <div class="rw-group">
         <label>발견 일시 <span class="req">*</span></label>
-        <input type="datetime-local">
+        <input type="datetime-local" name="foundAt" required>
       </div>
       <div class="rw-group">
         <label>주소 입력</label>
         <div style="display:flex;gap:8px">
-          <input type="text" placeholder="주소 직접 입력" style="flex:1">
-          <button type="button" style="padding:10px 14px;border:1px solid var(--primary);border-radius:var(--radius-sm);background:#fff;color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">검색</button>
+          <input type="text" id="address" name="address" placeholder="주소 직접 입력" style="flex:1">
+          <button type="button" id="btnSearchAddr" style="min-width:72px;padding:0 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer">검색</button>
         </div>
       </div>
     </div>
@@ -121,23 +167,9 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       발견 사진 (최대 5장)
     </div>
-    <div class="photo-upload-grid">
-      <div class="photo-slot">
-        <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=200&q=70&auto=format&fit=crop" alt="미리보기" onerror="this.parentElement.innerHTML='<div class=photo-add-box onclick=alert(업로드)><svg viewBox=0 0 24 24><rect x=3 y=3 width=18 height=18 rx=2/><circle cx=8.5 cy=8.5 r=1.5/><polyline points=21 15 16 10 5 21/></svg><span>사진 추가</span></div>'">
-      </div>
-      <div class="photo-add-box" onclick="alert('사진 업로드')">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <span>사진 추가</span>
-      </div>
-      <div class="photo-add-box" onclick="alert('사진 업로드')">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <span>사진 추가</span>
-      </div>
-      <div class="photo-add-box" onclick="alert('사진 업로드')">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <span>사진 추가</span>
-      </div>
-    </div>
+    <input type="file" id="photoInput" name="photos" accept="image/*" multiple style="display:none">
+    <div class="photo-upload-grid" id="photoGrid"></div>
+    <p class="photo-count" id="photoCount">0 / 5장</p>
   </div>
 
   <%-- 상세 설명 & 연락처 --%>
@@ -149,23 +181,146 @@
     <div class="rw-grid">
       <div class="rw-group full">
         <label>상황 설명 <span class="req">*</span></label>
-        <textarea placeholder="발견 당시 상황, 동물의 상태, 현재 위치 등을 자세히 적어주세요."></textarea>
+        <textarea name="description" required placeholder="발견 당시 상황, 동물의 상태, 현재 위치 등을 자세히 적어주세요."></textarea>
       </div>
       <div class="rw-group">
         <label>신고자 연락처 <span class="req">*</span></label>
-        <input type="tel" placeholder="010-0000-0000">
+        <input type="tel" name="lostContact" required placeholder="010-0000-0000">
       </div>
       <div class="rw-group">
         <label>현재 임시 보호 여부</label>
-        <select><option>아니요 (제보만)</option><option>예 (임시 보호 중)</option></select>
+        <select name="tempCare">
+          <option value="N">아니요 (제보만)</option>
+          <option value="Y">예 (임시 보호 중)</option>
+        </select>
       </div>
     </div>
   </div>
 
   <div class="rw-btn-row">
-    <button class="btn-cancel-rw" onclick="history.back()">취소</button>
-    <button class="btn-submit-rw" onclick="alert('발견 신고가 등록되었습니다.\n주변 회원들에게 알림이 발송됩니다.')">신고 등록하기</button>
+    <button type="button" class="btn-cancel-rw" onclick="history.back()">취소</button>
+    <button type="submit" class="btn-submit-rw">신고 등록하기</button>
   </div>
+  </form>
 </div>
+
+<script>
+function collectFeatureTags() {
+  var tags = [];
+  document.querySelectorAll('.ftag.on').forEach(function(el) {
+    tags.push(el.textContent.trim());
+  });
+  document.getElementById('featureTags').value = tags.join(',');
+  return true;
+}
+
+document.getElementById('btnSearchAddr').addEventListener('click', function () {
+  if (typeof daum === 'undefined' || !daum.Postcode) {
+    alert('주소 API를 불러오지 못했습니다.');
+    return;
+  }
+  new daum.Postcode({
+    oncomplete: function (data) {
+      document.getElementById('address').value = data.roadAddress || data.jibunAddress;
+    }
+  }).open();
+});
+
+(function () {
+  var MAX_PHOTOS = 5;
+  var selectedFiles = [];
+  var photoInput = document.getElementById('photoInput');
+  var photoGrid = document.getElementById('photoGrid');
+  var photoCount = document.getElementById('photoCount');
+
+  function syncPhotoInput() {
+    var dt = new DataTransfer();
+    selectedFiles.forEach(function (file) {
+      dt.items.add(file);
+    });
+    photoInput.files = dt.files;
+    photoCount.textContent = selectedFiles.length + ' / ' + MAX_PHOTOS + '장';
+  }
+
+  function openPhotoPicker() {
+    if (selectedFiles.length >= MAX_PHOTOS) {
+      alert('사진은 최대 ' + MAX_PHOTOS + '장까지 등록할 수 있습니다.');
+      return;
+    }
+    photoInput.click();
+  }
+
+  function removePhoto(index) {
+    selectedFiles.splice(index, 1);
+    syncPhotoInput();
+    renderPhotoGrid();
+  }
+
+  function renderPhotoGrid() {
+    photoGrid.innerHTML = '';
+
+    selectedFiles.forEach(function (file, idx) {
+      var slot = document.createElement('div');
+      slot.className = 'photo-slot';
+
+      var img = document.createElement('img');
+      img.alt = '미리보기 ' + (idx + 1);
+
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'photo-slot-remove';
+      removeBtn.setAttribute('aria-label', '사진 삭제');
+      removeBtn.textContent = '\u00d7';
+      removeBtn.addEventListener('click', function () {
+        removePhoto(idx);
+      });
+
+      slot.appendChild(img);
+      slot.appendChild(removeBtn);
+      photoGrid.appendChild(slot);
+    });
+
+    if (selectedFiles.length < MAX_PHOTOS) {
+      var addBox = document.createElement('div');
+      addBox.className = 'photo-add-box';
+      addBox.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>사진 추가</span>';
+      addBox.addEventListener('click', openPhotoPicker);
+      photoGrid.appendChild(addBox);
+    }
+  }
+
+  photoInput.addEventListener('change', function (e) {
+    var picked = Array.prototype.slice.call(e.target.files || []);
+    if (picked.length === 0) return;
+
+    var remain = MAX_PHOTOS - selectedFiles.length;
+    if (remain <= 0) {
+      alert('사진은 최대 ' + MAX_PHOTOS + '장까지 등록할 수 있습니다.');
+      syncPhotoInput();
+      return;
+    }
+
+    var added = picked.slice(0, remain);
+    selectedFiles = selectedFiles.concat(added);
+
+    if (picked.length > remain) {
+      alert('사진은 최대 ' + MAX_PHOTOS + '장까지입니다. ' + remain + '장만 추가되었습니다.');
+    }
+
+    syncPhotoInput();
+    renderPhotoGrid();
+  });
+
+  renderPhotoGrid();
+})();
+</script>
+
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

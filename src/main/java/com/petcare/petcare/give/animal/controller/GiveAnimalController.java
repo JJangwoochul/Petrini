@@ -1,6 +1,9 @@
 /**
+ * 역할: 유기동물(정부 API) URL 처리 → Service 호출 → JSP 반환
+ *
  * - 박유정 / 2026-07-06
  * - 파일 안에서 API 를 직접 호출했는데, Service 로 옮김
+ *
  * [목록 화면 흐름] (2026-07-06 조건 후 조회 추가)
  * 1. 사용자가 /give/animal/list 주소로 들어옴 → API 안 부름, 안내만 표시
  * 2. 조건 고르고 [조회] 클릭 → search=true 와 함께 Service 호출
@@ -81,7 +84,7 @@ public class GiveAnimalController {
         return "give/animal/list";
     }
 
-    /** 유기견 상세 페이지 */
+    /** 유기견 상세 페이지 — desertionNo 로 Service.getAnimalDetail() 호출 */
     @GetMapping("/detail")
     public String animalDetail(@RequestParam String desertionNo, Model model) {
         try {

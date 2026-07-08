@@ -1,3 +1,20 @@
+<%-- community/list.jsp — 커뮤니티 게시판 목록 --%>
+<%--
+  - 박유정 / 2026-07-08
+  - STEP 3: 목록 DB 연동 (가짜 카드 → ${list})
+
+  [목록 화면 흐름]
+  1. GET /community?boardType=... → CommunityPostController.list()
+  2. Service → TB_POST 조회 + thumbUrl(첫 사진)
+  3. 아래 <c:forEach items="${list}"> 로 카드 표시
+  4. 탭 클릭은 index.jsp 의 <a href> 로 URL 이동 (JS 필터 X)
+
+  [탭 ↔ boardType]
+  - 전체 /community
+  - 집사생활 ?boardType=TOWN
+  - 무료나눔 ?boardType=SHARE
+  - 수의사 상담 ?boardType=LIFE
+--%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -14,59 +31,43 @@
       </div>
     </div>
 
-  <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=1'">
-    <img class="comm-thumb" src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=192&q=70&auto=format&fit=crop" alt="강아지" onerror="this.src='https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'">
-    <div class="comm-body">
-      <div>
-        <span class="comm-category cat-life">집사생활</span>
-        <div class="comm-title">우리 강아지 훈련 방법 공유해요! 앉아·기다려 마스터!</div>
-        <div class="comm-preview">6개월 된 비숑이 드디어 앉아·기다려를 배웠어요! 간식 클리커 훈련법으로 2주 만에 성공했답니다. 궁금하신 분들을 위해 자세한 방법을 공유해 드릴게요...</div>
+    <%-- DB 글 목록 (Controller 가 넘긴 ${list}) --%>
+    <c:forEach var="item" items="${list}">
+      <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=${item.postId}'">
+        <img class="comm-thumb"
+             src="${not empty item.thumbUrl ? contextPath.concat(item.thumbUrl) : 'https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'}"
+             alt="썸네일"
+             onerror="this.src='https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'">
+        <div class="comm-body">
+          <div>
+            <c:choose>
+              <c:when test="${item.boardType eq 'TOWN'}">
+                <span class="comm-category cat-town">집사생활</span>
+              </c:when>
+              <c:when test="${item.boardType eq 'SHARE'}">
+                <span class="comm-category cat-share">무료나눔</span>
+              </c:when>
+              <c:when test="${item.boardType eq 'LIFE'}">
+                <span class="comm-category cat-life">수의사 상담</span>
+              </c:when>
+            </c:choose>
+            <div class="comm-title">${item.title}</div>
+            <div class="comm-preview">${item.body}</div>
+          </div>
+          <div class="comm-meta">
+            <span class="comm-meta-item">${item.regDate}</span>
+            <span class="comm-meta-item">조회 ${item.viewCount}</span>
+            <span class="comm-meta-item">♥ ${item.likeCnt}</span>
+          </div>
+        </div>
       </div>
-      <div class="comm-meta">
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>김민준</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.25</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>1,284</span>
-        <span class="comm-meta-item like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>148</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>32</span>
-      </div>
-    </div>
-  </div>
+    </c:forEach>
 
-  <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=2'">
-    <img class="comm-thumb" src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=192&q=70&auto=format&fit=crop" alt="분실" onerror="this.src='https://placehold.co/96x96/FEE2E2/DC2626?text=분실'">
-    <div class="comm-body">
-      <div>
-        <span class="comm-category cat-lost">분실·보호</span>
-        <div class="comm-title">[분실] 강남구 역삼동 흰색 말티즈 찾습니다 — 6월 25일 오후 실종</div>
-        <div class="comm-preview">이름은 코코, 3살 암컷 말티즈입니다. 어제 오후 6시쯤 역삼역 근처에서 목줄이 끊어져 실종됐어요. 파란 하트 모양 목걸이를 하고 있어요. 발견하시면 꼭 연락주세요...</div>
-      </div>
-      <div class="comm-meta">
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>이서연</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.25</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>892</span>
-        <span class="comm-meta-item like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>84</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>18</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=3'">
-    <img class="comm-thumb" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=192&q=70&auto=format&fit=crop" alt="나눔" onerror="this.src='https://placehold.co/96x96/DCFCE7/16A34A?text=나눔'">
-    <div class="comm-body">
-      <div>
-        <span class="comm-category cat-share">무료나눔</span>
-        <div class="comm-title">[나눔완료] 고양이 사료 나눔합니다 — 마포구 직거래</div>
-        <div class="comm-preview">고양이가 갑자기 이 사료를 안 먹어서 나눔합니다. 로얄캐닌 인도어 2kg 미개봉 1개, 절반 사용 1개. 마포구 합정역 근처 직거래만 가능해요...</div>
-      </div>
-      <div class="comm-meta">
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>최유나</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.24</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>456</span>
-        <span class="comm-meta-item like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>31</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>9</span>
-      </div>
-    </div>
-  </div>
+<c:if test="${empty list}">
+  <p style="text-align:center;color:var(--text-muted);padding:40px 0">
+    등록된 게시글이 없습니다.
+  </p>
+</c:if>
 
   <div style="display:flex;justify-content:center;margin-top:24px;gap:5px">
     <button style="width:36px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer">‹</button>
@@ -232,12 +233,27 @@
 </div><%-- end .comm-wrap --%>
 <script>
 function selTab(btn, type) {
-  document.querySelectorAll('.comm-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.comm-tab').forEach(function(t) {
+    if (t.tagName === 'BUTTON') t.classList.remove('on');
+  });
   btn.classList.add('on');
+
   var isVet = (type === 'vet');
   document.getElementById('normalBoard').style.display = isVet ? 'none' : 'block';
   document.getElementById('vetBoard').style.display   = isVet ? 'block' : 'none';
   if (!isVet) document.getElementById('askForm').style.display = 'none';
+
+  if (isVet) return;
+
+  // 전체 / 집사생활 / 무료나눔 — 카드 필터 (DB 연동 전 UI용)
+  document.querySelectorAll('#normalBoard .comm-card').forEach(function(card) {
+    var bt = card.getAttribute('data-board-type');
+    var show = false;
+    if (type === 'all')   show = true;
+    if (type === 'life')  show = (bt === 'LIFE');
+    if (type === 'share') show = (bt === 'SHARE');
+    card.style.display = show ? 'flex' : 'none';
+  });
 }
 function toggleAskForm() {
   var f = document.getElementById('askForm');

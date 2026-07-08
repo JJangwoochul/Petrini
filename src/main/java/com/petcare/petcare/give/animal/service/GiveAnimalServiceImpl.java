@@ -1,15 +1,18 @@
 /**
+ * 역할: GiveAnimalService 구현체 — 정부 유기동물 API 호출
+ *
  * - 박유정 / 2026-07-06
  * - Controller 에 있던 API 호출 코드를 이 파일로 옮김
- * - 캐싱 시스템 연동 최적화 완료
+ * - @Cacheable 캐시 적용 (animalList, animalDetail)
  *
- * [getAnimalList]
+ * [getAnimalList — 목록]
  * 1. 검색 조건(지역, 개/고양이, 상태, 페이지)으로 API 주소 만듦
  * 2. callApi() 로 정부 서버에 요청
  * 3. 돌아온 JSON 을 읽어서 유기견 리스트로 변환
  * 4. GiveAnimalListResult 에 담아서 Controller 에 돌려줌
+ * ※ Controller 가 search=false 일 때는 이 메서드 자체를 호출하지 않음
  *
- * [getAnimalDetail]
+ * [getAnimalDetail — 상세]
  * 1. 유기번호(desertionNo)로 API 주소 만듦
  * 2. callApi() 로 요청
  * 3. 유기견 1마리 정보(AbandonmentVO) 반환
@@ -78,7 +81,7 @@ public class GiveAnimalServiceImpl implements GiveAnimalService {
             url.append("&_type=json");
             
             if (sido != null && !sido.isBlank()) {
-                url.append("&sidoLikeCd=").append(URLEncoder.encode(sido.trim(), StandardCharsets.UTF_8));
+                url.append("&upr_cd=").append(sido.trim());
             }
         
             if (upkind != null && !upkind.isBlank()) {
