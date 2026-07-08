@@ -35,14 +35,14 @@
         --WHERE       H.STATUS_CD = 'ACTIVE'
         --ORDER BY    H.HOSPITAL_ID DESC
         SELECT      H.HOSPITAL_ID,
-                    H.HOSPITAL_NAME,
+                    H.NAME         AS hospitalName,
                     H.PHONE,
                     H.ADDR,
                     H.LAT,
                     H.LNG,
                     H.AVG_RATING,
                     H.REVIEW_CNT,
-                    H.DEPT_LIST,
+                    H.TAG_LIST     AS deptList,
                     (SELECT F.FILE_URL
                        FROM TB_FILE F
                       WHERE F.REF_TYPE = 'HOSPITAL'
@@ -58,10 +58,11 @@
     <select id="selectHospitalById" parameterType="long" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
         SELECT  HOSPITAL_ID,
                 BIZ_NO,
-        --      MEMBER_NO,
-                HOSPITAL_NAME,
+                MEMBER_NO,
+                NAME           AS hospitalName,
                 PHONE,
                 ADDR,
+                ADDR_DETAIL    AS addrDetail,
                 LAT,
                 LNG,
                 AVG_RATING,
@@ -69,7 +70,8 @@
                 STATUS_CD,
                 APPROVE_DATE,
                 HOURS_JSON,
-                DEPT_LIST
+                DESCRIPTION,
+                TAG_LIST       AS deptList
           FROM  TB_HOSPITAL
          WHERE  HOSPITAL_ID = #{hospitalId}
     </select>

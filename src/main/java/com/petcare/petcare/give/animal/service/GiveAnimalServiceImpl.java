@@ -46,7 +46,7 @@ public class GiveAnimalServiceImpl implements GiveAnimalService {
     private static final int PAGE_SIZE = 20;      // 한 페이지에 20마리
     private static final int SEARCH_DAYS = 30;    // 최근 30일 데이터만 조회
 
-    @Value("${abandonmentPublic-api-key}")
+    @Value("${public.service-api-key}")
     private String serviceKey;  // application.properties 에 있는 API 키
 
     private final ObjectMapper objectMapper = new ObjectMapper();

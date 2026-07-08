@@ -25,9 +25,10 @@ public class HospitalVO implements Mapperable{
     private Long   hospitalId;     // HOSPITAL_ID
     private Long   bizNo;          // BIZ_NO
     private Long   memberNo;       // MEMBER_NO
-    private String hospitalName;   // HOSPITAL_NAME
+    private String hospitalName;   // NAME
     private String phone;          // PHONE
     private String addr;           // ADDR
+    private String addrDetail;     // ADDR_DETAIL
     private Double lat;            // LAT
     private Double lng;            // LNG
     private Double avgRating;      // AVG_RATING
@@ -35,7 +36,8 @@ public class HospitalVO implements Mapperable{
     private String statusCd;       // STATUS_CD (PENDING/ACTIVE/INACTIVE)
     private Date   approveDate;    // APPROVE_DATE
     private String hoursJson;      // HOURS_JSON
-    private String deptList;       // DEPT_LIST    
+    private String description;    // DESCRIPTION
+    private String deptList;       // TAG_LIST (JSP 호환용 필드명 유지)
     private String thumbPath;    
     
     @Override

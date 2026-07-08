@@ -157,9 +157,16 @@
                   <c:otherwise>-</c:otherwise>
                 </c:choose>
               </div>
+              <%-- 2026/07/08 장우철 — 목록 버튼 예약하기 → 상세보기, 경로 /hospital/detail --%>
+              <%--
               <button class="btn-reserve"
                       onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=${h.hospitalId}'">
                 예약하기
+              </button>
+              --%>
+              <button class="btn-reserve"
+                      onclick="event.stopPropagation();location.href='${contextPath}/hospital/detail?id=${h.hospitalId}'">
+                상세보기
               </button>
             </div>
           </div>
