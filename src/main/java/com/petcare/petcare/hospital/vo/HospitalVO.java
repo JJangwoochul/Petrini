@@ -2,7 +2,7 @@
  * 역할: 동물병원·예약 데이터 객체
  *
  * 필드 예시
- * - hospitalId, hospitalName, address, phone, rating
+ * - hospitalId, name, address, phone, rating
  *
  * 참고 테이블
  * - TB_HOSPITAL
@@ -25,7 +25,7 @@ public class HospitalVO implements Mapperable{
     private Long   hospitalId;     // HOSPITAL_ID
     private Long   bizNo;          // BIZ_NO
     private Long   memberNo;       // MEMBER_NO
-    private String hospitalName;   // HOSPITAL_NAME
+    private String name;           // HOSPITAL_NAME
     private String phone;          // PHONE
     private String addr;           // ADDR
     private Double lat;            // LAT
@@ -35,13 +35,13 @@ public class HospitalVO implements Mapperable{
     private String statusCd;       // STATUS_CD (PENDING/ACTIVE/INACTIVE)
     private Date   approveDate;    // APPROVE_DATE
     private String hoursJson;      // HOURS_JSON
-    private String deptList;       // DEPT_LIST    
+    private String tagList;       // TAG_LIST    
     private String thumbPath;    
     
     @Override
     public String getMarkerId()   { return String.valueOf(hospitalId); }
     @Override
-    public String getMarkerName() { return hospitalName; }
+    public String getMarkerName() { return name; }
     @Override
     public Double getMarkerLat()  { return lat; }
     @Override

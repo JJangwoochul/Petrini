@@ -132,12 +132,12 @@
         <c:forEach var="h" items="${hospitalList}">
           <%-- id 추가 + onclick을 selectHospital으로 --%>
           <div class="hosp-card" id="card-${h.hospitalId}" onclick="selectHospital(${h.hospitalId})">
-            <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${h.hospitalName}">
+            <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${h.name}">
             <div class="hosp-body">
               <div class="hosp-tags">
                 <span class="hosp-tag type">동물병원</span>
               </div>
-              <div class="hosp-name">${h.hospitalName}</div>
+              <div class="hosp-name">${h.name}</div>
               <div class="hosp-meta">
                 <div class="hosp-meta-row">
                   <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -145,7 +145,7 @@
                 </div>
                 <div class="hosp-meta-row">
                   <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  ${h.deptList}
+                  ${h.tagList}
                 </div>
               </div>
             </div>
@@ -178,7 +178,7 @@
     <c:forEach items="${hospitalList}" var="h" varStatus="st">
       {
         id: ${h.hospitalId},
-        name: "${h.hospitalName}",
+        name: "${h.name}",
         lat: ${h.lat != null ? h.lat : 'null'},
         lng: ${h.lng != null ? h.lng : 'null'}
       }

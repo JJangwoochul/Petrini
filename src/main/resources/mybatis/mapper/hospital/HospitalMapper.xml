@@ -17,32 +17,15 @@
 -->
     <!-- 병원 목록 전체 조회 -->
     <select id="selectHospitalList" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
-        --SELECT      H.HOSPITAL_ID,
-        --            H.HOSPITAL_NAME,
-        --            H.PHONE,
-        --            H.ADDR,
-        --            H.LAT,
-        --            H.LNG,
-        --            H.AVG_RATING,
-        --            H.REVIEW_CNT,
-        --            H.DEPT_LIST,
-        --            F.FILE_URL AS THUMB_PATH 
-        --FROM        TB_HOSPITAL H
-        --LEFT JOIN   TB_FILE F
-        --ON          F.REF_TYPE = 'HOSPITAL'
-        --AND         F.REF_ID = H.HOSPITAL_ID
-        --AND         F.FILE_ORDER = 0 
-        --WHERE       H.STATUS_CD = 'ACTIVE'
-        --ORDER BY    H.HOSPITAL_ID DESC
         SELECT      H.HOSPITAL_ID,
-                    H.HOSPITAL_NAME,
+                    H.NAME,
                     H.PHONE,
                     H.ADDR,
                     H.LAT,
                     H.LNG,
                     H.AVG_RATING,
                     H.REVIEW_CNT,
-                    H.DEPT_LIST,
+                    H.TAG_LIST,
                     (SELECT F.FILE_URL
                        FROM TB_FILE F
                       WHERE F.REF_TYPE = 'HOSPITAL'
@@ -59,7 +42,7 @@
         SELECT  HOSPITAL_ID,
                 BIZ_NO,
                 MEMBER_NO,
-                HOSPITAL_NAME,
+                NAME,
                 PHONE,
                 ADDR,
                 LAT,
@@ -69,7 +52,7 @@
                 STATUS_CD,
                 APPROVE_DATE,
                 HOURS_JSON,
-                DEPT_LIST
+                TAG_LIST
           FROM  TB_HOSPITAL
          WHERE  HOSPITAL_ID = #{hospitalId}
     </select>
