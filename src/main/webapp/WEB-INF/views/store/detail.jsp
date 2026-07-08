@@ -1,8 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- 지윤 26.07.07 추가: 가격 콤마 표시용 fmt 태그 --%>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
-<c:set var="productId" value="${empty param.id ? '1' : param.id}" />
+<%-- 지윤 26.07.07 수정: URL param.id 그대로 쓰던 것 -> Controller가 넘겨준 product 객체의 productId로 변경 (실데이터 연동) --%>
+<c:set var="productId" value="${product.productId}" />
+
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 <style>
 .detail-wrap { max-width:var(--inner-width); margin:32px auto 80px; padding:0 20px; }
@@ -72,39 +76,49 @@
   <div class="breadcrumb">
     <a href="${contextPath}/">홈</a><span>›</span>
     <a href="${contextPath}/store">상품</a><span>›</span>
-    <a href="${contextPath}/store?cat=food">사료/간식</a><span>›</span>
-    로얄캐닌 미디엄 어덜트
+    <%-- 지윤 26.07.07 수정: 하드코딩된 카테고리명/상품명 -> product 실데이터로 변경 --%>
+    <a href="${contextPath}/store">${product.categoryName}</a><span>›</span>
+    ${product.productName}
   </div>
 
   <div class="detail-top">
     <%-- 이미지 갤러리 --%>
     <div class="detail-gallery">
-      <img class="detail-main-img" id="mainImg"
-           src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&q=80&auto=format&fit=crop"
-           alt="메인이미지" onerror="this.src='https://placehold.co/600x600/EAF7F2/2BAB82?text=상품'">
-      <div class="detail-thumbs">
-        <img class="detail-thumb active" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=144&q=70&auto=format&fit=crop" alt="t1" onclick="switchImg(this,'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&q=80&auto=format&fit=crop')" onerror="this.src='https://placehold.co/72x72/EAF7F2/2BAB82?text=1'">
-        <img class="detail-thumb" src="https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=144&q=70&auto=format&fit=crop" alt="t2" onclick="switchImg(this,'https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=600&q=80&auto=format&fit=crop')" onerror="this.src='https://placehold.co/72x72/EAF7F2/2BAB82?text=2'">
-        <img class="detail-thumb" src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=144&q=70&auto=format&fit=crop" alt="t3" onclick="switchImg(this,'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&q=80&auto=format&fit=crop')" onerror="this.src='https://placehold.co/72x72/EAF7F2/2BAB82?text=3'">
-      </div>
+
+      <%-- 지윤 26.07.07 수정: 메인 상품 고정 이미지 URL -> DB에서 가져온 product.thumbnailUrl로 변경 --%>
+     <img class="detail-main-img" id="mainImg"
+     src="${product.thumbnailUrl}"
+     alt="${product.productName}" onerror="this.src='https://placehold.co/600x600/EAF7F2/2BAB82?text=상품'">
+
+      <%-- 지윤 26.07.07 수정: 썸네일 3개 하드코딩 -> TB_FILE 실데이터로 개수 상관없이 자동 반복
+     이미지 없는 상품은 imageList가 빈 리스트라 자동으로 썸네일 줄 자체가 안 보임 --%>
+    <div class="detail-thumbs">
+    <c:forEach var="img" items="${product.imageList}" varStatus="loop">
+    <img class="detail-thumb ${loop.first ? 'active' : ''}" src="${img}" alt="${product.productName} ${loop.index+1}" onclick="switchImg(this,'${img}')">
+    </c:forEach>
+    </div>
     </div>
 
     <%-- 상품 정보 --%>
     <div class="detail-info">
-      <div class="detail-brand">로얄캐닌 (Royal Canin)</div>
-      <div class="detail-name">미디엄 어덜트 성견 사료 4kg</div>
-      <div class="detail-rating">
-        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span>4.8점 (324개 리뷰)</span>
-      </div>
-      <div class="detail-price-wrap">
-        <div><span class="detail-price-rate">11%</span><span class="detail-price-sale">48,900원</span></div>
-        <div class="detail-price-origin">정가 55,000원</div>
-      </div>
+      <%-- 지윤 26.07.07 수정: 브랜드/상품명/평점/가격 하드코딩 -> product 실데이터로 변경
+     별 아이콘 5개 고정 -> 1개만 남기고 텍스트로 대체 (진짜 별점 렌더링은 리뷰 단계에서 처리 예정) --%>
+    <div class="detail-brand">${product.brandName}</div>
+    <div class="detail-name">${product.productName}</div>
+    <div class="detail-rating">
+      <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>${product.avgRating}점 (${product.reviewCount}개 리뷰)</span>
+    </div>
+    <div class="detail-price-wrap">
+    <div>
+     <c:if test="${product.discountRate > 0}"><span class="detail-price-rate">${product.discountRate}%</span></c:if>
+     <span class="detail-price-sale"><fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원</span>
+    </div>
+    <c:if test="${product.discountRate > 0}">
+    <div class="detail-price-origin">정가 <fmt:formatNumber value="${product.price}" pattern="#,###"/>원</div>
+     </c:if>
+    </div>
+
       <div class="detail-tags">
         <span class="detail-tag">무료배송</span>
         <span class="detail-tag">중형견 적합</span>
@@ -112,22 +126,37 @@
         <span class="detail-tag">오메가3 함유</span>
       </div>
 
-      <div class="detail-option">
-        <label>용량 선택</label>
-        <select><option>4kg (48,900원)</option><option>8kg (89,000원)</option><option>15kg (159,000원)</option></select>
-      </div>
-      <div class="detail-option">
-        <label>수량</label>
-        <div class="detail-qty-wrap">
-          <button onclick="changeQty(-1)">−</button>
-          <input type="number" id="qty" value="1" min="1" max="99" readonly>
-          <button onclick="changeQty(1)">+</button>
-        </div>
-      </div>
+      <%-- 지윤 26.07.07 수정: 용량 하드코딩 -> TB_PRODUCT_OPTION 실데이터로 변경
+     색상이 없거나 '기본'이면 색상 표시 생략, 사이즈만 표시 --%>
+<div class="detail-option">
+  <label>옵션 선택</label>
+  <select id="optionSelect" onchange="onOptionChange()">
+    <c:forEach var="opt" items="${product.optionList}">
+      <option value="${opt.addPrice}" data-stock="${opt.stockQty}">
+        <c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
+        <c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
+      </option>
+    </c:forEach>
+  </select>
+</div>
+
+    <div class="detail-option">
+  <label>수량</label>
+  <div class="detail-qty-wrap">
+    <button onclick="changeQty(-1)">−</button>
+    <input type="number" id="qty" value="1" min="1" readonly>
+    <button onclick="changeQty(1)">+</button>
+  </div>
+  <%-- 지윤 26.07.07 추가: 재고 초과 경고 --%>
+  <div id="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
+</div>
+
+      <%-- 지윤 26.07.07 수정: 하드코딩 48,900원 -> 실제 판매가로 변경 --%>
       <div class="detail-total">
-        <span>총 결제금액</span>
-        <strong id="totalPrice">48,900원</strong>
+      <span>총 결제금액</span>
+      <strong id="totalPrice"><fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원</strong>
       </div>
+
       <div class="detail-btn-row">
         <button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>찜</button>
         <button class="btn-cart-detail" onclick="alert('장바구니에 담았습니다.')">장바구니</button>
@@ -139,8 +168,8 @@
   <%-- 탭 --%>
   <div class="detail-tab-bar">
     <button class="detail-tab on" onclick="showTab('info',this)">상품 정보</button>
-    <button class="detail-tab" onclick="showTab('review',this)">리뷰 (324)</button>
-    <button class="detail-tab" onclick="showTab('qna',this)">Q&A (12)</button>
+    <button class="detail-tab" onclick="showTab('review',this)">리뷰 (${product.reviewCount})</button>
+    <button class="detail-tab" onclick="showTab('qna',this)">Q&A (${product.qnaList.size()})</button>
   </div>
 
   <div class="tab-section on" id="tab-info">
@@ -154,40 +183,63 @@
     </div>
   </div>
 
-  <div class="tab-section" id="tab-review">
+  <%-- 지윤 26.07.07 수정: 평점/막대그래프/리뷰카드 하드코딩 -> TB_REVIEW 실데이터로 변경 --%>
+<div class="tab-section" id="tab-review">
     <div class="review-summary">
       <div class="review-avg">
-        <div class="big">4.8</div>
+        <div class="big">${product.avgRating}</div>
         <div class="review-stars">
           <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-        <small>324개 리뷰</small>
+        <small>${product.reviewCount}개 리뷰</small>
       </div>
       <div class="review-bars">
-        <div class="review-bar-row"><span>5점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:72%"></div></div><span>72%</span></div>
-        <div class="review-bar-row"><span>4점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:18%"></div></div><span>18%</span></div>
-        <div class="review-bar-row"><span>3점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:6%"></div></div><span>6%</span></div>
-        <div class="review-bar-row"><span>2점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:2%"></div></div><span>2%</span></div>
-        <div class="review-bar-row"><span>1점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:2%"></div></div><span>2%</span></div>
+        <div class="review-bar-row"><span>5점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:${product.rating5Percent}%"></div></div><span>${product.rating5Percent}%</span></div>
+        <div class="review-bar-row"><span>4점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:${product.rating4Percent}%"></div></div><span>${product.rating4Percent}%</span></div>
+        <div class="review-bar-row"><span>3점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:${product.rating3Percent}%"></div></div><span>${product.rating3Percent}%</span></div>
+        <div class="review-bar-row"><span>2점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:${product.rating2Percent}%"></div></div><span>${product.rating2Percent}%</span></div>
+        <div class="review-bar-row"><span>1점</span><div class="review-bar-bg"><div class="review-bar-fill" style="width:${product.rating1Percent}%"></div></div><span>${product.rating1Percent}%</span></div>
       </div>
     </div>
-    <div class="review-card">
-      <div class="review-card-head"><span class="reviewer">김민준 ⭐⭐⭐⭐⭐</span><span class="review-date">2025.06.20</span></div>
-      <div class="review-text">우리 강아지가 잘 먹어요! 전에 먹던 사료는 잘 안 먹었는데 이건 정말 맛있게 먹네요. 변도 좋아지고 털도 윤기나는 것 같아요.</div>
-    </div>
-    <div class="review-card">
-      <div class="review-card-head"><span class="reviewer">이서연 ⭐⭐⭐⭐⭐</span><span class="review-date">2025.06.15</span></div>
-      <div class="review-text">수의사 선생님 추천으로 구매했어요. 알갱이 크기가 적당하고 냄새도 좋아요. 꾸준히 구매할 것 같습니다.</div>
-    </div>
+    <c:if test="${empty product.reviewList}">
+      <div style="text-align:center;padding:60px 0;color:var(--text-muted)">아직 등록된 리뷰가 없습니다.</div>
+    </c:if>
+    <c:forEach var="rv" items="${product.reviewList}">
+      <div class="review-card">
+        <div class="review-card-head">
+          <span class="reviewer">${rv.nickname} <c:forEach begin="1" end="${rv.rating}">⭐</c:forEach></span>
+          <span class="review-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
+        </div>
+        <div class="review-text">${rv.content}</div>
+      </div>
+    </c:forEach>
   </div>
 
-  <div class="tab-section" id="tab-qna">
-    <div style="text-align:center;padding:60px 0;color:var(--text-muted)">Q&A 구현 예정</div>
-  </div>
+  <%-- 지윤 26.07.07 수정: "상품상세페이지 Q&A -> TB_PRODUCT_QNA 실데이터로 변경
+     관리자 답변 화면은 아직 담당자 미정이라, 유저가 보는 질문/답변 목록만 우선 구현 --%>
+<div class="tab-section" id="tab-qna">
+    <c:if test="${empty product.qnaList}">
+      <div style="text-align:center;padding:60px 0;color:var(--text-muted)">아직 등록된 문의가 없습니다.</div>
+    </c:if>
+    <c:forEach var="qna" items="${product.qnaList}">
+      <div class="review-card">
+        <div class="review-card-head">
+          <span class="reviewer">Q. ${qna.nickname}</span>
+          <span class="review-date">${qna.regDate}</span>
+        </div>
+        <div class="review-text">${qna.question}</div>
+        <c:if test="${not empty qna.answer}">
+          <div style="margin-top:10px; padding:12px; background:var(--bg-page); border-radius:var(--radius-sm); font-size:13px; color:var(--text-sub);">
+            <strong style="color:var(--primary-dark);">A.</strong> ${qna.answer}
+          </div>
+        </c:if>
+        <c:if test="${empty qna.answer}">
+          <div style="margin-top:10px; font-size:12px; color:var(--text-muted);">답변 대기중입니다.</div>
+        </c:if>
+      </div>
+    </c:forEach>
+</div>
+
 </div>
 
 <script>
@@ -196,13 +248,42 @@ function switchImg(el, src) {
   document.querySelectorAll('.detail-thumb').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
 }
+// 지윤 26.07.07 수정: 판매가 하드코딩 -> product.salePrice 실데이터로 변경
+// 99개 고정 제한 -> 선택된 옵션의 실제 재고(data-stock) 기준으로 변경 
+function getSelectedStock() {
+  const sel = document.getElementById('optionSelect');
+  if (!sel || sel.options.length === 0) return 99;
+  return parseInt(sel.options[sel.selectedIndex].dataset.stock) || 0;
+}
 function changeQty(d) {
   const inp = document.getElementById('qty');
+  const maxStock = getSelectedStock();
   let v = parseInt(inp.value) + d;
-  if(v < 1) v = 1; if(v > 99) v = 99;
+  if (v < 1) v = 1;
+  if (v > maxStock) {
+    v = maxStock;
+    document.getElementById('stockWarning').style.display = 'block';
+  } else {
+    document.getElementById('stockWarning').style.display = 'none';
+  }
   inp.value = v;
-  document.getElementById('totalPrice').textContent = (48900 * v).toLocaleString() + '원';
+  updateTotal();
 }
+function onOptionChange() {
+  document.getElementById('qty').value = 1;
+  document.getElementById('stockWarning').style.display = 'none';
+  updateTotal();
+}
+function updateTotal() {
+  const sel = document.getElementById('optionSelect');
+  const addPrice = sel && sel.options.length > 0 ? parseInt(sel.value) || 0 : 0;
+  const qty = parseInt(document.getElementById('qty').value);
+  const total = (${product.salePrice} + addPrice) * qty;
+  document.getElementById('totalPrice').textContent = total.toLocaleString() + '원';
+}
+//지윤 26.07.07 추가: 페이지 로드 시 총 결제금액 한 번 계산
+updateTotal();
+
 function showTab(id, btn) {
   document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('on'));
   document.querySelectorAll('.detail-tab').forEach(b => b.classList.remove('on'));
