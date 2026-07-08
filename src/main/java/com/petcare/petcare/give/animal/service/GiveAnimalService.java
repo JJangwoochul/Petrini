@@ -1,7 +1,9 @@
 /**
+ * 역할: 유기동물 API 비즈니스 로직 (interface)
+ *
  * - 박유정 / 2026-07-06
- * - 메서드 2개 추가
- * - 목록·상세 기능 Service 에 구현하려고
+ * - Controller 에 있던 API 호출을 Service 로 분리
+ * - 목록·상세 조회 메서드 정의
  */
 
 package com.petcare.petcare.give.animal.service;

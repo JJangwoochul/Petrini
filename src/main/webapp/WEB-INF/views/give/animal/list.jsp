@@ -1,4 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  역할: 유기동물 목록 화면 (give/animal/list)
+
+  - 박유정 / 2026-07-06
+  - 파일 안에서 API 를 직접 호출했는데, Service 로 옮김
+
+  [목록 화면 흐름] (2026-07-06 조건 후 조회 추가)
+  1. 사용자가 /give/animal/list 주소로 들어옴 → API 안 부름, 안내만 표시 (searched=false)
+  2. 조건 고르고 [조회] 클릭 → hidden search=true 와 함께 Controller 호출
+  3. giveAnimalService.getAnimalList() (캐시 적용)
+  4. 받은 결과(animals, totalCount 등)를 이 JSP 에 표시
+--%>
 <%@ taglib prefix="c"   uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn"  uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -105,22 +117,22 @@
         <label>시·도</label>
         <select name="sido">
           <option value="">전체</option>
-          <option value="서울특별시"  ${sido eq '서울특별시'  ? 'selected' : ''}>서울</option>
-          <option value="부산광역시"  ${sido eq '부산광역시'  ? 'selected' : ''}>부산</option>
-          <option value="대구광역시"  ${sido eq '대구광역시'  ? 'selected' : ''}>대구</option>
-          <option value="인천광역시"  ${sido eq '인천광역시'  ? 'selected' : ''}>인천</option>
-          <option value="광주광역시"  ${sido eq '광주광역시'  ? 'selected' : ''}>광주</option>
-          <option value="대전광역시"  ${sido eq '대전광역시'  ? 'selected' : ''}>대전</option>
-          <option value="울산광역시"  ${sido eq '울산광역시'  ? 'selected' : ''}>울산</option>
-          <option value="경기도"      ${sido eq '경기도'      ? 'selected' : ''}>경기</option>
-          <option value="강원특별자치도" ${sido eq '강원특별자치도' ? 'selected' : ''}>강원</option>
-          <option value="충청북도"    ${sido eq '충청북도'    ? 'selected' : ''}>충북</option>
-          <option value="충청남도"    ${sido eq '충청남도'    ? 'selected' : ''}>충남</option>
-          <option value="전북특별자치도" ${sido eq '전북특별자치도' ? 'selected' : ''}>전북</option>
-          <option value="전라남도"    ${sido eq '전라남도'    ? 'selected' : ''}>전남</option>
-          <option value="경상북도"    ${sido eq '경상북도'    ? 'selected' : ''}>경북</option>
-          <option value="경상남도"    ${sido eq '경상남도'    ? 'selected' : ''}>경남</option>
-          <option value="제주특별자치도" ${sido eq '제주특별자치도' ? 'selected' : ''}>제주</option>
+          <option value="6110000"  ${sido eq '6110000'  ? 'selected' : ''}>서울</option>
+          <option value="6260000"  ${sido eq '6260000'  ? 'selected' : ''}>부산</option>
+          <option value="6270000"  ${sido eq '6270000'  ? 'selected' : ''}>대구</option>
+          <option value="6280000"  ${sido eq '6280000'  ? 'selected' : ''}>인천</option>
+          <option value="6290000"  ${sido eq '6290000'  ? 'selected' : ''}>광주</option>
+          <option value="6300000"  ${sido eq '6300000'  ? 'selected' : ''}>대전</option>
+          <option value="6310000"  ${sido eq '6310000'  ? 'selected' : ''}>울산</option>
+          <option value="6410000"  ${sido eq '6410000'      ? 'selected' : ''}>경기</option>
+          <option value="6510000"  ${sido eq '6510000' ? 'selected' : ''}>강원</option>
+          <option value="6430000"  ${sido eq '6430000'    ? 'selected' : ''}>충북</option>
+          <option value="6440000"  ${sido eq '6440000'    ? 'selected' : ''}>충남</option>
+          <option value="6450000"  ${sido eq '6450000' ? 'selected' : ''}>전북</option>
+          <option value="6460000"  ${sido eq '6460000'    ? 'selected' : ''}>전남</option>
+          <option value="6470000"  ${sido eq '6470000'    ? 'selected' : ''}>경북</option>
+          <option value="6480000"  ${sido eq '6480000'    ? 'selected' : ''}>경남</option>
+          <option value="6500000"  ${sido eq '6500000' ? 'selected' : ''}>제주</option>
         </select>
       </div>
       <div class="sf-group">

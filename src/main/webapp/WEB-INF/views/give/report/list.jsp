@@ -1,4 +1,11 @@
-<%-- give/report/_list.jsp — 분실/보호 게시판 탭 --%>
+<%-- give/report/list.jsp — 분실/보호 게시판 탭 --%>
+<%--
+  - 박유정 / 2026-07-06~07
+
+  [목록 화면 흐름]
+  1. GET /give/report/list → giveReportService.getReportList()
+  2. TB_POST 목록 + thumbUrl(첫 사진) 표시
+--%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -54,90 +61,48 @@
   </div>
 
   <div style="font-size:14px;color:var(--text-sub);margin-bottom:16px">
-    총 <strong style="color:var(--text-main)">328</strong>건의 발견 신고가 있습니다
+    총 <strong style="color:var(--text-main)">${empty list ? 0 : list.size()}</strong>건의 발견 신고가 있습니다
   </div>
 
-  <div class="report-grid">
-    <div class="report-card" onclick="location.href='${contextPath}/give/report/detail?id=1'">
-      <div class="report-thumb-wrap">
-        <img class="report-thumb" src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&q=70&auto=format&fit=crop" alt="신고1" onerror="this.src='https://placehold.co/400x200/EAF7F2/2BAB82?text=발견사진'">
-        <span class="report-status rs-finding">찾는 중</span>
-        <div class="report-map-pin"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 마포구</div>
-      </div>
-      <div class="report-body">
-        <div class="report-tags"><span class="report-tag">강아지</span><span class="report-tag">중형</span><span class="report-tag">황갈색</span></div>
-        <div class="report-title">합정역 근처 목줄 없는 강아지 발견</div>
-        <div class="report-desc">합정역 2번 출구 앞에서 목줄 없이 배회하는 강아지를 발견했습니다. 골든 리트리버로 보이며 약 20kg 정도 됩니다. 겁을 많이 먹은 상태입니다.</div>
-        <div class="report-meta">
-          <div class="report-meta-left">
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>김민준</span>
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.25</span>
+  <c:choose>
+    <c:when test="${empty list}">
+      <p style="text-align:center;color:var(--text-muted);padding:48px 0">등록된 신고가 없습니다.</p>
+    </c:when>
+    <c:otherwise>
+      <div class="report-grid">
+        <c:forEach var="item" items="${list}">
+          <div class="report-card" onclick="location.href='${contextPath}/give/report/detail?id=${item.postId}'">
+            <div class="report-thumb-wrap">
+              <%-- thumbUrl: TB_FILE 첫 번째 사진, 없으면 placeholder --%>
+              <img class="report-thumb"
+                   src="${not empty item.thumbUrl ? contextPath.concat(item.thumbUrl) : 'https://placehold.co/400x200/EAF7F2/2BAB82?text=발견사진'}"
+                   alt="발견사진">
+              <span class="report-status rs-finding">찾는 중</span>
+              <span class="report-map-pin">
+                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                ${item.region}
+              </span>
+            </div>
+            <div class="report-body">
+              <div class="report-tags">
+                <c:if test="${item.lostSpecies eq 'DOG'}"><span class="report-tag">강아지</span></c:if>
+                <c:if test="${item.lostSpecies eq 'CAT'}"><span class="report-tag">고양이</span></c:if>
+                <c:if test="${item.lostSpecies eq 'ETC'}"><span class="report-tag">기타</span></c:if>
+              </div>
+              <div class="report-title">${item.title}</div>
+              <div class="report-desc">${item.body}</div>
+              <div class="report-meta">
+                <div class="report-meta-left">
+                  <span class="report-meta-item">#${item.postId}</span>
+                </div>
+                <span>${item.regDate.year}.${item.regDate.monthValue}.${item.regDate.dayOfMonth}</span>
+              </div>
+            </div>
           </div>
-          <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>12</span>
-        </div>
+        </c:forEach>
       </div>
-    </div>
-
-    <div class="report-card" onclick="location.href='${contextPath}/give/report/detail?id=2'">
-      <div class="report-thumb-wrap">
-        <img class="report-thumb" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&q=70&auto=format&fit=crop" alt="신고2" onerror="this.src='https://placehold.co/400x200/F3E8FF/9333EA?text=발견사진'">
-        <span class="report-status rs-rescued">구조 완료</span>
-        <div class="report-map-pin"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 강남구</div>
-      </div>
-      <div class="report-body">
-        <div class="report-tags"><span class="report-tag">고양이</span><span class="report-tag">소형</span><span class="report-tag">검은색</span></div>
-        <div class="report-title">[구조완료] 삼성동 아파트 단지 고양이 발견</div>
-        <div class="report-desc">삼성동 아파트 주차장에서 다리를 절고 있는 고양이를 발견했습니다. 임시 보호 후 보호소 연계 완료되었습니다.</div>
-        <div class="report-meta">
-          <div class="report-meta-left">
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>이서연</span>
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.24</span>
-          </div>
-          <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>8</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="report-card" onclick="location.href='${contextPath}/give/report/detail?id=3'">
-      <div class="report-thumb-wrap">
-        <img class="report-thumb" src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&q=70&auto=format&fit=crop" alt="신고3" onerror="this.src='https://placehold.co/400x200/EAF7F2/2BAB82?text=발견사진'">
-        <span class="report-status rs-returned">주인 찾음</span>
-        <div class="report-map-pin"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>경기 고양시</div>
-      </div>
-      <div class="report-body">
-        <div class="report-tags"><span class="report-tag">강아지</span><span class="report-tag">소형</span><span class="report-tag">흰색</span></div>
-        <div class="report-title">[주인찾음] 일산 호수공원 흰색 푸들 발견</div>
-        <div class="report-desc">일산 호수공원 벤치 근처에서 혼자 앉아있는 푸들을 발견했습니다. 목걸이에 연락처가 있어 주인에게 연락이 닿았습니다.</div>
-        <div class="report-meta">
-          <div class="report-meta-left">
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>박지호</span>
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.23</span>
-          </div>
-          <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>5</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="report-card" onclick="location.href='${contextPath}/give/report/detail?id=4'">
-      <div class="report-thumb-wrap">
-        <img class="report-thumb" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=70&auto=format&fit=crop" alt="신고4" onerror="this.src='https://placehold.co/400x200/EAF7F2/2BAB82?text=발견사진'">
-        <span class="report-status rs-finding">찾는 중</span>
-        <div class="report-map-pin"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 노원구</div>
-      </div>
-      <div class="report-body">
-        <div class="report-tags"><span class="report-tag">강아지</span><span class="report-tag">중형</span><span class="report-tag">오렌지</span></div>
-        <div class="report-title">노원역 인근 시바이누로 보이는 강아지 목격</div>
-        <div class="report-desc">노원역 근처 골목에서 시바이누처럼 생긴 강아지가 배회하고 있습니다. 경계심이 강해 접근이 어렵습니다. 주변 분들의 제보 부탁드립니다.</div>
-        <div class="report-meta">
-          <div class="report-meta-left">
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>최유나</span>
-            <span class="report-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.22</span>
-          </div>
-          <span class="report-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>21</span>
-        </div>
-      </div>
-    </div>
-  </div>
+    </c:otherwise>
+  </c:choose>
 
   <div style="display:flex;justify-content:center;gap:5px">
     <button style="width:36px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer">‹</button>

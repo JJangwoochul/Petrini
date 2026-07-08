@@ -1,4 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  역할: 분실/보호 신고 상세 (give/report/detail)
+
+  - 박유정 / 2026-07-06~07
+
+  [상세 화면 흐름]
+  1. GET /give/report/detail?id=번호
+  2. report(TB_POST) + report.photoUrls(TB_FILE) 표시
+--%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId"      value="give" />
@@ -25,7 +34,7 @@
   .rd-info-row span{font-size:14px;font-weight:600;color:var(--text-main)}
   .rd-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:16px}
   .rd-section h3{font-size:14px;font-weight:800;color:var(--text-main);margin:0 0 12px}
-  .rd-desc{font-size:14px;color:var(--text-sub);line-height:1.8;margin:0;border-left:3px solid var(--primary);padding-left:14px}
+  .rd-desc{font-size:14px;color:var(--text-sub);line-height:1.8;margin:0;border-left:3px solid var(--primary);padding-left:14px;white-space:pre-line}
   .rd-map{border-radius:var(--radius-sm);overflow:hidden;height:180px}
   .rd-map img{width:100%;height:100%;object-fit:cover;display:block}
   .comment-area{}
@@ -61,16 +70,24 @@
       발견 신고 목록으로
     </a>
     <div class="rd-photos">
-      <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&q=80&auto=format&fit=crop" alt="발견사진 메인" onerror="this.src='https://placehold.co/600x260/EAF7F2/2BAB82?text=발견사진'">
-      <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=300&q=70&auto=format&fit=crop" alt="발견사진2" onerror="this.src='https://placehold.co/300x127/EAF7F2/2BAB82?text=사진'">
-      <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&q=70&auto=format&fit=crop" alt="발견사진3" onerror="this.src='https://placehold.co/300x127/EAF7F2/2BAB82?text=사진'">
+      <%-- TB_FILE에서 조회한 사진 URL (report.photoUrls) --%>
+      <c:choose>
+        <c:when test="${not empty report.photoUrls}">
+          <c:forEach var="url" items="${report.photoUrls}">
+            <img src="${contextPath}${url}" alt="발견사진" onerror="this.src='https://placehold.co/600x260/EAF7F2/2BAB82?text=발견사진'">
+          </c:forEach>
+        </c:when>
+        <c:otherwise>
+          <img src="https://placehold.co/600x260/EAF7F2/2BAB82?text=발견사진" alt="발견사진 없음">
+        </c:otherwise>
+      </c:choose>
     </div>
 
     <div class="rd-status-row">
       <span class="rd-status rds-finding">찾는 중</span>
-      <span style="font-size:12px;color:var(--text-muted)">신고번호: #RPT-2025-0892</span>
+      <span style="font-size:12px;color:var(--text-muted)">신고번호: #${report.postId}</span>
     </div>
-    <div class="rd-title">합정역 근처 목줄 없는 강아지 발견</div>
+    <div class="rd-title">${report.title}</div>
     <div class="rd-tags">
       <span class="rd-tag">강아지</span>
       <span class="rd-tag">중형</span>
@@ -80,17 +97,13 @@
     </div>
 
     <div class="rd-info-grid">
-      <div class="rd-info-row"><label>발견 일시</label><span>2025.06.25 15:32</span></div>
-      <div class="rd-info-row"><label>발견 장소</label><span>서울 마포구 합정역 2번 출구</span></div>
-      <div class="rd-info-row"><label>추정 크기</label><span>중형 (약 20kg)</span></div>
-      <div class="rd-info-row"><label>털 색상</label><span>황갈색</span></div>
-      <div class="rd-info-row"><label>현재 상황</label><span>제보 후 자리 떠남 — 인근 목격 중</span></div>
-      <div class="rd-info-row"><label>신고자</label><span>김민준</span></div>
+      <div class="rd-info-row"><label>발견 장소</label><span>${report.region}</span></div>
+      <div class="rd-info-row"><label>연락처</label><span>${report.lostContact}</span></div>
     </div>
 
     <div class="rd-section">
       <h3>상세 설명</h3>
-      <p class="rd-desc">합정역 2번 출구 앞에서 목줄 없이 배회하는 강아지를 발견했습니다. 골든 리트리버로 보이며 약 20kg 정도 됩니다. 겁을 많이 먹은 상태로 접근하면 피합니다. 인근 편의점 앞을 왔다 갔다 하고 있어요. 잃어버리신 분이나 주변에서 목격하신 분은 댓글 달아주세요!</p>
+      <p class="rd-desc">${report.body}</p>
     </div>
 
     <div class="rd-section">
