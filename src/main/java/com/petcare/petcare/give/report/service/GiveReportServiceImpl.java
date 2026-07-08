@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.give.report.mapper.GiveReportMapper;
+import com.petcare.petcare.give.report.vo.GiveReportFileVO;
 import com.petcare.petcare.give.report.vo.GiveReportVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
@@ -227,6 +228,15 @@ public class GiveReportServiceImpl implements GiveReportService {
                 throw new IllegalStateException("FILE_SAVE_FAILED", e);
             }
 
+            String fileUrl = "/upload/give/report/" + postId + "/" + savedName;
+            GiveReportFileVO fileVo = new GiveReportFileVO();
+            fileVo.setRefType("POST");
+            fileVo.setRefId(postId);
+            fileVo.setDriveFileId("LOCAL");
+            fileVo.setFileUrl(fileUrl);
+            fileVo.setOriginName(file.getOriginalFilename());
+            giveReportMapper.insertFile(fileVo);
+            saved++;
         }
     }
 

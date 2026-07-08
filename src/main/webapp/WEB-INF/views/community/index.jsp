@@ -111,27 +111,32 @@
       <button class="btn-write" onclick="location.href='${contextPath}/community/write'"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>글쓰기</button>
     </c:if>
   </div>
-  <div class="comm-tabs">
+    <%-- 탭: DB 연동 — 클릭 시 URL 이동 (boardType 파라미터) / 박유정 2026-07-08 --%>
+    <div class="comm-tabs">
     <c:choose>
       <c:when test="${commTab eq 'talent'}">
-        <a href="${contextPath}/community/talent/list" class="comm-tab on">재능나눔</a>
         <a href="${contextPath}/community" class="comm-tab">전체</a>
-        <a href="${contextPath}/community" class="comm-tab">집사생활</a>
-        <a href="${contextPath}/community" class="comm-tab">무료나눔</a>
-        <a href="${contextPath}/community" class="comm-tab vet-tab">
+        <a href="${contextPath}/community?boardType=TOWN" class="comm-tab">집사생활</a>
+        <a href="${contextPath}/community?boardType=SHARE" class="comm-tab">무료나눔</a>
+        <a href="${contextPath}/community/talent/list" class="comm-tab on">재능나눔</a>
+        <a href="${contextPath}/community?boardType=LIFE" class="comm-tab vet-tab">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           수의사 상담
         </a>
       </c:when>
       <c:otherwise>
+        <a href="${contextPath}/community"
+           class="comm-tab ${empty boardType ? 'on' : ''}">전체</a>
+        <a href="${contextPath}/community?boardType=TOWN"
+           class="comm-tab ${boardType eq 'TOWN' ? 'on' : ''}">집사생활</a>
+        <a href="${contextPath}/community?boardType=SHARE"
+           class="comm-tab ${boardType eq 'SHARE' ? 'on' : ''}">무료나눔</a>
         <a href="${contextPath}/community/talent/list" class="comm-tab">재능나눔</a>
-        <button class="comm-tab on" onclick="selTab(this,'all')">전체</button>
-        <button class="comm-tab" onclick="selTab(this,'life')">집사생활</button>
-        <button class="comm-tab" onclick="selTab(this,'share')">무료나눔</button>
-        <button class="comm-tab vet-tab" onclick="selTab(this,'vet')">
+        <a href="${contextPath}/community?boardType=LIFE"
+           class="comm-tab vet-tab ${boardType eq 'LIFE' ? 'on' : ''}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           수의사 상담
-        </button>
+        </a>
       </c:otherwise>
     </c:choose>
   </div>

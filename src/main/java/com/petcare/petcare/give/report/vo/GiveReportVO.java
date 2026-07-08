@@ -25,7 +25,7 @@ import lombok.Setter;
 public class GiveReportVO {
 
     // ── TB_POST 컬럼 ──────────────────────────────────────────
-
+                   
     private Long postId;           // POST_ID — 게시글 ID
     private Long memberNo;         // MEMBER_NO — 작성자 회원번호
     private String boardType;      // BOARD_TYPE — 게시판 유형 (LOST 고정)
