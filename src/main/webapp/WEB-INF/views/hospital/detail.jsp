@@ -52,14 +52,14 @@
       <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=300&q=70&auto=format&fit=crop" alt="병원3" onerror="this.src='https://placehold.co/300x200/E0F2FE/0284C7?text=병원'"> --%>
       <c:forEach var="img" items="${imgList}">
         <div class="swiper-slide">
-            <img src="${contextPath}/upload/${img.fileUrl}" alt="${hospital.hospitalName}">
+            <img src="${contextPath}/upload/${img.fileUrl}" alt="${hospital.name}">
         </div>
       </c:forEach>
     </div>
     <div class="hdetail-head">
       <div>
         <div class="hdetail-tags"><span class="hdtag type">동물병원</span><span class="hdtag open">진료중</span></div>
-        <div class="hdetail-name">${hospital.hospitalName}</div>
+        <div class="hdetail-name">${hospital.name}</div>
         <div class="hdetail-rating">
           <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(128개 리뷰)</span>
