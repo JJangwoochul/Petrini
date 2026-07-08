@@ -1,26 +1,47 @@
 /**
  * 역할: 유기동물 제보 DB 접근 (MyBatis interface)
  *
+ * - 박유정 / 2026-07-06~07
+ *
  * XML: resources/mybatis/mapper/give/report/GiveReportMapper.xml
  * namespace: com.petcare.petcare.give.report.mapper.GiveReportMapper
  *
- * 쿼리 예시
- * - selectReportList
- * - selectReportDetail
- * - insertReport
- * - updateReport
+ * 쿼리
+ * - insertReport / selectReportList / selectReportDetail
+ * - insertFile / selectFileUrlsByPostId (사진)
  *
  * 참고 테이블
- * - TB_ANIMAL_REPORT
+ * - TB_POST (BOARD_TYPE = 'LOST')
+ * - TB_FILE (REF_TYPE = 'POST')
  *
  * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
  */
 
 package com.petcare.petcare.give.report.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
+import com.petcare.petcare.give.report.vo.GiveReportFileVO;
+import com.petcare.petcare.give.report.vo.GiveReportVO;
 
 @Mapper
-public interface GiveReportMapper {}
+public interface GiveReportMapper {
+
+    int insertReport(GiveReportVO vo);
+
+    Long selectMemberNoByMemberId(String memberId);
+
+    Long selectMemberNoByEmail(String email);
+
+    GiveReportVO selectReportDetail(long postId);
+
+    List<GiveReportVO> selectReportList();
+
+    // TB_FILE INSERT — 사진 등록
+    int insertFile(GiveReportFileVO file);
+
+    // 게시글에 연결된 사진 URL 목록 (상세·목록 썸네일용)
+    java.util.List<String> selectFileUrlsByPostId(long postId);
+}

@@ -1,24 +1,21 @@
 /**
- * 역할: 유기동물 입양 비즈니스 로직 (interface)
+ * 역할: 유기동물 API 비즈니스 로직 (interface)
  *
- * 담당 화면
- * - give/animal/list.jsp      유기동물 목록
- * - give/animal/detail.jsp    유기동물 상세
- *
- * 구현할 기능 예시
- * - 공공 API 유기동물 목록 조회 (지역·품종·상태 필터)
- * - 유기동물 상세 조회
- * - 입양 관심 등록
- *
- * 연결
- * - 구현: GiveAnimalServiceImpl
- * - 호출: GiveAnimalController
- * - DB: GiveAnimalMapper
- *
- * 참고 테이블
- * - TB_ADOPTION_INTEREST
+ * - 박유정 / 2026-07-06
+ * - Controller 에 있던 API 호출을 Service 로 분리
+ * - 목록·상세 조회 메서드 정의
  */
 
 package com.petcare.petcare.give.animal.service;
 
-public interface GiveAnimalService {}
+import com.petcare.petcare.give.animal.vo.GiveAnimalListResult;
+import com.petcare.petcare.give.vo.AbandonmentVO;
+
+public interface GiveAnimalService {
+
+    /** 검색 조건으로 유기견 목록 가져오기 */
+    GiveAnimalListResult getAnimalList(String sido, String upkind, String state, int pageNo);
+
+    /** 유기번호로 유기견 1마리 상세 가져오기 */
+    AbandonmentVO getAnimalDetail(String desertionNo) throws Exception;
+}

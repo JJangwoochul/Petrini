@@ -4,24 +4,23 @@
  * XML: resources/mybatis/mapper/mypage/home/MypageHomeMapper.xml
  * namespace: com.petcare.petcare.mypage.home.mapper.MypageHomeMapper
  *
- * 쿼리 예시
- * - selectMypageSummary
- * - selectPetList
- * - selectHealthSummary
- *
- * 참고 테이블
- * - TB_MEMBER
- * - TB_PET
- * - TB_PET_HEALTH
+ * 2026/07/08 장우철 — 마이페이지 B단계
+ * - countUsableCoupon   : TB_MEMBER_COUPON (STATUS_CD = UNUSED)
+ * - countFavoriteProduct: TB_FAVORITE (FAV_TYPE = PRODUCT)
  *
  * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
  */
 
 package com.petcare.petcare.mypage.home.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 
-
 @Mapper
-public interface MypageHomeMapper {}
+public interface MypageHomeMapper {
+
+    // 2026/07/08 장우철 — 이용중인 쿠폰 수 (미사용)
+    int countUsableCoupon(Long memberNo);
+
+    // 2026/07/08 장우철 — 관심상품 수 (상품 찜)
+    int countFavoriteProduct(Long memberNo);
+}

@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=e7433bf8a345b0044ed62663faec792e"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -23,6 +23,22 @@
     <div class="header-top">
         <div class="header-top-inner">
             <nav class="header-top-nav">
+            <%-- 2026/07/07 장우철 — 관리자 헤더 버튼
+                 변경 이유: 관리자도 유저 홈(/login)에서 로그인하므로, role=ADMIN 일 때만
+                 로그아웃 옆에 관리자 대시보드(/admin) 이동 링크 노출 (유저·사업자에게는 비표시) --%>
+            <c:choose>
+            <c:when test="${not empty memberInfo}">
+                <c:if test="${memberInfo.role eq 'ADMIN'}">
+                    <a href="${contextPath}/admin">관리자페이지</a>
+                </c:if>
+                <a href="${contextPath}/member/logout">로그아웃</a>
+            </c:when>
+            <c:otherwise>
+                <a href="${contextPath}/login">로그인</a>
+                <a href="${contextPath}/join">회원가입</a>
+            </c:otherwise>
+            </c:choose>
+            <%-- [변경 전] 로그인 시 로그아웃만 표시 (관리자 전용 링크 없음)
             <c:choose>
             <c:when test="${not empty memberInfo}">
                 <a href="${contextPath}/member/logout">로그아웃</a>
@@ -32,6 +48,7 @@
                 <a href="${contextPath}/join">회원가입</a>
             </c:otherwise>
             </c:choose>
+            --%>
                 <a href="${contextPath}/member/cs">고객센터</a>
             
             </nav>
@@ -107,7 +124,7 @@
             <a href="${contextPath}/hospital" class="gnb-item ${pageId eq 'hospital' ? 'active' : ''}">병원</a>
             <a href="${contextPath}/walk" class="gnb-item ${pageId eq 'walk' ? 'active' : ''}">산책</a>
             <a href="${contextPath}/community" class="gnb-item ${pageId eq 'community' ? 'active' : ''}">커뮤니티</a>
-            <a href="${contextPath}/give" class="gnb-item ${pageId eq 'give' ? 'active' : ''}">기부</a>
+            <a href="${contextPath}/give" class="gnb-item ${pageId eq 'give' ? 'active' : ''}">가족찾기</a>
             <a href="${contextPath}/petmap" class="gnb-item ${pageId eq 'petmap' ? 'active' : ''}">펫맵</a>
         </div>
     </nav>

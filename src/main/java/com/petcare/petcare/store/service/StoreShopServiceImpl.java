@@ -23,6 +23,9 @@ import org.springframework.stereotype.Service;
 import com.petcare.petcare.store.mapper.StoreShopMapper;
 import com.petcare.petcare.store.vo.StoreShopVO;
 import com.petcare.petcare.store.vo.CategoryVO;
+import com.petcare.petcare.store.vo.OptionVO;
+import com.petcare.petcare.store.vo.ReviewVO;
+import com.petcare.petcare.store.vo.QnaVO;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
@@ -56,9 +59,46 @@ public class StoreShopServiceImpl implements StoreShopService {
       return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
   }
 
-  //지윤 26.07.06 카테고리 트리는 가공 없이 그대로 전달
+ //지윤 26.07.06 카테고리 트리는 가공 없이 그대로 전달
   @Override
   public List<CategoryVO> getCategoryTree() {
       return storeShopMapper.selectCategoryTree();
   }
+
+//지윤 26.07.07 상품 상세 조회 + 할인율 계산 (목록조회와 동일한 계산 로직)
+//지윤 26.07.07 이미지 목록도 같이 조회해서 product에 채워넣도록 수정
+@Override
+public StoreShopVO getProductDetail(Long productId) {
+    StoreShopVO product = storeShopMapper.selectProductDetail(productId);
+    if (product != null) {
+        if (product.getPrice() != null && product.getSalePrice() != null && product.getPrice() > 0) {
+            int rate = (int) Math.round((product.getPrice() - product.getSalePrice()) * 100.0 / product.getPrice());
+            product.setDiscountRate(rate);
+        } else {
+            product.setDiscountRate(0);
+        }
+        product.setImageList(storeShopMapper.selectProductImages(productId));
+        product.setOptionList(storeShopMapper.selectProductOptions(productId));
+
+//지윤 26.07.07 리뷰 목록 조회 + 별점별 비율(%) 계산 (별점 막대그래프용)
+List<ReviewVO> reviews = storeShopMapper.selectProductReviews(productId);
+product.setReviewList(reviews);
+int[] count = new int[6]; // index 1~5 사용
+for (ReviewVO r : reviews) {
+    int star = (int) Math.round(r.getRating());
+    if (star >= 1 && star <= 5) count[star]++;
+}
+int total = reviews.size();
+product.setRating5Percent(total == 0 ? 0 : count[5] * 100 / total);
+product.setRating4Percent(total == 0 ? 0 : count[4] * 100 / total);
+product.setRating3Percent(total == 0 ? 0 : count[3] * 100 / total);
+product.setRating2Percent(total == 0 ? 0 : count[2] * 100 / total);
+product.setRating1Percent(total == 0 ? 0 : count[1] * 100 / total);
+
+//지윤 26.07.07 Q&A 목록 조회
+product.setQnaList(storeShopMapper.selectProductQna(productId));
+}
+return product;
+
+}
 }

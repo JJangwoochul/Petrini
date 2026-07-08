@@ -14,34 +14,33 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.petcare.petcare.member.auth.service.MemberAuthService;
+import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
+import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
 
-/* 2026/07/06 장우철 */
-
 @Controller("memberController")
 public class MemberAuthController {
 
-    // ── 의존성 주입 ──
-    // Controller는 URL·세션만 담당, 로그인 검증(BCrypt·DB)은 MemberAuthService에 위임
     private final MemberAuthService memberAuthService;
 
     public MemberAuthController(MemberAuthService memberAuthService) {
         this.memberAuthService = memberAuthService;
     }
 
-    // ── 로그인 화면 (GET) ──
-    // login.jsp 표시만, DB 조회 없음
+    // 2026/07/06 장우철 — login(로그인)
+
+    /** login — 화면 (GET /login) */
     @GetMapping("/login")
     public String login() {
         return "member/login";
     }
 
-    // ── 로그인 처리 (POST) ──
-    // login.jsp 폼 → loginId, loginPw 수신
+    /** login — 처리 (POST /login) */
     @PostMapping("/login")
     public String loginPost(
             @RequestParam(required = false) String loginId,
@@ -104,7 +103,7 @@ public class MemberAuthController {
     }
      */
 
-    // ── 회원가입 화면 ──
+    /** join — 화면 (GET /join) */
     @GetMapping("/join")
     public String join() {
         return "member/join";
@@ -114,6 +113,36 @@ public class MemberAuthController {
     public String joinAlias() {
         return "redirect:/join";
     }
+
+    // 2026/07/07 장우철 — join(회원가입)
+
+    /**
+     * join — 이메일 중복 확인 (GET /join/check-email)
+     * join.jsp [중복 확인] Ajax → JSON { available, message }
+     * SQL·검증은 Service, Controller 는 결과만 반환
+     */
+    @GetMapping("/join/check-email")
+    @ResponseBody
+    public EmailCheckResultVO checkEmail(@RequestParam String email) {
+        return memberAuthService.checkEmail(email);
+    }
+
+    /**
+     * join — 가입 처리 (POST /join)
+     * join.jsp [가입 완료] FormData → MemberRegisterVO 자동 매핑
+     * 성공: "OK" / 실패: "ERROR:코드" (join.jsp 에서 분기 — JSP 수정은 직접 적용)
+     */
+    @PostMapping("/join")
+    @ResponseBody
+    public String joinPost(MemberRegisterVO vo) {
+        String error = memberAuthService.register(vo);
+        if (error != null) {
+            return "ERROR:" + error;
+        }
+        return "OK";
+    }
+
+    // 2026/07/06 장우철 — login(로그아웃)
 
     // ── 로그아웃 ──
     // 서버 세션만 제거 (브라우저 자동로그인용 sessionStorage는 login.jsp에서 별도 처리 예정)

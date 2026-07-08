@@ -430,7 +430,7 @@
 .noti-actions { display:flex; justify-content:flex-end; gap:8px; margin-bottom:20px; }
 
 /* ================================================================
-   사업자 등록 신청 (biz-apply)
+   사업자 등록 신청 (biz/apply)
 ================================================================ */
 .biz-hero {
     position:relative; border-radius:var(--radius-md);

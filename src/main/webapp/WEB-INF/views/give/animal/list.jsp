@@ -1,4 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  역할: 유기동물 목록 화면 (give/animal/list)
+
+  - 박유정 / 2026-07-06
+  - 파일 안에서 API 를 직접 호출했는데, Service 로 옮김
+
+  [목록 화면 흐름] (2026-07-06 조건 후 조회 추가)
+  1. 사용자가 /give/animal/list 주소로 들어옴 → API 안 부름, 안내만 표시 (searched=false)
+  2. 조건 고르고 [조회] 클릭 → hidden search=true 와 함께 Controller 호출
+  3. giveAnimalService.getAnimalList() (캐시 적용)
+  4. 받은 결과(animals, totalCount 등)를 이 JSP 에 표시
+--%>
 <%@ taglib prefix="c"   uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn"  uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -57,6 +69,21 @@
   .page-btn:hover{border-color:var(--primary);color:var(--primary)}
   .page-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
   .page-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  /* 검색창 바로 아래 결과 영역만 로딩 */
+  .results-panel{position:relative;min-height:320px}
+  .search-loading{
+    display:none;position:absolute;top:0;left:0;right:0;z-index:10;
+    min-height:320px;
+    background:rgba(255,255,255,.92);
+    border:1px solid var(--border);border-radius:var(--radius-md);
+    flex-direction:column;align-items:center;justify-content:flex-start;
+    gap:20px;text-align:center;padding:32px 20px 36px;
+  }
+  .search-loading.is-show{display:flex}
+  .loading-dog{width:min(360px,85vw);max-width:100%;height:auto;border-radius:var(--radius-sm)}
+  .search-loading p{margin:0;font-size:20px;font-weight:800;color:var(--text-main);line-height:1.55}
+  .search-loading .loading-sub{display:block;margin-top:10px;font-size:14px;font-weight:600;color:var(--text-sub)}
 </style>
 
 <div class="give-content">
@@ -90,22 +117,22 @@
         <label>시·도</label>
         <select name="sido">
           <option value="">전체</option>
-          <option value="서울특별시"  ${sido eq '서울특별시'  ? 'selected' : ''}>서울</option>
-          <option value="부산광역시"  ${sido eq '부산광역시'  ? 'selected' : ''}>부산</option>
-          <option value="대구광역시"  ${sido eq '대구광역시'  ? 'selected' : ''}>대구</option>
-          <option value="인천광역시"  ${sido eq '인천광역시'  ? 'selected' : ''}>인천</option>
-          <option value="광주광역시"  ${sido eq '광주광역시'  ? 'selected' : ''}>광주</option>
-          <option value="대전광역시"  ${sido eq '대전광역시'  ? 'selected' : ''}>대전</option>
-          <option value="울산광역시"  ${sido eq '울산광역시'  ? 'selected' : ''}>울산</option>
-          <option value="경기도"      ${sido eq '경기도'      ? 'selected' : ''}>경기</option>
-          <option value="강원특별자치도" ${sido eq '강원특별자치도' ? 'selected' : ''}>강원</option>
-          <option value="충청북도"    ${sido eq '충청북도'    ? 'selected' : ''}>충북</option>
-          <option value="충청남도"    ${sido eq '충청남도'    ? 'selected' : ''}>충남</option>
-          <option value="전북특별자치도" ${sido eq '전북특별자치도' ? 'selected' : ''}>전북</option>
-          <option value="전라남도"    ${sido eq '전라남도'    ? 'selected' : ''}>전남</option>
-          <option value="경상북도"    ${sido eq '경상북도'    ? 'selected' : ''}>경북</option>
-          <option value="경상남도"    ${sido eq '경상남도'    ? 'selected' : ''}>경남</option>
-          <option value="제주특별자치도" ${sido eq '제주특별자치도' ? 'selected' : ''}>제주</option>
+          <option value="6110000"  ${sido eq '6110000'  ? 'selected' : ''}>서울</option>
+          <option value="6260000"  ${sido eq '6260000'  ? 'selected' : ''}>부산</option>
+          <option value="6270000"  ${sido eq '6270000'  ? 'selected' : ''}>대구</option>
+          <option value="6280000"  ${sido eq '6280000'  ? 'selected' : ''}>인천</option>
+          <option value="6290000"  ${sido eq '6290000'  ? 'selected' : ''}>광주</option>
+          <option value="6300000"  ${sido eq '6300000'  ? 'selected' : ''}>대전</option>
+          <option value="6310000"  ${sido eq '6310000'  ? 'selected' : ''}>울산</option>
+          <option value="6410000"  ${sido eq '6410000'      ? 'selected' : ''}>경기</option>
+          <option value="6510000"  ${sido eq '6510000' ? 'selected' : ''}>강원</option>
+          <option value="6430000"  ${sido eq '6430000'    ? 'selected' : ''}>충북</option>
+          <option value="6440000"  ${sido eq '6440000'    ? 'selected' : ''}>충남</option>
+          <option value="6450000"  ${sido eq '6450000' ? 'selected' : ''}>전북</option>
+          <option value="6460000"  ${sido eq '6460000'    ? 'selected' : ''}>전남</option>
+          <option value="6470000"  ${sido eq '6470000'    ? 'selected' : ''}>경북</option>
+          <option value="6480000"  ${sido eq '6480000'    ? 'selected' : ''}>경남</option>
+          <option value="6500000"  ${sido eq '6500000' ? 'selected' : ''}>제주</option>
         </select>
       </div>
       <div class="sf-group">
@@ -128,12 +155,40 @@
         </select>
       </div>
       <input type="hidden" name="pageNo" value="1">
+      <%-- [조건 고른 뒤에만 조회] 조회 버튼 눌렀을 때만 search=true 로 Controller 에 전달 --%>
+      <input type="hidden" name="search" value="true">
       <button type="submit" class="btn-search">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         조회
       </button>
     </form>
   </div>
+
+  <%-- 검색창 바로 아래: 결과 + 로딩 --%>
+  <div class="results-panel">
+
+    <div id="searchLoading" class="search-loading" aria-live="polite">
+      <img class="loading-dog" src="${contextPath}/resources/images/loading-dog.gif"
+           alt="" aria-hidden="true">
+      <p>
+        아이들의 간절한 기다림에 응답하는 중입니다.<br>
+        <small class="loading-sub">잠시만 기다려주세요!</small>
+      </p>
+    </div>
+
+  <%-- 아직 [조회] 안 눌렀을 때 안내 (API 호출 전) --%>
+  <c:if test="${!searched}">
+    <div class="empty-box">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <p style="font-size:15px;font-weight:600;color:var(--text-main);margin:0">조건을 선택한 뒤 [조회]를 눌러 주세요.</p>
+      <small style="font-size:13px;color:var(--text-muted)">지역·종류를 고른 후 조회하면 결과가 빠르게 표시됩니다.</small>
+    </div>
+  </c:if>
+
+  <%-- [조회] 눌렀을 때만 결과 수·카드·페이징 표시 --%>
+  <c:if test="${searched}">
 
   <%-- 결과 수 --%>
   <div class="result-bar">
@@ -202,33 +257,49 @@
         </c:forEach>
       </div>
 
-      <%-- 페이지네이션 --%>
+      <%-- 페이지네이션 (search=true 유지해야 다음 페이지도 API 조회됨) --%>
       <div class="pagination">
         <c:if test="${pageNo > 1}">
           <a class="page-btn"
-             href="${contextPath}/give/animal/list?sido=${sido}&upkind=${upkind}&state=${state}&pageNo=${pageNo-1}">
+             href="${contextPath}/give/animal/list?sido=${sido}&upkind=${upkind}&state=${state}&search=true&pageNo=${pageNo-1}">
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </a>
         </c:if>
 
-        <c:forEach begin="${[pageNo-2 > 1 ? pageNo-2 : 1][0]}"
-                   end="${[pageNo+2 < totalPages ? pageNo+2 : totalPages][0]}"
-                   var="p">
+        <%-- 페이지 버튼 5개씩 묶음 (1~5, 6~10, 11~15 ...) / 박유정 2026-07-06 --%>
+        <c:set var="startPage" value="${pageNo - ((pageNo - 1) % 5)}" />
+        <c:set var="endPage" value="${startPage + 4 > totalPages ? totalPages : startPage + 4}" />
+        <c:forEach begin="${startPage}" end="${endPage}" var="p">
           <a class="page-btn ${p == pageNo ? 'active' : ''}"
-             href="${contextPath}/give/animal/list?sido=${sido}&upkind=${upkind}&state=${state}&pageNo=${p}">
+             href="${contextPath}/give/animal/list?sido=${sido}&upkind=${upkind}&state=${state}&search=true&pageNo=${p}">
             ${p}
           </a>
         </c:forEach>
 
         <c:if test="${pageNo < totalPages}">
           <a class="page-btn"
-             href="${contextPath}/give/animal/list?sido=${sido}&upkind=${upkind}&state=${state}&pageNo=${pageNo+1}">
+             href="${contextPath}/give/animal/list?sido=${sido}&upkind=${upkind}&state=${state}&search=true&pageNo=${pageNo+1}">
             <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
         </c:if>
       </div>
     </c:otherwise>
   </c:choose>
+
+  </c:if>
+
+  </div><%-- /results-panel --%>
 </div>
+
+<script>
+  function showSearchLoading() {
+    var el = document.getElementById('searchLoading');
+    if (el) el.classList.add('is-show');
+  }
+  document.querySelector('.search-form')?.addEventListener('submit', showSearchLoading);
+  document.querySelectorAll('.pagination .page-btn').forEach(function(a) {
+    a.addEventListener('click', showSearchLoading);
+  });
+</script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

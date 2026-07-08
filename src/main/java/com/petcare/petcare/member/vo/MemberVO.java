@@ -32,7 +32,12 @@ public class MemberVO {
     // ── 권한·역할 (세션에서 화면 분기용) ──
     private String role;            // USER / BIZ / ADMIN
     private String bizType;         // 사업자 유형 HOSPITAL, STAY, STORE 등 (BIZ일 때)
+    private Long   adminNo;         // 2026/07/07 장우철 추가 — 관리자번호 (role=ADMIN일 때, TB_ADMIN.ADMIN_NO)
     private String status;          // 화면용 상태 (ACTIVE 등, DB STATUS_CD와 별도 사용 가능)
+
+    // 2026/07/08 장우철 — 마이페이지 DB 연동 (A단계)
+    // TB_MEMBER.POINT_BALANCE — 로그인 시 세션에 담아 사이드바·마이홈 보유 포인트 표시
+    private Long pointBalance;      // 보유 포인트 — TB_MEMBER.POINT_BALANCE (가입 시 0)
 
     // 약관 동의 (요구사항: 서비스(필수)·개인정보(필수)·마케팅(선택))
     private String agreeService;    // Y/N

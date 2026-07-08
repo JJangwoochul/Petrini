@@ -1,126 +1,101 @@
 /**
- * 역할: 유기동물 입양 URL 처리 → Service 호출 → JSP 반환
+ * 역할: 유기동물(정부 API) URL 처리 → Service 호출 → JSP 반환
  *
- * 연결
- * - Service: GiveAnimalService
- * - 상속: GiveBaseController (공공 API 헬퍼)
+ * - 박유정 / 2026-07-06
+ * - 파일 안에서 API 를 직접 호출했는데, Service 로 옮김
  *
- * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
- * return 경로는 담당 JSP와 동일하게 맞출 것
+ * [목록 화면 흐름] (2026-07-06 조건 후 조회 추가)
+ * 1. 사용자가 /give/animal/list 주소로 들어옴 → API 안 부름, 안내만 표시
+ * 2. 조건 고르고 [조회] 클릭 → search=true 와 함께 Service 호출
+ * 3. giveAnimalService.getAnimalList() (캐시 적용)
+ * 4. 받은 결과를 model 에 넣고 list.jsp 보여줌
+ *
+ * [상세 화면 흐름]
+ * 1. 사용자가 /give/animal/detail?desertionNo=번호 로 들어옴
+ * 2. giveAnimalService.getAnimalDetail() 에 맡김
+ * 3. 받은 유기견 1마리 정보를 detail.jsp 에 보여줌
  */
 
 package com.petcare.petcare.give.animal.controller;
 
-import java.net.URLEncoder;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petcare.petcare.common.util.controller.CommonUtilController;
-import com.petcare.petcare.give.vo.AbandonmentVO;
+import com.petcare.petcare.give.animal.service.GiveAnimalService;
+import com.petcare.petcare.give.animal.vo.GiveAnimalListResult;
 
 @Controller("giveAnimalController")
 @RequestMapping("/give/animal")
-public class GiveAnimalController extends CommonUtilController {
-    String baseUrl = "https://apis.data.go.kr/1543061/abandonmentPublicService_v2/abandonmentPublic_v2";
+public class GiveAnimalController {
 
+    @Autowired
+    private GiveAnimalService giveAnimalService;
+
+    /**
+     * 유기견 목록 페이지
+     *
+     * [조건 고른 뒤에만 조회] 박유정 2026-07-06
+     * - 페이지 첫 진입(search=false) : API 호출 안 함 → 빠르게 화면만 보여줌
+     * - [조회] 버튼 클릭(search=true) : 그때 Service → 정부 API 호출
+     * - 같은 조건 재조회는 Service 의 @Cacheable 캐시가 처리 (두 번째부터 빠름)
+     */
     @GetMapping("/list")
     public String animalList(
-            @RequestParam(defaultValue = "")  String sido,
-            @RequestParam(defaultValue = "")  String sigungu,
-            @RequestParam(defaultValue = "")  String upkind,
-            @RequestParam(defaultValue = "")  String state,
-            @RequestParam(defaultValue = "1") int    pageNo,
+            @RequestParam(defaultValue = "") String sido,
+            @RequestParam(defaultValue = "") String upkind,
+            @RequestParam(defaultValue = "") String state,
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "false") boolean search,
             Model model) {
 
-        try {
+        // JSP 검색 폼·페이징에서 선택값 유지 + "조회 했는지" 여부 전달 (화면용 → Controller 담당)
+        model.addAttribute("sido", sido);
+        model.addAttribute("upkind", upkind);
+        model.addAttribute("state", state);
+        model.addAttribute("searched", search);
 
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
-            String bgnde = LocalDate.now().minusDays(30).format(fmt);
-            String endde = LocalDate.now().format(fmt);
-
-            StringBuilder sb = new StringBuilder(baseUrl);
-            sb.append("?serviceKey=").append(URLEncoder.encode(serviceKey, "UTF-8"));
-            sb.append("&bgnde=").append(bgnde);
-            sb.append("&endde=").append(endde);
-            sb.append("&pageNo=").append(pageNo);
-            sb.append("&numOfRows=").append(pageSize);
-            sb.append("&_type=json");
-            if (!sido.isEmpty())    sb.append("&sidoLikeCd=").append(URLEncoder.encode(sido,    "UTF-8"));
-            if (!sigungu.isEmpty()) sb.append("&sigunguLikeCd=").append(URLEncoder.encode(sigungu,"UTF-8"));
-            if (!upkind.isEmpty())  sb.append("&upkind=").append(upkind);
-            if (!state.isEmpty())   sb.append("&state=").append(state);
-
-            String json   = callApi(sb.toString());
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(json);
-            JsonNode body = root.path("response").path("body");
-            int totalCount = body.path("totalCount").asInt(0);
-            JsonNode items = body.path("items").path("item");
-
-            List<AbandonmentVO> animals = new ArrayList<>();
-            if (items.isArray()) {
-                for (JsonNode item : items) animals.add(AbandonmentVO.parseItem(item, fmt));
-            } else if (items.isObject() && !items.isEmpty()) {
-                animals.add(AbandonmentVO.parseItem(items, fmt));
-            }
-
-            model.addAttribute("animals",    animals);
-            model.addAttribute("totalCount", totalCount);
-            model.addAttribute("pageNo",     pageNo);
-            model.addAttribute("totalPages", (int) Math.ceil((double) totalCount / pageSize));
-            model.addAttribute("sido",       sido);
-            model.addAttribute("upkind",     upkind);
-            model.addAttribute("state",      state);
-            model.addAttribute("apiError",   false);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            model.addAttribute("animals",    new ArrayList<>());
+        // 아직 [조회] 안 눌렀으면 API 스킵 (지역 첫 조회 10초+ 대기 방지)
+        if (!search) {
+            model.addAttribute("animals", Collections.emptyList());
             model.addAttribute("totalCount", 0);
-            model.addAttribute("pageNo",     1);
+            model.addAttribute("pageNo", 1);
             model.addAttribute("totalPages", 0);
-            model.addAttribute("apiError",   true);
-            model.addAttribute("errorMsg",   e.getMessage());
+            model.addAttribute("apiError", false);
+            return "give/animal/list";
+        }
+
+        // [조회] 눌렀을 때만 Service 호출 
+        GiveAnimalListResult result = giveAnimalService.getAnimalList(sido, upkind, state, pageNo);
+
+        model.addAttribute("animals", result.getAnimals());
+        model.addAttribute("totalCount", result.getTotalCount());
+        model.addAttribute("pageNo", result.getPageNo());
+        model.addAttribute("totalPages", result.getTotalPages());
+        model.addAttribute("apiError", result.isApiError());
+        if (result.isApiError()) {
+            model.addAttribute("errorMsg", result.getErrorMsg());
         }
         return "give/animal/list";
     }
-    
-    // ── 유기동물 상세 ─────────────────────────────────────
+
+    /** 유기견 상세 페이지 — desertionNo 로 Service.getAnimalDetail() 호출 */
     @GetMapping("/detail")
     public String animalDetail(@RequestParam String desertionNo, Model model) {
         try {
-            StringBuilder sb = new StringBuilder(baseUrl);
-            sb.append("?serviceKey=").append(URLEncoder.encode(serviceKey, "UTF-8"));
-            sb.append("&desertion_no=").append(URLEncoder.encode(desertionNo, "UTF-8"));
-            sb.append("&_type=json");
-
-            String json   = callApi(sb.toString());
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(json);
-            JsonNode items = root.path("response").path("body").path("items").path("item");
-
-            // 결과가 1건이면 객체로, 여러 건이면 배열로 내려오는 경우가 있어 둘 다 처리
-            JsonNode item = items.isArray() ? items.get(0) : items;
-
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
-            model.addAttribute("animal",   AbandonmentVO.parseItem(item, fmt));
+            model.addAttribute("animal", giveAnimalService.getAnimalDetail(desertionNo));
             model.addAttribute("apiError", false);
-        } 
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("animal",   null);
+            model.addAttribute("animal", null);
             model.addAttribute("apiError", true);
         }
         return "give/animal/detail";
     }
+
 }

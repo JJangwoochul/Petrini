@@ -15,4 +15,9 @@
 
 package com.petcare.petcare.common.config.service;
 
-public class CommonConfigServiceImpl implements CommonConfigService {}
+import org.springframework.stereotype.Service;
+
+@Service
+public class CommonConfigServiceImpl implements CommonConfigService {
+    
+}

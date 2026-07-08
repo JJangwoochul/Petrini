@@ -40,4 +40,7 @@ int getTotalPages(Long categoryId, String keyword);
 
 //지윤 26.07.06 카테고리 트리 조회
 List<CategoryVO> getCategoryTree();
+
+//지윤 26.07.07 상품 상세 조회
+StoreShopVO getProductDetail(Long productId);
 }

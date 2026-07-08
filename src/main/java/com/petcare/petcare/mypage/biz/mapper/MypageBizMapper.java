@@ -19,6 +19,16 @@ package com.petcare.petcare.mypage.biz.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
+
 
 @Mapper
-public interface MypageBizMapper {}
+public interface MypageBizMapper {
+    // TB_BUSINESS INSERT
+    public void insertBusiness(MypageBizVO vo) throws Exception;
+
+    // TB_BUSINESS_AUTH INSERT
+    public void insertBusinessAuth(MypageBizVO vo) throws Exception;
+
+    public MypageBizVO selectBizAuthStatus(String bizId) throws Exception;
+}

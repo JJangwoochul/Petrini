@@ -14,6 +14,11 @@
 
 package com.petcare.petcare.store.vo;
 
+import java.util.List;
+import com.petcare.petcare.store.vo.OptionVO;
+import com.petcare.petcare.store.vo.ReviewVO;
+import com.petcare.petcare.store.vo.QnaVO;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -39,7 +44,23 @@ public class StoreShopVO {
     private Integer stockQty;
     private String thumbnailUrl;
 
-    // ===== 리뷰 (TB_REVIEW, 아직 더미데이터 없음 → 0으로 표시됨) =====
-    private Double avgRating;
+   private Double avgRating;
     private Integer reviewCount;
+
+    //지윤 26.07.07 상품 상세 이미지 목록
+    private List<String> imageList;
+
+    //지윤 26.07.07 상품 옵션 목록
+    private List<OptionVO> optionList;
+
+    //지윤 26.07.07 상품 리뷰 목록 + 별점 분포(막대그래프용 %)
+   private List<ReviewVO> reviewList;
+   private Integer rating5Percent;
+   private Integer rating4Percent;
+   private Integer rating3Percent;
+   private Integer rating2Percent;
+   private Integer rating1Percent;
+
+   //지윤 26.07.07 상품 Q&A 목록
+   private List<QnaVO> qnaList;
 }

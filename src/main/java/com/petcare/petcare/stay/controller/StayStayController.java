@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.common.external.service.KakaoMapService;
 
+
 @Controller("stayController")
 @RequestMapping("/stay")
 public class StayStayController {
@@ -34,7 +35,7 @@ public class StayStayController {
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") String id, Model model) {
         model.addAttribute("id", id);
-        kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
+        //kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
         return "stay/detail";
     }
 

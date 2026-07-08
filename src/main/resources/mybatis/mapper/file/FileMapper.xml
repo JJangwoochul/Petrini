@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petcare.petcare.file.mapper.FileMapper">
+    <insert id="insertFile" parameterType="com.petcare.petcare.file.vo.FileVO">
+        INSERT INTO TB_FILE (
+                                FILE_ID, 
+                                REF_TYPE, 
+                                REF_ID, 
+                                FILE_URL, 
+                                DRIVE_FILE_ID,
+                                <!-- FILE_ORDER, -->
+                                ORIGIN_NAME,
+                                REG_DATE
+                            )
+        VALUES              (
+                                SEQ_FILE.NEXTVAL, 
+                                #{refType}, 
+                                #{refId}, 
+                                #{fileUrl}, 
+                                #{driveFileId, jdbcType=VARCHAR},
+                                <!--#{fileOrder}, --> 
+                                #{originName, jdbcType=VARCHAR},
+                                SYSDATE
+                            )
+    </insert>
+
+    <select id="selectFileList" parameterType="com.petcare.petcare.file.vo.FileVO" resultType="com.petcare.petcare.file.vo.FileVO">
+        SELECT      FILE_ID, 
+                    REF_TYPE, 
+                    REF_ID, 
+                    FILE_URL, 
+                    <!--FILE_ORDER, --> 
+                    REG_DATE
+        FROM        TB_FILE
+        WHERE       REF_TYPE = #{refType}
+        AND         REF_ID   = #{refId}
+        --ORDER BY    FILE_ORDER ASC
+    </select>
+
+    <delete id="deleteFilesByRefId" parameterType="com.petcare.petcare.file.vo.FileVO">
+        DELETE FROM     TB_FILE
+        WHERE           REF_TYPE = #{refType}
+        AND             REF_ID   = #{refId}
+    </delete>
+</mapper>

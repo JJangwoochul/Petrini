@@ -1,119 +1,26 @@
+<%-- community/list.jsp — 커뮤니티 게시판 목록 --%>
+<%--
+  - 박유정 / 2026-07-08
+  - STEP 3: 목록 DB 연동 (가짜 카드 → ${list})
+
+  [목록 화면 흐름]
+  1. GET /community?boardType=... → CommunityPostController.list()
+  2. Service → TB_POST 조회 + thumbUrl(첫 사진)
+  3. 아래 <c:forEach items="${list}"> 로 카드 표시
+  4. 탭 클릭은 index.jsp 의 <a href> 로 URL 이동 (JS 필터 X)
+
+  [탭 ↔ boardType]
+  - 전체 /community
+  - 집사생활 ?boardType=TOWN
+  - 무료나눔 ?boardType=SHARE
+  - 수의사 상담 ?boardType=LIFE
+--%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="community" />
-<%@ include file="/WEB-INF/views/common/header.jsp" %>
-<style>
-  .comm-hero{background:linear-gradient(135deg,#0F766E 0%,#14B8A6 60%,#5EEAD4 100%);padding:40px 0;color:#fff;text-align:center}
-  .comm-hero-inner{max-width:var(--inner-width);margin:0 auto;padding:0 20px}
-  .comm-hero h1{font-size:28px;font-weight:800;margin:0 0 8px}
-  .comm-hero p{font-size:14px;opacity:.85;margin:0}
-  .comm-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px}
-  .comm-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px}
-  .comm-tab{padding:12px 24px;font-size:15px;font-weight:600;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:var(--transition)}
-  .comm-tab.on{color:var(--primary);border-bottom-color:var(--primary)}
-  .comm-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  .comm-search{display:flex;gap:8px}
-  .comm-search input{border:1px solid var(--border);border-radius:50px;padding:9px 18px;font-size:14px;outline:none;width:240px}
-  .comm-search input:focus{border-color:var(--primary)}
-  .comm-search button{padding:9px 18px;border:none;border-radius:50px;background:var(--primary);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
-  .btn-write{padding:9px 20px;border:none;border-radius:50px;background:var(--primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
-  .btn-write svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-  .comm-card{display:flex;gap:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:12px;transition:var(--transition);cursor:pointer}
-  .comm-card:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px)}
-  .comm-thumb{width:96px;height:96px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0}
-  .comm-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between}
-  .comm-category{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:6px}
-  .cat-town{background:#FFF8E1;color:#F59E0B}
-  .cat-lost{background:#FEE2E2;color:#DC2626}
-  .cat-share{background:#DCFCE7;color:#16A34A}
-  .cat-life{background:var(--primary-light);color:var(--primary-dark)}
-  .comm-title{font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .comm-preview{font-size:13px;color:var(--text-muted);margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .comm-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-muted)}
-  .comm-meta-item{display:flex;align-items:center;gap:4px}
-  .comm-meta-item svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .vet-tab{color:#0284C7 !important}
-  .vet-tab.on{border-bottom-color:#0284C7 !important;color:#0284C7 !important}
-  /* 수의사 상담 배너 */
-  .vet-banner{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #BFDBFE;border-radius:var(--radius-md);padding:20px 24px;display:flex;align-items:center;gap:16px;margin-bottom:20px}
-  .vet-banner-icon{width:48px;height:48px;border-radius:50%;background:#0284C7;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .vet-banner-icon svg{width:24px;height:24px;stroke:#fff}
-  .vet-banner-title{font-size:16px;font-weight:800;color:#1E40AF;margin-bottom:2px}
-  .vet-banner-desc{font-size:13px;color:#3B82F6}
-  .vet-banner-desc strong{color:#1D4ED8}
-  .btn-vet-ask{margin-left:auto;flex-shrink:0;padding:10px 18px;border:none;border-radius:50px;background:#0284C7;color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
-  .btn-vet-ask svg{width:14px;height:14px}
-  .btn-vet-ask:hover{background:#0369A1}
-  /* 글쓰기 폼 */
-  .vet-ask-form{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;margin-bottom:20px}
-  .vet-ask-title{font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
-  .vet-form-row{margin-bottom:14px}
-  .vet-form-row label{display:block;font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:6px}
-  .req{color:#FF6B6B}
-  .vet-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .vet-input{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;transition:border-color .15s}
-  .vet-input:focus{border-color:#0284C7}
-  .vet-textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;min-height:120px;resize:vertical;line-height:1.6}
-  .vet-textarea:focus{border-color:#0284C7}
-  .vet-radio-label{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text-sub);cursor:pointer;padding:8px 16px;border:1px solid var(--border);border-radius:50px}
-  .vet-upload-box{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text-muted);font-size:13px}
-  .vet-upload-box svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-  .vet-upload-box:hover{border-color:#0284C7;color:#0284C7}
-  .vet-btn-cancel{padding:10px 24px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text-sub);font-size:14px;font-weight:600;cursor:pointer}
-  .vet-btn-submit{padding:10px 24px;border:none;border-radius:var(--radius-sm);background:#0284C7;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-  .vet-btn-submit:hover{background:#0369A1}
-  /* 상담 카드 */
-  .vet-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-bottom:12px;transition:var(--transition)}
-  .vet-card:hover{box-shadow:var(--shadow-sm)}
-  .vet-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-  .vet-card-badges{display:flex;gap:6px}
-  .vet-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
-  .vet-badge.dog{background:#FEF3C7;color:#D97706}
-  .vet-badge.cat{background:#F3E8FF;color:#9333EA}
-  .vet-badge.answered{background:#DCFCE7;color:#16A34A}
-  .vet-badge.waiting{background:#FEE2E2;color:#DC2626}
-  .vet-card-date{font-size:12px;color:var(--text-muted)}
-  .vet-card-title{font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px}
-  .vet-card-preview{font-size:13px;color:var(--text-muted);margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  /* 수의사 답변 박스 */
-  .vet-answer{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:12px}
-  .vet-answer-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#1D4ED8;margin-bottom:6px}
-  .vet-answer-head svg{width:14px;height:14px;stroke:#1D4ED8}
-  .vet-answer-date{color:#93C5FD;font-weight:400;margin-left:auto}
-  .vet-answer-text{font-size:13px;color:#1E40AF;line-height:1.7}
-  .vet-card-meta{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-muted)}
-  .vet-meta-item{display:flex;align-items:center;gap:4px}
-  .vet-meta-item svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .vet-meta-item.like svg{fill:var(--accent);stroke:none}
-  .vet-select{border:1px solid var(--border);border-radius:50px;padding:8px 14px;font-size:13px;font-family:inherit;outline:none;cursor:pointer}
-</style>
-
-<div class="comm-hero">
-  <div class="comm-hero-inner">
-    <h1>우리애기 건강 고민, 수의사 선생님이 도와드려요!</h1>
-    <p>강아지, 고양이와 함께하는 반려생활, 궁금한점 많으시죠?</p>
-  </div>
-</div>
-
-<div class="comm-wrap">
-  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px">
-    <div>
-      <h1 style="font-size:24px;font-weight:800;color:var(--text-main);margin-bottom:4px">커뮤니티</h1>
-      <p style="font-size:14px;color:var(--text-muted)">반려동물 이야기를 나눠보세요</p>
-    </div>
-    <button class="btn-write" onclick="location.href='${contextPath}/community/write'"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>글쓰기</button>
-  </div>
-  <div class="comm-tabs">
-    <button class="comm-tab on" onclick="selTab(this,'all')">전체</button>
-    <button class="comm-tab" onclick="selTab(this,'life')">집사생활</button>
-    <%-- <button class="comm-tab" onclick="selTab(this,'walk')">산책추천</button> --%>
-    <button class="comm-tab" onclick="selTab(this,'share')">무료나눔</button>
-    <button class="comm-tab vet-tab" onclick="selTab(this,'vet')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      수의사 상담
-    </button>
-  </div>
+<c:set var="commTab" value="all" />
+<%@ include file="/WEB-INF/views/community/index.jsp" %>
   <%-- ── 일반 게시판 영역 ─────────────────────────────── --%>
   <div id="normalBoard">
     <div class="comm-toolbar">
@@ -124,59 +31,43 @@
       </div>
     </div>
 
-  <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=1'">
-    <img class="comm-thumb" src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=192&q=70&auto=format&fit=crop" alt="강아지" onerror="this.src='https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'">
-    <div class="comm-body">
-      <div>
-        <span class="comm-category cat-life">집사생활</span>
-        <div class="comm-title">우리 강아지 훈련 방법 공유해요! 앉아·기다려 마스터!</div>
-        <div class="comm-preview">6개월 된 비숑이 드디어 앉아·기다려를 배웠어요! 간식 클리커 훈련법으로 2주 만에 성공했답니다. 궁금하신 분들을 위해 자세한 방법을 공유해 드릴게요...</div>
+    <%-- DB 글 목록 (Controller 가 넘긴 ${list}) --%>
+    <c:forEach var="item" items="${list}">
+      <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=${item.postId}'">
+        <img class="comm-thumb"
+             src="${not empty item.thumbUrl ? contextPath.concat(item.thumbUrl) : 'https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'}"
+             alt="썸네일"
+             onerror="this.src='https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'">
+        <div class="comm-body">
+          <div>
+            <c:choose>
+              <c:when test="${item.boardType eq 'TOWN'}">
+                <span class="comm-category cat-town">집사생활</span>
+              </c:when>
+              <c:when test="${item.boardType eq 'SHARE'}">
+                <span class="comm-category cat-share">무료나눔</span>
+              </c:when>
+              <c:when test="${item.boardType eq 'LIFE'}">
+                <span class="comm-category cat-life">수의사 상담</span>
+              </c:when>
+            </c:choose>
+            <div class="comm-title">${item.title}</div>
+            <div class="comm-preview">${item.body}</div>
+          </div>
+          <div class="comm-meta">
+            <span class="comm-meta-item">${item.regDate}</span>
+            <span class="comm-meta-item">조회 ${item.viewCount}</span>
+            <span class="comm-meta-item">♥ ${item.likeCnt}</span>
+          </div>
+        </div>
       </div>
-      <div class="comm-meta">
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>김민준</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.25</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>1,284</span>
-        <span class="comm-meta-item like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>148</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>32</span>
-      </div>
-    </div>
-  </div>
+    </c:forEach>
 
-  <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=2'">
-    <img class="comm-thumb" src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=192&q=70&auto=format&fit=crop" alt="분실" onerror="this.src='https://placehold.co/96x96/FEE2E2/DC2626?text=분실'">
-    <div class="comm-body">
-      <div>
-        <span class="comm-category cat-lost">분실·보호</span>
-        <div class="comm-title">[분실] 강남구 역삼동 흰색 말티즈 찾습니다 — 6월 25일 오후 실종</div>
-        <div class="comm-preview">이름은 코코, 3살 암컷 말티즈입니다. 어제 오후 6시쯤 역삼역 근처에서 목줄이 끊어져 실종됐어요. 파란 하트 모양 목걸이를 하고 있어요. 발견하시면 꼭 연락주세요...</div>
-      </div>
-      <div class="comm-meta">
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>이서연</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.25</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>892</span>
-        <span class="comm-meta-item like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>84</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>18</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="comm-card" onclick="location.href='${contextPath}/community/detail?id=3'">
-    <img class="comm-thumb" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=192&q=70&auto=format&fit=crop" alt="나눔" onerror="this.src='https://placehold.co/96x96/DCFCE7/16A34A?text=나눔'">
-    <div class="comm-body">
-      <div>
-        <span class="comm-category cat-share">무료나눔</span>
-        <div class="comm-title">[나눔완료] 고양이 사료 나눔합니다 — 마포구 직거래</div>
-        <div class="comm-preview">고양이가 갑자기 이 사료를 안 먹어서 나눔합니다. 로얄캐닌 인도어 2kg 미개봉 1개, 절반 사용 1개. 마포구 합정역 근처 직거래만 가능해요...</div>
-      </div>
-      <div class="comm-meta">
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>최유나</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2025.06.24</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>456</span>
-        <span class="comm-meta-item like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>31</span>
-        <span class="comm-meta-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>9</span>
-      </div>
-    </div>
-  </div>
+<c:if test="${empty list}">
+  <p style="text-align:center;color:var(--text-muted);padding:40px 0">
+    등록된 게시글이 없습니다.
+  </p>
+</c:if>
 
   <div style="display:flex;justify-content:center;margin-top:24px;gap:5px">
     <button style="width:36px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer">‹</button>
@@ -338,15 +229,31 @@
       <button style="width:36px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer">›</button>
     </div>
   </div><%-- end #vetBoard --%>
-</div>
+  </div><%-- end .comm-content --%>
+</div><%-- end .comm-wrap --%>
 <script>
 function selTab(btn, type) {
-  document.querySelectorAll('.comm-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.comm-tab').forEach(function(t) {
+    if (t.tagName === 'BUTTON') t.classList.remove('on');
+  });
   btn.classList.add('on');
+
   var isVet = (type === 'vet');
   document.getElementById('normalBoard').style.display = isVet ? 'none' : 'block';
   document.getElementById('vetBoard').style.display   = isVet ? 'block' : 'none';
   if (!isVet) document.getElementById('askForm').style.display = 'none';
+
+  if (isVet) return;
+
+  // 전체 / 집사생활 / 무료나눔 — 카드 필터 (DB 연동 전 UI용)
+  document.querySelectorAll('#normalBoard .comm-card').forEach(function(card) {
+    var bt = card.getAttribute('data-board-type');
+    var show = false;
+    if (type === 'all')   show = true;
+    if (type === 'life')  show = (bt === 'LIFE');
+    if (type === 'share') show = (bt === 'SHARE');
+    card.style.display = show ? 'flex' : 'none';
+  });
 }
 function toggleAskForm() {
   var f = document.getElementById('askForm');

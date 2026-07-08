@@ -6,7 +6,6 @@
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
-
 <style>
   .hosp-hero{background:linear-gradient(135deg,#0C4A6E 0%,#0284C7 60%,#38BDF8 100%);padding:40px 0;color:#fff;text-align:center}
   .hosp-hero-inner{max-width:var(--inner-width);margin:0 auto;padding:0 20px}
@@ -30,12 +29,25 @@
   /* 지도 영역 */
   .hosp-map-area{background:var(--bg-page);border:1px solid var(--border);border-radius:var(--radius-md);height:280px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;overflow:hidden}
   .hosp-map-area img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md)}
+  /* 지도 위 검색바 */
+  .hosp-map-search{display:flex;gap:8px;margin-bottom:12px}
+  .hosp-map-search input{
+    flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:10px 14px;font-size:14px;outline:none;font-family:inherit
+  }
+  .hosp-map-search input:focus{border-color:var(--primary)}
+  .hosp-map-search button{
+    padding:10px 18px;border:none;border-radius:var(--radius-sm);
+    background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap
+  }
   /* 병원 목록 */
   .hosp-list-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .hosp-list-head span{font-size:14px;color:var(--text-sub)}
   .hosp-list-head strong{color:var(--text-main);font-weight:700}
   .hosp-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start;transition:var(--transition);cursor:pointer}
   .hosp-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  /* 카드 활성화 (마커 클릭 시 해당 카드 강조) */
+  .hosp-card.active{border-color:var(--primary);box-shadow:0 0 0 2px rgba(2,132,199,.2)}
   .hosp-thumb{width:88px;height:88px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0}
   .hosp-body{flex:1;min-width:0}
   .hosp-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
@@ -95,79 +107,222 @@
   </aside>
 
   <div>
-    <div class="hosp-map-area" id="kakao-map">
-      <%-- <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=900&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/900x280/EAF7F2/2BAB82?text=카카오맵+API+연동+예정'"> --%>
+    <%-- 검색바 --%>
+    <div class="hosp-map-search">
+      <input type="text" id="mapSearchInput" placeholder="장소명, 지역명 검색...">
+      <button onclick="searchPlace()">검색</button>
     </div>
-<c:set var="mapLevel"     value="3"/>
-<c:set var="mapAddMarker" value="${true}"/>
-<%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
+
+    <div class="hosp-map-area" id="kakao-map"></div>
+    <c:set var="mapLevel" value="3"/>
+    <c:set var="mapAddMarker" value="${true}"/>
+    <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
+    
     <div class="hosp-list-head">
-      <span>검색 결과 <strong>24개</strong> 병원</span>
+      <span>검색 결과 <strong>${hospitalList.size()}개</strong> 병원</span>
       <div style="display:flex;gap:8px">
         <span class="chip on" style="font-size:12px">거리순</span>
         <span class="chip" style="font-size:12px">별점순</span>
         <span class="chip" style="font-size:12px">리뷰순</span>
       </div>
     </div>
-    <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=1'">
-      <img class="hosp-thumb" src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=176&q=70&auto=format&fit=crop" alt="병원" onerror="this.src='https://placehold.co/88x88/E0F2FE/0284C7?text=병원'">
-      <div class="hosp-body">
-        <div class="hosp-tags"><span class="hosp-tag type">동물병원</span><span class="hosp-tag open">진료중</span></div>
-        <div class="hosp-name">행복 동물병원</div>
-        <div class="hosp-meta">
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 마포구 합정동 · 0.8km</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>평일 09:00~19:00 · 토 09:00~14:00</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>내과·외과·피부과·안과</div>
-        </div>
-      </div>
-      <div class="hosp-right">
-        <div class="hosp-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>4.9 (128)</div>
-        <div class="hosp-dist">0.8km</div>
-        <button class="btn-reserve" onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=1'">예약하기</button>
-      </div>
-    </div>
-    <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=2'">
-      <img class="hosp-thumb" src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=176&q=70&auto=format&fit=crop" alt="병원2" onerror="this.src='https://placehold.co/88x88/E0F2FE/0284C7?text=병원'">
-      <div class="hosp-body">
-        <div class="hosp-tags"><span class="hosp-tag type">동물병원</span><span class="hosp-tag open">진료중</span></div>
-        <div class="hosp-name">서울 24시 동물의료센터</div>
-        <div class="hosp-meta">
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 강남구 역삼동 · 1.4km</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>24시간 운영</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>응급·중환자·내과·외과·종양</div>
-        </div>
-      </div>
-      <div class="hosp-right">
-        <div class="hosp-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>4.7 (256)</div>
-        <div class="hosp-dist">1.4km</div>
-        <button class="btn-reserve" onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=2'">예약하기</button>
-      </div>
-    </div>
-    <div class="hosp-card" onclick="location.href='${contextPath}/hospital/detail?id=3'">
-      <img class="hosp-thumb" src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=176&q=70&auto=format&fit=crop" alt="병원3" onerror="this.src='https://placehold.co/88x88/E0F2FE/0284C7?text=병원'">
-      <div class="hosp-body">
-        <div class="hosp-tags"><span class="hosp-tag type">동물병원</span><span class="hosp-tag close">진료종료</span></div>
-        <div class="hosp-name">미래 고양이 전문병원</div>
-        <div class="hosp-meta">
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>서울 서초구 방배동 · 2.1km</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>평일 10:00~18:00 (점심 13~14시)</div>
-          <div class="hosp-meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>고양이 전문 · 내과·피부과·치과</div>
-        </div>
-      </div>
-      <div class="hosp-right">
-        <div class="hosp-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>4.8 (94)</div>
-        <div class="hosp-dist">2.1km</div>
-        <button class="btn-reserve" onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=3'" style="background:var(--text-muted)">예약하기</button>
-      </div>
-    </div>
+
+    <c:choose>
+      <c:when test="${not empty hospitalList}">
+        <c:forEach var="h" items="${hospitalList}">
+          <%-- id 추가 + onclick을 selectHospital으로 --%>
+          <div class="hosp-card" id="card-${h.hospitalId}" onclick="selectHospital(${h.hospitalId})">
+            <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${h.name}">
+            <div class="hosp-body">
+              <div class="hosp-tags">
+                <span class="hosp-tag type">동물병원</span>
+              </div>
+              <div class="hosp-name">${h.name}</div>
+              <div class="hosp-meta">
+                <div class="hosp-meta-row">
+                  <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${h.addr}
+                </div>
+                <div class="hosp-meta-row">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  ${h.tagList}
+                </div>
+              </div>
+            </div>
+            <div class="hosp-right">
+              <div class="hosp-rating">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <c:choose>
+                  <c:when test="${h.avgRating != null}">${h.avgRating} (${h.reviewCnt})</c:when>
+                  <c:otherwise>-</c:otherwise>
+                </c:choose>
+              </div>
+              <%-- 2026/07/08 장우철 — 목록 버튼 예약하기 → 상세보기, 경로 /hospital/detail --%>
+              <%--
+              <button class="btn-reserve"
+                      onclick="event.stopPropagation();location.href='${contextPath}/hospital/reserve?id=${h.hospitalId}'">
+                예약하기
+              </button>
+              --%>
+              <button class="btn-reserve"
+                      onclick="event.stopPropagation();location.href='${contextPath}/hospital/detail?id=${h.hospitalId}'">
+                상세보기
+              </button>
+            </div>
+          </div>
+        </c:forEach>
+      </c:when>
+      <c:otherwise>
+        <p style="font-size:15px;font-weight:600;color:var(--text-main);margin:0">등록된 병원이 없습니다.</p>
+      </c:otherwise>
+    </c:choose>
   </div>
 </div>
 
 <script>
-  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',function(){
-    this.closest('.hosp-filter-chips,.hosp-list-head div').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-    this.classList.add('on');
-  }));
+  /* ── 1) JSTL → JS 배열 변환 ── */
+  var HOSPITALS = [
+    <c:forEach items="${hospitalList}" var="h" varStatus="st">
+      {
+        id: ${h.hospitalId},
+        name: "${h.name}",
+        lat: ${h.lat != null ? h.lat : 'null'},
+        lng: ${h.lng != null ? h.lng : 'null'}
+      }
+      <c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+  ];
+
+  /* ── 2) 전역 변수 ── */
+  var map;
+  var markers = [];
+  var infowindows = [];
+
+  /* ── 3) 페이지 로딩 → 마커 생성 ── */
+  document.addEventListener('DOMContentLoaded', function() {
+      map = window.kakaoMap;
+      if (!map) return;
+
+      var bounds = new kakao.maps.LatLngBounds();
+      var hasMarker = false;
+
+      for (var i = 0; i < HOSPITALS.length; i++) {
+          var h = HOSPITALS[i];
+          if (h.lat === null || h.lng === null) {
+              continue;
+          }
+
+          var position = new kakao.maps.LatLng(h.lat, h.lng);
+          var marker = new kakao.maps.Marker({ position: position, map: map });
+
+          var infowindow = new kakao.maps.InfoWindow({
+              content: '<div style="padding:8px 12px;font-size:13px;font-weight:800;'
+                     + 'color:#1A1A2E;white-space:nowrap;">'
+                     + '<a href="${contextPath}/hospital/detail?id=' + h.id + '" '
+                     + 'style="color:inherit;text-decoration:none">' + h.name + '</a></div>'
+          });
+
+          addMarkerEvents(marker, infowindow, h.id);
+
+          markers.push(marker);
+          infowindows.push(infowindow);
+          bounds.extend(position);
+          hasMarker = true;
+      }
+
+      if (hasMarker) {
+          map.setBounds(bounds);
+      }
+  });
+
+
+  /* ── 4) 마커 이벤트 등록 (클로저 해결용 별도 함수) ── */
+  function addMarkerEvents(marker, infowindow, hospitalId) {
+      kakao.maps.event.addListener(marker, 'mouseover', function() {
+          infowindow.open(map, marker);
+      });
+      kakao.maps.event.addListener(marker, 'mouseout', function() {
+          infowindow.close();
+      });
+      kakao.maps.event.addListener(marker, 'click', function() {
+          highlightCard(hospitalId);
+      });
+  }
+
+  /* ── 5) 카드 클릭 → 지도 이동 + 말풍선 + 강조 ── */
+  function selectHospital(hospitalId) {
+      var hospital = null;
+      var hospitalIdx = -1;
+      var markerIdx = 0;
+  
+      for (var i = 0; i < HOSPITALS.length; i++) {
+          var h = HOSPITALS[i];
+          if (h.lat === null || h.lng === null) {
+              continue;
+          }
+          if (h.id === hospitalId) {
+              hospital = h;
+              hospitalIdx = markerIdx;
+              break;
+          }
+          markerIdx++;
+      }
+  
+      if (hospital !== null && hospitalIdx >= 0) {
+          map.setCenter(new kakao.maps.LatLng(hospital.lat, hospital.lng));
+          map.setLevel(4);
+  
+          for (var i = 0; i < infowindows.length; i++) {
+              infowindows[i].close();
+          }
+          infowindows[hospitalIdx].open(map, markers[hospitalIdx]);
+      }
+  
+      highlightCard(hospitalId);
+  }
+  
+  /* ── 6) 카드 강조 ── */
+  function highlightCard(hospitalId) {
+      var allCards = document.querySelectorAll('.hosp-card');
+      for (var i = 0; i < allCards.length; i++) {
+          allCards[i].classList.remove('active');
+      }
+      var card = document.getElementById('card-' + hospitalId);
+      if (card) {
+          card.classList.add('active');
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+  }
+  
+  /* ── 7) 검색 ── */
+  function searchPlace() {
+      var keyword = document.getElementById('mapSearchInput').value.trim();
+      if (!keyword) return;
+  
+      var kakaoPs = window.kakaoPs;
+      kakaoPs.keywordSearch(keyword, function(results, status) {
+          if (status === kakao.maps.services.Status.OK) {
+              var first = results[0];
+              map.setCenter(new kakao.maps.LatLng(first.y, first.x));
+              map.setLevel(5);
+          } else {
+              alert('검색 결과가 없습니다.');
+          }
+      });
+  }
+  
+  /* ── 8) 필터 chip 토글 ── */
+  var chips = document.querySelectorAll('.chip');
+  for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', function () {
+          var group = this.closest('.hosp-filter-chips, .hosp-list-head div');
+          var siblings = group.querySelectorAll('.chip');
+          for (var j = 0; j < siblings.length; j++) {
+              siblings[j].classList.remove('on');
+          }
+          this.classList.add('on');
+      });
+  }
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

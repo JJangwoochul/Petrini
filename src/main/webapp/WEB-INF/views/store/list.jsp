@@ -121,14 +121,19 @@
 
   <%-- 상품 목록 --%>
   <div class="store-content">
-    <%-- 지윤 26.07.06 상품목록 전용 검색창 추가 --%>
-    <form method="get" action="${contextPath}/store" class="store-search-box">
-      <c:if test="${not empty selectedCategory}">
-        <input type="hidden" name="category" value="${selectedCategory}">
-      </c:if>
-      <input type="text" name="keyword" value="${selectedKeyword}" placeholder="상품명 또는 브랜드로 검색">
-      <button type="submit">검색</button>
-    </form>
+    <%-- 지윤 26.07.06 수정: species 파라미터 누락으로 고양이 탭에서 검색시 강아지로 초기화되던 버그 수정 --%>
+<form method="get" action="${contextPath}/store" class="store-search-box">
+  <input type="hidden" name="species" value="${selectedSpecies}">
+  <c:if test="${not empty selectedCategory}">
+    <input type="hidden" name="category" value="${selectedCategory}">
+  </c:if>
+  <c:if test="${not empty selectedAge}">
+    <input type="hidden" name="age" value="${selectedAge}">
+  </c:if>
+  <input type="text" name="keyword" value="${selectedKeyword}" placeholder="상품명 또는 브랜드로 검색">
+  <button type="submit">검색</button>
+</form>
+
     <%-- 지윤 26.07.06 나이 필터: 선택된 카테고리에 나이 하위카테고리 있을 때만 표시 --%>
     <c:set var="hasAgeOptions" value="false"/>
     <c:forEach var="cat" items="${categoryTree}">
