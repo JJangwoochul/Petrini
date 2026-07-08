@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%-- 마이페이지 공통 사이드바: sec 변수는 각 섹션 JSP에서 미리 set 되어 있어야 함 --%>
 <aside class="mypage-sidebar">
     <div class="sidebar-profile">
@@ -9,6 +10,7 @@
                  onerror="this.src='https://placehold.co/76x76/EAF7F2/2BAB82?text=ME'">
         </div>
         <div class="profile-name">${memberInfo.memberName}<span>님</span></div>
+        <%-- 2026/07/08 장우철 — 등급: role 기준 (일반회원/사업자/관리자), 추후 GRADE_CD 로 변경 가능 --%>
         <div class="profile-grade">
             <c:choose>
                 <c:when test="${memberInfo.role eq 'ADMIN'}">관리자</c:when>
@@ -16,7 +18,11 @@
                 <c:otherwise>일반회원</c:otherwise>
             </c:choose>
         </div>
+        <%-- 2026/07/08 장우철 — 보유 포인트: 세션 memberInfo.pointBalance (TB_MEMBER.POINT_BALANCE) --%>
+        <div class="profile-points">보유 포인트 <strong><fmt:formatNumber value="${memberInfo.pointBalance != null ? memberInfo.pointBalance : 0}" pattern="#,###" /> P</strong></div>
+        <%-- [변경 전] 하드코딩 더미
         <div class="profile-points">보유 포인트 <strong>1,200 P</strong></div>
+        --%>
     </div>
     <ul class="sidebar-menu">
         <li><a href="${contextPath}/mypage" class="${sec eq 'dashboard' ? 'active' : ''}">

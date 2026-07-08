@@ -69,6 +69,9 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             sessionMember.setMemberName(found.getMemberName());
             sessionMember.setNickname(found.getNickname());
             sessionMember.setRole("USER");
+            // 2026/07/08 장우철 — 마이페이지 A단계: TB_MEMBER 보유 포인트 세션에 담기
+            sessionMember.setPointBalance(
+                    found.getPointBalance() != null ? found.getPointBalance() : 0L);
             return sessionMember;
         }
 
@@ -95,6 +98,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         sessionAdmin.setMemberId(admin.getAdminId());
         sessionAdmin.setMemberName(admin.getAdminName());
         sessionAdmin.setRole("ADMIN");
+        // 2026/07/08 장우철 — 관리자는 TB_MEMBER 포인트 없음 → 0 표시
+        sessionAdmin.setPointBalance(0L);
         return sessionAdmin;
     }
 

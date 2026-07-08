@@ -10,8 +10,11 @@
 
 package com.petcare.petcare.mypage.home.controller;
 
+import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.mypage.home.service.MypageHomeService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -19,10 +22,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/mypage")
 public class MypageHomeController {
 
+    private final MypageHomeService mypageHomeService;
+
+    public MypageHomeController(MypageHomeService mypageHomeService) {
+        this.mypageHomeService = mypageHomeService;
+    }
+
+    // 2026/07/08 장우철 — 마이페이지 B단계: 쿠폰·관심상품 COUNT DB 연동
     @GetMapping({"", "/"})
-    public String dashboard(HttpSession session) {
-        if (session.getAttribute("memberInfo") == null)
+    public String dashboard(HttpSession session, Model model) {
+        MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
+        if (memberInfo == null) {
             return "redirect:/login";
+        }
+
+        Long memberNo = memberInfo.getMemberNo();
+        model.addAttribute("couponCount", mypageHomeService.countUsableCoupon(memberNo));
+        model.addAttribute("wishlistCount", mypageHomeService.countFavoriteProduct(memberNo));
+
         return "mypage/dashboard";
     }
 

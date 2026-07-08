@@ -26,4 +26,6 @@ public class MemberAuthVO {
     private String email;         // 이메일 — TB_MEMBER.EMAIL
     private String statusCd;      // 회원 상태 — TB_MEMBER.STATUS_CD (NORMAL만 로그인 허용)
     private String gradeCd;       // 회원 등급 코드 — TB_MEMBER.GRADE_CD (BRONZE/SILVER/GOLD)
+    // 2026/07/08 장우철 — 마이페이지 DB 연동 (A단계)
+    private Long pointBalance;    // 보유 포인트 — TB_MEMBER.POINT_BALANCE
 }
