@@ -48,6 +48,9 @@
 .btn-wish-detail { flex:1; padding:14px; border:2px solid var(--primary); border-radius:var(--radius-sm); background:#fff; color:var(--primary); font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
 .btn-wish-detail svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; }
 .btn-cart-detail { flex:2; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--primary); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+/* 지윤 26.07.08 추가: 바로구매 버튼 스타일 (기존엔 스타일 정의 자체가 없어서 브라우저 기본 버튼으로 보였음) */
+.btn-buy-now { flex:1; padding:14px; border:1px solid var(--primary); border-radius:var(--radius-sm); background:#fff; color:var(--primary); font-size:15px; font-weight:700; cursor:pointer; transition:var(--transition); }
+.btn-buy-now:hover { background:var(--primary-light); }
 .btn-buy-detail { flex:2; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--text-main); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
 /* 탭 */
 .detail-tab-bar { display:flex; border-bottom:2px solid var(--border); margin-bottom:28px; }
@@ -132,11 +135,18 @@
   <label>옵션 선택</label>
   <select id="optionSelect" onchange="onOptionChange()">
     <c:forEach var="opt" items="${product.optionList}">
-      <option value="${opt.addPrice}" data-stock="${opt.stockQty}">
-        <c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
-        <c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
-      </option>
+
+      <%-- 지윤 26.07.08 수정: data-option-id 추가 (장바구니 담을 때 어느 옵션인지 알아야 해서) --%>
+  <option value="${opt.addPrice}" data-stock="${opt.stockQty}" data-option-id="${opt.optionId}">
+  <c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
+  <c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
+  </option>
+
     </c:forEach>
+    <%-- 지윤 26.07.08 추가: 옵션 없는 상품은 빈 박스로 보이던 것 -> cart.jsp와 동일하게 "단일 옵션" 표시. data-option-id 빈 값 -> 장바구니 담을 때 null 처리됨 --%>
+    <c:if test="${empty product.optionList}">
+      <option value="0" data-stock="${product.stockQty}" data-option-id="">단일 옵션</option>
+    </c:if>
   </select>
 </div>
 
@@ -149,18 +159,26 @@
   </div>
   <%-- 지윤 26.07.07 추가: 재고 초과 경고 --%>
   <div id="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
-</div>
+  </div>
 
-      <%-- 지윤 26.07.07 수정: 하드코딩 48,900원 -> 실제 판매가로 변경 --%>
-      <div class="detail-total">
-      <span>총 결제금액</span>
-      <strong id="totalPrice"><fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원</strong>
-      </div>
+  <%-- 지윤 26.07.07 수정: 하드코딩 48,900원 -> 실제 판매가로 변경 --%>
+  <div class="detail-total">
+  <span>총 결제금액</span>
+  <strong id="totalPrice"><fmt:formatNumber value="${product.salePrice}" pattern="#,###"/>원</strong>
+  </div>
 
-      <div class="detail-btn-row">
-        <button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>찜</button>
-        <button class="btn-cart-detail" onclick="alert('장바구니에 담았습니다.')">장바구니</button>
-        <button class="btn-buy-detail" onclick="location.href='${contextPath}/store/order'">바로구매</button>
+<div class="detail-btn-row">
+<button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기">찜</button>
+<%-- 지윤 26.07.08 수정: alert만 뜨던 가짜 버튼 -> 실제 TB_CART_ITEM에 저장하는 폼으로 변경 --%>
+<%-- 지윤 26.07.08 수정: form submit(즉시 이동) -> AJAX로 먼저 담고, confirm으로 이동 여부 물어보는 방식으로 변경 --%>
+<form id="cartForm" style="display:contents">
+  <input type="hidden" name="productId" value="${product.productId}">
+  <input type="hidden" name="optionId" id="cartOptionId">
+  <input type="hidden" name="qty" id="cartQty">
+  <input type="hidden" name="price" id="cartPrice">
+  <button type="button" id="btnAddCart" class="btn-cart-detail">장바구니</button>
+</form>
+<button type="button" id="btnBuyNow" class="btn-buy-now">바로구매</button>
       </div>
     </div>
   </div>
@@ -290,5 +308,33 @@ function showTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('on');
   btn.classList.add('on');
 }
+//지윤 26.07.08 수정: form submit -> AJAX로 먼저 담고, confirm으로 이동 여부 물어본 뒤 이동
+document.getElementById('btnAddCart').addEventListener('click', function () {
+  var sel = document.getElementById('optionSelect');
+  var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
+  var addPrice = (sel && sel.options.length > 0) ? (parseInt(sel.value) || 0) : 0;
+  var qty = parseInt(document.getElementById('qty').value);
+  var price = ${product.salePrice} + addPrice;
+
+  fetch('${contextPath}/store/cart/add', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: 'productId=${product.productId}&optionId=' + optionId + '&qty=' + qty + '&price=' + price
+  }).then(function(res){
+    if (res.ok) {
+      refreshCartCount();
+      if (confirm('장바구니에 담았습니다. 장바구니로 이동하시겠습니까?')) {
+        location.href = '${contextPath}/store/cart';
+      }
+    } else {
+      alert('장바구니 담기에 실패했습니다.');
+    }
+  });
+});
+
+//지윤 26.07.08 추가: 바로구매 -> 주문서 페이지로 바로 이동 (장바구니 거치지 않음)
+document.getElementById('btnBuyNow').addEventListener('click', function () {
+  location.href = '${contextPath}/store/order';
+});
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

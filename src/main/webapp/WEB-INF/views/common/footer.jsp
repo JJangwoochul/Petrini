@@ -33,3 +33,14 @@
 <script>window.__CONTEXT_PATH__ = '${contextPath}';</script>
 <script src="${contextPath}/resources/js/search.js?v=20260705"></script>
 <script src="${contextPath}/resources/js/wishlist.js?v=20260705"></script>
+<%-- 지윤 26.07.08 추가: 헤더 장바구니 뱃지 숫자 실시간 갱신. 모든 페이지 로드마다 호출되고, 담기/삭제 후에도 재호출됨 --%>
+<script>
+window.refreshCartCount = function () {
+  fetch(window.__CONTEXT_PATH__ + '/store/cart/count')
+    .then(function(res){ return res.text(); })
+    .then(function(count){
+      document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = count; });
+    });
+};
+refreshCartCount();
+</script>
