@@ -77,13 +77,139 @@
 
 <main class="adm-main">
 
+    <%-- 2026-07-09 장우철 — 처리 결과 메시지 --%>
+    <c:if test="${not empty successMsg}">
+        <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${successMsg}</div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+        <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${errorMsg}</div>
+    </c:if>
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#999;margin-bottom:20px">
+        <a href="${contextPath}/admin/biz/list" style="color:#999;text-decoration:none">사업자 승인 관리</a>
+        <span>›</span>
+        <span style="color:#1A1A2E;font-weight:600">${biz.bizName} 상세</span>
+    </div>
+
+    <%-- 2026-07-09 장우철 — [변경 후] 상단 헤더 실데이터 --%>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+        <div class="biz-type-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div>
+            <h1 style="font-size:22px;font-weight:800;color:#1A1A2E;margin:0 0 4px">${biz.bizName}</h1>
+            <div style="display:flex;gap:8px;align-items:center">
+                <span class="adm-badge" style="background:#E0F2FE;color:#0284C7">${biz.bizType}</span>
+                <c:choose>
+                    <c:when test="${biz.statusCd eq 'PENDING'}"><span class="adm-badge wait">승인 대기</span></c:when>
+                    <c:when test="${biz.statusCd eq 'APPROVED'}"><span class="adm-badge active">승인 완료</span></c:when>
+                    <c:otherwise><span class="adm-badge" style="background:#FEE2E2;color:#DC2626">반려</span></c:otherwise>
+                </c:choose>
+                <span style="font-size:12px;color:#999">신청일: ${biz.applyDate}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="biz-detail-grid">
+        <div>
+            <div class="bds">
+                <div class="bds-title">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+                    사업자 기본 정보
+                </div>
+                <div class="bds-row"><label>업체명</label><span>${biz.bizName}</span></div>
+                <div class="bds-row"><label>업종</label><span>${biz.bizType}</span></div>
+                <div class="bds-row"><label>사업자 등록번호</label><span>${biz.bizRegNo}</span></div>
+                <div class="bds-row"><label>대표자명</label><span>${biz.ceoName}</span></div>
+                <div class="bds-row"><label>사업장 전화번호</label><span>${biz.phone}</span></div>
+                <div class="bds-row"><label>PetCare 계정</label><span>${biz.bizId}</span></div>
+            </div>
+
+            <%-- 2026-07-09 장우철 — TB_FILE 제출 서류 (BIZ_AUTH / BIZ_LICENSE) --%>
+            <div class="bds">
+                <div class="bds-title">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    제출 서류
+                </div>
+                <c:if test="${empty authFiles && empty licenseFiles}">
+                    <p style="font-size:13px;color:#999;margin:0">제출된 서류가 없습니다.</p>
+                </c:if>
+                <c:forEach var="f" items="${authFiles}">
+                <div class="doc-viewer">
+                    <div class="doc-viewer-head">
+                        사업자등록증
+                        <a href="${contextPath}/upload/${f.fileUrl}" target="_blank" class="adm-btn blue">원본 보기</a>
+                    </div>
+                    <div class="doc-viewer-foot">
+                        <span>${f.originName}</span>
+                        <span>${f.regDate}</span>
+                    </div>
+                </div>
+                </c:forEach>
+                <c:forEach var="f" items="${licenseFiles}">
+                <div class="doc-viewer">
+                    <div class="doc-viewer-head">
+                        영업신고증 / 허가증
+                        <a href="${contextPath}/upload/${f.fileUrl}" target="_blank" class="adm-btn blue">원본 보기</a>
+                    </div>
+                    <div class="doc-viewer-foot">
+                        <span>${f.originName}</span>
+                        <span>${f.regDate}</span>
+                    </div>
+                </div>
+                </c:forEach>
+            </div>
+        </div>
+
+        <div>
+            <div class="approve-card">
+                <h3>승인 처리</h3>
+                <div class="approve-status-box">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span>
+                        <c:choose>
+                            <c:when test="${biz.statusCd eq 'PENDING'}">관리자 검토 대기 중</c:when>
+                            <c:when test="${biz.statusCd eq 'APPROVED'}">승인 완료된 신청입니다</c:when>
+                            <c:otherwise>반려된 신청입니다</c:otherwise>
+                        </c:choose>
+                    </span>
+                </div>
+
+                <c:if test="${biz.statusCd eq 'PENDING'}">
+                <form method="post" action="${contextPath}/admin/biz/approve" class="approve-btn-row"
+                      onsubmit="return confirm('${biz.bizName} 신청을 승인하시겠습니까?')">
+                    <input type="hidden" name="bizNo" value="${biz.bizNo}">
+                    <button type="submit" class="btn-approve">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                        승인하기
+                    </button>
+                </form>
+                <form method="post" action="${contextPath}/admin/biz/reject" class="approve-btn-row" style="margin-top:8px"
+                      onsubmit="return confirm('반려 처리하시겠습니까?')">
+                    <input type="hidden" name="bizNo" value="${biz.bizNo}">
+                    <div class="approve-reject-area">
+                        <label>반려 사유 (필수)</label>
+                        <textarea name="rejectReason" required placeholder="반려 사유를 입력하세요"></textarea>
+                    </div>
+                    <button type="submit" class="btn-reject">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        반려하기
+                    </button>
+                </form>
+                </c:if>
+
+                <button class="adm-btn gray" style="width:100%;padding:11px;font-size:14px;margin-top:8px" onclick="location.href='${contextPath}/admin/biz/list'">목록으로</button>
+            </div>
+        </div>
+    </div>
+
+    <%-- ========== [변경 전] 2026-07-09 장우철 — 더미 상세(행복 동물병원) 목업 보존
+         이유: 기존 UI 목업을 삭제하지 않고 참고용으로 남김 ==========
     <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#999;margin-bottom:20px">
         <a href="${contextPath}/admin/biz/list" style="color:#999;text-decoration:none">사업자 승인 관리</a>
         <span>›</span>
         <span style="color:#1A1A2E;font-weight:600">행복 동물병원 상세</span>
     </div>
-
-    <%-- 상단 헤더 --%>
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
         <div class="biz-type-icon">
             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><rect x="9" y="10" width="6" height="11" rx="1"/><line x1="12" y1="13" x2="12" y2="17"/><line x1="10" y1="15" x2="14" y2="15"/></svg>
@@ -97,129 +223,64 @@
             </div>
         </div>
     </div>
-
     <div class="biz-detail-grid">
         <div>
-            <%-- 사업자 기본 정보 --%>
             <div class="bds">
-                <div class="bds-title">
-                    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
-                    사업자 기본 정보
-                </div>
+                <div class="bds-title">사업자 기본 정보</div>
                 <div class="bds-row"><label>업체명</label><span>행복 동물병원</span></div>
                 <div class="bds-row"><label>업종</label><span>동물병원</span></div>
-                <div class="bds-row"><label>사업자 등록번호</label><span style="display:flex;align-items:center;gap:8px">123-45-67890 <span class="adm-badge active" style="font-size:11px">국세청 인증 완료</span></span></div>
+                <div class="bds-row"><label>사업자 등록번호</label><span>123-45-67890</span></div>
                 <div class="bds-row"><label>대표자명</label><span>김철수</span></div>
                 <div class="bds-row"><label>사업장 전화번호</label><span>02-1234-5678</span></div>
-                <div class="bds-row"><label>사업장 주소</label><span>서울특별시 마포구 합정동 123-4 (우: 04001)</span></div>
-                <div class="bds-row"><label>업체 소개</label><span style="text-align:left;line-height:1.6;font-weight:400">반려동물 전문 동물병원으로 내과, 외과, 피부과, 안과 진료를 제공합니다. 2010년 개원 이래 15년간 지역 반려동물 의료를 담당해왔습니다.</span></div>
+                <div class="bds-row"><label>사업장 주소</label><span>서울특별시 마포구 합정동 123-4</span></div>
             </div>
-
-            <%-- 담당자 정보 --%>
             <div class="bds">
-                <div class="bds-title">
-                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    담당자 정보
-                </div>
+                <div class="bds-title">담당자 정보</div>
                 <div class="bds-row"><label>담당자 이름</label><span>김철수</span></div>
-                <div class="bds-row"><label>담당자 연락처</label><span style="display:flex;align-items:center;gap:8px">010-1234-5678 <span class="adm-badge active" style="font-size:11px">인증 완료</span></span></div>
+                <div class="bds-row"><label>담당자 연락처</label><span>010-1234-5678</span></div>
                 <div class="bds-row"><label>담당자 이메일</label><span>happy@hospital.com</span></div>
-                <div class="bds-row"><label>PetCare 계정</label><span>minjun@email.com (회원 #12847)</span></div>
+                <div class="bds-row"><label>PetCare 계정</label><span>minjun@email.com</span></div>
             </div>
-
-            <%-- 제출 서류 --%>
             <div class="bds">
-                <div class="bds-title">
-                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    제출 서류
-                </div>
-
+                <div class="bds-title">제출 서류</div>
                 <div class="doc-viewer">
-                    <div class="doc-viewer-head">
-                        사업자등록증
-                        <div style="display:flex;gap:6px">
-                            <button class="adm-btn blue" onclick="alert('새 창에서 원본 파일을 확인합니다.')">원본 보기</button>
-                            <button class="adm-btn gray">다운로드</button>
-                        </div>
+                    <div class="doc-viewer-head">사업자등록증
+                        <button class="adm-btn blue" onclick="alert('새 창에서 원본 파일을 확인합니다.')">원본 보기</button>
                     </div>
-                    <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=70&auto=format&fit=crop"
-                         alt="사업자등록증"
-                         onerror="this.src='https://placehold.co/600x220/EEF2FF/3B5BDB?text=사업자등록증+미리보기'">
-                    <div class="doc-viewer-foot">
-                        <span>파일명: business_license_행복동물병원.pdf</span>
-                        <span>2.4 MB · 2025.06.25 업로드</span>
-                    </div>
+                    <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=70" alt="사업자등록증">
                 </div>
-
                 <div class="doc-viewer">
-                    <div class="doc-viewer-head">
-                        영업신고증 (동물병원 개설 신고증)
-                        <div style="display:flex;gap:6px">
-                            <button class="adm-btn blue" onclick="alert('새 창에서 원본 파일을 확인합니다.')">원본 보기</button>
-                            <button class="adm-btn gray">다운로드</button>
-                        </div>
+                    <div class="doc-viewer-head">영업신고증
+                        <button class="adm-btn blue" onclick="alert('새 창에서 원본 파일을 확인합니다.')">원본 보기</button>
                     </div>
-                    <img src="https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=600&q=70&auto=format&fit=crop"
-                         alt="영업신고증"
-                         onerror="this.src='https://placehold.co/600x220/EEF2FF/3B5BDB?text=영업신고증+미리보기'">
-                    <div class="doc-viewer-foot">
-                        <span>파일명: vet_license_행복동물병원.pdf</span>
-                        <span>1.8 MB · 2025.06.25 업로드</span>
-                    </div>
+                    <img src="https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=600&q=70" alt="영업신고증">
                 </div>
             </div>
-
-            <%-- 약관 동의 내역 --%>
             <div class="bds">
-                <div class="bds-title">
-                    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-                    약관 동의 내역
-                </div>
-                <div class="bds-row"><label>[필수] 파트너 서비스 이용약관</label><span style="color:#16A34A">동의 · 2025.06.25</span></div>
-                <div class="bds-row"><label>[필수] 개인정보 수집·이용 동의</label><span style="color:#16A34A">동의 · 2025.06.25</span></div>
-                <div class="bds-row"><label>[선택] 마케팅 정보 수신 동의</label><span style="color:#3B5BDB">동의 · 2025.06.25</span></div>
+                <div class="bds-title">약관 동의 내역</div>
+                <div class="bds-row"><label>[필수] 파트너 서비스 이용약관</label><span>동의 · 2025.06.25</span></div>
             </div>
         </div>
-
-        <%-- 사이드: 승인 처리 --%>
         <div>
             <div class="approve-card">
                 <h3>승인 처리</h3>
-                <div class="approve-status-box">
-                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <span>관리자 검토 대기 중</span>
-                </div>
-
-                <p style="font-size:13px;font-weight:700;color:#1A1A2E;margin:0 0 10px">검토 체크리스트</p>
+                <div class="approve-status-box"><span>관리자 검토 대기 중</span></div>
                 <div class="approve-checklist">
                     <label class="approve-check"><input type="checkbox">사업자등록번호 국세청 인증 확인</label>
-                    <label class="approve-check"><input type="checkbox">사업자등록증 서류 일치 여부</label>
-                    <label class="approve-check"><input type="checkbox">영업신고증 / 허가증 유효성 확인</label>
-                    <label class="approve-check"><input type="checkbox">담당자 연락처 인증 확인</label>
-                    <label class="approve-check"><input type="checkbox">중복 신청 여부 확인</label>
                 </div>
-
                 <div class="approve-reject-area">
                     <label>반려 사유 (반려 시 필수 입력)</label>
                     <textarea placeholder="반려 사유를 입력하면 신청자에게 이메일로 발송됩니다."></textarea>
                 </div>
-
                 <div class="approve-btn-row">
-                    <button class="btn-approve"
-                            onclick="if(confirm('행복 동물병원을 승인하시겠습니까?\n\n승인 시:\n· 사업자 권한(ROLE_BUSINESS) 부여\n· 승인 완료 이메일 자동 발송\n· 플랫폼에 병원 정보 노출'))alert('승인 완료!\n행복 동물병원에 이메일이 발송되었습니다.')">
-                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                        승인하기
-                    </button>
-                    <button class="btn-reject"
-                            onclick="if(confirm('반려 처리하시겠습니까?\n반려 사유가 신청자에게 이메일로 발송됩니다.'))alert('반려 처리되었습니다.\n신청자에게 이메일이 발송되었습니다.')">
-                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        반려하기
-                    </button>
-                    <button class="adm-btn gray" style="width:100%;padding:11px;font-size:14px" onclick="location.href='${contextPath}/admin/biz/list'">목록으로</button>
+                    <button class="btn-approve" onclick="alert('승인 완료!')">승인하기</button>
+                    <button class="btn-reject" onclick="alert('반려 처리되었습니다.')">반려하기</button>
                 </div>
             </div>
         </div>
     </div>
+    ========== [변경 전] 끝 ========== --%>
+
 </main>
 
 <%@ include file="/WEB-INF/views/admin/common/footer.jsp" %>

@@ -2,7 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.petcare.petcare.file.mapper.FileMapper">
+    <!-- 2026-07-09 장우철 — [변경 후] SEQ_TB_FILE 사용
+         이유: 커뮤니티·제보(GiveReport)와 동일 PK 시퀀스. SEQ_FILE 은 별도 시퀀스라
+               이미 TB_FILE 에 있는 FILE_ID 와 겹쳐 ORA-00001(PK_TB_FILE) 발생 -->
     <insert id="insertFile" parameterType="com.petcare.petcare.file.vo.FileVO">
+        <selectKey keyProperty="fileId" resultType="long" order="BEFORE">
+            SELECT SEQ_TB_FILE.NEXTVAL FROM DUAL
+        </selectKey>
         INSERT INTO TB_FILE (
                                 FILE_ID, 
                                 REF_TYPE, 
@@ -14,7 +20,7 @@
                                 REG_DATE
                             )
         VALUES              (
-                                SEQ_FILE.NEXTVAL, 
+                                #{fileId}, 
                                 #{refType}, 
                                 #{refId}, 
                                 #{fileUrl}, 
@@ -24,6 +30,12 @@
                                 SYSDATE
                             )
     </insert>
+
+    <!-- [변경 전] 2026-07-09 장우철 — SEQ_FILE 사용 (PK 충돌 원인)
+    <insert id="insertFile" ...>
+        VALUES ( SEQ_FILE.NEXTVAL, #{refType}, ... )
+    </insert>
+    -->
 
     <select id="selectFileList" parameterType="com.petcare.petcare.file.vo.FileVO" resultType="com.petcare.petcare.file.vo.FileVO">
         SELECT      FILE_ID, 

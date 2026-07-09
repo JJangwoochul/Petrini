@@ -2,27 +2,39 @@
  * 역할: 관리자 사업자 관리 DB 접근 (MyBatis interface)
  *
  * XML: resources/mybatis/mapper/admin/biz/AdminBizMapper.xml
- * namespace: com.petcare.petcare.admin.biz.mapper.AdminBizMapper
- *
- * 쿼리 예시
- * - selectBizApplyList    사업자 신청 목록
- * - selectBizApplyDetail  사업자 신청 상세
- * - updateBizStatus       승인/반려 상태 변경
- * - selectTalentApplyList 재능나눔 승인 목록
- * - updateTalentStatus    재능나눔 승인/반려
- *
- * 참고 테이블
- * - TB_BUSINESS
- * - (재능나눔) 관련 테이블
- *
- * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
  */
 
 package com.petcare.petcare.admin.biz.mapper;
 
-import org.apache.ibatis.annotations.Mapper;
+import java.util.List;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.admin.biz.vo.AdminBizVO;
 
 @Mapper
-public interface AdminBizMapper {}
+public interface AdminBizMapper {
+
+    // 2026-07-09 장우철 — 사업자 신청 목록 (상태 탭 필터)
+    // 이유: admin/biz/list.jsp 탭(PENDING/APPROVED/REJECTED)별로 TB_BUSINESS 조회
+    List<AdminBizVO> selectBizApplyList(@Param("statusCd") String statusCd);
+
+    // 2026-07-09 장우철 — 사업자 신청 상세 1건
+    // 이유: admin/biz/detail.jsp 에서 bizNo 기준으로 기본정보 + 최신 AUTH 이력 표시
+    AdminBizVO selectBizApplyDetail(@Param("bizNo") Long bizNo);
+
+    // 2026-07-09 장우철 — 탭 뱃지용 건수
+    // 이유: list.jsp 상단 "대기 N건" 을 DB 실제 건수로 표시
+    int countBizApplyByStatus(@Param("statusCd") String statusCd);
+
+    // 2026-07-09 장우철 — TB_BUSINESS 승인/반려 상태 변경
+    // 이유: USER 신청 시 insertBusiness 가 넣은 TB_BUSINESS.STATUS_CD 를 관리자가 갱신
+    int updateBusinessStatus(@Param("bizNo") Long bizNo,
+                             @Param("statusCd") String statusCd);
+
+    // 2026-07-09 장우철 — TB_BUSINESS_AUTH 최신 신청 건 상태 변경
+    // 이유: MypageBiz applyBusiness 가 PENDING 으로 넣은 AUTH 이력도 같이 APPROVED/REJECTED 처리
+    int updateBusinessAuthStatus(@Param("bizNo") Long bizNo,
+                                 @Param("statusCd") String statusCd);
+}

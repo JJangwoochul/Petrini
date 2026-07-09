@@ -5,17 +5,78 @@
 
 <!--
   역할: AdminBizMapper SQL 정의
-
-  쿼리 id 예시
-  - selectBizApplyList
-  - selectBizApplyDetail
-  - updateBizStatus
-  - selectTalentApplyList
-  - updateTalentStatus
-
-  테이블
-  - TB_BUSINESS
-  - (재능나눔) 관련 테이블
+  테이블: TB_BUSINESS, TB_BUSINESS_AUTH
 -->
+
+  <!-- 2026-07-09 장우철 — 목록·상세 공통 컬럼
+       이유: MypageBizMapper insert 컬럼과 동일하게 맞춰 관리자 화면에 표시 -->
+  <sql id="bizApplyColumns">
+    B.BIZ_NO       AS bizNo,
+    B.BIZ_ID       AS bizId,
+    B.BIZ_TYPE     AS bizType,
+    B.BIZ_REG_NO   AS bizRegNo,
+    B.BIZ_NAME     AS bizName,
+    B.CEO_NAME     AS ceoName,
+    B.PHONE        AS phone,
+    B.STATUS_CD    AS statusCd,
+    B.JOIN_DATE    AS joinDate,
+    A.AUTH_ID      AS authId,
+    A.APPLY_DATE   AS applyDate
+  </sql>
+
+  <!-- 2026-07-09 장우철 — 최신 AUTH 1건만 조인
+       이유: 재신청 시 AUTH 가 여러 건일 수 있어 APPLY_DATE 최신 1건만 목록/상세에 노출 -->
+  <sql id="latestAuthJoin">
+    JOIN TB_BUSINESS_AUTH A ON A.BIZ_NO = B.BIZ_NO
+     AND A.AUTH_ID = (
+           SELECT AUTH_ID
+             FROM TB_BUSINESS_AUTH
+            WHERE BIZ_NO = B.BIZ_NO
+            ORDER BY APPLY_DATE DESC
+            FETCH FIRST 1 ROW ONLY
+         )
+  </sql>
+
+  <select id="selectBizApplyList" resultType="com.petcare.petcare.admin.biz.vo.AdminBizVO">
+    SELECT
+    <include refid="bizApplyColumns"/>
+    FROM TB_BUSINESS B
+    <include refid="latestAuthJoin"/>
+    WHERE B.STATUS_CD = #{statusCd}
+    ORDER BY A.APPLY_DATE DESC
+  </select>
+
+  <select id="selectBizApplyDetail" resultType="com.petcare.petcare.admin.biz.vo.AdminBizVO">
+    SELECT
+    <include refid="bizApplyColumns"/>
+    FROM TB_BUSINESS B
+    <include refid="latestAuthJoin"/>
+    WHERE B.BIZ_NO = #{bizNo}
+  </select>
+
+  <select id="countBizApplyByStatus" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_BUSINESS
+    WHERE STATUS_CD = #{statusCd}
+  </select>
+
+  <update id="updateBusinessStatus">
+    UPDATE TB_BUSINESS
+    SET STATUS_CD = #{statusCd}
+    WHERE BIZ_NO = #{bizNo}
+  </update>
+
+  <!-- 2026-07-09 장우철 — AUTH 최신 건만 상태 변경 (목록 조인 조건과 동일) -->
+  <update id="updateBusinessAuthStatus">
+    UPDATE TB_BUSINESS_AUTH
+    SET STATUS_CD = #{statusCd}
+    WHERE AUTH_ID = (
+          SELECT AUTH_ID
+            FROM TB_BUSINESS_AUTH
+           WHERE BIZ_NO = #{bizNo}
+           ORDER BY APPLY_DATE DESC
+           FETCH FIRST 1 ROW ONLY
+        )
+  </update>
 
 </mapper>

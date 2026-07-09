@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.common.config.controller.CommonConfigController;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.member.auth.service.MemberAuthService;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.mypage.biz.service.MypageBizService;
 import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
@@ -45,6 +46,11 @@ public class MypageBizController extends CommonConfigController {
     @Autowired
     private MypageBizService mypageBizService;
 
+    // 2026-07-09 장우철 — 승인 완료 사업자 세션(role=BIZ) 동기화
+    // 이유: 관리자 승인 후 재로그인 없이 /mypage/biz ↔ /apply 무한 리다이렉트 방지
+    @Autowired
+    private MemberAuthService memberAuthService;
+
     @Autowired
     private FileMapper fileMapper;   
     
@@ -53,6 +59,16 @@ public class MypageBizController extends CommonConfigController {
         MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
         if (memberInfo == null)
             return "redirect:/login";
+
+        // 2026-07-09 장우철 — [변경 후] DB 승인 상태를 세션에 반영 후 업종별 사업자 화면으로 이동
+        memberAuthService.enrichSessionWithApprovedBiz(memberInfo);
+        session.setAttribute("memberInfo", memberInfo);
+
+        /* [변경 전] 2026-07-09 장우철 — 세션 role 만 확인, APPROVED 인데 USER 이면 /apply 로 루프
+        if (!"BIZ".equals(memberInfo.getRole())) {
+            return "redirect:/mypage/biz/apply";
+        }
+        */
 
         if (!"BIZ".equals(memberInfo.getRole())) {
             return "redirect:/mypage/biz/apply";
@@ -82,7 +98,10 @@ public class MypageBizController extends CommonConfigController {
         MypageBizVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
         if (apply != null) {
         if ("APPROVED".equals(apply.getStatusCd())) {
-            // 승인 완료
+            // 2026-07-09 장우철 — [변경 후] 승인 완료 시 세션에 BIZ 권한 반영 후 이동
+            // 이유: apply.getBizType() 과 로그인 enrich 가 동일한 TB_BUSINESS.BIZ_TYPE 사용
+            memberAuthService.enrichSessionWithApprovedBiz(member);
+            session.setAttribute("memberInfo", member);
             return "redirect:/mypage/biz";
         }
         // PENDING

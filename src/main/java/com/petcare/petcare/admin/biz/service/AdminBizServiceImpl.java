@@ -1,18 +1,112 @@
 /**
  * 역할: AdminBizService 구현체 (@Service)
  *
- * 구현 내용
- * - Controller에서 넘어온 요청 처리
- * - Mapper 호출하여 DB 조회·수정
- * - 승인/반려 시 상태값 변경 및 처리 결과 반환
- *
  * 연결
  * - implements: AdminBizService
- * - 사용: AdminBizMapper
- *
- * 비즈니스 로직은 여기에 작성 (Controller, Mapper에 직접 작성 X)
+ * - 사용: AdminBizMapper, FileMapper
  */
 
 package com.petcare.petcare.admin.biz.service;
 
-public class AdminBizServiceImpl implements AdminBizService {}
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.petcare.petcare.admin.biz.mapper.AdminBizMapper;
+import com.petcare.petcare.admin.biz.vo.AdminBizVO;
+import com.petcare.petcare.file.mapper.FileMapper;
+import com.petcare.petcare.file.vo.FileVO;
+
+@Service
+public class AdminBizServiceImpl implements AdminBizService {
+
+    @Autowired
+    private AdminBizMapper adminBizMapper;
+
+    // 2026-07-09 장우철 — 신청 서류 조회용 (MypageBiz apply 시 REF_TYPE=BIZ_AUTH / BIZ_LICENSE)
+    // 이유: 상세 화면에서 TB_FILE 메타를 그대로 재사용 (FK 없이 refType+refId 패턴)
+    @Autowired
+    private FileMapper fileMapper;
+
+    @Override
+    public List<AdminBizVO> getBizApplyList(String statusCd) {
+        return adminBizMapper.selectBizApplyList(statusCd);
+    }
+
+    @Override
+    public AdminBizVO getBizApplyDetail(Long bizNo) {
+        return adminBizMapper.selectBizApplyDetail(bizNo);
+    }
+
+    @Override
+    public Map<String, Integer> getBizStatusCounts() {
+        Map<String, Integer> counts = new HashMap<>();
+        counts.put("PENDING", adminBizMapper.countBizApplyByStatus("PENDING"));
+        counts.put("APPROVED", adminBizMapper.countBizApplyByStatus("APPROVED"));
+        counts.put("REJECTED", adminBizMapper.countBizApplyByStatus("REJECTED"));
+        return counts;
+    }
+
+    @Override
+    public List<FileVO> getBizAuthFiles(Long bizNo) {
+        return selectFilesByRef("BIZ_AUTH", bizNo);
+    }
+
+    @Override
+    public List<FileVO> getBizLicenseFiles(Long bizNo) {
+        return selectFilesByRef("BIZ_LICENSE", bizNo);
+    }
+
+    private List<FileVO> selectFilesByRef(String refType, Long bizNo) {
+        try {
+            FileVO query = new FileVO();
+            query.setRefType(refType);
+            query.setRefId(bizNo);
+            return fileMapper.selectFileList(query);
+        } catch (Exception e) {
+            throw new IllegalStateException("FILE_LIST_FAILED", e);
+        }
+    }
+
+    // 2026-07-09 장우철 — 승인 처리 (TB_BUSINESS + TB_BUSINESS_AUTH 동시 갱신)
+    // 이유: USER 신청(applyBusiness)이 두 테이블에 PENDING 으로 넣으므로 승인도 쌍으로 맞춤
+    // 후속: 로그인 시 TB_BUSINESS APPROVED 이면 세션 role=BIZ 세팅은 MemberAuth 쪽 별도 작업
+    @Override
+    @Transactional
+    public void approveBiz(Long bizNo) {
+        AdminBizVO biz = requirePendingBiz(bizNo);
+        adminBizMapper.updateBusinessStatus(biz.getBizNo(), "APPROVED");
+        adminBizMapper.updateBusinessAuthStatus(biz.getBizNo(), "APPROVED");
+    }
+
+    // 2026-07-09 장우철 — 반려 처리
+    // 이유: 반려 사유는 화면 검증만 하고 DB 컬럼(REJECT_REASON)은 DDL 확인 후 추가 가능
+    @Override
+    @Transactional
+    public void rejectBiz(Long bizNo, String rejectReason) {
+        if (rejectReason == null || rejectReason.isBlank()) {
+            throw new IllegalArgumentException("REJECT_REASON_REQUIRED");
+        }
+        AdminBizVO biz = requirePendingBiz(bizNo);
+        adminBizMapper.updateBusinessStatus(biz.getBizNo(), "REJECTED");
+        adminBizMapper.updateBusinessAuthStatus(biz.getBizNo(), "REJECTED");
+    }
+
+    private AdminBizVO requirePendingBiz(Long bizNo) {
+        if (bizNo == null) {
+            throw new IllegalArgumentException("BIZ_NO_REQUIRED");
+        }
+        AdminBizVO biz = adminBizMapper.selectBizApplyDetail(bizNo);
+        if (biz == null) {
+            throw new IllegalArgumentException("BIZ_NOT_FOUND");
+        }
+        if (!"PENDING".equals(biz.getStatusCd())) {
+            throw new IllegalStateException("BIZ_NOT_PENDING");
+        }
+        return biz;
+    }
+}

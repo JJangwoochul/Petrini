@@ -4,25 +4,30 @@
  * 담당 화면
  * - admin/biz/list.jsp      사업자 승인 목록
  * - admin/biz/detail.jsp    사업자 신청 상세
- * - admin/biz/talent.jsp    재능나눔 승인
- *
- * 구현할 기능 예시
- * - 사업자 신청 목록 조회 (대기/승인/반려 탭·필터)
- * - 사업자 신청 상세 조회
- * - 사업자 승인 / 반려 처리
- * - 재능나눔 승인 목록 조회
- * - 재능나눔 승인 / 반려 처리
- *
- * 연결
- * - 구현: AdminBizServiceImpl
- * - 호출: AdminBizController
- * - DB: AdminBizMapper
- *
- * 참고 테이블
- * - TB_BUSINESS
- * - (재능나눔) 관련 테이블
  */
 
 package com.petcare.petcare.admin.biz.service;
 
-public interface AdminBizService {}
+import java.util.List;
+import java.util.Map;
+
+import com.petcare.petcare.admin.biz.vo.AdminBizVO;
+import com.petcare.petcare.file.vo.FileVO;
+
+public interface AdminBizService {
+
+    // 2026-07-09 장우철 — 사업자 승인 목록·상세·처리 API
+    List<AdminBizVO> getBizApplyList(String statusCd);
+
+    AdminBizVO getBizApplyDetail(Long bizNo);
+
+    Map<String, Integer> getBizStatusCounts();
+
+    List<FileVO> getBizAuthFiles(Long bizNo);
+
+    List<FileVO> getBizLicenseFiles(Long bizNo);
+
+    void approveBiz(Long bizNo);
+
+    void rejectBiz(Long bizNo, String rejectReason);
+}
