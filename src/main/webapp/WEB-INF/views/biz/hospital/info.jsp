@@ -273,31 +273,31 @@
                         -->
 
                         <!-- 월~금: 기본 09:00~18:00, 점심 12:00~13:00 -->
-                        <tr id="row-mon">
+                        <tr id="row-m">
                             <td class="hours-day">월</td>
-                            <td><label class="tog"><input type="checkbox" id="use-mon" checked onchange="toggleDay('월',this)"><span class="tog-sl"></span></label></td>
-                            <td><div class="hours-time"><input type="time" id="open-mon" value="09:00"><span>~</span><input type="time" id="close-월" value="18:00"></div></td>
-                            <td><div class="hours-time"><input type="time" id="lunchS-mon" value="12:00"><span>~</span><input type="time" id="lunchE-월" value="13:00"></div></td>
+                            <td><label class="tog"><input type="checkbox" id="use-월" checked onchange="toggleDay('월',this)"><span class="tog-sl"></span></label></td>
+                            <td><div class="hours-time"><input type="time" id="open-월" value="09:00"><span>~</span><input type="time" id="close-월" value="18:00"></div></td>
+                            <td><div class="hours-time"><input type="time" id="lunchS-월" value="12:00"><span>~</span><input type="time" id="lunchE-월" value="13:00"></div></td>
                         </tr>
-                        <tr id="row-tue">
+                        <tr id="row-화">
                             <td class="hours-day">화</td>
                             <td><label class="tog"><input type="checkbox" id="use-화" checked onchange="toggleDay('화',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-화" value="09:00"><span>~</span><input type="time" id="close-화" value="18:00"></div></td>
                             <td><div class="hours-time"><input type="time" id="lunchS-화" value="12:00"><span>~</span><input type="time" id="lunchE-화" value="13:00"></div></td>
                         </tr>
-                        <tr id="row-wed">
+                        <tr id="row-수">
                             <td class="hours-day">수</td>
                             <td><label class="tog"><input type="checkbox" id="use-수" checked onchange="toggleDay('수',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-수" value="09:00"><span>~</span><input type="time" id="close-수" value="18:00"></div></td>
                             <td><div class="hours-time"><input type="time" id="lunchS-수" value="12:00"><span>~</span><input type="time" id="lunchE-수" value="13:00"></div></td>
                         </tr>
-                        <tr id="row-thu">
+                        <tr id="row-목">
                             <td class="hours-day">목</td>
                             <td><label class="tog"><input type="checkbox" id="use-목" checked onchange="toggleDay('목',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-목" value="09:00"><span>~</span><input type="time" id="close-목" value="18:00"></div></td>
                             <td><div class="hours-time"><input type="time" id="lunchS-목" value="12:00"><span>~</span><input type="time" id="lunchE-목" value="13:00"></div></td>
                         </tr>
-                        <tr id="row-fri">
+                        <tr id="row-금">
                             <td class="hours-day">금</td>
                             <td><label class="tog"><input type="checkbox" id="use-금" checked onchange="toggleDay('금',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-금" value="09:00"><span>~</span><input type="time" id="close-금" value="18:00"></div></td>
@@ -305,7 +305,7 @@
                         </tr>
 
                         <!-- 토: 단축 운영 예시 (14시까지, 점심 없음) -->
-                        <tr id="row-sat">
+                        <tr id="row-토">
                             <td class="hours-day">토</td>
                             <td><label class="tog"><input type="checkbox" id="use-토" checked onchange="toggleDay('토',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-토" value="09:00"><span>~</span><input type="time" id="close-토" value="14:00"></div></td>
@@ -313,13 +313,13 @@
                         </tr>
 
                         <!-- 일, 공휴일: 기본 휴무 (row-off 클래스 + checked 없음) -->
-                        <tr id="row-sun" class="row-off">
+                        <tr id="row-일" class="row-off">
                             <td class="hours-day">일</td>
                             <td><label class="tog"><input type="checkbox" id="use-일" onchange="toggleDay('일',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-일" value=""><span>~</span><input type="time" id="close-일" value=""></div></td>
                             <td><div class="hours-time"><input type="time" id="lunchS-일" value=""><span>~</span><input type="time" id="lunchE-일" value=""></div></td>
                         </tr>
-                        <tr id="row-holi" class="row-off">
+                        <tr id="row-공휴일" class="row-off">
                             <td class="hours-day">공휴일</td>
                             <td><label class="tog"><input type="checkbox" id="use-공휴일" onchange="toggleDay('공휴일',this)"><span class="tog-sl"></span></label></td>
                             <td><div class="hours-time"><input type="time" id="open-공휴일" value=""><span>~</span><input type="time" id="close-공휴일" value=""></div></td>
@@ -343,37 +343,37 @@
                 <p style="font-size:13px;color:#999;margin:0 0 14px">해당하는 항목을 모두 선택하세요.</p>
                 <div class="tag-checks">
                     <label class="tag-check">
-                        <input type="checkbox" name="tags" value="24H"
+                        <input type="checkbox" name="tagList" value="24H"
                                ${fn:contains(hospital.tagList, '24H') ? 'checked' : ''}>
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         24시간 진료
                     </label>
                     <label class="tag-check">
-                        <input type="checkbox" name="tags" value="EXOTIC"
+                        <input type="checkbox" name="tagList" value="EXOTIC"
                                ${fn:contains(hospital.tagList, 'EXOTIC') ? 'checked' : ''}>
                         <svg viewBox="0 0 24 24"><circle cx="4.5" cy="9.5" r="2"/><circle cx="9" cy="5.5" r="2"/><circle cx="15" cy="5.5" r="2"/><circle cx="19.5" cy="9.5" r="2"/></svg>
                         특수동물 진료
                     </label>
                     <label class="tag-check">
-                        <input type="checkbox" name="tags" value="HOSPITEL"
+                        <input type="checkbox" name="tagList" value="HOSPITEL"
                                ${fn:contains(hospital.tagList, 'HOSPITEL') ? 'checked' : ''}>
                         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                         호스피텔 가능
                     </label>
                     <label class="tag-check">
-                        <input type="checkbox" name="tags" value="INPATIENT"
+                        <input type="checkbox" name="tagList" value="INPATIENT"
                                ${fn:contains(hospital.tagList, 'INPATIENT') ? 'checked' : ''}>
                         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                         입원 진료
                     </label>
                     <label class="tag-check">
-                        <input type="checkbox" name="tags" value="EMERGENCY"
+                        <input type="checkbox" name="tagList" value="EMERGENCY"
                                ${fn:contains(hospital.tagList, 'EMERGENCY') ? 'checked' : ''}>
                         <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         응급 진료
                     </label>
                     <label class="tag-check">
-                        <input type="checkbox" name="tags" value="PARKING"
+                        <input type="checkbox" name="tagList" value="PARKING"
                                ${fn:contains(hospital.tagList, 'PARKING') ? 'checked' : ''}>
                         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a4 4 0 010 8H9"/></svg>
                         주차 가능
@@ -420,9 +420,8 @@
                              onclick="this.querySelector('input').click()">
                             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             <small>추가</small>
-                            <!-- name="images" → Controller의 MultipartFile[] images -->
-                            <input type="file" name="images" accept=".jpg,.jpeg,.png"
-                                   onchange="previewImg(this)">
+                            <!-- name="imgList" → Controller의 MultipartFile[] imgList -->
+                            <input type="file" name="imgList" accept=".jpg,.jpeg,.png" onchange="previewImg(this)">
                         </div>
                     </c:forEach>
                 </div>
@@ -448,279 +447,277 @@
      =================================== -->
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
-
-/* ===================================
-   요일 목록 (전역 상수)
-   - JS 전체에서 이 배열을 순회하며 요일별 처리
-   =================================== */
-var DAYS = ['월','화','수','목','금','토','일','공휴일'];
-
-
-/* ===================================
-   [1] 페이지 로딩 시: DB의 hoursJson → 화면에 채우기
-
-   DB 예시: {"월":{"open":"09:00","close":"18:00","lunchStart":"12:00","lunchEnd":"13:00"}, ...}
-   - JSON에 있는 요일 → 토글 ON + 시간 채우기
-   - JSON에 없는 요일 → 토글 OFF + 시간 비우기 (= 휴무)
-   =================================== */
-document.addEventListener('DOMContentLoaded', function() {
-
-    // 히든필드에서 JSON 문자열 가져오기
-    var jsonText = document.getElementById('hoursJsonInput').value;
-
-    // 값이 없으면 (신규 등록) 기본값 그대로 두고 종료
-    if (!jsonText || jsonText === '' || jsonText === 'null') {
-        return;
-    }
-
-    // JSON 문자열 → 자바스크립트 객체로 변환
-    var hoursData;
-    try {
-        hoursData = JSON.parse(jsonText);
-    } catch (e) {
-        return; // 파싱 실패 시 기본값 유지
-    }
-
-    // 8개 요일을 하나씩 순회
-    for (var i = 0; i < DAYS.length; i++) {
-        var day = DAYS[i];         // 예: "월"
-        var dayInfo = hoursData[day];  // 예: {open:"09:00", close:"18:00", ...} 또는 undefined
-
-        // 각 input 요소 가져오기
-        var useCheckbox = document.getElementById('use-' + day);
-        var openInput   = document.getElementById('open-' + day);
-        var closeInput  = document.getElementById('close-' + day);
-        var lunchSInput = document.getElementById('lunchS-' + day);
-        var lunchEInput = document.getElementById('lunchE-' + day);
-
-        if (!dayInfo) {
-            // JSON에 이 요일이 없음 → 휴무 처리
-            useCheckbox.checked = false;
-            toggleDay(day, useCheckbox);  // 행 흐리게
-            openInput.value   = '';
-            closeInput.value  = '';
-            lunchSInput.value = '';
-            lunchEInput.value = '';
-        } else {
-            // JSON에 이 요일이 있음 → 시간 채우기
-            useCheckbox.checked = true;
-            toggleDay(day, useCheckbox);  // 행 활성화
-            openInput.value   = dayInfo.open       || '';
-            closeInput.value  = dayInfo.close      || '';
-            lunchSInput.value = dayInfo.lunchStart  || '';
-            lunchEInput.value = dayInfo.lunchEnd    || '';
-        }
-    }
-});
+	/* ===================================
+	   요일 목록 (전역 상수)
+	   - JS 전체에서 이 배열을 순회하며 요일별 처리
+	   =================================== */
+	var DAYS = ['월','화','수','목','금','토','일','공휴일'];
 
 
-/* ===================================
-   [2] 저장 버튼 클릭 시: 화면의 시간 → JSON으로 조립 → 히든필드에 넣기
+	/* ===================================
+	   [1] 페이지 로딩 시: DB의 hoursJson → 화면에 채우기
 
-   결과 예시:
-   {
-     "월": {"open":"09:00","close":"18:00","lunchStart":"12:00","lunchEnd":"13:00"},
-     "토": {"open":"09:00","close":"14:00","lunchStart":"","lunchEnd":""}
-   }
-   → 토글 OFF인 요일(일, 공휴일)은 JSON에 안 들어감 = 휴무
-   =================================== */
-document.querySelector('form[name="hospitalInfoForm"]').addEventListener('submit', function() {
+	   DB 예시: {"월":{"open":"09:00","close":"18:00","lunchStart":"12:00","lunchEnd":"13:00"}, ...}
+	   - JSON에 있는 요일 → 토글 ON + 시간 채우기
+	   - JSON에 없는 요일 → 토글 OFF + 시간 비우기 (= 휴무)
+	   =================================== */
+	document.addEventListener('DOMContentLoaded', function() {
 
-    var result = {};  // 빈 객체에 요일별로 추가
+	    // 히든필드에서 JSON 문자열 가져오기
+	    var jsonText = document.getElementById('hoursJsonInput').value;
 
-    for (var i = 0; i < DAYS.length; i++) {
-        var day = DAYS[i];
+	    // 값이 없으면 (신규 등록) 기본값 그대로 두고 종료
+	    if (!jsonText || jsonText === '' || jsonText === 'null') {
+	        return;
+	    }
 
-        // 토글이 꺼져있으면 이 요일은 건너뜀 (= 휴무)
-        var isOn = document.getElementById('use-' + day).checked;
-        if (!isOn) {
-            continue;
-        }
+	    // JSON 문자열 → 자바스크립트 객체로 변환
+	    var hoursData;
+	    try {
+	        hoursData = JSON.parse(jsonText);
+	    } catch (e) {
+	        return; // 파싱 실패 시 기본값 유지
+	    }
 
-        // 시작·종료 시간이 비어있으면 건너뜀
-        var openVal  = document.getElementById('open-' + day).value;
-        var closeVal = document.getElementById('close-' + day).value;
-        if (!openVal || !closeVal) {
-            continue;
-        }
+	    // 8개 요일을 하나씩 순회
+	    for (var i = 0; i < DAYS.length; i++) {
+	        var day = DAYS[i];         // 예: "월"
+	        var dayInfo = hoursData[day];  // 예: {open:"09:00", close:"18:00", ...} 또는 undefined
 
-        // 이 요일의 시간 정보를 객체로 만들어 추가
-        result[day] = {
-            open:       openVal,
-            close:      closeVal,
-            lunchStart: document.getElementById('lunchS-' + day).value,
-            lunchEnd:   document.getElementById('lunchE-' + day).value
-        };
-    }
+	        // 각 input 요소 가져오기
+	        var useCheckbox = document.getElementById('use-' + day);
+	        var openInput   = document.getElementById('open-' + day);
+	        var closeInput  = document.getElementById('close-' + day);
+	        var lunchSInput = document.getElementById('lunchS-' + day);
+	        var lunchEInput = document.getElementById('lunchE-' + day);
 
-    // 객체 → JSON 문자열로 변환 → 히든필드에 세팅
-    document.getElementById('hoursJsonInput').value = JSON.stringify(result);
-    // 이후 폼이 submit되면서 Controller로 전송됨
-});
-
-
-/* ===================================
-   [3] 요일 토글 ON/OFF
-
-   - 체크 해제 → 해당 행에 'row-off' 클래스 추가 → CSS가 흐리게 + 입력 비활성화
-   - 체크 선택 → 'row-off' 제거 → 정상 표시
-   =================================== */
-function toggleDay(day, checkbox) {
-    var row = document.getElementById('row-' + day);
-    if (checkbox.checked) {
-        row.classList.remove('row-off');
-    } else {
-        row.classList.add('row-off');
-    }
-}
+	        if (!dayInfo) {
+	            // JSON에 이 요일이 없음 → 휴무 처리
+	            useCheckbox.checked = false;
+	            toggleDay(day, useCheckbox);  // 행 흐리게
+	            openInput.value   = '';
+	            closeInput.value  = '';
+	            lunchSInput.value = '';
+	            lunchEInput.value = '';
+	        } else {
+	            // JSON에 이 요일이 있음 → 시간 채우기
+	            useCheckbox.checked = true;
+	            toggleDay(day, useCheckbox);  // 행 활성화
+	            openInput.value   = dayInfo.open       || '';
+	            closeInput.value  = dayInfo.close      || '';
+	            lunchSInput.value = dayInfo.lunchStart  || '';
+	            lunchEInput.value = dayInfo.lunchEnd    || '';
+	        }
+	    }
+	});
 
 
-/* ===================================
-   [4] 월요일 시간을 나머지 요일에 복사
+	/* ===================================
+	   [2] 저장 버튼 클릭 시: 화면의 시간 → JSON으로 조립 → 히든필드에 넣기
 
-   월요일의 4개 input값(시작, 종료, 점심시작, 점심종료)을
-   화~공휴일에 그대로 넣고, 토글도 월요일과 같게 맞춤
-   =================================== */
-function copyMonToAll() {
-    // 월요일 값 읽기
-    var monOpen   = document.getElementById('open-월').value;
-    var monClose  = document.getElementById('close-월').value;
-    var monLunchS = document.getElementById('lunchS-월').value;
-    var monLunchE = document.getElementById('lunchE-월').value;
-    var monIsOn   = document.getElementById('use-월').checked;
+	   결과 예시:
+	   {
+	     "월": {"open":"09:00","close":"18:00","lunchStart":"12:00","lunchEnd":"13:00"},
+	     "토": {"open":"09:00","close":"14:00","lunchStart":"","lunchEnd":""}
+	   }
+	   → 토글 OFF인 요일(일, 공휴일)은 JSON에 안 들어감 = 휴무
+	   =================================== */
+	document.querySelector('form[name="hospitalInfoForm"]').addEventListener('submit', function() {
 
-    // i=1부터 (화요일부터) 순회
-    for (var i = 1; i < DAYS.length; i++) {
-        var day = DAYS[i];
-        document.getElementById('open-'   + day).value = monOpen;
-        document.getElementById('close-'  + day).value = monClose;
-        document.getElementById('lunchS-' + day).value = monLunchS;
-        document.getElementById('lunchE-' + day).value = monLunchE;
-        document.getElementById('use-' + day).checked  = monIsOn;
-        toggleDay(day, document.getElementById('use-' + day));
-    }
-}
+	    var result = {};  // 빈 객체에 요일별로 추가
 
+	    for (var i = 0; i < DAYS.length; i++) {
+	        var day = DAYS[i];
 
-/* ===================================
-   [5] 주소 검색 (다음 우편번호 API)
+	        // 토글이 꺼져있으면 이 요일은 건너뜀 (= 휴무)
+	        var isOn = document.getElementById('use-' + day).checked;
+	        if (!isOn) {
+	            continue;
+	        }
 
-   "주소 검색" 버튼 클릭 → 팝업 → 선택 → addr input에 채움
-   =================================== */
-document.getElementById('btnAddr').addEventListener('click', function() {
-    new daum.Postcode({
-        oncomplete: function(data) {
-            // 도로명/지번 중 사용자가 선택한 것 사용
-            var addr = (data.userSelectedType === 'R')
-                     ? data.roadAddress
-                     : data.jibunAddress;
+	        // 시작·종료 시간이 비어있으면 건너뜀
+	        var openVal  = document.getElementById('open-' + day).value;
+	        var closeVal = document.getElementById('close-' + day).value;
+	        if (!openVal || !closeVal) {
+	            continue;
+	        }
 
-            // 동/면 이름이 있으면 괄호로 추가
-            if (data.bname) {
-                addr = addr + ' (' + data.bname + ')';
-            }
+	        // 이 요일의 시간 정보를 객체로 만들어 추가
+	        result[day] = {
+	            open:       openVal,
+	            close:      closeVal,
+	            lunchStart: document.getElementById('lunchS-' + day).value,
+	            lunchEnd:   document.getElementById('lunchE-' + day).value
+	        };
+	    }
 
-            document.querySelector("input[name='addr']").value = addr;
-            document.querySelector("input[name='addrDetail']").focus();
-        }
-    }).open();
-});
+	    // 객체 → JSON 문자열로 변환 → 히든필드에 세팅
+	    document.getElementById('hoursJsonInput').value = JSON.stringify(result);
+	    // 이후 폼이 submit되면서 Controller로 전송됨
+	});
 
 
-/* ===================================
-   [6] 새 이미지 미리보기
+	/* ===================================
+	   [3] 요일 토글 ON/OFF
 
-   파일 선택 → FileReader로 읽기 → img 태그 생성 → 미리보기 표시
-   + 삭제(취소) 버튼도 함께 추가
-   =================================== */
-function previewImg(input) {
-    // 파일이 선택 안 됐으면 무시
-    if (!input.files || !input.files[0]) return;
-
-    var reader = new FileReader();
-
-    reader.onload = function(e) {
-        var box = input.closest('.img-upload-box');
-
-        // 기존 + 아이콘, "추가" 텍스트 숨기기
-        var svg   = box.querySelector('svg');
-        var small = box.querySelector('small');
-        if (svg)   svg.style.display   = 'none';
-        if (small) small.style.display = 'none';
-
-        // 이전 미리보기가 있으면 제거
-        var oldPreview = box.querySelector('.img-preview');
-        if (oldPreview) oldPreview.remove();
-
-        // 새 미리보기 이미지 추가
-        var img = document.createElement('img');
-        img.src = e.target.result;    // FileReader가 읽은 base64 데이터
-        img.className = 'img-preview';
-        box.appendChild(img);
-
-        // 삭제(취소) 버튼 추가 — 클릭하면 원래 빈 상태로 복원
-        if (!box.querySelector('.btn-img-del')) {
-            var delBtn = document.createElement('button');
-            delBtn.type = 'button';
-            delBtn.className = 'btn-img-del';
-            delBtn.innerHTML = '&times;';
-            delBtn.onclick = function(e) {
-                e.stopPropagation();   // 부모 div의 onclick 실행 방지
-                resetUploadBox(box);
-            };
-            box.appendChild(delBtn);
-        }
-    };
-
-    reader.readAsDataURL(input.files[0]);
-}
+	   - 체크 해제 → 해당 행에 'row-off' 클래스 추가 → CSS가 흐리게 + 입력 비활성화
+	   - 체크 선택 → 'row-off' 제거 → 정상 표시
+	   =================================== */
+	function toggleDay(day, checkbox) {
+	    var row = document.getElementById('row-' + day);
+	    if (checkbox.checked) {
+	        row.classList.remove('row-off');
+	    } else {
+	        row.classList.add('row-off');
+	    }
+	}
 
 
-/* ===================================
-   [7] 기존 이미지 삭제 표시
+	/* ===================================
+	   [4] 월요일 시간을 나머지 요일에 복사
 
-   실제로 지우는 건 아니고, "삭제할 파일 ID"를 hidden input에 기록만 함
-   → 폼 submit 시 Controller가 deleteFileIds로 받아서 DB+물리파일 삭제
-   =================================== */
-function markDelete(fileId, btn) {
-    // 이미지 박스를 흐리게 + 클릭 불가 처리
-    var box = btn.closest('.img-upload-box');
-    box.classList.add('deleted');
+	   월요일의 4개 input값(시작, 종료, 점심시작, 점심종료)을
+	   화~공휴일에 그대로 넣고, 토글도 월요일과 같게 맞춤
+	   =================================== */
+	function copyMonToAll() {
+	    // 월요일 값 읽기
+	    var monOpen   = document.getElementById('open-월').value;
+	    var monClose  = document.getElementById('close-월').value;
+	    var monLunchS = document.getElementById('lunchS-월').value;
+	    var monLunchE = document.getElementById('lunchE-월').value;
+	    var monIsOn   = document.getElementById('use-월').checked;
 
-    // hidden input 생성 → deleteFileArea에 추가
-    var hiddenInput = document.createElement('input');
-    hiddenInput.type  = 'hidden';
-    hiddenInput.name  = 'deleteFileIds';   // Controller의 Long[] deleteFileIds와 매칭
-    hiddenInput.value = fileId;
-    document.getElementById('deleteFileArea').appendChild(hiddenInput);
-}
+	    // i=1부터 (화요일부터) 순회
+	    for (var i = 1; i < DAYS.length; i++) {
+	        var day = DAYS[i];
+	        document.getElementById('open-'   + day).value = monOpen;
+	        document.getElementById('close-'  + day).value = monClose;
+	        document.getElementById('lunchS-' + day).value = monLunchS;
+	        document.getElementById('lunchE-' + day).value = monLunchE;
+	        document.getElementById('use-' + day).checked  = monIsOn;
+	        toggleDay(day, document.getElementById('use-' + day));
+	    }
+	}
 
 
-/* ===================================
-   [8] 새 이미지 업로드 취소 (빈 슬롯으로 복원)
+	/* ===================================
+	   [5] 주소 검색 (다음 우편번호 API)
 
-   미리보기, 삭제버튼 제거 → file input 초기화 → + 아이콘 다시 표시
-   =================================== */
-function resetUploadBox(box) {
-    // 미리보기 이미지 제거
-    var preview = box.querySelector('.img-preview');
-    if (preview) preview.remove();
+	   "주소 검색" 버튼 클릭 → 팝업 → 선택 → addr input에 채움
+	   =================================== */
+	document.getElementById('btnAddr').addEventListener('click', function() {
+	    new daum.Postcode({
+	        oncomplete: function(data) {
+	            // 도로명/지번 중 사용자가 선택한 것 사용
+	            var addr = (data.userSelectedType === 'R')
+	                     ? data.roadAddress
+	                     : data.jibunAddress;
 
-    // 삭제 버튼 제거
-    var delBtn = box.querySelector('.btn-img-del');
-    if (delBtn) delBtn.remove();
+	            // 동/면 이름이 있으면 괄호로 추가
+	            if (data.bname) {
+	                addr = addr + ' (' + data.bname + ')';
+	            }
 
-    // file input 초기화 (선택한 파일 해제)
-    var fileInput = box.querySelector('input[type="file"]');
-    if (fileInput) fileInput.value = '';
+	            document.querySelector("input[name='addr']").value = addr;
+	            document.querySelector("input[name='addrDetail']").focus();
+	        }
+	    }).open();
+	});
 
-    // + 아이콘과 "추가" 텍스트 다시 보이기
-    var svg   = box.querySelector('svg');
-    var small = box.querySelector('small');
-    if (svg)   svg.style.display = '';
-    if (small) small.style.display = '';
-}
 
+	/* ===================================
+	   [6] 새 이미지 미리보기
+
+	   파일 선택 → FileReader로 읽기 → img 태그 생성 → 미리보기 표시
+	   + 삭제(취소) 버튼도 함께 추가
+	   =================================== */
+	function previewImg(input) {
+	    // 파일이 선택 안 됐으면 무시
+	    if (!input.files || !input.files[0]) return;
+
+	    var reader = new FileReader();
+
+	    reader.onload = function(e) {
+	        var box = input.closest('.img-upload-box');
+
+	        // 기존 + 아이콘, "추가" 텍스트 숨기기
+	        var svg   = box.querySelector('svg');
+	        var small = box.querySelector('small');
+	        if (svg)   svg.style.display   = 'none';
+	        if (small) small.style.display = 'none';
+
+	        // 이전 미리보기가 있으면 제거
+	        var oldPreview = box.querySelector('.img-preview');
+	        if (oldPreview) oldPreview.remove();
+
+	        // 새 미리보기 이미지 추가
+	        var img = document.createElement('img');
+	        img.src = e.target.result;    // FileReader가 읽은 base64 데이터
+	        img.className = 'img-preview';
+	        box.appendChild(img);
+
+	        // 삭제(취소) 버튼 추가 — 클릭하면 원래 빈 상태로 복원
+	        if (!box.querySelector('.btn-img-del')) {
+	            var delBtn = document.createElement('button');
+	            delBtn.type = 'button';
+	            delBtn.className = 'btn-img-del';
+	            delBtn.innerHTML = '&times;';
+	            delBtn.onclick = function(e) {
+	                e.stopPropagation();   // 부모 div의 onclick 실행 방지
+	                resetUploadBox(box);
+	            };
+	            box.appendChild(delBtn);
+	        }
+	    };
+
+	    reader.readAsDataURL(input.files[0]);
+	}
+
+
+	/* ===================================
+	   [7] 기존 이미지 삭제 표시
+
+	   실제로 지우는 건 아니고, "삭제할 파일 ID"를 hidden input에 기록만 함
+	   → 폼 submit 시 Controller가 deleteFileIds로 받아서 DB+물리파일 삭제
+	   =================================== */
+	function markDelete(fileId, btn) {
+	    // 이미지 박스를 흐리게 + 클릭 불가 처리
+	    var box = btn.closest('.img-upload-box');
+	    box.classList.add('deleted');
+
+	    // hidden input 생성 → deleteFileArea에 추가
+	    var hiddenInput = document.createElement('input');
+	    hiddenInput.type  = 'hidden';
+	    hiddenInput.name  = 'deleteFileIds';   // Controller의 Long[] deleteFileIds와 매칭
+	    hiddenInput.value = fileId;
+	    document.getElementById('deleteFileArea').appendChild(hiddenInput);
+	}
+
+
+	/* ===================================
+	   [8] 새 이미지 업로드 취소 (빈 슬롯으로 복원)
+
+	   미리보기, 삭제버튼 제거 → file input 초기화 → + 아이콘 다시 표시
+	   =================================== */
+	function resetUploadBox(box) {
+	    // 미리보기 이미지 제거
+	    var preview = box.querySelector('.img-preview');
+	    if (preview) preview.remove();
+
+	    // 삭제 버튼 제거
+	    var delBtn = box.querySelector('.btn-img-del');
+	    if (delBtn) delBtn.remove();
+
+	    // file input 초기화 (선택한 파일 해제)
+	    var fileInput = box.querySelector('input[type="file"]');
+	    if (fileInput) fileInput.value = '';
+
+	    // + 아이콘과 "추가" 텍스트 다시 보이기
+	    var svg   = box.querySelector('svg');
+	    var small = box.querySelector('small');
+	    if (svg)   svg.style.display = '';
+	    if (small) small.style.display = '';
+	}
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

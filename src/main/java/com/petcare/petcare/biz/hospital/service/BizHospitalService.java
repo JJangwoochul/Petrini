@@ -31,4 +31,9 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
-public interface BizHospitalService {}
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
+public interface BizHospitalService {
+    public HospitalVO getHospitalByBizId(String bizId) throws Exception;    
+    public void updateHospitalInfo(HospitalVO vo) throws Exception;
+}

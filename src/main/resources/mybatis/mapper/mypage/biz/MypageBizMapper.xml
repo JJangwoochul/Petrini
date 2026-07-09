@@ -8,7 +8,7 @@
 -->
 
 <mapper namespace="com.petcare.petcare.mypage.biz.mapper.MypageBizMapper">
-    <insert id="insertBusiness" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <insert id="insertBusiness" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
         <selectKey keyProperty="bizNo" resultType="long" order="AFTER">
             SELECT MAX(BIZ_NO) FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
         </selectKey>
@@ -34,7 +34,7 @@
                                 )
     </insert>
 
-    <insert id="insertBusinessAuth" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <insert id="insertBusinessAuth" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
         INSERT INTO TB_BUSINESS_AUTH (
                                         BIZ_NO, 
                                         BIZ_REG_NO, 
@@ -53,7 +53,7 @@
 
     <!-- 2026-07-09 장우철 — [변경 후] 최신 AUTH + 반려사유, 상태는 TB_BUSINESS 기준
          이유: 반려 시 B.STATUS_CD=REJECTED 와 A.REJECT_REASON 을 유저 화면에 표시 -->
-    <select id="selectBizAuthStatus" parameterType="string" resultType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <select id="selectBizAuthStatus" parameterType="string" resultType="com.petcare.petcare.biz.vo.BusinessVO">
         SELECT      B.BIZ_NO        AS bizNo,
                     B.BIZ_NAME      AS bizName,
                     B.BIZ_TYPE      AS bizType,
@@ -72,7 +72,7 @@
     FROM TB_BUSINESS B JOIN TB_BUSINESS_AUTH A ...
     -->
 
-    <select id="selectBusinessByBizId" resultType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <select id="selectBusinessByBizId" resultType="com.petcare.petcare.biz.vo.BusinessVO">
         SELECT      BIZ_NO      AS bizNo,
                     BIZ_ID      AS bizId,
                     BIZ_TYPE    AS bizType,
@@ -85,7 +85,7 @@
         WHERE       BIZ_ID = #{bizId}
     </select>
 
-    <update id="updateBusinessForReapply" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <update id="updateBusinessForReapply" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
         UPDATE TB_BUSINESS
         SET    BIZ_TYPE   = #{bizType},
                BIZ_REG_NO = #{bizRegNo},

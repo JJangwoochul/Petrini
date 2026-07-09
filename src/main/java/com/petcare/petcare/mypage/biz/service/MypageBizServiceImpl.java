@@ -10,10 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.petcare.petcare.biz.vo.BusinessVO;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.mypage.biz.mapper.MypageBizMapper;
-import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
 
 @Service
 public class MypageBizServiceImpl implements MypageBizService {
@@ -28,13 +28,13 @@ public class MypageBizServiceImpl implements MypageBizService {
     // 이유: UK(BIZ_ID, BIZ_REG_NO) — 재신청은 TB_BUSINESS UPDATE + TB_BUSINESS_AUTH INSERT
     @Override
     @Transactional
-    public void applyBusiness(MypageBizVO vo, List<FileVO> fileList) throws Exception {
+    public void applyBusiness(BusinessVO vo, List<FileVO> fileList) throws Exception {
 
         if (mypageBizMapper.countActiveBizRegNo(vo.getBizRegNo(), vo.getBizId()) > 0) {
             throw new IllegalStateException("BIZ_REG_NO_DUPLICATE");
         }
 
-        MypageBizVO existing = mypageBizMapper.selectBusinessByBizId(vo.getBizId());
+        BusinessVO existing = mypageBizMapper.selectBusinessByBizId(vo.getBizId());
 
         if (existing == null) {
             mypageBizMapper.insertBusiness(vo);
@@ -85,7 +85,7 @@ public class MypageBizServiceImpl implements MypageBizService {
     }
 
     @Override
-    public MypageBizVO getBizAuthStatus(String bizId) throws Exception {
+    public BusinessVO getBizAuthStatus(String bizId) throws Exception {
         return mypageBizMapper.selectBizAuthStatus(bizId);
     }
 }

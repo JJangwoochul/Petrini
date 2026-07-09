@@ -50,6 +50,24 @@
         --ORDER BY    FILE_ORDER ASC
     </select>
 
+    <!-- 파일 1건 조회 (삭제 전 경로 확인용) -->
+    <select id="selectFile" parameterType="long" resultType="com.petcare.petcare.file.vo.FileVO">
+        SELECT      FILE_ID,
+                    REF_TYPE,
+                    REF_ID,
+                    FILE_URL,
+                    ORIGIN_NAME,
+                    REG_DATE
+        FROM        TB_FILE
+        WHERE       FILE_ID = #{fileId}
+    </select>
+    
+    <!-- 파일 1건 삭제 -->
+    <delete id="deleteFile" parameterType="long">
+        DELETE FROM TB_FILE
+        WHERE       FILE_ID = #{fileId}
+    </delete>
+
     <delete id="deleteFilesByRefId" parameterType="com.petcare.petcare.file.vo.FileVO">
         DELETE FROM     TB_FILE
         WHERE           REF_TYPE = #{refType}

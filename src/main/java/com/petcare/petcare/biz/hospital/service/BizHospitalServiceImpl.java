@@ -15,4 +15,38 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
-public class BizHospitalServiceImpl implements BizHospitalService {}
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
+import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
+@Service
+public class BizHospitalServiceImpl implements BizHospitalService {
+    @Autowired
+    private BizHospitalMapper bizHospitalMapper;
+    @Autowired
+    private KakaoMapService kakaoMapService;
+
+    public HospitalVO getHospitalByBizId(String bizId) throws Exception {
+        return bizHospitalMapper.selectHospitalByBizId(bizId);
+    } 
+
+    @Transactional
+    public void updateHospitalInfo(HospitalVO vo) throws Exception {
+        // 주소가 있으면 좌표 변환
+        if (vo.getAddr() != null && !vo.getAddr().isBlank()) {
+            Map<String, Double> coords = kakaoMapService.geocodeAddress(vo.getAddr());
+            if (coords != null) {
+                vo.setLat(coords.get("lat"));
+                vo.setLng(coords.get("lng"));
+            }
+        }
+        
+        bizHospitalMapper.updateHospitalInfo(vo);
+    }
+}

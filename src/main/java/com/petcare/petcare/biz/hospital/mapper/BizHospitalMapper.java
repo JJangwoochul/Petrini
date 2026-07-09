@@ -25,6 +25,12 @@ package com.petcare.petcare.biz.hospital.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
 
 @Mapper
-public interface BizHospitalMapper {}
+public interface BizHospitalMapper {
+    public HospitalVO selectHospitalByBizId(String bizId) throws Exception;
+    public int insertHospital(String bizId) throws Exception;
+    public int updateHospitalInfo(HospitalVO vo) throws Exception;    
+}
