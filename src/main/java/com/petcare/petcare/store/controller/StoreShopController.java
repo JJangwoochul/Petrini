@@ -181,12 +181,14 @@ public int getCartCount(HttpSession session) {
         return "store/order-complete";
     }
 
-    @GetMapping("/order")
-    public String order(@RequestParam(required = false) Long productId,
-                    @RequestParam(required = false) Long optionId,
-                    @RequestParam(defaultValue = "1") int qty,
-                    Model model,
-                    HttpSession session) {
+    //지윤 26.07.09 수정: cartItemIds 파라미터 추가 - 장바구니에서 주문하기로 들어온 경우도 처리
+@GetMapping("/order")
+public String order(@RequestParam(required = false) Long productId,
+                @RequestParam(required = false) Long optionId,
+                @RequestParam(defaultValue = "1") int qty,
+                @RequestParam(required = false) java.util.List<Long> cartItemIds,
+                Model model,
+                HttpSession session) {
     Long memberNo = getLoginMemberNo(session);
     if (memberNo == null) {
         return "redirect:/login";
@@ -195,6 +197,11 @@ public int getCartCount(HttpSession session) {
     if (productId != null) {
         model.addAttribute("orderItems",
                 storeShopService.getDirectOrderItem(productId, optionId, qty));
+    }
+    // 장바구니에서 주문하기로 들어온 경우: 체크된 항목들만 주문서에 넘김
+    else if (cartItemIds != null && !cartItemIds.isEmpty()) {
+        model.addAttribute("orderItems",
+                storeShopService.getCartOrderItems(cartItemIds));
     }
     // 기존 쿠폰 조회는 그대로 유지
     model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));

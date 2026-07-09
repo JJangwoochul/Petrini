@@ -98,4 +98,7 @@ public interface StoreShopMapper {
    //지윤 07.09 상품 바로구매 -> 주문페이지
    CartItemVO selectDirectOrderItem(@Param("productId") Long productId,
                                  @Param("optionId") Long optionId);
+
+   //지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
+   List<CartItemVO> selectCartItemsByIds(@Param("cartItemIds") java.util.List<Long> cartItemIds);
 }

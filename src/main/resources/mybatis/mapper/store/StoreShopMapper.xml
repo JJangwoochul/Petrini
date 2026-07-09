@@ -188,6 +188,36 @@
     ORDER BY ci.CART_ITEM_ID
 </select>
 
+<!-- 지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동 -->
+<select id="selectCartItemsByIds" resultType="com.petcare.petcare.store.vo.CartItemVO">
+    SELECT
+        ci.CART_ITEM_ID,
+        ci.CART_ID,
+        ci.PRODUCT_ID,
+        ci.OPTION_ID,
+        p.PRODUCT_NAME,
+        p.BRAND_NAME,
+        f.FILE_URL          AS THUMBNAIL_URL,
+        o.OPTION_COLOR,
+        o.OPTION_SIZE,
+        TO_NUMBER(ci.QTY)   AS QTY,
+        TO_NUMBER(ci.PRICE) AS PRICE,
+        o.STOCK_QTY
+    FROM TB_CART_ITEM ci
+    JOIN TB_PRODUCT p ON p.PRODUCT_ID = ci.PRODUCT_ID
+    LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = ci.OPTION_ID
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL,
+               ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+        FROM TB_FILE
+        WHERE REF_TYPE = 'PRODUCT'
+    ) f ON f.REF_ID = ci.PRODUCT_ID AND f.RN = 1
+    WHERE ci.CART_ITEM_ID IN
+    <foreach collection="cartItemIds" item="id" open="(" separator="," close=")">
+        #{id}
+    </foreach>
+</select>
+
 <!-- 지윤 26.07.09 바로구매 상품 1개 조회 -->
 <select id="selectDirectOrderItem"
         resultType="com.petcare.petcare.store.vo.CartItemVO">

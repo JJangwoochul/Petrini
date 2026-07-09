@@ -98,7 +98,7 @@
     <div class="summary-row"><span>쿠폰 할인</span><span style="color:var(--accent)">-0원</span></div>
     <div class="coupon-input"><input type="text" placeholder="쿠폰 코드 입력"><button>적용</button></div>
     <div class="summary-row total"><span>총 결제금액</span><span id="sumTotal">98,900원</span></div>
-    <button class="btn-order" id="btnOrder" onclick="location.href='${contextPath}/store/order'">주문하기 (3개)</button>
+    <button class="btn-order" id="btnOrder">주문하기 (3개)</button>
   </div>
 </div>
 <script>
@@ -223,6 +223,18 @@ document.getElementById('btnDeleteAll').addEventListener('click', function(){
       alert('삭제에 실패했습니다.');
     }
   });
+});
+
+//지윤 26.07.09 추가: 주문하기 클릭 시 체크된 장바구니 항목ID들을 파라미터로 넘김
+document.getElementById('btnOrder').addEventListener('click', function () {
+  var checkedIds = Array.from(document.querySelectorAll('.cart-item'))
+    .filter(function(item){ return item.querySelector('.cart-cb').checked; })
+    .map(function(item){ return item.dataset.cartItemId; });
+  if (checkedIds.length === 0) {
+    alert('주문할 상품을 선택해주세요.');
+    return;
+  }
+  location.href = '${contextPath}/store/order?cartItemIds=' + checkedIds.join(',');
 });
 
 recalc();

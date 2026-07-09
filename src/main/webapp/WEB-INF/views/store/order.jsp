@@ -122,22 +122,66 @@
     <div class="order-total-box">
       <div class="order-total-row">
   <span>상품 금액</span>
-  <span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
+  <span id="orderProductTotal"><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
 </div>
 <div class="order-total-row">
   <span>배송비</span>
-  <span style="color:var(--primary)">무료</span>
+  <span id="orderDeliveryFee" style="color:var(--primary)">무료</span>
 </div>
 <div class="order-total-row">
   <span>쿠폰/포인트 할인</span>
-  <span style="color:var(--accent)">-0원</span>
+  <span id="orderDiscount" style="color:var(--accent)">-0원</span>
 </div>
 <div class="order-total-row final">
   <span>결제 예정 금액</span>
-  <span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
+  <span id="orderFinalTotal"><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
 </div>
     </div>
     <button class="btn-pay" onclick="location.href='${contextPath}/store/payment'">결제수단 선택하기</button>
   </div>
 </div>
+<script>
+
+//지윤 26.07.09 추가: 쿠폰/포인트 선택 시 결제 예정 금액 실시간 계산
+var PRODUCT_TOTAL = ${productTotal};
+
+function won(n){ return n.toLocaleString('ko-KR') + '원'; }
+
+function updateOrderTotal() {
+  var couponSel = document.getElementById('couponSelect');
+  var opt = couponSel.options[couponSel.selectedIndex];
+  var couponType = opt.dataset.type;
+  var couponValue = parseInt(opt.dataset.value) || 0;
+  var minOrderAmt = parseInt(opt.dataset.min) || 0;
+
+  var deliveryFee = (PRODUCT_TOTAL === 0 || PRODUCT_TOTAL >= 50000) ? 0 : 3000;
+
+  var couponDiscount = 0;
+  if (couponType) {
+    if (PRODUCT_TOTAL < minOrderAmt) {
+      alert('최소 주문금액 ' + won(minOrderAmt) + ' 이상부터 사용 가능한 쿠폰입니다.');
+      couponSel.value = '0';
+    } else if (couponType === 'RATE') {
+      couponDiscount = Math.floor(PRODUCT_TOTAL * couponValue / 100);
+    } else if (couponType === 'AMOUNT') {
+      couponDiscount = couponValue;
+    }
+  }
+
+  var pointInput = document.getElementById('pointInput');
+  var pointUsed = parseInt(pointInput.value) || 0;
+  if (pointUsed < 0) pointUsed = 0;
+
+  var totalDiscount = couponDiscount + pointUsed;
+  var finalTotal = PRODUCT_TOTAL + deliveryFee - totalDiscount;
+  if (finalTotal < 0) finalTotal = 0;
+
+  document.getElementById('orderDeliveryFee').textContent = deliveryFee === 0 ? '무료' : won(deliveryFee);
+  document.getElementById('orderDiscount').textContent = '-' + won(totalDiscount);
+  document.getElementById('orderFinalTotal').textContent = won(finalTotal);
+}
+
+//지윤 26.07.09 추가: 페이지 로드 시 배송비/총액 한 번 자동 계산 (쿠폰 안 골라도 정확한 값 보이게)
+updateOrderTotal();
+</script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

@@ -69,4 +69,7 @@ List<CouponVO> getMemberCoupons(Long memberNo);
 
 //지윤 26.07.09 바로구매 클릭 시 해당 상품 주문페이지 이동
 List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qty);
+
+//지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
+List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds);
 }

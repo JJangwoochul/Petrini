@@ -165,4 +165,10 @@ public List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qt
     item.setQty(qty);
     return java.util.List.of(item);
 }
+
+//지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
+@Override
+public List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds) {
+    return storeShopMapper.selectCartItemsByIds(cartItemIds);
+}
 }
