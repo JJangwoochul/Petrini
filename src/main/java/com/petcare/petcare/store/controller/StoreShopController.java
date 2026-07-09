@@ -18,10 +18,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.PostMapping;
 
-//지윤 26.07.06 상품목록 조회용 Service 클래스 import
 import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CategoryVO;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller("storeController")
 @RequestMapping("/store")
@@ -72,17 +73,68 @@ public class StoreShopController {
     }
 
     
+    
    //지윤 26.07.07 상품 상세 실데이터 연동
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") Long id, Model model) {
-        model.addAttribute("product", storeShopService.getProductDetail(id));
-        return "store/detail";
-    }
+    model.addAttribute("product", storeShopService.getProductDetail(id));
+    return "store/detail";
+}
 
+//지윤 26.07.08 장바구니 담기 (POST). 로그인 기능 없어서 MEMBER_NO=1 임시 고정
+//지윤 26.07.08 수정: 담기 성공 시 cart.jsp에서 팝업 띄우도록 flash attribute 추가
+@PostMapping("/cart/add")
+public String addToCart(@RequestParam Long productId,
+                         @RequestParam(required = false) String optionId,
+                         @RequestParam(defaultValue = "1") int qty,
+                         @RequestParam int price,
+                         RedirectAttributes redirectAttributes) {
+    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+    Long optionIdLong = (optionId == null || optionId.isBlank()) ? null : Long.valueOf(optionId);
+    storeShopService.addToCart(memberNo, productId, optionIdLong, qty, price);
+    redirectAttributes.addFlashAttribute("cartAddSuccess", true);
+    return "redirect:/store/cart";
+}
+
+//지윤 26.07.08 장바구니 수량 변경 (AJAX, cart.jsp에서 호출)
+@PostMapping("/cart/updateQty")
+@ResponseBody
+public String updateCartQty(@RequestParam Long cartItemId, @RequestParam int qty) {
+    storeShopService.updateCartItemQty(cartItemId, qty);
+    return "OK";
+}
+
+//지윤 26.07.08 장바구니 항목 삭제 (AJAX, cart.jsp에서 호출)
+@PostMapping("/cart/delete")
+@ResponseBody
+public String deleteCartItem(@RequestParam Long cartItemId) {
+    storeShopService.deleteCartItem(cartItemId);
+    return "OK";
+}
+
+//지윤 26.07.08 장바구니 선택삭제/전체삭제 (AJAX)
+@PostMapping("/cart/deleteAll")
+@ResponseBody
+public String deleteCartItems(@RequestParam java.util.List<Long> cartItemIds) {
+    storeShopService.deleteCartItems(cartItemIds);
+    return "OK";
+}
+
+//지윤 26.07.08 헤더 장바구니 뱃지용 (AJAX, 모든 페이지 로드 시 header에서 호출)
+@GetMapping("/cart/count")
+@ResponseBody
+public int getCartCount() {
+    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+    return storeShopService.getCartItemCount(memberNo);
+}
+
+    //지윤 26.07.08 장바구니 실데이터 연동 (로그인 기능 없어서 MEMBER_NO=1 임시 고정)
     @GetMapping("/cart")
-    public String cart() {
-        return "store/cart";
-    }
+    public String cart(Model model) {
+    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+    model.addAttribute("cartItems", storeShopService.getCartItems(memberNo));
+    return "store/cart";
+}
 
     @GetMapping("/order")
     public String order() {
