@@ -25,7 +25,10 @@ public class MypageBizVO {
     private String bizName;      // 상호명
     private String ceoName;      // 대표자
     private String phone;        // 연락처
-    private String statusCd;     // 상태코드 (PENDING/APPROVED)
+    private String statusCd;     // 상태코드 (PENDING/APPROVED/REJECTED)
+
+    // 2026-07-09 장우철 — TB_BUSINESS_AUTH 최신 건 반려 사유 (반려 화면·재신청 안내)
+    private String rejectReason;
 
     // 폼에서만 사용 (DB 컬럼 아님)
     private String zipcode;

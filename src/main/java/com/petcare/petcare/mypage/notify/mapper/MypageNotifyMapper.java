@@ -19,7 +19,14 @@
 package com.petcare.petcare.mypage.notify.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.mypage.notify.vo.MypageNotifyVO;
 
 @Mapper
-public interface MypageNotifyMapper {}
+public interface MypageNotifyMapper {
+
+    // 2026-07-09 장우철 — 사업자 반려 알림 INSERT
+    // 이유: 관리자 rejectBiz 처리 시 해당 MEMBER_NO 에만 TB_NOTIFICATION 1건 등록
+    int insertNotification(MypageNotifyVO vo);
+}

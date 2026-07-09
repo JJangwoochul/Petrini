@@ -20,6 +20,7 @@ import com.petcare.petcare.admin.biz.mapper.AdminBizMapper;
 import com.petcare.petcare.admin.biz.vo.AdminBizVO;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
 @Service
 public class AdminBizServiceImpl implements AdminBizService {
@@ -31,6 +32,11 @@ public class AdminBizServiceImpl implements AdminBizService {
     // 이유: 상세 화면에서 TB_FILE 메타를 그대로 재사용 (FK 없이 refType+refId 패턴)
     @Autowired
     private FileMapper fileMapper;
+
+    // 2026-07-09 장우철 — 반려 알림 발송 (TB_NOTIFICATION)
+    // 이유: rejectBiz 트랜잭션 안에서 해당 유저에게만 알림 INSERT
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     @Override
     public List<AdminBizVO> getBizApplyList(String statusCd) {
@@ -83,8 +89,8 @@ public class AdminBizServiceImpl implements AdminBizService {
         adminBizMapper.updateBusinessAuthStatus(biz.getBizNo(), "APPROVED");
     }
 
-    // 2026-07-09 장우철 — 반려 처리
-    // 이유: 반려 사유는 화면 검증만 하고 DB 컬럼(REJECT_REASON)은 DDL 확인 후 추가 가능
+    // 2026-07-09 장우철 — [변경 후] 반려 처리 + 사유 저장 + 유저 알림
+    // 이유: DATABASE_TABLE.sql TB_BUSINESS_AUTH.REJECT_REASON / TB_NOTIFICATION 활용
     @Override
     @Transactional
     public void rejectBiz(Long bizNo, String rejectReason) {
@@ -92,8 +98,20 @@ public class AdminBizServiceImpl implements AdminBizService {
             throw new IllegalArgumentException("REJECT_REASON_REQUIRED");
         }
         AdminBizVO biz = requirePendingBiz(bizNo);
+        String reason = rejectReason.trim();
+
+        adminBizMapper.updateBusinessStatus(biz.getBizNo(), "REJECTED");
+        adminBizMapper.updateBusinessAuthReject(biz.getBizNo(), "REJECTED", reason);
+
+        Long memberNo = adminBizMapper.selectMemberNoByBizId(biz.getBizId());
+        if (memberNo != null) {
+            mypageNotifyService.sendBizRejectNotification(memberNo, biz.getBizName(), reason);
+        }
+
+        /* [변경 전] 2026-07-09 장우철 — STATUS 만 REJECTED, 사유·알림 없음
         adminBizMapper.updateBusinessStatus(biz.getBizNo(), "REJECTED");
         adminBizMapper.updateBusinessAuthStatus(biz.getBizNo(), "REJECTED");
+        */
     }
 
     private AdminBizVO requirePendingBiz(Long bizNo) {

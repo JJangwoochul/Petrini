@@ -79,4 +79,33 @@
         )
   </update>
 
+  <!-- 2026-07-09 장우철 — [변경 후] 반려 시 STATUS_CD + REJECT_REASON 동시 저장
+       이유: 유저 화면·알림함에 관리자 반려 사유 노출 (DATABASE_TABLE.sql REJECT_REASON 컬럼) -->
+  <update id="updateBusinessAuthReject">
+    UPDATE TB_BUSINESS_AUTH
+    SET STATUS_CD = #{statusCd},
+        REJECT_REASON = #{rejectReason}
+    WHERE AUTH_ID = (
+          SELECT AUTH_ID
+            FROM TB_BUSINESS_AUTH
+           WHERE BIZ_NO = #{bizNo}
+           ORDER BY APPLY_DATE DESC
+           FETCH FIRST 1 ROW ONLY
+        )
+  </update>
+
+  <!-- [변경 전] 2026-07-09 장우철 — 반려도 updateBusinessAuthStatus 만 호출, REJECT_REASON 미저장
+  <update id="updateBusinessAuthReject"> ... 미구현 ...
+  -->
+
+  <!-- 2026-07-09 장우철 — 사업자 신청 계정 → 회원 PK
+       이유: MypageBiz apply 시 BIZ_ID = TB_MEMBER.MEMBER_ID(이메일) -->
+  <select id="selectMemberNoByBizId" resultType="long">
+    SELECT MEMBER_NO
+    FROM TB_MEMBER
+    WHERE MEMBER_ID = #{bizId}
+       OR EMAIL = #{bizId}
+    FETCH FIRST 1 ROW ONLY
+  </select>
+
 </mapper>

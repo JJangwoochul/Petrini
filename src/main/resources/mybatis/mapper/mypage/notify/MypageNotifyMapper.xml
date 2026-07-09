@@ -5,14 +5,34 @@
 
 <!--
   역할: MypageNotifyMapper SQL 정의
-
-  쿼리 id 예시
-  - selectNotificationList
-  - selectNotificationDetail
-  - updateReadStatus
-
-  테이블
-  - TB_NOTIFICATION
+  테이블: TB_NOTIFICATION (DATABASE_TABLE.sql)
 -->
+
+  <!-- 2026-07-09 장우철 — 알림 1건 등록
+       이유: 사업자 반려 시 유저 알림함에 제목·반려사유 전달 (3번 알림함 UI 연동 전 INSERT 선행) -->
+  <insert id="insertNotification" parameterType="com.petcare.petcare.mypage.notify.vo.MypageNotifyVO">
+    <selectKey keyProperty="notiId" resultType="long" order="BEFORE">
+      SELECT NVL(MAX(NOTI_ID), 0) + 1 FROM TB_NOTIFICATION
+    </selectKey>
+    INSERT INTO TB_NOTIFICATION (
+      NOTI_ID,
+      MEMBER_NO,
+      NOTI_TYPE,
+      TITLE,
+      CONTENT,
+      LINK_URL,
+      IS_READ,
+      REG_DATE
+    ) VALUES (
+      #{notiId},
+      #{memberNo},
+      #{notiType},
+      #{title},
+      #{content, jdbcType=VARCHAR},
+      #{linkUrl, jdbcType=VARCHAR},
+      #{isRead},
+      SYSDATE
+    )
+  </insert>
 
 </mapper>

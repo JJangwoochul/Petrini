@@ -20,4 +20,9 @@
 
 package com.petcare.petcare.mypage.notify.service;
 
-public interface MypageNotifyService {}
+public interface MypageNotifyService {
+
+    // 2026-07-09 장우철 — 사업자 신청 반려 알림 발송
+    // 이유: AdminBizServiceImpl.rejectBiz 에서 호출, 해당 회원 알림함에만 저장
+    void sendBizRejectNotification(Long memberNo, String bizName, String rejectReason);
+}

@@ -37,4 +37,14 @@ public interface AdminBizMapper {
     // 이유: MypageBiz applyBusiness 가 PENDING 으로 넣은 AUTH 이력도 같이 APPROVED/REJECTED 처리
     int updateBusinessAuthStatus(@Param("bizNo") Long bizNo,
                                  @Param("statusCd") String statusCd);
+
+    // 2026-07-09 장우철 — TB_BUSINESS_AUTH 최신 건 반려 (REJECT_REASON 저장)
+    // 이유: DATABASE_TABLE.sql TB_BUSINESS_AUTH.REJECT_REASON 컬럼에 관리자 입력 사유 보관
+    int updateBusinessAuthReject(@Param("bizNo") Long bizNo,
+                                 @Param("statusCd") String statusCd,
+                                 @Param("rejectReason") String rejectReason);
+
+    // 2026-07-09 장우철 — BIZ_ID(=회원 이메일)로 MEMBER_NO 조회
+    // 이유: 반려 알림은 TB_NOTIFICATION.MEMBER_NO 대상으로만 INSERT
+    Long selectMemberNoByBizId(@Param("bizId") String bizId);
 }

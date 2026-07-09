@@ -85,24 +85,25 @@
     <h3>신청 정보</h3>
     <div class="complete-row">
       <span>상호명</span>
-      <span>${bizName}</span>
+      <span>${not empty biz.bizName ? biz.bizName : bizName}</span>
     </div>
     <div class="complete-row">
       <span>업종</span>
       <span>
+        <c:set var="bt" value="${not empty biz.bizType ? biz.bizType : bizType}" />
         <c:choose>
-          <c:when test="${bizType == 'HOSPITAL'}">동물병원</c:when>
-          <c:when test="${bizType == 'GROOMING'}">반려동물 미용</c:when>
-          <c:when test="${bizType == 'STAY'}">펫 호텔·유치원</c:when>
-          <c:when test="${bizType == 'STORE'}">반려동물 용품점</c:when>
-          <c:when test="${bizType == 'STUDIO'}">스튜디오</c:when>
-          <c:otherwise>${bizType}</c:otherwise>
+          <c:when test="${bt == 'HOSPITAL'}">동물병원</c:when>
+          <c:when test="${bt == 'GROOMING'}">반려동물 미용</c:when>
+          <c:when test="${bt == 'STAY'}">펫 호텔·유치원</c:when>
+          <c:when test="${bt == 'STORE'}">반려동물 용품점</c:when>
+          <c:when test="${bt == 'STUDIO'}">스튜디오</c:when>
+          <c:otherwise>${bt}</c:otherwise>
         </c:choose>
       </span>
     </div>
     <div class="complete-row">
       <span>사업자등록번호</span>
-      <span>${bizRegNo}</span>
+      <span>${not empty biz.bizRegNo ? biz.bizRegNo : bizRegNo}</span>
     </div>
     <div class="complete-row">
       <span>처리 상태</span>

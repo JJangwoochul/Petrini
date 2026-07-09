@@ -19,7 +19,19 @@
 <div class="mypage-wrap">
     <%@ include file="/WEB-INF/views/mypage/sidebar.jsp" %>
 
-    <div class="mypage-content">
+        <div class="mypage-content">
+        <%-- 2026-07-09 장우철 — 재신청 모드 안내 / 오류 메시지 --%>
+        <c:if test="${reapply}">
+            <div style="background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;padding:14px 18px;border-radius:8px;margin-bottom:16px;font-size:14px;line-height:1.6">
+                <strong>재신청</strong> — 아래 내용을 보완하여 다시 제출해 주세요.
+                <c:if test="${not empty rejectReason}">
+                    <br><span style="color:#7F1D1D;margin-top:6px;display:inline-block">반려 사유: ${rejectReason}</span>
+                </c:if>
+            </div>
+        </c:if>
+        <c:if test="${not empty errorMsg}">
+            <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${errorMsg}</div>
+        </c:if>
         <%-- ── 사업자 등록 신청 ── --%>
         <div class="mp-section active">
             <h2 class="mp-title">사업자 등록 신청</h2>
