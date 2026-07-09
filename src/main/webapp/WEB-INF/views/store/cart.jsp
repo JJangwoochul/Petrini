@@ -93,7 +93,8 @@
   <div class="cart-summary">
     <h3>주문 요약</h3>
     <div class="summary-row"><span>상품 금액</span><span id="sumProduct">98,900원</span></div>
-    <div class="summary-row"><span>배송비</span><span style="color:var(--primary);font-weight:700">무료</span></div>
+    <%-- 지윤 26.07.09 배송비 무료 고정 텍스트 -> 5만원 기준 실시간 계산으로 변경 --%>
+    <div class="summary-row"><span>배송비</span><span id="sumDelivery" style="color:var(--primary);font-weight:700">무료</span></div>
     <div class="summary-row"><span>쿠폰 할인</span><span style="color:var(--accent)">-0원</span></div>
     <div class="coupon-input"><input type="text" placeholder="쿠폰 코드 입력"><button>적용</button></div>
     <div class="summary-row total"><span>총 결제금액</span><span id="sumTotal">98,900원</span></div>
@@ -103,6 +104,7 @@
 <script>
 function won(n){ return n.toLocaleString('ko-KR') + '원'; }
 
+//지윤 26.07.09 배송비 계산 추가 (5만원 이상 무료, 미만은 3,000원)
 function recalc(){
   var total = 0, count = 0;
   document.querySelectorAll('.cart-item').forEach(function(item){
@@ -113,8 +115,10 @@ function recalc(){
     item.querySelector('.cart-price').textContent = won(lineTotal);
     if(checked){ total += lineTotal; count++; }
   });
+  var deliveryFee = (total === 0 || total >= 50000) ? 0 : 3000;
   document.getElementById('sumProduct').textContent = won(total);
-  document.getElementById('sumTotal').textContent = won(total);
+  document.getElementById('sumDelivery').textContent = deliveryFee === 0 ? '무료' : won(deliveryFee);
+  document.getElementById('sumTotal').textContent = won(total + deliveryFee);
   var btn = document.getElementById('btnOrder');
   btn.textContent = '주문하기 (' + count + '개)';
   btn.disabled = count === 0;

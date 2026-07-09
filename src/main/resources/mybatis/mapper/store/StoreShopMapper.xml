@@ -34,6 +34,7 @@
     </if>
 </sql>
 
+<!-- 지윤 26.07.09 수정: 썸네일을 DESCRIPTION(임시)에서 TB_FILE(정식)로 변경 -->
 <select id="selectProductList" resultType="com.petcare.petcare.store.vo.StoreShopVO">
     SELECT
         p.PRODUCT_ID,
@@ -45,7 +46,7 @@
         TO_NUMBER(p.PRICE)        AS PRICE,
         TO_NUMBER(p.SALE_PRICE)   AS SALE_PRICE,
         TO_NUMBER(p.STOCK_QTY)    AS STOCK_QTY,
-        p.DESCRIPTION             AS THUMBNAIL_URL,
+        f.FILE_URL                AS THUMBNAIL_URL,
         NVL(rv.AVG_RATING, 0)     AS AVG_RATING,
         NVL(rv.REVIEW_COUNT, 0)   AS REVIEW_COUNT
     FROM TB_PRODUCT p
@@ -58,6 +59,12 @@
         WHERE REVIEW_TYPE = 'PRODUCT'
         GROUP BY TARGET_ID
     ) rv ON rv.TARGET_ID = p.PRODUCT_ID
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL,
+               ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+        FROM TB_FILE
+        WHERE REF_TYPE = 'PRODUCT'
+    ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
     WHERE <include refid="productFilter"/>
     <choose>
         <when test="sort == 'latest'">ORDER BY p.PRODUCT_ID DESC</when>
@@ -83,7 +90,7 @@
     ORDER BY CATEGORY_ID
 </select>
 
-<!-- 지윤 26.07.07 상품 상세 조회 -->
+<!-- 지윤 26.07.09 수정: 썸네일 TB_FILE로 변경, 진짜 설명 텍스트(DESCRIPTION) 컬럼도 추가 -->
 <select id="selectProductDetail" resultType="com.petcare.petcare.store.vo.StoreShopVO">
     SELECT
         p.PRODUCT_ID,
@@ -95,7 +102,8 @@
         TO_NUMBER(p.PRICE)        AS PRICE,
         TO_NUMBER(p.SALE_PRICE)   AS SALE_PRICE,
         TO_NUMBER(p.STOCK_QTY)    AS STOCK_QTY,
-        p.DESCRIPTION             AS THUMBNAIL_URL,
+        f.FILE_URL                AS THUMBNAIL_URL,
+        p.DESCRIPTION             AS DESCRIPTION,
         NVL(rv.AVG_RATING, 0)     AS AVG_RATING,
         NVL(rv.REVIEW_COUNT, 0)   AS REVIEW_COUNT
     FROM TB_PRODUCT p
@@ -108,6 +116,12 @@
         WHERE REVIEW_TYPE = 'PRODUCT'
         GROUP BY TARGET_ID
     ) rv ON rv.TARGET_ID = p.PRODUCT_ID
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL,
+               ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+        FROM TB_FILE
+        WHERE REF_TYPE = 'PRODUCT'
+    ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
     WHERE p.PRODUCT_ID = #{productId}
 </select>
 
@@ -145,7 +159,7 @@
     ORDER BY q.QNA_ID DESC
 </select>
 
-<!-- 지윤 26.07.08 장바구니 목록 조회 (회원번호 기준, 상품/옵션 정보 조인) -->
+<!-- 지윤 26.07.09 수정: 썸네일 DESCRIPTION -> TB_FILE로 변경 -->
 <select id="selectCartItems" resultType="com.petcare.petcare.store.vo.CartItemVO">
     SELECT
         ci.CART_ITEM_ID,
@@ -154,7 +168,7 @@
         ci.OPTION_ID,
         p.PRODUCT_NAME,
         p.BRAND_NAME,
-        p.DESCRIPTION       AS THUMBNAIL_URL,
+        f.FILE_URL          AS THUMBNAIL_URL,
         o.OPTION_COLOR,
         o.OPTION_SIZE,
         TO_NUMBER(ci.QTY)   AS QTY,
@@ -164,8 +178,48 @@
     JOIN TB_CART c ON c.CART_ID = ci.CART_ID
     JOIN TB_PRODUCT p ON p.PRODUCT_ID = ci.PRODUCT_ID
     LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = ci.OPTION_ID
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL,
+               ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+        FROM TB_FILE
+        WHERE REF_TYPE = 'PRODUCT'
+    ) f ON f.REF_ID = ci.PRODUCT_ID AND f.RN = 1
     WHERE c.MEMBER_NO = #{memberNo}
     ORDER BY ci.CART_ITEM_ID
+</select>
+
+<!-- 지윤 26.07.09 바로구매 상품 1개 조회 -->
+<select id="selectDirectOrderItem"
+        resultType="com.petcare.petcare.store.vo.CartItemVO">
+
+    SELECT
+        p.PRODUCT_ID,
+        #{optionId, jdbcType=NUMERIC} AS OPTION_ID,
+        p.PRODUCT_NAME,
+        p.BRAND_NAME,
+        f.FILE_URL AS THUMBNAIL_URL,
+        o.OPTION_COLOR,
+        o.OPTION_SIZE,
+        TO_NUMBER(p.SALE_PRICE) + NVL(o.ADD_PRICE, 0) AS PRICE,
+        NVL(o.STOCK_QTY, TO_NUMBER(p.STOCK_QTY)) AS STOCK_QTY
+    FROM TB_PRODUCT p
+    LEFT JOIN TB_PRODUCT_OPTION o
+        ON o.PRODUCT_ID = p.PRODUCT_ID
+        AND o.OPTION_ID = #{optionId, jdbcType=NUMERIC}
+    LEFT JOIN (
+        SELECT
+            REF_ID,
+            FILE_URL,
+            ROW_NUMBER() OVER (
+                PARTITION BY REF_ID
+                ORDER BY FILE_ID
+            ) AS RN
+        FROM TB_FILE
+        WHERE REF_TYPE = 'PRODUCT'
+    ) f
+        ON f.REF_ID = p.PRODUCT_ID
+        AND f.RN = 1
+    WHERE p.PRODUCT_ID = #{productId}
 </select>
 
 <!-- 지윤 26.07.08 이 회원의 장바구니(CART_ID) 조회 -->
@@ -232,6 +286,17 @@
     FROM TB_CART_ITEM ci
     JOIN TB_CART c ON c.CART_ID = ci.CART_ID
     WHERE c.MEMBER_NO = #{memberNo}
+</select>
+
+<!-- 지윤 26.07.09 회원 보유쿠폰 목록 조회 (미사용 상태만) -->
+<select id="selectMemberCoupons" resultType="com.petcare.petcare.store.vo.CouponVO">
+    SELECT mc.MEMBER_COUPON_ID, c.COUPON_ID, c.COUPON_NAME, c.COUPON_TYPE,
+           TO_NUMBER(c.DISCOUNT_VALUE) AS DISCOUNT_VALUE,
+           TO_NUMBER(c.MIN_ORDER_AMT)  AS MIN_ORDER_AMT
+    FROM TB_MEMBER_COUPON mc
+    JOIN TB_COUPON c ON c.COUPON_ID = mc.COUPON_ID
+    WHERE mc.MEMBER_NO = #{memberNo} AND mc.STATUS_CD = 'UNUSED'
+    ORDER BY mc.MEMBER_COUPON_ID
 </select>
 
 </mapper>

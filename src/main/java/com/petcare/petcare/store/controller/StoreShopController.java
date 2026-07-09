@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CategoryVO;
+import com.petcare.petcare.member.vo.MemberVO;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller("storeController")
@@ -35,6 +37,12 @@ public class StoreShopController {
     //지윤 26.07.06 상품목록 조회용 Service 주입
     @Autowired
     private StoreShopService storeShopService;
+
+    //지윤 26.07.09 로그인 기능 연동: 세션에서 로그인한 회원번호 가져오기 (없으면 null)
+    private Long getLoginMemberNo(HttpSession session) {
+    MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
+    return (memberInfo != null) ? memberInfo.getMemberNo() : null;
+}
 
     // ----- 수정 전 원본 -----
     // @GetMapping({"", "/"})
@@ -82,14 +90,19 @@ public class StoreShopController {
 }
 
 //지윤 26.07.08 장바구니 담기 (POST). 로그인 기능 없어서 MEMBER_NO=1 임시 고정
-//지윤 26.07.08 수정: 담기 성공 시 cart.jsp에서 팝업 띄우도록 flash attribute 추가
+//지윤 26.07.09 수정: 로그인 안 했으면 장바구니 담기 막고 알림 후 로그인페이지로 이동
 @PostMapping("/cart/add")
 public String addToCart(@RequestParam Long productId,
                          @RequestParam(required = false) String optionId,
                          @RequestParam(defaultValue = "1") int qty,
                          @RequestParam int price,
+                         HttpSession session,
                          RedirectAttributes redirectAttributes) {
-    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        redirectAttributes.addFlashAttribute("loginRequired", true);
+        return "redirect:/login";
+    }
     Long optionIdLong = (optionId == null || optionId.isBlank()) ? null : Long.valueOf(optionId);
     storeShopService.addToCart(memberNo, productId, optionIdLong, qty, price);
     redirectAttributes.addFlashAttribute("cartAddSuccess", true);
@@ -123,22 +136,21 @@ public String deleteCartItems(@RequestParam java.util.List<Long> cartItemIds) {
 //지윤 26.07.08 헤더 장바구니 뱃지용 (AJAX, 모든 페이지 로드 시 header에서 호출)
 @GetMapping("/cart/count")
 @ResponseBody
-public int getCartCount() {
-    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
+public int getCartCount(HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) return 0;
     return storeShopService.getCartItemCount(memberNo);
 }
 
-    //지윤 26.07.08 장바구니 실데이터 연동 (로그인 기능 없어서 MEMBER_NO=1 임시 고정)
+    //지윤 26.07.09 장바구니 실데이터 연동 
     @GetMapping("/cart")
-    public String cart(Model model) {
-    Long memberNo = 1L; // TODO: 로그인 기능 붙으면 세션에서 가져오도록 변경
-    model.addAttribute("cartItems", storeShopService.getCartItems(memberNo));
-    return "store/cart";
-}
-
-    @GetMapping("/order")
-    public String order() {
-        return "store/order";
+    public String cart(Model model, HttpSession session) {
+        Long memberNo = getLoginMemberNo(session);
+        if (memberNo == null) {
+            return "redirect:/login";
+        }
+        model.addAttribute("cartItems", storeShopService.getCartItems(memberNo));
+        return "store/cart";
     }
 
     @GetMapping("/payment")
@@ -163,9 +175,29 @@ public int getCartCount() {
                         @RequestParam(required = false) String message) {
         return "결제 요청 실패: " + code + " - " + message;
     }
-        
+
     @GetMapping("/order-complete")
     public String orderComplete() {
         return "store/order-complete";
     }
+
+    @GetMapping("/order")
+    public String order(@RequestParam(required = false) Long productId,
+                    @RequestParam(required = false) Long optionId,
+                    @RequestParam(defaultValue = "1") int qty,
+                    Model model,
+                    HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "redirect:/login";
+    }
+    // 바로구매로 들어온 경우: 상품 1개만 주문서에 넘김
+    if (productId != null) {
+        model.addAttribute("orderItems",
+                storeShopService.getDirectOrderItem(productId, optionId, qty));
+    }
+    // 기존 쿠폰 조회는 그대로 유지
+    model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));
+    return "store/order";
+}
 }

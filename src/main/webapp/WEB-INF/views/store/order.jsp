@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -37,21 +38,27 @@
 
   <div class="order-section">
     <h3>주문 상품</h3>
-    <div class="order-product-row">
-      <img class="order-product-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=120&q=70&auto=format&fit=crop" alt="사료" onerror="this.src='https://placehold.co/60x60/EAF7F2/2BAB82?text=IMG'">
-      <div class="order-product-name">로얄캐닌 미디엄 어덜트 사료 4kg × 1</div>
-      <div class="order-product-price">48,900원</div>
+    <c:set var="productTotal" value="0" />
+
+<c:forEach var="item" items="${orderItems}">
+  <c:set var="lineTotal" value="${item.price * item.qty}" />
+  <c:set var="productTotal" value="${productTotal + lineTotal}" />
+
+  <div class="order-product-row">
+    <img class="order-product-thumb"
+         src="${item.thumbnailUrl}"
+         alt="${item.productName}"
+         onerror="this.src='https://placehold.co/60x60/EAF7F2/2BAB82?text=IMG'">
+
+    <div class="order-product-name">
+      ${item.productName} × ${item.qty}
     </div>
-    <div class="order-product-row">
-      <img class="order-product-thumb" src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=120&q=70&auto=format&fit=crop" alt="매트" onerror="this.src='https://placehold.co/60x60/EAF7F2/2BAB82?text=IMG'">
-      <div class="order-product-name">노즈워크 매트 오렌지 × 2</div>
-      <div class="order-product-price">37,000원</div>
+
+    <div class="order-product-price">
+      <fmt:formatNumber value="${lineTotal}" pattern="#,###"/>원
     </div>
-    <div class="order-product-row">
-      <img class="order-product-thumb" src="https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=120&q=70&auto=format&fit=crop" alt="간식" onerror="this.src='https://placehold.co/60x60/EAF7F2/2BAB82?text=IMG'">
-      <div class="order-product-name">수제 져키 트릿 200g × 1</div>
-      <div class="order-product-price">13,000원</div>
-    </div>
+  </div>
+</c:forEach>
   </div>
 
   <div class="order-section">
@@ -83,24 +90,52 @@
     </div>
   </div>
 
-  <div class="order-section">
+  <%-- 지윤 26.07.09 수정: 쿠폰 코드 직접입력 -> 보유쿠폰 드롭다운으로 변경 (등록은 마이페이지에서, 여기선 적용만) --%>
+<div class="order-section">
     <h3>쿠폰 / 포인트</h3>
-    <div class="coupon-input"><input type="text" placeholder="쿠폰 코드 입력"><button class="addr-btn">적용</button></div>
+    <div class="order-form-group">
+      <label>보유 쿠폰</label>
+      <select id="couponSelect" onchange="updateOrderTotal()">
+        <option value="0" data-type="" data-value="0" data-min="0">쿠폰 선택 안 함</option>
+        <c:forEach var="c" items="${memberCoupons}">
+          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-min="${c.minOrderAmt}">
+            ${c.couponName}
+            <c:if test="${c.couponType == 'RATE'}"> (${c.discountValue}% 할인)</c:if>
+            <c:if test="${c.couponType == 'AMOUNT'}"> (<fmt:formatNumber value="${c.discountValue}" pattern="#,###"/>원 할인)</c:if>
+          </option>
+        </c:forEach>
+      </select>
+      <c:if test="${empty memberCoupons}">
+        <small style="color:var(--text-muted)">사용 가능한 쿠폰이 없습니다.</small>
+      </c:if>
+    </div>
     <div class="order-form-grid" style="margin-top:14px">
       <div class="order-form-group">
         <label>보유 포인트 2,400P</label>
-        <input type="number" placeholder="사용할 포인트 입력" value="0">
+        <input type="number" id="pointInput" placeholder="사용할 포인트 입력" value="0" onchange="updateOrderTotal()">
       </div>
     </div>
-  </div>
+</div>
 
   <div class="order-section">
     <h3>결제 예정 금액</h3>
     <div class="order-total-box">
-      <div class="order-total-row"><span>상품 금액</span><span>98,900원</span></div>
-      <div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">무료</span></div>
-      <div class="order-total-row"><span>쿠폰/포인트 할인</span><span style="color:var(--accent)">-0원</span></div>
-      <div class="order-total-row final"><span>결제 예정 금액</span><span>98,900원</span></div>
+      <div class="order-total-row">
+  <span>상품 금액</span>
+  <span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
+</div>
+<div class="order-total-row">
+  <span>배송비</span>
+  <span style="color:var(--primary)">무료</span>
+</div>
+<div class="order-total-row">
+  <span>쿠폰/포인트 할인</span>
+  <span style="color:var(--accent)">-0원</span>
+</div>
+<div class="order-total-row final">
+  <span>결제 예정 금액</span>
+  <span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
+</div>
     </div>
     <button class="btn-pay" onclick="location.href='${contextPath}/store/payment'">결제수단 선택하기</button>
   </div>
