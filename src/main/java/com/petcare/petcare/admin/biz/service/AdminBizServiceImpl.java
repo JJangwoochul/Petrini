@@ -87,6 +87,12 @@ public class AdminBizServiceImpl implements AdminBizService {
         AdminBizVO biz = requirePendingBiz(bizNo);
         adminBizMapper.updateBusinessStatus(biz.getBizNo(), "APPROVED");
         adminBizMapper.updateBusinessAuthStatus(biz.getBizNo(), "APPROVED");
+
+        // 2026-07-10 장우철 — 승인 알림 INSERT (반려와 동일하게 TB_NOTIFICATION, 이메일/푸시 후순위)
+        Long memberNo = adminBizMapper.selectMemberNoByBizId(biz.getBizId());
+        if (memberNo != null) {
+            mypageNotifyService.sendBizApproveNotification(memberNo, biz.getBizName(), biz.getBizType());
+        }
     }
 
     // 2026-07-09 장우철 — [변경 후] 반려 처리 + 사유 저장 + 유저 알림
