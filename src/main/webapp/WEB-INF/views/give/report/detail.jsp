@@ -7,13 +7,18 @@
   [상세 화면 흐름]
   1. GET /give/report/detail?id=번호
   2. report(TB_POST) + report.photoUrls(TB_FILE) 표시
+  4. POST /give/report/status → 상태 변경
+  5. comments(TB_POST_COMMENT) 표시 + POST /give/report/comment (parentId → 대댓글)
+  6. POST /give/report/comment/delete — 본인 댓글 삭제
+  7. POST /give/report/comment/update — 본인 댓글 수정
 --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId"      value="give" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 <style>
-  .rd-wrap{max-width:860px;margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 280px;gap:24px;align-items:flex-start}
+  .rd-wrap{max-width:var(--inner-width);margin:32px auto 80px;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:flex-start}
   .rd-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);text-decoration:none;margin-bottom:18px;transition:var(--transition)}
   .rd-back:hover{color:var(--primary)}
   .rd-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -37,20 +42,35 @@
   .rd-desc{font-size:14px;color:var(--text-sub);line-height:1.8;margin:0;border-left:3px solid var(--primary);padding-left:14px;white-space:pre-line}
   .rd-map{border-radius:var(--radius-sm);overflow:hidden;height:180px}
   .rd-map img{width:100%;height:100%;object-fit:cover;display:block}
-  .comment-area{}
   .comment-input-wrap{display:flex;gap:10px;margin-bottom:18px}
-  .comment-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0}
+  .comment-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--primary-light)}
   .comment-flex{flex:1}
   .comment-input{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-size:14px;color:var(--text-main);outline:none;font-family:inherit;resize:none;min-height:70px;line-height:1.6;box-sizing:border-box}
   .comment-input:focus{border-color:var(--primary)}
   .comment-submit-row{display:flex;justify-content:flex-end;margin-top:8px}
   .comment-submit-row button{padding:7px 18px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer}
-  .comment-item{display:flex;gap:12px;margin-bottom:14px}
+  .comment-item{display:flex;gap:12px;margin-bottom:18px}
   .comment-body-box{flex:1}
-  .comment-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
-  .comment-name{font-size:14px;font-weight:700;color:var(--text-main)}
-  .comment-date{font-size:12px;color:var(--text-muted)}
-  .comment-text{font-size:14px;color:var(--text-sub);line-height:1.6}
+  .comment-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:12px}
+  .comment-head-meta{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
+  .comment-meta-sep{color:var(--text-muted);font-size:12px;line-height:1}
+  .comment-name{font-size:14px;font-weight:700;color:var(--text-main);min-width:0}
+  .comment-date{font-size:12px;color:var(--text-muted);white-space:nowrap}
+  .comment-delete-btn{font-size:12px;font-weight:700;color:#DC2626;background:none;border:none;cursor:pointer;padding:0;line-height:1;white-space:nowrap}
+  .comment-delete-btn:hover{text-decoration:underline}
+  .comment-edit-btn{font-size:12px;font-weight:700;color:var(--primary-dark);background:none;border:none;cursor:pointer;padding:0;line-height:1;white-space:nowrap}
+  .comment-edit-btn:hover{text-decoration:underline}
+  .comment-text{font-size:14px;color:var(--text-sub);line-height:1.6;white-space:pre-line}
+  .comment-actions{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .reply-btn{font-size:13px;font-weight:600;color:var(--primary-dark);background:var(--primary-light);border:none;border-radius:4px;cursor:pointer;padding:5px 12px;line-height:1.4}
+  .reply-btn:hover{background:var(--primary);color:#fff}
+  .reply-form{display:none;margin-top:10px}
+  .reply-form.open{display:block}
+  .reply-item{margin-left:48px;padding-left:12px;border-left:2px solid var(--border)}
+  .reply-input{min-height:60px}
+  .edit-form{display:none;margin-top:10px}
+  .edit-form.open{display:block}
+  .comment-error{font-size:12px;color:#B91C1C;margin-bottom:10px}
   
   /* 사이드 카드 */
   .rd-side-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;position:sticky;top:20px;margin-bottom:16px}
@@ -60,7 +80,6 @@
   .side-row span:last-child{font-weight:700;color:var(--text-main)}
   .btn-status-change{width:100%;padding:11px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;transition:var(--transition)}
   .btn-status-change:hover{background:var(--primary-dark)}
-  .btn-shelter-link{width:100%;padding:10px;border:2px solid var(--primary);border-radius:var(--radius-sm);background:#fff;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;margin-top:8px}
 </style>
 
 <div class="rd-wrap">
@@ -84,17 +103,58 @@
     </div>
 
     <div class="rd-status-row">
-      <span class="rd-status rds-finding">찾는 중</span>
+      <c:choose>
+        <c:when test="${fn:contains(report.tags, 'OWNER_FOUND')}">
+          <span class="rd-status rds-rescued">주인 찾음</span>
+        </c:when>
+        <c:when test="${fn:contains(report.tags, 'RESCUED')}">
+          <span class="rd-status rds-rescued">구조 완료</span>
+        </c:when>
+        <c:otherwise>
+          <span class="rd-status rds-finding">찾는 중</span>
+        </c:otherwise>
+      </c:choose>
       <span style="font-size:12px;color:var(--text-muted)">신고번호: #${report.postId}</span>
     </div>
     <div class="rd-title">${report.title}</div>
-    <div class="rd-tags">
-      <span class="rd-tag">강아지</span>
-      <span class="rd-tag">중형</span>
-      <span class="rd-tag">황갈색</span>
-      <span class="rd-tag">목줄 없음</span>
-      <span class="rd-tag">겁을 많이 먹음</span>
-    </div>
+   <div class="rd-tags">
+   <c:if test="${report.lostSpecies eq 'DOG'}">
+    <span class="rd-tag">강아지</span>
+   </c:if>
+   <c:if test="${report.lostSpecies eq 'CAT'}">
+    <span class="rd-tag">고양이</span>
+   </c:if>
+   <c:if test="${report.lostSpecies eq 'ETC'}">
+    <span class="rd-tag">기타</span>
+   </c:if>
+
+      <c:if test="${not empty report.animalSize}">
+        <span class="rd-tag">${report.animalSize}</span>
+      </c:if>
+      <c:if test="${not empty report.furColor}">
+        <span class="rd-tag">${report.furColor}</span>
+      </c:if>
+      <c:if test="${report.gender eq 'M'}">
+        <span class="rd-tag">수컷</span>
+      </c:if>
+      <c:if test="${report.gender eq 'F'}">
+        <span class="rd-tag">암컷</span>
+      </c:if>
+      <c:if test="${report.gender eq 'UNKNOWN'}">
+        <span class="rd-tag">성별 모름</span>
+      </c:if>
+      <c:if test="${not empty report.featureTags}">
+        <c:forEach var="ft" items="${fn:split(report.featureTags, ',')}">
+          <c:if test="${not empty ft}">
+            <span class="rd-tag">${ft}</span>
+          </c:if>
+        </c:forEach>
+      </c:if>
+
+    <c:if test="${fn:contains(report.tags, 'TEMP_CARE')}">
+    <span class="rd-tag">임시보호 중</span>
+  </c:if>
+</div>
 
     <div class="rd-info-grid">
       <div class="rd-info-row"><label>발견 장소</label><span>${report.region}</span></div>
@@ -114,51 +174,243 @@
     </div>
 
     <div class="rd-section">
-      <h3>댓글 (12)</h3>
-      <div class="comment-input-wrap">
-        <img class="comment-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=72&q=70&auto=format&fit=crop" alt="me" onerror="this.src='https://placehold.co/36x36/EAF7F2/2BAB82?text=ME'">
-        <div class="comment-flex">
-          <textarea class="comment-input" placeholder="제보, 목격 정보, 응원 댓글을 남겨주세요."></textarea>
-          <div class="comment-submit-row"><button onclick="alert('댓글이 등록되었습니다.')">등록</button></div>
+      <h3>댓글 (${empty commentCount ? 0 : commentCount})</h3>
+
+      <c:if test="${param.error eq 'empty'}">
+        <p class="comment-error">댓글 내용을 입력해 주세요.</p>
+      </c:if>
+      <c:if test="${param.error eq 'comment'}">
+        <p class="comment-error">댓글 처리에 실패했습니다.</p>
+      </c:if>
+      <c:if test="${param.error eq 'commentForbidden'}">
+        <p class="comment-error">본인 댓글만 수정·삭제할 수 있습니다.</p>
+      </c:if>
+      <c:if test="${param.error eq 'member'}">
+        <p class="comment-error">회원 정보를 확인할 수 없습니다. 다시 로그인해 주세요.</p>
+      </c:if>
+      <c:if test="${param.error eq 'seq'}">
+        <p class="comment-error">댓글 시퀀스(SEQ_TB_POST_COMMENT)가 DB에 없습니다.</p>
+      </c:if>
+
+      <form method="post" action="${contextPath}/give/report/comment">
+        <input type="hidden" name="postId" value="${report.postId}">
+        <div class="comment-input-wrap">
+          <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=ME" alt="me">
+          <div class="comment-flex">
+            <textarea class="comment-input" name="body" placeholder="제보, 목격 정보, 응원 댓글을 남겨주세요." required></textarea>
+            <div class="comment-submit-row"><button type="submit">등록</button></div>
+          </div>
         </div>
-      </div>
-      <div class="comment-item">
-        <img class="comment-avatar" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=72&q=70&auto=format&fit=crop" alt="댓글러" onerror="this.src='https://placehold.co/36x36/EAF7F2/2BAB82?text=U'">
-        <div class="comment-body-box">
-          <div class="comment-head"><span class="comment-name">이서연</span><span class="comment-date">2025.06.25 16:15</span></div>
-          <div class="comment-text">방금 저도 합정 카페거리 쪽에서 비슷한 강아지 봤어요! 골든 리트리버 맞는 것 같고 남쪽으로 이동했습니다.</div>
+      </form>
+
+      <c:forEach var="cmt" items="${comments}">
+        <div class="comment-item">
+          <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=U" alt="댓글러">
+          <div class="comment-body-box">
+            <div class="comment-head">
+              <span class="comment-name">${cmt.nickname}</span>
+              <div class="comment-head-meta">
+                <span class="comment-date">
+                  <c:choose>
+                    <c:when test="${not empty cmt.regDate}">
+                      ${cmt.regDate.year}.${cmt.regDate.monthValue}.${cmt.regDate.dayOfMonth}
+                    </c:when>
+                    <c:otherwise>-</c:otherwise>
+                  </c:choose>
+                </span>
+                <c:if test="${loginMemberNo != null && loginMemberNo == cmt.memberNo}">
+                  <span class="comment-meta-sep">·</span>
+                  <button type="button" class="comment-edit-btn"
+                          onclick="toggleEditForm(${cmt.commentId})">수정</button>
+                  <span class="comment-meta-sep">·</span>
+                  <form method="post" action="${contextPath}/give/report/comment/delete" style="display:inline;margin:0;padding:0">
+                    <input type="hidden" name="commentId" value="${cmt.commentId}">
+                    <input type="hidden" name="postId" value="${report.postId}">
+                    <button type="submit" class="comment-delete-btn"
+                            onclick="return confirm('댓글을 삭제할까요?')">삭제</button>
+                  </form>
+                </c:if>
+              </div>
+            </div>
+            <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
+            <div id="editForm-${cmt.commentId}" class="edit-form">
+              <form method="post" action="${contextPath}/give/report/comment/update">
+                <input type="hidden" name="commentId" value="${cmt.commentId}">
+                <input type="hidden" name="postId" value="${report.postId}">
+                <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
+                <div class="comment-submit-row">
+                  <button type="button" class="reply-btn" onclick="toggleEditForm(${cmt.commentId})">취소</button>
+                  <button type="submit">저장</button>
+                </div>
+              </form>
+            </div>
+            <div class="comment-actions">
+              <button type="button" class="reply-btn" onclick="toggleReplyForm(${cmt.commentId})">↳ 답글</button>
+            </div>
+            <div id="replyForm-${cmt.commentId}" class="reply-form">
+              <form method="post" action="${contextPath}/give/report/comment">
+                <input type="hidden" name="postId" value="${report.postId}">
+                <input type="hidden" name="parentId" value="${cmt.commentId}">
+                <textarea class="comment-input reply-input" name="body" placeholder="답글을 입력하세요..." required></textarea>
+                <div class="comment-submit-row"><button type="submit">등록</button></div>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="comment-item">
-        <img class="comment-avatar" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=72&q=70&auto=format&fit=crop" alt="댓글러2" onerror="this.src='https://placehold.co/36x36/EAF7F2/2BAB82?text=U'">
-        <div class="comment-body-box">
-          <div class="comment-head"><span class="comment-name">박지호</span><span class="comment-date">2025.06.25 17:02</span></div>
-          <div class="comment-text">마포구청 동물보호소(02-1234-5678)에 신고하시면 포획 인력 나옵니다. 빠른 해결 바랍니다.</div>
-        </div>
-      </div>
+
+        <c:forEach var="reply" items="${cmt.replies}">
+          <div class="comment-item reply-item">
+            <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=R" alt="답글러">
+            <div class="comment-body-box">
+              <div class="comment-head">
+                <span class="comment-name">${reply.nickname}</span>
+                <div class="comment-head-meta">
+                  <span class="comment-date">
+                    <c:choose>
+                      <c:when test="${not empty reply.regDate}">
+                        ${reply.regDate.year}.${reply.regDate.monthValue}.${reply.regDate.dayOfMonth}
+                      </c:when>
+                      <c:otherwise>-</c:otherwise>
+                    </c:choose>
+                  </span>
+                  <c:if test="${loginMemberNo != null && loginMemberNo == reply.memberNo}">
+                    <span class="comment-meta-sep">·</span>
+                    <button type="button" class="comment-edit-btn"
+                            onclick="toggleEditForm(${reply.commentId})">수정</button>
+                    <span class="comment-meta-sep">·</span>
+                    <form method="post" action="${contextPath}/give/report/comment/delete" style="display:inline;margin:0;padding:0">
+                      <input type="hidden" name="commentId" value="${reply.commentId}">
+                      <input type="hidden" name="postId" value="${report.postId}">
+                      <button type="submit" class="comment-delete-btn"
+                              onclick="return confirm('댓글을 삭제할까요?')">삭제</button>
+                    </form>
+                  </c:if>
+                </div>
+              </div>
+              <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
+              <div id="editForm-${reply.commentId}" class="edit-form">
+                <form method="post" action="${contextPath}/give/report/comment/update">
+                  <input type="hidden" name="commentId" value="${reply.commentId}">
+                  <input type="hidden" name="postId" value="${report.postId}">
+                  <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
+                  <div class="comment-submit-row">
+                    <button type="button" class="reply-btn" onclick="toggleEditForm(${reply.commentId})">취소</button>
+                    <button type="submit">저장</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </c:forEach>
+      </c:forEach>
+
+      <c:if test="${empty comments}">
+        <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0">아직 댓글이 없습니다.</p>
+      </c:if>
     </div>
   </div>
 
   <div>
     <div class="rd-side-card">
       <h3>신고 현황</h3>
-      <div class="side-row"><span>상태</span><span style="color:#F59E0B;font-weight:800">찾는 중</span></div>
-      <div class="side-row"><span>신고일</span><span>2025.06.25</span></div>
-      <div class="side-row"><span>조회 수</span><span>284</span></div>
-      <div class="side-row"><span>댓글</span><span>12</span></div>
-      <select style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;color:var(--text-main);outline:none;margin-top:12px">
-        <option>찾는 중</option>
-        <option>구조 완료</option>
-        <option>주인 찾음</option>
-      </select>
-      <button class="btn-status-change" onclick="alert('상태가 변경되었습니다.')">상태 변경</button>
-    </div>
-    <div class="rd-side-card">
-      <h3>보호소 연계</h3>
-      <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;line-height:1.6">직접 보호가 어려우시면 보호소 연계를 신청해 주세요.</p>
-      <button class="btn-shelter-link" onclick="alert('마포구 동물보호소에 연계 신청이 접수되었습니다.\n담당자가 연락드립니다.')">보호소 연계 신청</button>
+      <div class="side-row">
+        <span>상태</span>
+        <c:choose>
+          <c:when test="${fn:contains(report.tags, 'OWNER_FOUND')}">
+            <span style="color:#16A34A;font-weight:800">주인 찾음</span>
+          </c:when>
+          <c:when test="${fn:contains(report.tags, 'RESCUED')}">
+            <span style="color:#16A34A;font-weight:800">구조 완료</span>
+          </c:when>
+          <c:otherwise>
+            <span style="color:#F59E0B;font-weight:800">찾는 중</span>
+          </c:otherwise>
+        </c:choose>
+      </div>
+      <div class="side-row">
+        <span>신고일</span>
+        <span>
+          <c:choose>
+            <c:when test="${not empty report.regDate}">
+              ${report.regDate.year}.${report.regDate.monthValue}.${report.regDate.dayOfMonth}
+            </c:when>
+            <c:otherwise>-</c:otherwise>
+          </c:choose>
+        </span>
+      </div>
+      <div class="side-row"><span>댓글</span><span>${empty commentCount ? 0 : commentCount}</span></div>
+            <c:if test="${param.error eq 'forbidden'}">
+        <p style="font-size:12px;color:#B91C1C;margin-bottom:10px">작성자만 상태를 변경할 수 있습니다.</p>
+      </c:if>
+      <c:if test="${param.error eq 'status'}">
+        <p style="font-size:12px;color:#B91C1C;margin-bottom:10px">상태 변경에 실패했습니다.</p>
+      </c:if>
+
+      <c:if test="${loginMemberNo != null && loginMemberNo == report.memberNo}">
+      <form method="post" action="${contextPath}/give/report/status">
+        <input type="hidden" name="postId" value="${report.postId}">
+
+        <select name="findingStatus"
+                style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;color:var(--text-main);outline:none;margin-top:12px">
+          <option value="FINDING"
+            ${fn:contains(report.tags, 'FINDING') && !fn:contains(report.tags, 'RESCUED') && !fn:contains(report.tags, 'OWNER_FOUND') ? 'selected' : ''}>
+            찾는 중
+          </option>
+          <option value="RESCUED"
+            ${fn:contains(report.tags, 'RESCUED') ? 'selected' : ''}>
+            구조 완료
+          </option>
+          <option value="OWNER_FOUND"
+            ${fn:contains(report.tags, 'OWNER_FOUND') ? 'selected' : ''}>
+            주인 찾음
+          </option>
+        </select>
+
+        <button type="submit" class="btn-status-change">상태 변경</button>
+      </form>
+      </c:if>
     </div>
   </div>
 </div>
+
+<script>
+  const isLoggedIn = ${isLoggedIn == true};
+
+  function toggleReplyForm(commentId) {
+    if (!isLoggedIn) {
+      alert('로그인 후 답글을 작성할 수 있습니다.');
+      location.href = '${contextPath}/login?redirect=/give/report/detail?id=${report.postId}';
+      return;
+    }
+    var form = document.getElementById('replyForm-' + commentId);
+    if (!form) {
+      return;
+    }
+    document.querySelectorAll('.reply-form.open').forEach(function(el) {
+      if (el !== form) {
+        el.classList.remove('open');
+      }
+    });
+    form.classList.toggle('open');
+  }
+
+  function toggleEditForm(commentId) {
+    var form = document.getElementById('editForm-' + commentId);
+    var text = document.getElementById('commentText-' + commentId);
+    if (!form) {
+      return;
+    }
+    document.querySelectorAll('.edit-form.open').forEach(function(el) {
+      if (el !== form) {
+        el.classList.remove('open');
+      }
+    });
+    var willOpen = !form.classList.contains('open');
+    form.classList.toggle('open');
+    if (text) {
+      text.style.display = willOpen ? 'none' : '';
+    }
+  }
+</script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

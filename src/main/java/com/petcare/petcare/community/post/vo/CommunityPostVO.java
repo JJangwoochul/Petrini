@@ -34,12 +34,25 @@ public class CommunityPostVO {
     private Integer likeCnt;       // LIKE_CNT — 좋아요 수
     private String statusCd;       // STATUS_CD — 게시 상태 (ACTIVE 등)
     private LocalDateTime regDate; // REG_DATE — 등록일
-    private String tags;           // TAGS — 태그
+    private String tags;           // TAGS — 태그 (LIFE: WAITING/ANSWERED)
     private String region;         // REGION — 지역
+    private String lostSpecies;    // LOST_SPECIES — LIFE: 동물 종 (DOG/CAT/ETC)
+    private String lostFeature;    // LOST_FEATURE — LIFE: 품종|나이
+
+    // ── write.jsp / vet-ask-form 전용 (DB 컬럼 없음 → Service에서 조합) ──
+
+    private String petType;        // 반려동물 종 — DOG / CAT / ETC
+    private String breed;          // 품종
+    private String petAge;         // 나이
 
     // ── 조회 전용 (DB 컬럼 아님, Service·JOIN 으로 채움) ──
 
     private String authorName;         // 작성자 닉네임 (TB_MEMBER JOIN, 추후)
     private String thumbUrl;           // 목록 썸네일 — TB_FILE 첫 사진 URL
     private List<String> photoUrls;    // 상세 사진 목록 (STEP 5)
+
+    // LIFE 답변 미리보기 — 첫 일반댓글 (목록 vet-answer 용)
+    private String answerBody;
+    private String answerAuthor;
+    private LocalDateTime answerDate;
 }

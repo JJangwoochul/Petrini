@@ -1,16 +1,25 @@
 /**
- * 역할: 커뮤니티 좋아요·신고 데이터 객체
+ * 역할: 커뮤니티 좋아요 데이터 객체
  *
- * 필드 예시
- * - reactionId, postId, memberId, reactionType, createdAt
+ * - 박유정 / 2026-07-09
  *
  * 참고 테이블
- * - TB_COMMUNITY_LIKE
- * - TB_COMMUNITY_REPORT
- *
- * DB 컬럼명은 팀 VO 규칙(camelCase)에 맞게 작성
+ * - TB_POST_LIKE
  */
 
 package com.petcare.petcare.community.reaction.vo;
 
-public class CommunityReactionVO {}
+import java.time.LocalDateTime;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class CommunityReactionVO {
+
+    private Long likeId;           // LIKE_ID
+    private Long postId;           // POST_ID
+    private Long memberNo;         // MEMBER_NO
+    private LocalDateTime regDate; // REG_DATE
+}
