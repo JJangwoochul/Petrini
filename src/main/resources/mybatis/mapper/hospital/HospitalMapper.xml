@@ -57,4 +57,79 @@
           FROM  TB_HOSPITAL
          WHERE  HOSPITAL_ID = #{hospitalId}
     </select>
+
+    <!-- 2026-07-10 장우철 — 예약 폼 반려동물 목록 (F2) -->
+    <select id="selectPetListByMemberNo" parameterType="long"
+            resultType="com.petcare.petcare.hospital.vo.HospitalPetVO">
+        SELECT  P.PET_ID     AS petId,
+                P.PET_NAME   AS petName,
+                P.SPECIES    AS species,
+                P.BREED      AS breed,
+                P.AGE        AS age
+          FROM  TB_PET P
+         WHERE  P.MEMBER_NO = #{memberNo}
+         ORDER BY P.IS_REPRESENT DESC, P.PET_ID ASC
+    </select>
+
+    <!-- 2026-07-10 장우철 — 병원 예약 INSERT (F2), SEQ_RESERVATION 사용 -->
+    <insert id="insertReservation" parameterType="com.petcare.petcare.hospital.vo.ReservationVO">
+        <selectKey keyProperty="resvId" resultType="long" order="BEFORE">
+            SELECT SEQ_RESERVATION.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TB_RESERVATION (
+            RESV_ID,
+            RESV_NO,
+            RESV_TYPE,
+            MEMBER_NO,
+            PET_ID,
+            TARGET_ID,
+            RESV_DATE,
+            RESV_TIME,
+            SYMPTOMS,
+            REQUEST_MEMO,
+            STATUS_CD,
+            REG_DATE
+        ) VALUES (
+            #{resvId},
+            #{resvNo},
+            #{resvType},
+            #{memberNo},
+            #{petId},
+            #{targetId},
+            #{resvDate},
+            #{resvTime},
+            #{symptoms, jdbcType=VARCHAR},
+            #{requestMemo, jdbcType=VARCHAR},
+            #{statusCd},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 2026-07-10 장우철 — 예약 완료 화면 조회 (F3) -->
+    <select id="selectReservationById" parameterType="long"
+            resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+        SELECT  R.RESV_ID        AS resvId,
+                R.RESV_NO        AS resvNo,
+                R.RESV_TYPE      AS resvType,
+                R.MEMBER_NO      AS memberNo,
+                R.PET_ID         AS petId,
+                R.TARGET_ID      AS targetId,
+                R.RESV_DATE      AS resvDate,
+                R.RESV_TIME      AS resvTime,
+                R.SYMPTOMS       AS symptoms,
+                R.REQUEST_MEMO   AS requestMemo,
+                R.STATUS_CD      AS statusCd,
+                R.REG_DATE       AS regDate,
+                M.MEMBER_NAME    AS memberName,
+                P.PET_NAME       AS petName,
+                P.SPECIES        AS petSpecies,
+                P.BREED          AS petBreed,
+                P.AGE            AS petAge,
+                H.NAME           AS hospitalName
+          FROM  TB_RESERVATION R
+          JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+         WHERE  R.RESV_ID = #{resvId}
+    </select>
 </mapper>

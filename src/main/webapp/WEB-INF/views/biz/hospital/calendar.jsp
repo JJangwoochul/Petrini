@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="동물병원" />
 <c:set var="bizPage"      value="calendar" />
@@ -52,11 +53,7 @@
 </main>
 
 <script>
-  function offset(days) {
-    var d = new Date();
-    d.setDate(d.getDate() + days);
-    return toKey(d);
-  }
+  // 2026-07-10 장우철 — 서버 예약 데이터 → FullCalendar (F7)
   function toKey(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
@@ -66,14 +63,19 @@
   var statusBadgeClass = { wait:'bs-wait', done:'bs-done' };
 
   var reservations = [
-    { name:'홍길동', pet:'초코 (강아지)', time:'09:00', date: offset(-2), status:'done' },
-    { name:'이서연', pet:'나비 (고양이)', time:'10:30', date: offset(-1), status:'done' },
-    { name:'박도현', pet:'두부 (강아지)', time:'11:00', date: offset(0),  status:'wait' },
-    { name:'최아린', pet:'몽이 (고양이)', time:'14:00', date: offset(0),  status:'wait' },
-    { name:'정하율', pet:'뽀삐 (강아지)', time:'15:30', date: offset(1),  status:'wait' },
-    { name:'김민서', pet:'루비 (고양이)', time:'09:30', date: offset(3),  status:'wait' },
-    { name:'오세훈', pet:'별이 (강아지)', time:'13:00', date: offset(3),  status:'wait' },
-    { name:'한지우', pet:'달이 (강아지)', time:'16:00', date: offset(5),  status:'wait' }
+    <c:forEach var="r" items="${calendarReservations}" varStatus="st">
+    {
+      name: '<c:out value="${r.memberName}"/>',
+      pet: '<c:out value="${r.petName}"/>',
+      time: '<c:out value="${r.resvTime}"/>',
+      date: '<fmt:formatDate value="${r.resvDate}" pattern="yyyy-MM-dd"/>',
+      status: (function(cd){
+        if (cd === 'PENDING' || cd === 'CONFIRMED') return 'wait';
+        if (cd === 'DONE') return 'done';
+        return 'wait';
+      })('<c:out value="${r.statusCd}"/>')
+    }<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
   ];
 
   var events = reservations.map(function (r) {

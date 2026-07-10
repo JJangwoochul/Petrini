@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -28,6 +29,7 @@ import com.petcare.petcare.biz.hospital.service.BizHospitalService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
@@ -55,17 +57,90 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/dashboard";
     }
 
+    // 2026-07-10 장우철 — 사업자 예약 관리 (F4)
     @GetMapping("/reserve")
-    public String hospitalReserve(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String hospitalReserve(HttpSession session, Model model) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
             return "redirect:/login";
+        }
+
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        model.addAttribute("hospital", hospital);
+        model.addAttribute("reservationList",
+                bizHospitalService.getReservationList(hospital.getHospitalId(), "all"));
         return "biz/hospital/reserve";
     }
 
-    @GetMapping("/calendar")
-    public String hospitalCalendar(HttpSession session) {
-        if (getBizMember(session) == null)
+    // 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5)
+    @PostMapping("/reserve/status")
+    public String updateReservationStatus(@RequestParam("resvId") Long resvId,
+                                          @RequestParam("statusCd") String statusCd,
+                                          HttpSession session,
+                                          RedirectAttributes rttr) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
             return "redirect:/login";
+        }
+
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        bizHospitalService.updateReservationStatus(hospital.getHospitalId(), resvId, statusCd);
+        rttr.addFlashAttribute("msg", "예약 상태가 변경되었습니다.");
+        return "redirect:/biz/hospital/reserve";
+    }
+
+    // 2026-07-10 장우철 — 사업자 예약 상세 모달 API (F6)
+    @GetMapping("/reserve/detail")
+    @ResponseBody
+    public ReservationVO reservationDetail(@RequestParam("resvId") Long resvId,
+                                           HttpSession session) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            return null;
+        }
+
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return null;
+        }
+
+        return bizHospitalService.getReservationDetail(hospital.getHospitalId(), resvId);
+    }
+
+    // 2026-07-10 장우철 — 사업자 예약 캘린더 (F7)
+    @GetMapping("/calendar")
+    public String hospitalCalendar(@RequestParam(value = "from", required = false) String fromDate,
+                                   @RequestParam(value = "to", required = false) String toDate,
+                                   HttpSession session,
+                                   Model model) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            return "redirect:/login";
+        }
+
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        if (fromDate == null || fromDate.isBlank()) {
+            fromDate = java.time.LocalDate.now().minusMonths(3).toString();
+        }
+        if (toDate == null || toDate.isBlank()) {
+            toDate = java.time.LocalDate.now().plusMonths(6).toString();
+        }
+
+        model.addAttribute("hospital", hospital);
+        model.addAttribute("calendarReservations",
+                bizHospitalService.getCalendarReservations(hospital.getHospitalId(), fromDate, toDate));
         return "biz/hospital/calendar";
     }
 
@@ -150,8 +225,7 @@ public class BizHospitalController extends BizBaseController {
 
     // ── POST: 저장 ──
     @PostMapping("/info")
-    public String saveHospitalInfo(HospitalVO vo,
-                                   @RequestParam(value = "tagList", required = false) String[] tagList,
+    public String saveHospitalInfo(@RequestParam(value = "tagList", required = false) String[] tagList,
                                    @RequestParam(value = "imgList", required = false) MultipartFile[] imgList, 
                                    @RequestParam(value = "deleteFileIds", required = false) Long[] deleteFileIds,
                                    HttpSession session,
@@ -166,11 +240,10 @@ public class BizHospitalController extends BizBaseController {
             rttr.addFlashAttribute("errorMsg", "병원 정보를 불러올 수 없습니다.");
             return "redirect:/biz/hospital/info";
         }
-        vo.setHospitalId(hospital.getHospitalId());
 
         // 태그 체크박스 배열 → 콤마 구분 문자열
         if (tagList != null) {
-            vo.setTagList(String.join(",", tagList));
+            hospital.setTagList(String.join(",", tagList));
         }
 
         // 기존 이미지 삭제 처리 ──
@@ -192,7 +265,7 @@ public class BizHospitalController extends BizBaseController {
         }
 
         // ── 3) 병원 기본정보 업데이트 ──
-        bizHospitalService.updateHospitalInfo(vo);
+        bizHospitalService.updateHospitalInfo(hospital);
 
         rttr.addFlashAttribute("msg", "저장되었습니다.");
         return "redirect:/biz/hospital/info";

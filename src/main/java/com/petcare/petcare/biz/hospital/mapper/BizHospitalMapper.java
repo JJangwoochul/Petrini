@@ -23,9 +23,13 @@
 
 package com.petcare.petcare.biz.hospital.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 
 
 @Mapper
@@ -35,4 +39,19 @@ public interface BizHospitalMapper {
     int insertHospital(String bizId);
 
     int updateHospitalInfo(HospitalVO vo);
+
+    // 2026-07-10 장우철 — 병원 예약 1차 (F4~F7) 사업자 측 Mapper
+    List<ReservationVO> selectReservationList(@Param("hospitalId") Long hospitalId,
+                                               @Param("tab") String tab) throws Exception;
+
+    ReservationVO selectReservationDetail(@Param("resvId") Long resvId,
+                                          @Param("hospitalId") Long hospitalId) throws Exception;
+
+    int updateReservationStatus(@Param("resvId") Long resvId,
+                                @Param("hospitalId") Long hospitalId,
+                                @Param("statusCd") String statusCd) throws Exception;
+
+    List<ReservationVO> selectReservationCalendarList(@Param("hospitalId") Long hospitalId,
+                                                        @Param("fromDate") String fromDate,
+                                                        @Param("toDate") String toDate) throws Exception;
 }

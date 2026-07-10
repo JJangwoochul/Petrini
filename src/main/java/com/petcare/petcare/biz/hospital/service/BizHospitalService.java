@@ -31,7 +31,10 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
+import java.util.List;
+
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 
 public interface BizHospitalService {
 
@@ -41,4 +44,13 @@ public interface BizHospitalService {
     HospitalVO resolveHospitalByBizId(String bizId);
 
     void updateHospitalInfo(HospitalVO vo);
+
+    // 2026-07-10 장우철 — 병원 예약 1차 (F4~F7) 사업자 Service
+    List<ReservationVO> getReservationList(Long hospitalId, String tab) throws Exception;
+
+    ReservationVO getReservationDetail(Long hospitalId, Long resvId) throws Exception;
+
+    void updateReservationStatus(Long hospitalId, Long resvId, String statusCd) throws Exception;
+
+    List<ReservationVO> getCalendarReservations(Long hospitalId, String fromDate, String toDate) throws Exception;
 }

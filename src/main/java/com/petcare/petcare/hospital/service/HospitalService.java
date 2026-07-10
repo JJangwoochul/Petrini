@@ -26,9 +26,16 @@ package com.petcare.petcare.hospital.service;
 
 import java.util.List;
 
+import com.petcare.petcare.hospital.vo.HospitalPetVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 
 public interface HospitalService {
     List<HospitalVO> getHospitalList() throws Exception;
-    HospitalVO getHospitalById(Long hospitalId) throws Exception;        
+    HospitalVO getHospitalById(Long hospitalId) throws Exception;
+
+    // 2026-07-10 장우철 — 병원 예약 1차 (F2~F3)
+    List<HospitalPetVO> getPetListForReserve(Long memberNo) throws Exception;
+    Long createHospitalReservation(ReservationVO vo) throws Exception;
+    ReservationVO getReservationById(Long resvId) throws Exception;
 }

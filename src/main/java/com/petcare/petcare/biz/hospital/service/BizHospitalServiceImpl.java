@@ -15,6 +15,7 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 
 @Service
 public class BizHospitalServiceImpl implements BizHospitalService {
@@ -66,5 +68,46 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         }
         
         bizHospitalMapper.updateHospitalInfo(vo);
+    }
+
+    // 2026-07-10 장우철 — 사업자 예약 목록 (F4)
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservationVO> getReservationList(Long hospitalId, String tab) throws Exception {
+        if (hospitalId == null) {
+            return List.of();
+        }
+        String safeTab = (tab == null || "all".equals(tab)) ? null : tab;
+        return bizHospitalMapper.selectReservationList(hospitalId, safeTab);
+    }
+
+    // 2026-07-10 장우철 — 사업자 예약 상세 모달 (F6)
+    @Override
+    @Transactional(readOnly = true)
+    public ReservationVO getReservationDetail(Long hospitalId, Long resvId) throws Exception {
+        return bizHospitalMapper.selectReservationDetail(resvId, hospitalId);
+    }
+
+    // 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5)
+    @Override
+    @Transactional
+    public void updateReservationStatus(Long hospitalId, Long resvId, String statusCd) throws Exception {
+        if (hospitalId == null || resvId == null || statusCd == null || statusCd.isBlank()) {
+            throw new IllegalArgumentException("예약 상태 변경 정보가 올바르지 않습니다.");
+        }
+        int updated = bizHospitalMapper.updateReservationStatus(resvId, hospitalId, statusCd);
+        if (updated == 0) {
+            throw new IllegalStateException("예약을 찾을 수 없거나 변경할 수 없습니다.");
+        }
+    }
+
+    // 2026-07-10 장우철 — 사업자 예약 캘린더 (F7)
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservationVO> getCalendarReservations(Long hospitalId, String fromDate, String toDate) throws Exception {
+        if (hospitalId == null) {
+            return List.of();
+        }
+        return bizHospitalMapper.selectReservationCalendarList(hospitalId, fromDate, toDate);
     }
 }
