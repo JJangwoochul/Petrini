@@ -35,7 +35,6 @@ import jakarta.servlet.http.HttpSession;
 @Controller("bizHospitalController")
 @RequestMapping("/biz/hospital")
 public class BizHospitalController extends BizBaseController {
-
     @Autowired
     private BizHospitalService bizHospitalService;
     @Autowired
@@ -120,20 +119,30 @@ public class BizHospitalController extends BizBaseController {
         // 승인 시 TB_HOSPITAL이 이미 INSERT됨 → null일 수 없음
         HospitalVO hospital = bizHospitalService.getHospitalByBizId(member.getMemberId());
         model.addAttribute("hospital", hospital);
-
-        List<FileVO> imgList = fileService.getFileList("HOSPITAL", hospital.getHospitalId());
-        model.addAttribute("imgList", imgList);
         return "biz/hospital/info";
     }
 
+    @GetMapping("/profile")
+    public String profile(HttpSession session, Model model) throws Exception{
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+        
+        // 승인 시 TB_HOSPITAL이 이미 INSERT됨 → null일 수 없음
+        HospitalVO hospital = bizHospitalService.getHospitalByBizId(member.getMemberId());
+        model.addAttribute("hospital", hospital);
+
+        List<FileVO> imgList = fileService.getFileList("HOSPITAL", hospital.getHospitalId());
+        model.addAttribute("imgList", imgList);
+        return "biz/hospital/profile";
+    }
+
     // ── POST: 저장 ──
-    @PostMapping("/info")
-    public String saveHospitalInfo(HospitalVO vo,
-                                   @RequestParam(value = "tagList", required = false) String[] tagList,
-                                   @RequestParam(value = "imgList", required = false) MultipartFile[] imgList, 
-                                   @RequestParam(value = "deleteFileIds", required = false) Long[] deleteFileIds,
-                                   HttpSession session,
-                                   RedirectAttributes rttr) throws Exception {
+    @PostMapping("/profile")
+    public String saveProfile(@RequestParam(value = "tagList", required = false) String[] tagList,
+                              @RequestParam(value = "imgList", required = false) MultipartFile[] imgList, 
+                              @RequestParam(value = "deleteFileIds", required = false) Long[] deleteFileIds,
+                              HttpSession session,
+                              RedirectAttributes rttr) throws Exception {
 
         MemberVO member = getBizMember(session);
         if (member == null) 
@@ -141,11 +150,10 @@ public class BizHospitalController extends BizBaseController {
 
         // 로그인한 사업자의 hospitalId 세팅
         HospitalVO hospital = bizHospitalService.getHospitalByBizId(member.getMemberId());
-        vo.setHospitalId(hospital.getHospitalId());
 
         // 태그 체크박스 배열 → 콤마 구분 문자열
         if (tagList != null) {
-            vo.setTagList(String.join(",", tagList));
+            hospital.setTagList(String.join(",", tagList));
         }
 
         // 기존 이미지 삭제 처리 ──
@@ -167,16 +175,9 @@ public class BizHospitalController extends BizBaseController {
         }
 
         // ── 3) 병원 기본정보 업데이트 ──
-        bizHospitalService.updateHospitalInfo(vo);
+        bizHospitalService.updateHospitalInfo(hospital);
 
         rttr.addFlashAttribute("msg", "저장되었습니다.");
-        return "redirect:/biz/hospital/info";
+        return "redirect:/biz/hospital/profile";
     }
-
-    // @GetMapping("/profile")
-    // public String hospitalProfile(HttpSession session) {
-    //     if (getBizMember(session) == null)
-    //         return "redirect:/login";
-    //     return "biz/hospital/profile";
-    // }
 }

@@ -15,4 +15,7 @@
 
 package com.petcare.petcare.biz.stay.service;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class BizStayServiceImpl implements BizStayService {}

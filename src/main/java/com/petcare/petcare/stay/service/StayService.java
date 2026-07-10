@@ -28,6 +28,6 @@ import java.util.List;
 import com.petcare.petcare.stay.vo.StayVO;
 
 public interface StayService {
-    public List<StayVO> getLodgeList();
-    public StayVO getLodgeDetail(Long lodgeId);
+    public List<StayVO> getStayList();
+    public StayVO getStayDetail(Long stayId);
 }

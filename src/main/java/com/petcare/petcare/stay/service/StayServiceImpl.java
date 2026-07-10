@@ -31,17 +31,17 @@ public class StayServiceImpl implements StayService {
     private StayMapper stayMapper;
 
     @Override
-    public List<StayVO> getLodgeList() {
-        return stayMapper.selectLodgeList();
+    public List<StayVO> getStayList() {
+        return stayMapper.selectStayList();
     }
 
     @Override
-    public StayVO getLodgeDetail(Long lodgeId) {
-        StayVO lodge = stayMapper.selectLodgeById(lodgeId);
-        if (lodge != null) {
-            List<StayRoomVO> rooms = stayMapper.selectRoomsByLodgeId(lodgeId);
-            lodge.setRooms(rooms);
+    public StayVO getStayDetail(Long stayId) {
+        StayVO stay = stayMapper.selectStayById(stayId);
+        if (stay != null) {
+            List<StayRoomVO> rooms = stayMapper.selectRoomsByStayId(stayId);
+            stay.setRooms(rooms);
         }
-        return lodge;
+        return stay;
     }    
 }

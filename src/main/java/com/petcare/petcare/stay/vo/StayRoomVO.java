@@ -6,8 +6,8 @@ import lombok.Setter;
 @Getter @Setter
 public class StayRoomVO {
     private Long   roomId;
-    private Long   lodgeId;
-    private String roomName;
+    private Long   stayId;
+    private String name;
     private int    pricePerNight;
     private int    capacity;
     private int    petLimit;

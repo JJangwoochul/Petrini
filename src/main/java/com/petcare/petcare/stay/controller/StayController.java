@@ -39,24 +39,24 @@ public class StayController {
 
     @GetMapping({"", "/"})
     public String list(Model model) {
-        List<StayVO> lodgeList = stayService.getLodgeList();
-        model.addAttribute("lodgeList", lodgeList);
+        List<StayVO> stayList = stayService.getStayList();
+        model.addAttribute("stayList", stayList);
         return "stay/list";
     }
 
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") Long id, Model model) throws Exception {
-        StayVO lodge = stayService.getLodgeDetail(id);
-        List<FileVO> imgList = fileService.getFileList("LODGE", id);
+        StayVO stay = stayService.getStayDetail(id);
+        List<FileVO> imgList = fileService.getFileList("STAY", id);
         
         // 지도 표시 (단일마커 — 숙소 1곳)
-        if (lodge != null && lodge.getLat() != null) {
+        if (stay != null && stay.getLat() != null) {
             java.util.List<StayVO> singleList = new java.util.ArrayList<>();
-            singleList.add(lodge);
+            singleList.add(stay);
             kakaoMapService.addMapAttributes(model, singleList);
         }
 
-        model.addAttribute("lodge", lodge);
+        model.addAttribute("stay", stay);
         model.addAttribute("imgList", imgList);
         
         return "stay/detail";

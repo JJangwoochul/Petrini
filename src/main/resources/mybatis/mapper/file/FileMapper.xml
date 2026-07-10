@@ -10,7 +10,6 @@
             SELECT SEQ_TB_FILE.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO TB_FILE (
-                                FILE_ID, 
                                 REF_TYPE, 
                                 REF_ID, 
                                 FILE_URL, 
@@ -20,7 +19,6 @@
                                 REG_DATE
                             )
         VALUES              (
-                                #{fileId}, 
                                 #{refType}, 
                                 #{refId}, 
                                 #{fileUrl}, 

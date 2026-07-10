@@ -3,7 +3,7 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="pageId"      value="stay" />
+<c:set var="pageId" value="stay" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <style>
@@ -79,45 +79,45 @@
   </a>
 </div>
 
-<c:if test="${empty lodge}">
+<c:if test="${empty stay}">
   <div style="max-width:var(--inner-width);margin:60px auto;text-align:center;color:var(--text-muted)">
     <p style="font-size:18px;font-weight:700;">숙소 정보를 찾을 수 없습니다.</p>
     <a href="${contextPath}/stay" style="color:var(--primary)">목록으로 돌아가기</a>
   </div>
 </c:if>
 
-<c:if test="${not empty lodge}">
+<c:if test="${not empty stay}">
 <div class="sd-wrap">
   <div>
     <%-- 갤러리 --%>
     <div class="sd-gallery">
-      <%-- <img src="${contextPath}/upload/lodge/${lodge.lodgeId}/2.jpg"
+      <%-- <img src="${contextPath}/upload/stay/${stay.stayId}/2.jpg"
            onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진2'">
-      <img src="${contextPath}/upload/lodge/${lodge.lodgeId}/3.jpg"
+      <img src="${contextPath}/upload/stay/${stay.stayId}/3.jpg"
            onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진3'">
-      <img src="${contextPath}/upload/lodge/${lodge.lodgeId}/4.jpg"
+      <img src="${contextPath}/upload/stay/${stay.stayId}/4.jpg"
            onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진4'">
-      <img src="${contextPath}/upload/lodge/${lodge.lodgeId}/5.jpg"
+      <img src="${contextPath}/upload/stay/${stay.stayId}/5.jpg"
            onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진5'"> --%>
       <c:forEach var="img" items="${imgList}">
-        <img src="${contextPath}/upload/${img.fileUrl}" alt="${lodge.lodgeName}" alt="${lodge.lodgeName}">
+        <img src="${contextPath}/upload/${img.fileUrl}" alt="${stay.name}" alt="${stay.name}">
       </c:forEach>
     </div>
 
     <span class="sd-badge">반려동물 동반 숙소</span>
-    <div class="sd-title">${lodge.lodgeName}</div>
+    <div class="sd-title">${stay.name}</div>
     <div class="sd-loc">
       <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      ${lodge.addr}
+      ${stay.addr}
     </div>
     <div class="sd-rating">
       <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(84개 리뷰)</span>
     </div>
     <%-- 편의시설 태그 --%>
-    <c:if test="${not empty lodge.facilities}">
+    <c:if test="${not empty stay.facilities}">
       <div class="sd-tags">
-        <c:forEach var="fac" items="${fn:split(lodge.facilities, ',')}">
+        <c:forEach var="fac" items="${fn:split(stay.facilities, ',')}">
           <span class="sd-tag">${fn:trim(fac)}</span>
         </c:forEach>
       </div>
@@ -127,36 +127,36 @@
     <div class="sd-section">
       <h3><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>기본 정보</h3>
       <div class="sd-info-grid">
-        <div class="sd-info-row"><label>주소</label><span>${lodge.addr}</span></div>
-        <div class="sd-info-row"><label>운영 시간</label><span>체크인 ${lodge.checkIn} / 체크아웃 ${lodge.checkOut}</span></div>
-        <c:if test="${not empty lodge.rooms}">
-          <div class="sd-info-row"><label>수용 인원</label><span>객실별 최대 ${lodge.rooms[0].capacity}인</span></div>
+        <div class="sd-info-row"><label>주소</label><span>${stay.addr}</span></div>
+        <div class="sd-info-row"><label>운영 시간</label><span>체크인 ${stay.checkIn} / 체크아웃 ${stay.checkOut}</span></div>
+        <c:if test="${not empty stay.rooms}">
+          <div class="sd-info-row"><label>수용 인원</label><span>객실별 최대 ${stay.rooms[0].capacity}인</span></div>
         </c:if>
-        <c:if test="${not empty lodge.petPolicy}">
-          <div class="sd-info-row"><label>반려동물 조건</label><span>${lodge.petPolicy}</span></div>
+        <c:if test="${not empty stay.petPolicy}">
+          <div class="sd-info-row"><label>반려동물 조건</label><span>${stay.petPolicy}</span></div>
         </c:if>
-        <c:if test="${not empty lodge.petFee}">
-          <div class="sd-info-row"><label>추가 요금</label><span>${lodge.petFee}</span></div>
+        <c:if test="${not empty stay.petFee}">
+          <div class="sd-info-row"><label>추가 요금</label><span>${stay.petFee}</span></div>
         </c:if>
       </div>
     </div>
 
     <%-- 공간 소개 --%>
-    <c:if test="${not empty lodge.description}">
+    <c:if test="${not empty stay.description}">
       <div class="sd-section">
         <h3><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>공간 소개</h3>
-        <p class="sd-desc">${lodge.description}</p>
+        <p class="sd-desc">${stay.description}</p>
       </div>
     </c:if>
 
     <%-- 객실 정보 --%>
-    <c:if test="${not empty lodge.rooms}">
+    <c:if test="${not empty stay.rooms}">
       <div class="sd-section">
-        <h3><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>객실 정보 (${fn:length(lodge.rooms)}개)</h3>
-        <c:forEach var="room" items="${lodge.rooms}">
+        <h3><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>객실 정보 (${fn:length(stay.rooms)}개)</h3>
+        <c:forEach var="room" items="${stay.rooms}">
           <div class="room-card">
             <div>
-              <div class="room-name">${room.roomName}</div>
+              <div class="room-name">${room.name}</div>
               <div class="room-meta">수용 ${room.capacity}인 · 반려동물 ${room.petLimit}마리</div>
             </div>
             <div style="text-align:right">
@@ -169,15 +169,15 @@
     </c:if>
 
     <%-- 환불 정책 --%>
-    <c:if test="${not empty lodge.refundPolicy}">
+    <c:if test="${not empty stay.refundPolicy}">
       <div class="sd-section">
         <h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>환불 / 이용 규칙</h3>
-        <p class="sd-desc">${lodge.refundPolicy}</p>
+        <p class="sd-desc">${stay.refundPolicy}</p>
       </div>
     </c:if>
 
     <%-- 위치 --%>
-    <c:if test="${not empty lodge.lat}">
+    <c:if test="${not empty stay.lat}">
       <div class="sd-section">
         <h3><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>위치</h3>
         <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden"></div>
@@ -222,8 +222,8 @@
     <h3>예약하기</h3>
     <div class="rc-price">
       <c:choose>
-        <c:when test="${not empty lodge.rooms}">
-          <fmt:formatNumber value="${lodge.rooms[0].pricePerNight}" pattern="#,###"/>원
+        <c:when test="${not empty stay.rooms}">
+          <fmt:formatNumber value="${stay.rooms[0].pricePerNight}" pattern="#,###"/>원
           <span>/ 1박~</span>
         </c:when>
         <c:otherwise>가격 미정</c:otherwise>
@@ -240,11 +240,11 @@
       <label>인원</label>
       <select><option>1명</option><option>2명</option><option selected>3명</option><option>4명</option><option>5명</option><option>6명</option></select>
     </div>
-    <c:if test="${not empty lodge.rooms}">
+    <c:if test="${not empty stay.rooms}">
       <div class="rc-form-group">
         <label>객실 선택</label>
         <select>
-          <c:forEach var="room" items="${lodge.rooms}">
+          <c:forEach var="room" items="${stay.rooms}">
             <option value="${room.roomId}">
               ${room.roomName} — <fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원
             </option>
@@ -253,10 +253,10 @@
       </div>
     </c:if>
     <div class="rc-divider"></div>
-    <button class="btn-reserve-big" onclick="location.href='${contextPath}/stay/reserve?id=${lodge.lodgeId}'">예약 신청하기</button>
+    <button class="btn-reserve-big" onclick="location.href='${contextPath}/stay/reserve?id=${stay.stayId}'">예약 신청하기</button>
     <c:choose>
-      <c:when test="${not empty lodge.refundPolicy}">
-        <div class="rc-notice">${lodge.refundPolicy}</div>
+      <c:when test="${not empty stay.refundPolicy}">
+        <div class="rc-notice">${stay.refundPolicy}</div>
       </c:when>
       <c:otherwise>
         <div class="rc-notice">· 예약 확정 후 이메일로 안내드립니다.<br>· 취소는 체크인 3일 전까지 전액 환불됩니다.</div>

@@ -11,22 +11,40 @@
 
 package com.petcare.petcare.biz.stay.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.petcare.petcare.biz.controller.BizBaseController;
+import com.petcare.petcare.biz.stay.service.BizStayService;
+import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.stay.vo.StayVO;
 
 import jakarta.servlet.http.HttpSession;
 
 @Controller("bizStayController")
 @RequestMapping("/biz/stay")
 public class BizStayController extends BizBaseController {
-
+    @Autowired
+    private BizStayService bizStayService;
+    @Autowired
+    private FileService fileService;
+    
     @GetMapping({"", "/"})
-    public String stayDashboard(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String stayDashboard(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null) 
             return "redirect:/login";
+
+        // StayVO stay = bizStayService.getStayByBizId(member.getMemberId());
+        // model.addAttribute("stay", stay);
+
         return "biz/stay/dashboard";
     }
 
@@ -73,12 +91,20 @@ public class BizStayController extends BizBaseController {
     }
 
     @GetMapping("/info")
-    public String stayInfo(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
+    public String stayInfo(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        // 승인 시 TB_HOSPITAL이 이미 INSERT됨 → null일 수 없음
+        // StayVO stay = bizStayService.getStayByBizId(member.getMemberId());
+        // model.addAttribute("stay", stay);
+
+        // List<FileVO> imgList = fileService.getFileList("STAY", stay.getStayId());
+        // model.addAttribute("imgList", imgList);        
         return "biz/stay/info";
 
-    }    
+    }
+
 /*사업자 숙소관리 메뉴 0702지윤*/
     @GetMapping("/lodge")
     public String stayLodge(HttpSession session) {
