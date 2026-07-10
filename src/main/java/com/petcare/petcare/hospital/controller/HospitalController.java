@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.common.config.controller.CommonConfigController;
 import com.petcare.petcare.common.external.service.KakaoMapService;
-import com.petcare.petcare.file.mapper.FileMapper;
+import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
-import com.petcare.petcare.hospital.mapper.HospitalMapper;
+import com.petcare.petcare.hospital.service.HospitalService;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 
 @Controller("hospitalController")
@@ -34,14 +34,13 @@ public class HospitalController extends CommonConfigController {
     @Autowired
     private KakaoMapService kakaoMapService;
     @Autowired
-    private HospitalMapper hospitalMapper;
-
+    private HospitalService hospitalService;
     @Autowired
-    private FileMapper fileMapper;
+    private FileService fileService;
 
     @GetMapping({"", "/"})
     public String hospital(Model model) throws Exception {
-        List<HospitalVO> hospitalList = hospitalMapper.selectHospitalList();
+        List<HospitalVO> hospitalList = hospitalService.getHospitalList();
         kakaoMapService.addMapAttributes(model, hospitalList);
         
         model.addAttribute("hospitalList", hospitalList);
@@ -53,22 +52,19 @@ public class HospitalController extends CommonConfigController {
     @GetMapping("/detail")
     public String detail(@RequestParam String id, Model model) throws Exception {
         Long hospitalId = Long.parseLong(id);
-        HospitalVO hospital = hospitalMapper.selectHospitalById(Long.parseLong(id));
+        HospitalVO hospital = hospitalService.getHospitalById(Long.parseLong(id));
+        List<FileVO> imgList = fileService.getFileList("HOSPITAL", hospitalId);
 
-        FileVO param = new FileVO();
-        param.setRefType("HOSPITAL");
-        param.setRefId(hospitalId); 
-        param.setDriveFileId("hospital_" + System.currentTimeMillis());
-
-        List<FileVO> imgList = fileMapper.selectFileList(param);
-
-        List<HospitalVO> singleList = new ArrayList<>();
-        singleList.add(hospital); 
-        kakaoMapService.addMapAttributes(model, singleList);
-        // → markersJson에 1개만 들어감 → kakaomap.jsp가 상세모드로 자동 동작
+        if (hospital != null && hospital.getLat() != null) {
+            List<HospitalVO> singleList = new ArrayList<>();
+            singleList.add(hospital); 
+            kakaoMapService.addMapAttributes(model, singleList);
+            // → markersJson에 1개만 들어감 → kakaomap.jsp가 상세모드로 자동 동작
+        }
 
         model.addAttribute("hospital", hospital);
         model.addAttribute("imgList", imgList);
+
         return "hospital/detail";
     }
 

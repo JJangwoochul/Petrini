@@ -15,4 +15,27 @@
 
 package com.petcare.petcare.hospital.service;
 
-public class HospitalServiceImpl implements HospitalService {}
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.petcare.petcare.hospital.mapper.HospitalMapper;
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
+@Service
+public class HospitalServiceImpl implements HospitalService {
+
+    @Autowired
+    private HospitalMapper hospitalMapper;
+
+    @Override
+    public List<HospitalVO> getHospitalList() throws Exception {
+        return hospitalMapper.selectHospitalList();
+    }
+
+    @Override
+    public HospitalVO getHospitalById(Long hospitalId) throws Exception {
+        return hospitalMapper.selectHospitalById(hospitalId);
+    }
+}

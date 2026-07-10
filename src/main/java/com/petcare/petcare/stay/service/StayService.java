@@ -23,4 +23,11 @@
 
 package com.petcare.petcare.stay.service;
 
-public interface StayStayService {}
+import java.util.List;
+
+import com.petcare.petcare.stay.vo.StayVO;
+
+public interface StayService {
+    public List<StayVO> getLodgeList();
+    public StayVO getLodgeDetail(Long lodgeId);
+}

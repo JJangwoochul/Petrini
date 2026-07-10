@@ -19,8 +19,22 @@
 
 package com.petcare.petcare.stay.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
+
+import com.petcare.petcare.stay.vo.StayRoomVO;
+import com.petcare.petcare.stay.vo.StayVO;
 
 
 @Mapper
-public interface StayStayMapper {}
+public interface StayMapper {
+    // 숙소 목록 (최저가 포함)
+    List<StayVO> selectLodgeList();
+
+    // 숙소 상세
+    StayVO selectLodgeById(Long lodgeId);
+
+    // 해당 숙소의 객실 목록
+    List<StayRoomVO> selectRoomsByLodgeId(Long lodgeId);    
+}

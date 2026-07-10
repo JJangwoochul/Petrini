@@ -77,6 +77,7 @@ public class FileService {
         FileVO param = new FileVO();
         param.setRefType(refType);
         param.setRefId(refId);
+        param.setDriveFileId(refType.toLowerCase() + "_" + System.currentTimeMillis());
         return fileMapper.selectFileList(param);
     }    
 }
