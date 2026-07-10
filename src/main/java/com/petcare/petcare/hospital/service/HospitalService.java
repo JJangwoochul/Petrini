@@ -24,4 +24,11 @@
 
 package com.petcare.petcare.hospital.service;
 
-public interface HospitalService {}
+import java.util.List;
+
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
+public interface HospitalService {
+    List<HospitalVO> getHospitalList() throws Exception;
+    HospitalVO getHospitalById(Long hospitalId) throws Exception;        
+}

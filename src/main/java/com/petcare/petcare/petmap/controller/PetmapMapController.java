@@ -1,13 +1,3 @@
-/**
- * 역할: 펫맵 URL 처리 → Service 호출 → JSP 반환
- *
- * 연결
- * - Service: PetmapMapService
- *
- * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
- * return 경로는 담당 JSP와 동일하게 맞출 것
- */
-
 package com.petcare.petcare.petmap.controller;
 
 import java.net.URLEncoder;
@@ -37,28 +27,60 @@ public class PetmapMapController extends CommonConfigController {
       
     String listUrl = "https://apis.data.go.kr/B551011/KorPetTourService2/areaBasedList2";
     String catUrl  = "https://apis.data.go.kr/B551011/KorPetTourService2/categoryCode2";
-    
+
+    // contenttypeid → 한글 라벨 매핑 (JSP에서 뱃지 표시용)
+    private static final Map<String, String> TYPE_LABELS = new HashMap<>();
+    static {
+        TYPE_LABELS.put("12", "관광지");
+        TYPE_LABELS.put("14", "문화시설");
+        TYPE_LABELS.put("15", "축제/행사");
+        TYPE_LABELS.put("25", "여행코스");
+        TYPE_LABELS.put("28", "레포츠");
+        TYPE_LABELS.put("32", "숙박");
+        TYPE_LABELS.put("38", "쇼핑");
+        TYPE_LABELS.put("39", "음식점");
+    }
+
     @GetMapping({"", "/"})
     public String list(@RequestParam(defaultValue = "1") int pageNo,
                        @RequestParam(required = false) String contentTypeId,
                        @RequestParam(required = false) String areaCode,
                        @RequestParam(required = false) String cat1,
                        @RequestParam(required = false) String cat2,
+                       @RequestParam(defaultValue = "false") boolean search,
                        Model model) {
 
         List<PetMapVO> places = new ArrayList<>();
 
+        // ── 필터 상태를 JSP로 전달 (검색 전/후 모두) ──
+        model.addAttribute("contentTypeId", contentTypeId != null ? contentTypeId : "");
+        model.addAttribute("areaCode", areaCode != null ? areaCode : "");
+        model.addAttribute("cat1", cat1 != null ? cat1 : "");
+        model.addAttribute("cat2", cat2 != null ? cat2 : "");
+        model.addAttribute("searched", search);
+        model.addAttribute("typeLabels", TYPE_LABELS);
+
+        // ★ [조회] 안 눌렀으면 API 호출 스킵 → 페이지 즉시 로딩
+        if (!search) {
+            model.addAttribute("places", places);
+            model.addAttribute("totalCount", 0);
+            model.addAttribute("pageNo", 1);
+            model.addAttribute("totalPages", 0);
+            kakaoMapService.addMapAttributes(model, places);
+            model.addAttribute("skipAutoMarkers", "true");
+            return "petmap/list";
+        }
+
+        // ── [조회] 눌렀을 때만 API 호출 ──
         try {
-            // ── 1) 메인 API 호출 URL 조립 ──
             StringBuilder sb = new StringBuilder(listUrl);
             sb.append("?serviceKey=").append(URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8"));
             sb.append("&numOfRows=").append(commonUtilController.pageSize);
             sb.append("&pageNo=").append(pageNo);
-            sb.append("&MobileOS=").append("WIN");
-            sb.append("&MobileApp=").append("PetCare");
+            sb.append("&MobileOS=WIN");
+            sb.append("&MobileApp=PetCare");
             sb.append("&_type=json");
 
-            // 필터 파라미터 추가 (값이 있을 때만)
             if (contentTypeId != null && !contentTypeId.isEmpty()) {
                 sb.append("&contentTypeId=").append(contentTypeId);
             }
@@ -72,8 +94,7 @@ public class PetmapMapController extends CommonConfigController {
                 sb.append("&cat2=").append(cat2);
             }
 
-            // ── 2) API 호출 & 응답 파싱 ──
-            String json   = apiService.callApi(sb.toString());
+            String json = apiService.callApi(sb.toString());
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(json);
             JsonNode body = root.path("response").path("body");
@@ -88,16 +109,6 @@ public class PetmapMapController extends CommonConfigController {
                 places.add(PetMapVO.parseItem(items));
             }
 
-            // ── 기존 (단일마커 메서드 사용) ──
-            // if (!places.isEmpty()) {
-            //     kakaoMapService.addMapAttributes(model,
-            //         Double.parseDouble(places.get(0).getMapy()),
-            //         Double.parseDouble(places.get(0).getMapx()),
-            //         null);   // bizName 없음 → 단일마커 안 찍힘
-            // } else {
-            //     kakaoMapService.addMapAttributes(model, null, null, null);
-            // }
-
             model.addAttribute("totalCount", totalCount);
             model.addAttribute("pageNo", pageNo);
             model.addAttribute("totalPages", (int) Math.ceil((double) totalCount / commonUtilController.pageSize));
@@ -109,9 +120,7 @@ public class PetmapMapController extends CommonConfigController {
             model.addAttribute("errorMsg", e.getMessage());
         }
 
-        // ── 3) 하위 카테고리 목록 조회 ──
-        //    contentTypeId가 선택되면 → cat1 목록 조회
-        //    cat1까지 선택되면 → cat2 목록 조회
+        // 하위 카테고리 목록 조회
         if (contentTypeId != null && !contentTypeId.isEmpty()) {
             List<Map<String, String>> cat1List = getCategoryCodes(contentTypeId, null);
             model.addAttribute("cat1List", cat1List);
@@ -121,37 +130,21 @@ public class PetmapMapController extends CommonConfigController {
             model.addAttribute("cat2List", cat2List);
         }
 
-         // ── 4) 지도 설정 ── 변경 후 (통합 메서드) ──
         kakaoMapService.addMapAttributes(model, places);
         model.addAttribute("skipAutoMarkers", "true");
         model.addAttribute("places", places);
 
-        // ── 5) 현재 필터 상태를 JSP로 전달 ──
-        model.addAttribute("contentTypeId", contentTypeId != null ? contentTypeId : "");
-        model.addAttribute("areaCode", areaCode != null ? areaCode : "");
-        model.addAttribute("cat1", cat1 != null ? cat1 : "");
-        model.addAttribute("cat2", cat2 != null ? cat2 : "");
-
         return "petmap/list";
     }
 
-    /*
-     * TourAPI categoryCode2 호출 → [{code:"A01", name:"자연"}, ...] 형태로 반환
-     * @param contentTypeId  관광타입 ID (필수)
-     * @param parentCat1     cat1 값 (null이면 cat1 목록 조회, 값 있으면 cat2 목록 조회)
-    */
     private List<Map<String, String>> getCategoryCodes(String contentTypeId, String parentCat1) {
         List<Map<String, String>> result = new ArrayList<>();
         try {
             String encodedKey = URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8");
-            
             StringBuilder sb = new StringBuilder(catUrl);
             sb.append("?serviceKey=").append(encodedKey);
-            sb.append("&MobileOS=WIN");
-            sb.append("&MobileApp=PetCare");
-            sb.append("&_type=json");
+            sb.append("&MobileOS=WIN&MobileApp=PetCare&_type=json");
             sb.append("&contentTypeId=").append(contentTypeId);
-            
             if (parentCat1 != null) {
                 sb.append("&cat1=").append(parentCat1);
             }
@@ -176,7 +169,7 @@ public class PetmapMapController extends CommonConfigController {
                 result.add(code);
             }
         } catch (Exception e) {
-            // 실패 시 빈 리스트 반환 → JSP에서 하위 카테고리 안 보임
+            // 빈 리스트 반환
         }
         return result;
     }

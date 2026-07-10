@@ -22,10 +22,10 @@ package com.petcare.petcare.mypage.biz.service;
 
 import java.util.List;
 
+import com.petcare.petcare.biz.vo.BusinessVO;
 import com.petcare.petcare.file.vo.FileVO;
-import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
 
 public interface MypageBizService {
-    public void applyBusiness(MypageBizVO vo, List<FileVO> fileList) throws Exception;
-    public MypageBizVO getBizAuthStatus(String bizId) throws Exception;
+    public void applyBusiness(BusinessVO vo, List<FileVO> fileList) throws Exception;
+    public BusinessVO getBizAuthStatus(String bizId) throws Exception;
 }

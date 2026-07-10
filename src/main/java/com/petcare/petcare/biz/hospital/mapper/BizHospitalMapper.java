@@ -25,6 +25,14 @@ package com.petcare.petcare.biz.hospital.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
 
 @Mapper
-public interface BizHospitalMapper {}
+public interface BizHospitalMapper {
+    HospitalVO selectHospitalByBizId(String bizId);
+
+    int insertHospital(String bizId);
+
+    int updateHospitalInfo(HospitalVO vo);
+}

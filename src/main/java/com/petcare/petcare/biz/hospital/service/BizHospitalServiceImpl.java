@@ -15,4 +15,56 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
-public class BizHospitalServiceImpl implements BizHospitalService {}
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
+import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
+@Service
+public class BizHospitalServiceImpl implements BizHospitalService {
+    @Autowired
+    private BizHospitalMapper bizHospitalMapper;
+    @Autowired
+    private KakaoMapService kakaoMapService;
+
+    @Override
+    @Transactional(readOnly = true)
+    public HospitalVO getHospitalByBizId(String bizId) {
+        return bizHospitalMapper.selectHospitalByBizId(bizId);
+    }
+
+    // 2026-07-10 장우철 — merge 전 승인 계정 등 TB_HOSPITAL 미생성 시 보정 INSERT
+    @Override
+    @Transactional
+    public HospitalVO resolveHospitalByBizId(String bizId) {
+        if (bizId == null || bizId.isBlank()) {
+            return null;
+        }
+        HospitalVO hospital = bizHospitalMapper.selectHospitalByBizId(bizId);
+        if (hospital == null) {
+            bizHospitalMapper.insertHospital(bizId);
+            hospital = bizHospitalMapper.selectHospitalByBizId(bizId);
+        }
+        return hospital;
+    }
+
+    @Override
+    @Transactional
+    public void updateHospitalInfo(HospitalVO vo) {
+        // 주소가 있으면 좌표 변환
+        if (vo.getAddr() != null && !vo.getAddr().isBlank()) {
+            Map<String, Double> coords = kakaoMapService.geocodeAddress(vo.getAddr());
+            if (coords != null) {
+                vo.setLat(coords.get("lat"));
+                vo.setLng(coords.get("lng"));
+            }
+        }
+        
+        bizHospitalMapper.updateHospitalInfo(vo);
+    }
+}

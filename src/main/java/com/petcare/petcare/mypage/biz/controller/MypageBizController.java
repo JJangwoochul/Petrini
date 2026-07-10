@@ -12,6 +12,7 @@ package com.petcare.petcare.mypage.biz.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petcare.petcare.biz.vo.BusinessVO;
 import com.petcare.petcare.common.config.controller.CommonConfigController;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +45,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/mypage/biz")
 public class MypageBizController extends CommonConfigController {
-
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+    
     @Autowired
     private MypageBizService mypageBizService;
 
@@ -51,9 +55,6 @@ public class MypageBizController extends CommonConfigController {
     // 이유: 관리자 승인 후 재로그인 없이 /mypage/biz ↔ /apply 무한 리다이렉트 방지
     @Autowired
     private MemberAuthService memberAuthService;
-
-    @Autowired
-    private FileMapper fileMapper;   
     
     @GetMapping({"", "/"})
     public String biz(HttpSession session) {
@@ -98,7 +99,7 @@ public class MypageBizController extends CommonConfigController {
             return "redirect:/login";
 
         // 기존 신청 이력 확인
-        MypageBizVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
+        BusinessVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
         if (apply != null) {
         if ("APPROVED".equals(apply.getStatusCd())) {
             // 2026-07-09 장우철 — [변경 후] 승인 완료 시 세션에 BIZ 권한 반영 후 이동
@@ -138,7 +139,7 @@ public class MypageBizController extends CommonConfigController {
         if (member == null)
             return "redirect:/login";
 
-        MypageBizVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
+            BusinessVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
         if (apply == null || !"REJECTED".equals(apply.getStatusCd())) {
             return "redirect:/mypage/biz/apply";
         }
@@ -196,7 +197,7 @@ public class MypageBizController extends CommonConfigController {
     @PostMapping("/apply")
     public String bizApplySubmit(@RequestParam(required = true) MultipartFile docFile,
                                  @RequestParam(required = false) MultipartFile licenseFile,
-                                 MypageBizVO vo,
+                                 BusinessVO vo,
                                  RedirectAttributes redirectAttr,
                                  HttpSession session) throws Exception {
 
@@ -209,9 +210,8 @@ public class MypageBizController extends CommonConfigController {
 
         try {
             // 1) 파일을 디스크에 저장 + FileVO 목록 준비
-            //System.currentTimeMillis()
             String subDir = "biz/" + vo.getBizId();
-            File dir = new File(webConfig.uploadDir + subDir);
+            File dir = new File(uploadDir + subDir);
             if (!dir.exists()) 
                 dir.mkdirs();
 
@@ -239,7 +239,7 @@ public class MypageBizController extends CommonConfigController {
 
             // 2) DB 작업은 Service에서 한 트랜잭션으로 처리
             mypageBizService.applyBusiness(vo, fileList);
-
+           
             redirectAttr.addFlashAttribute("bizName", vo.getBizName());
             redirectAttr.addFlashAttribute("bizType", vo.getBizType());
             redirectAttr.addFlashAttribute("bizRegNo", vo.getBizRegNo());
@@ -257,7 +257,7 @@ public class MypageBizController extends CommonConfigController {
                 msg = "재신청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
             }
             redirectAttr.addFlashAttribute("errorMsg", msg);
-            MypageBizVO cur = mypageBizService.getBizAuthStatus(member.getMemberId());
+            BusinessVO cur = mypageBizService.getBizAuthStatus(member.getMemberId());
             if (cur != null && "REJECTED".equals(cur.getStatusCd())) {
                 return "redirect:/mypage/biz/apply?reapply=Y";
             }
@@ -279,7 +279,7 @@ public class MypageBizController extends CommonConfigController {
 
         // 2026-07-09 장우철 — [변경 후] DB 상태로 분기 (flash 만 믿지 않음)
         // 이유: 반려 후에도 complete 북마크 시 심사중으로 보이던 문제 방지
-        MypageBizVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
+        BusinessVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
         if (apply == null) {
             return "redirect:/mypage/biz/apply";
         }

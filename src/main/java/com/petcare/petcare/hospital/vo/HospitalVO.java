@@ -35,6 +35,7 @@ public class HospitalVO implements Mapperable{
     private Long   reviewCnt;      // REVIEW_CNT
     private String statusCd;       // STATUS_CD (PENDING/ACTIVE/INACTIVE)
     private Date   approveDate;    // APPROVE_DATE
+    private String description;    // DESCRIPTION  ← 이 줄 추가
     private String hoursJson;      // HOURS_JSON
     private String tagList;       // DEPT_LIST    
     private String thumbPath;    

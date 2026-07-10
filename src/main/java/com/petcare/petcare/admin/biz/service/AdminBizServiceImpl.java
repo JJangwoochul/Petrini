@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.admin.biz.mapper.AdminBizMapper;
 import com.petcare.petcare.admin.biz.vo.AdminBizVO;
+import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
@@ -32,6 +33,10 @@ public class AdminBizServiceImpl implements AdminBizService {
     // 이유: 상세 화면에서 TB_FILE 메타를 그대로 재사용 (FK 없이 refType+refId 패턴)
     @Autowired
     private FileMapper fileMapper;
+
+    //HYJ 26.07.09 사업자 승인 시, insert tb_hospital 필요
+    @Autowired
+    private BizHospitalMapper bizHospitalMapper;
 
     // 2026-07-09 장우철 — 반려 알림 발송 (TB_NOTIFICATION)
     // 이유: rejectBiz 트랜잭션 안에서 해당 유저에게만 알림 INSERT
@@ -87,6 +92,11 @@ public class AdminBizServiceImpl implements AdminBizService {
         AdminBizVO biz = requirePendingBiz(bizNo);
         adminBizMapper.updateBusinessStatus(biz.getBizNo(), "APPROVED");
         adminBizMapper.updateBusinessAuthStatus(biz.getBizNo(), "APPROVED");
+
+        //HYJ 26.07.09 병원 사업자인 경우, TB_HOSPITAL 빈 껍데기 INSERT
+        if ("HOSPITAL".equals(biz.getBizType())) {
+            bizHospitalMapper.insertHospital(biz.getBizId());
+        }
 
         // 2026-07-10 장우철 — 승인 알림 INSERT (반려와 동일하게 TB_NOTIFICATION, 이메일/푸시 후순위)
         Long memberNo = adminBizMapper.selectMemberNoByBizId(biz.getBizId());

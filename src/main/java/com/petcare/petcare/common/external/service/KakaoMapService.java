@@ -32,44 +32,51 @@ public class KakaoMapService {
     @Value("${kakao.js-api-key}")
     private String kakaoJsApiKey; 
     
-    // //상세페이지 단일마커용(다중마커와 통합-불필요X)
-    // public void addMapAttributes(Model model, Double lat, Double lng, String bizName) {
-    //     model.addAttribute("kakaoJsApiKey", kakaoJsApiKey);
-    //     model.addAttribute("bizName", bizName);
+    /**
+     * 주소 → 위경도 변환 (Kakao Local REST API)
+     * 반환: {lat: 37.xxx, lng: 126.xxx} 또는 변환 실패 시 null
+     */
+    public Map<String, Double> geocodeAddress(String address) {
+        if (address == null || address.isBlank()) {
+            return null;
+        }
+    
+        try {
+            // 카카오 주소 검색 API 호출
+            String apiUrl = "https://dapi.kakao.com/v2/local/search/address.json?analyze_type=similar&query="
+                          + java.net.URLEncoder.encode(address, "UTF-8");
         
-    //     //주소 -> 위경도 변환
-    //     // try {
-    //     //     model.addAttribute("mapAddress", address);
-    //     //     String url = "https://dapi.kakao.com/v2/local/search/address.json?analyze_type=similar&page=1&size=10&query={query}";
-
-    //     //     HttpHeaders headers = new HttpHeaders();
-    //     //     headers.set("Authorization", "KakaoAK " + kakaoRestApiKey);
-
-    //     //     RestTemplate restTemplate = new RestTemplate();
-    //     //     ResponseEntity<String> response = restTemplate.exchange(
-    //     //         url, HttpMethod.GET, new HttpEntity<>(headers), String.class, address
-    //     //     );
-
-    //     //     JsonNode documents = new ObjectMapper().readTree(response.getBody()).path("documents");
-
-    //     //     if (documents.isArray() && documents.size() > 0) {
-    //     //         model.addAttribute("mapLat", documents.get(0).path("y").asText());
-    //     //         model.addAttribute("mapLng", documents.get(0).path("x").asText());
-    //     //     } 
-    //     //     else {
-    //     //         setFallback(model);
-    //     //     }
-    //     // } catch (Exception e) {
-    //     //     setFallback(model);
-    //     // }
-
-    //     if (lat != null && lng != null) {
-    //         model.addAttribute("mapLat", lat);
-    //         model.addAttribute("mapLng", lng);
-    //     } else {
-    //         setFallback(model);
-    //     }
-    // }
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
+                    new java.net.URL(apiUrl).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "KakaoAK " + kakaoRestApiKey);
+        
+            // 응답 읽기
+            java.io.BufferedReader br = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+            br.close();
+        
+            // JSON 파싱 → documents[0].y(위도), documents[0].x(경도)
+            com.fasterxml.jackson.databind.JsonNode documents =
+                    new ObjectMapper().readTree(sb.toString()).path("documents");
+        
+            if (documents.isArray() && documents.size() > 0) {
+                Map<String, Double> result = new HashMap<>();
+                result.put("lat", documents.get(0).path("y").asDouble());
+                result.put("lng", documents.get(0).path("x").asDouble());
+                return result;
+            }
+        } catch (Exception e) {
+            // 변환 실패 시 null 반환 → 기존 좌표 유지
+        }
+    
+        return null;
+    }
 
     //리스트 다중마커용
     public void addMapAttributes(Model model, List<? extends Mapperable> list) {

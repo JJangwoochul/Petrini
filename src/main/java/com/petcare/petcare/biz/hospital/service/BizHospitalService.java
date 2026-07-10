@@ -31,4 +31,14 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
-public interface BizHospitalService {}
+import com.petcare.petcare.hospital.vo.HospitalVO;
+
+public interface BizHospitalService {
+
+    HospitalVO getHospitalByBizId(String bizId);
+
+    // 2026-07-10 장우철 — 승인됐는데 TB_HOSPITAL 없으면 껍데기 생성 후 반환
+    HospitalVO resolveHospitalByBizId(String bizId);
+
+    void updateHospitalInfo(HospitalVO vo);
+}

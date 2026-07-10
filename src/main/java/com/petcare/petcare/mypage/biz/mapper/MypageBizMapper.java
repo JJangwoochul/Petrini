@@ -12,24 +12,24 @@ package com.petcare.petcare.mypage.biz.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
+import com.petcare.petcare.biz.vo.BusinessVO;
 
 @Mapper
 public interface MypageBizMapper {
 
-    public void insertBusiness(MypageBizVO vo) throws Exception;
+    public void insertBusiness(BusinessVO vo) throws Exception;
 
-    public void insertBusinessAuth(MypageBizVO vo) throws Exception;
+    public void insertBusinessAuth(BusinessVO vo) throws Exception;
 
-    public MypageBizVO selectBizAuthStatus(String bizId) throws Exception;
+    public BusinessVO selectBizAuthStatus(String bizId) throws Exception;
 
     // 2026-07-09 장우철 — 회원 이메일(BIZ_ID) 기준 TB_BUSINESS 1건
     // 이유: 재신청 시 INSERT 대신 UPDATE 판단용
-    MypageBizVO selectBusinessByBizId(@Param("bizId") String bizId) throws Exception;
+    BusinessVO selectBusinessByBizId(@Param("bizId") String bizId) throws Exception;
 
     // 2026-07-09 장우철 — 반려 후 재신청 UPDATE
     // 이유: UK(BIZ_ID, BIZ_REG_NO) 충돌 없이 같은 행을 PENDING 으로 되돌림
-    int updateBusinessForReapply(MypageBizVO vo) throws Exception;
+    int updateBusinessForReapply(BusinessVO vo) throws Exception;
 
     // 2026-07-09 장우철 — 다른 사람이 쓰는 활성 사업자번호인지
     // 이유: 본인(bizId) 제외, PENDING/APPROVED 만 중복 체크

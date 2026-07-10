@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper">
 
-<!--
+  <!--
   역할: BizHospitalMapper SQL 정의
 
   쿼리 id 예시
@@ -19,5 +18,70 @@
   - TB_MEDICAL_RECORD
   - TB_REVIEW
 -->
-
+<mapper namespace="com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper">
+    <!-- 회원ID로 조회 -->
+    <select id="selectHospitalByBizId" parameterType="string" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
+        SELECT  H.HOSPITAL_ID, 
+                H.BIZ_NO,
+                H.NAME, 
+                H.PHONE,
+                H.ADDR, 
+                H.ADDR_DETAIL,
+                H.DESCRIPTION, 
+                H.HOURS_JSON, 
+                H.TAG_LIST,
+                H.LAT, 
+                H.LNG
+        FROM    TB_HOSPITAL H
+        JOIN    TB_BUSINESS B 
+        ON      H.BIZ_NO = B.BIZ_NO
+        WHERE   B.BIZ_ID = #{bizId}
+    </select> 
+    
+    <!-- 2026-07-10 장우철 — 병원 최초 등록 (승인 시 빈 껍데기)
+         이유: HOSPITAL_ID NOT NULL PK — 미지정 시 ORA-01400 으로 승인 전체 롤백 -->
+    <insert id="insertHospital" parameterType="string">
+        INSERT INTO TB_HOSPITAL (
+                                    HOSPITAL_ID,
+                                    BIZ_NO,
+                                    MEMBER_NO,
+                                    NAME,
+                                    PHONE,
+                                    APPROVE_DATE,
+                                    STATUS_CD
+                                )
+        SELECT  (SELECT NVL(MAX(HOSPITAL_ID), 0) + 1 FROM TB_HOSPITAL),
+                B.BIZ_NO,
+                (SELECT MEMBER_NO
+                   FROM TB_MEMBER
+                  WHERE MEMBER_ID = B.BIZ_ID
+                     OR EMAIL     = B.BIZ_ID
+                  FETCH FIRST 1 ROW ONLY),
+                B.BIZ_NAME,
+                B.PHONE,
+                SYSDATE,
+                'ACTIVE'
+        FROM    TB_BUSINESS B
+        WHERE   B.BIZ_ID = #{bizId}
+          AND NOT EXISTS (
+                SELECT 1
+                  FROM TB_HOSPITAL H
+                 WHERE H.BIZ_NO = B.BIZ_NO
+              )
+    </insert>
+    
+    <!-- 병원(PK)로 수정 -->
+    <update id="updateHospitalInfo" parameterType="com.petcare.petcare.hospital.vo.HospitalVO">
+        UPDATE TB_HOSPITAL
+        SET    NAME         = #{name},
+               PHONE        = #{phone},
+               ADDR         = #{addr},
+               ADDR_DETAIL  = #{addrDetail},
+               DESCRIPTION  = #{description},
+               HOURS_JSON   = #{hoursJson},
+               TAG_LIST     = #{tagList},
+               LAT          = #{lat},
+               LNG          = #{lng}
+        WHERE  HOSPITAL_ID  = #{hospitalId}
+    </update>  
 </mapper>

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="hospital" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -69,21 +70,38 @@
     <div class="hdetail-info-grid">
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>주소</div>
-        <div class="hdinfo-val">${hospital.addr}<br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small></div>
+        <div class="hdinfo-val">${hospital.addr}
+          <%-- <br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small> --%>
+        </div>
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>운영시간</div>
-        <div class="hdinfo-val">평일 09:00 ~ 19:00<br>토요일 09:00 ~ 14:00<br>일·공휴일 휴무</div>
+        <input type="hidden" id="hoursJsonData" value='${hospital.hoursJson}'>
+        <div class="hdinfo-val" id="hoursArea">등록된 운영시간이 없습니다</div>
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>전화번호</div>
         <div class="hdinfo-val">${hospital.phone}</div>
       </div>
       <div class="hdinfo-card">
-        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>진료과목</div>
+        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>병원 특성</div>
         <div class="dept-tags">
-          <span class="dept-tag">내과</span><span class="dept-tag">외과</span><span class="dept-tag">피부과</span>
-          <span class="dept-tag">안과</span><span class="dept-tag">치과</span><span class="dept-tag">정형외과</span>
+          <c:choose>
+            <c:when test="${not empty hospital.tagList}">
+              <c:forEach var="tag" items="${fn:split(hospital.tagList, ',')}">
+                <c:set var="t" value="${fn:trim(tag)}" />
+                <c:if test="${t == '24H'}"><span class="dept-tag">24시간 진료</span></c:if>
+                <c:if test="${t == 'EXOTIC'}"><span class="dept-tag">특수동물 진료</span></c:if>
+                <c:if test="${t == 'HOSPITEL'}"><span class="dept-tag">호스피텔 가능</span></c:if>
+                <c:if test="${t == 'INPATIENT'}"><span class="dept-tag">입원 진료</span></c:if>
+                <c:if test="${t == 'EMERGENCY'}"><span class="dept-tag">응급 진료</span></c:if>
+                <c:if test="${t == 'PARKING'}"><span class="dept-tag">주차 가능</span></c:if>
+              </c:forEach>
+            </c:when>
+            <c:otherwise>
+              <span style="font-size:13px;color:var(--text-muted)">등록된 특성이 없습니다</span>
+            </c:otherwise>
+          </c:choose>
         </div>
       </div>
     </div>
@@ -124,4 +142,36 @@
     <button class="btn-call"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>02-1234-5678</button>
   </div>
 </div>
+
+<script>
+  (function() {
+      var jsonText = document.getElementById('hoursJsonData').value;
+      if (!jsonText || jsonText === '' || jsonText === 'null') return;
+
+      var hours;
+      try { hours = JSON.parse(jsonText); } catch(e) { return; }
+
+      var DAYS = ['월','화','수','목','금','토','일','공휴일'];
+      var lines = [];
+
+      for (var i = 0; i < DAYS.length; i++) {
+          var day  = DAYS[i];
+          var info = hours[day];
+
+          if (!info) {
+              lines.push('<span style="color:var(--text-muted)">' + day + '  휴무</span>');
+              continue;
+          }
+
+          var text = day + '  ' + info.open + ' ~ ' + info.close;
+          if (info.lunchStart && info.lunchEnd) {
+              text += '  <span style="color:var(--text-muted);font-size:12px">(점심 '
+                    + info.lunchStart + '~' + info.lunchEnd + ')</span>';
+          }
+          lines.push(text);
+      }
+
+      document.getElementById('hoursArea').innerHTML = lines.join('<br>');
+  })();
+</script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
