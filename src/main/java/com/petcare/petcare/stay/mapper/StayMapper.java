@@ -30,11 +30,11 @@ import com.petcare.petcare.stay.vo.StayVO;
 @Mapper
 public interface StayMapper {
     // 숙소 목록 (최저가 포함)
-    List<StayVO> selectLodgeList();
+    List<StayVO> selectStayList();
 
     // 숙소 상세
-    StayVO selectLodgeById(Long lodgeId);
+    StayVO selectStayById(Long stayId);
 
     // 해당 숙소의 객실 목록
-    List<StayRoomVO> selectRoomsByLodgeId(Long lodgeId);    
+    List<StayRoomVO> selectRoomsByStayId(Long stayId);    
 }

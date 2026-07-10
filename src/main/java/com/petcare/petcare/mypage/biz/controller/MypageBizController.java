@@ -14,12 +14,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.biz.vo.BusinessVO;
 import com.petcare.petcare.common.config.controller.CommonConfigController;
-import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.member.auth.service.MemberAuthService;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.mypage.biz.service.MypageBizService;
-import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
 
 import jakarta.servlet.http.HttpSession;
 

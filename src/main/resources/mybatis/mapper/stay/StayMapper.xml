@@ -17,69 +17,68 @@
 
 <mapper namespace="com.petcare.petcare.stay.mapper.StayMapper">
     <!-- 숙소 목록 (최저가 + 객실수 포함) -->
-    <select id="selectLodgeList" resultType="com.petcare.petcare.stay.vo.StayVO">
-        SELECT L.LODGE_ID       AS lodgeId,
-               L.LODGE_NAME     AS lodgeName,
-               L.ADDR           AS addr,
-               L.LAT            AS lat,
-               L.LNG            AS lng,
-               L.FACILITIES     AS facilities,
+    <select id="selectStayList" resultType="com.petcare.petcare.stay.vo.StayVO">
+        SELECT S.STAY_ID,
+               S.NAME,
+               S.ADDR,
+               S.LAT,
+               S.LNG,
+               S.FACILITIES,
                NVL(R.MIN_PRICE, 0) AS minPrice,
                NVL(R.ROOM_CNT,  0) AS roomCount,
                (SELECT   F.FILE_URL
                 FROM     TB_FILE F
-                WHERE    F.REF_TYPE = 'LODGE'
-                AND      F.REF_ID   = L.LODGE_ID
+                WHERE    F.REF_TYPE = 'STAY'
+                AND      F.REF_ID   = S.STAY_ID
                 AND      ROWNUM     = 1
                ) AS THUMB_PATH
-          FROM TB_LODGE L
+          FROM TB_STAY S
           LEFT JOIN (
-               SELECT LODGE_ID,
+               SELECT STAY_ID,
                       MIN(PRICE_PER_NIGHT) AS MIN_PRICE,
                       COUNT(*)             AS ROOM_CNT
-                 FROM TB_LODGE_ROOM
+                 FROM TB_STAY_ROOM
                 WHERE STATUS_CD = 'APPROVE'
-                GROUP BY LODGE_ID
-          ) R ON L.LODGE_ID = R.LODGE_ID
-         WHERE L.STATUS_CD = 'APPROVE'
-         ORDER BY L.LODGE_ID
+                GROUP BY STAY_ID
+          ) R ON S.STAY_ID = R.STAY_ID
+         WHERE S.STATUS_CD = 'APPROVE'
+         ORDER BY S.STAY_ID
     </select>
 
     <!-- 숙소 상세 1건 -->
-    <select id="selectLodgeById" parameterType="long"
+    <select id="selectStayById" parameterType="long"
             resultType="com.petcare.petcare.stay.vo.StayVO">
-        SELECT LODGE_ID      AS lodgeId,
-               BIZ_NO        AS bizNo,
-               LODGE_NAME    AS lodgeName,
-               ADDR          AS addr,
-               LAT           AS lat,
-               LNG           AS lng,
-               PET_POLICY    AS petPolicy,
-               REFUND_POLICY AS refundPolicy,
-               FACILITIES    AS facilities,
-               STATUS_CD     AS statusCd,
-               CHECK_IN      AS checkIn,
-               CHECK_OUT     AS checkOut,
-               DESCRIPTION   AS description,
-               PET_FEE       AS petFee
-          FROM TB_LODGE
-         WHERE LODGE_ID = #{lodgeId}
+        SELECT STAY_ID,
+               BIZ_NO,
+               NAME,
+               ADDR,
+               LAT,
+               LNG,
+               PET_POLICY,
+               REFUND_POLICY,
+               FACILITIES,
+               STATUS_CD,
+               CHECK_IN,
+               CHECK_OUT,
+               DESCRIPTION,
+               PET_FEE
+          FROM TB_STAY
+         WHERE STAY_ID = #{stayId}
     </select>
 
     <!-- 객실 목록 -->
-    <select id="selectRoomsByLodgeId" parameterType="long"
+    <select id="selectRoomsByStayId" parameterType="long"
             resultType="com.petcare.petcare.stay.vo.StayRoomVO">
-        SELECT ROOM_ID         AS roomId,
-               LODGE_ID        AS lodgeId,
-               ROOM_NAME       AS roomName,
-               PRICE_PER_NIGHT AS pricePerNight,
-               CAPACITY        AS capacity,
-               PET_LIMIT       AS petLimit,
-               STATUS_CD       AS statusCd
-          FROM TB_LODGE_ROOM
-         WHERE LODGE_ID = #{lodgeId}
+        SELECT ROOM_ID,
+               STAY_ID,
+               NAME,
+               PRICE_PER_NIGHT,
+               CAPACITY,
+               PET_LIMIT,
+               STATUS_CD
+          FROM TB_STAY_ROOM
+         WHERE STAY_ID = #{stayId}
            AND STATUS_CD = 'APPROVE'
          ORDER BY PRICE_PER_NIGHT
     </select>
-
 </mapper>

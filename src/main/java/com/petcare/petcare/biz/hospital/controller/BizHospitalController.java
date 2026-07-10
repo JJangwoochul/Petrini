@@ -42,7 +42,7 @@ public class BizHospitalController extends BizBaseController {
     private BizHospitalService bizHospitalService;
     @Autowired
     private FileService fileService;
-    
+
     // ── 병원 (HOSPITAL) ──────────────────────────────────────
     @GetMapping({"", "/"})
     public String hospitalDashboard(HttpSession session, Model model) {
@@ -186,77 +186,74 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/contract";
     }
 
-    // 2026-07-10 장우철 — [변경 후] TB_HOSPITAL 없으면 자동 생성 후 폼 표시
+    // 2026-07-10 장우철+yeju merge — 사업자 정보 조회 (info.jsp, yeju 간소 화면)
     @GetMapping("/info")
     public String hospitalInfo(HttpSession session, Model model) throws Exception {
         MemberVO member = getBizMember(session);
-        if (member == null) return "redirect:/login";
+        if (member == null) {
+            return "redirect:/login";
+        }
 
         HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
         if (hospital == null) {
             return "redirect:/mypage/biz";
         }
         model.addAttribute("hospital", hospital);
-
-        List<FileVO> imgList = java.util.Collections.emptyList();
-        if (hospital.getHospitalId() != null) {
-            imgList = fileService.getFileList("HOSPITAL", hospital.getHospitalId());
-        }
-        model.addAttribute("imgList", imgList);
         return "biz/hospital/info";
-
-        /* [변경 전] 2026-07-10 장우철 — 승인 시 INSERT 가정, null 이면 NPE
-        HospitalVO hospital = bizHospitalService.getHospitalByBizId(member.getMemberId());
-        List<FileVO> imgList = fileService.getFileList("HOSPITAL", hospital.getHospitalId());
-        */
     }
 
-    // 2026-07-10 장우철 — 병원 정보(profile.jsp) / 사업자 정보(info.jsp) 각각 별도 진입
+    // 2026-07-10 장우철+yeju merge — 병원 정보 등록/수정 (profile.jsp, yeju DB 폼)
     @GetMapping("/profile")
-    public String hospitalProfile(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String hospitalProfile(HttpSession session, Model model) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
             return "redirect:/login";
-        return "biz/hospital/profile";
+        }
 
-        /* [변경 전] 2026-07-10 장우철 — info 로 통합 리다이렉트
-        return "redirect:/biz/hospital/info";
-        */
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return "redirect:/mypage/biz";
+        }
+        model.addAttribute("hospital", hospital);
+
+        List<FileVO> imgList = fileService.getFileList("HOSPITAL", hospital.getHospitalId());
+        model.addAttribute("imgList", imgList);
+        return "biz/hospital/profile";
     }
 
-    // ── POST: 저장 ──
-    @PostMapping("/info")
-    public String saveHospitalInfo(@RequestParam(value = "tagList", required = false) String[] tagList,
-                                   @RequestParam(value = "imgList", required = false) MultipartFile[] imgList, 
-                                   @RequestParam(value = "deleteFileIds", required = false) Long[] deleteFileIds,
-                                   HttpSession session,
-                                   RedirectAttributes rttr) throws Exception {
+    // 2026-07-10 장우철+yeju merge — yeju profile.jsp → POST /profile + resolveHospital
+    @PostMapping("/profile")
+    public String saveProfile(HospitalVO vo,
+                              @RequestParam(value = "tagList", required = false) String[] tagList,
+                              @RequestParam(value = "imgList", required = false) MultipartFile[] imgList,
+                              @RequestParam(value = "deleteFileIds", required = false) Long[] deleteFileIds,
+                              HttpSession session,
+                              RedirectAttributes rttr) throws Exception {
 
         MemberVO member = getBizMember(session);
-        if (member == null)
+        if (member == null) {
             return "redirect:/login";
+        }
 
         HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
         if (hospital == null || hospital.getHospitalId() == null) {
             rttr.addFlashAttribute("errorMsg", "병원 정보를 불러올 수 없습니다.");
-            return "redirect:/biz/hospital/info";
+            return "redirect:/biz/hospital/profile";
         }
+        vo.setHospitalId(hospital.getHospitalId());
 
-        // 태그 체크박스 배열 → 콤마 구분 문자열
         if (tagList != null) {
-            hospital.setTagList(String.join(",", tagList));
+            vo.setTagList(String.join(",", tagList));
         }
 
-        // 기존 이미지 삭제 처리 ──
         if (deleteFileIds != null) {
             for (Long fileId : deleteFileIds) {
                 fileService.deleteFile(fileId);
             }
         }
 
-        // ── 2) 새 이미지 업로드 처리 ──
         if (imgList != null) {
             for (MultipartFile img : imgList) {
-                // 빈 파일 슬롯은 건너뛰기 (파일 선택 안 한 input)
                 if (img == null || img.isEmpty()) {
                     continue;
                 }
@@ -264,10 +261,9 @@ public class BizHospitalController extends BizBaseController {
             }
         }
 
-        // ── 3) 병원 기본정보 업데이트 ──
-        bizHospitalService.updateHospitalInfo(hospital);
+        bizHospitalService.updateHospitalInfo(vo);
 
         rttr.addFlashAttribute("msg", "저장되었습니다.");
-        return "redirect:/biz/hospital/info";
+        return "redirect:/biz/hospital/profile";
     }
 }

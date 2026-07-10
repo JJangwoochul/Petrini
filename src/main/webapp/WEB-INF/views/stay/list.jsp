@@ -167,7 +167,7 @@
   <%-- 목록 --%>
   <div>
     <div class="stay-toolbar">
-      <span style="font-size:14px;color:var(--text-sub)">총 <strong style="color:var(--text-main)">${lodgeList.size()}</strong>개 숙소</span>
+      <span style="font-size:14px;color:var(--text-sub)">총 <strong style="color:var(--text-main)">${stayList.size()}</strong>개 숙소</span>
       <div class="stay-sort">
         <span class="sort-chip on" onclick="selSort(this)">추천순</span>
         <span class="sort-chip" onclick="selSort(this)">낮은 가격순</span>
@@ -177,19 +177,19 @@
     <div class="stay-grid">
       <%-- ★ DB 데이터로 카드 반복 생성 --%>
       <c:choose>
-        <c:when test="${not empty lodgeList}">
-          <c:forEach var="s" items="${lodgeList}">
-            <div class="stay-card" onclick="location.href='${contextPath}/stay/detail?id=${s.lodgeId}'">
+        <c:when test="${not empty stayList}">
+          <c:forEach var="s" items="${stayList}">
+            <div class="stay-card" onclick="location.href='${contextPath}/stay/detail?id=${s.stayId}'">
               <div class="stay-card-thumb">
                 <img src="${contextPath}/upload/${s.thumbPath}"
-                     alt="${s.lodgeName}">
+                     alt="${s.name}">
                 <span class="stay-card-badge">반려동물 동반 숙소</span>
                 <button class="stay-wish-btn" onclick="event.stopPropagation()">
                   <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
                 </button>
               </div>
               <div class="stay-card-body">
-                <div class="sc-name">${s.lodgeName}</div>
+                <div class="sc-name">${s.name}</div>
                 <div class="sc-loc">
                   <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   ${s.addr}
