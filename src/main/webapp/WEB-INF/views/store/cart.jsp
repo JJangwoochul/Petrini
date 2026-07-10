@@ -55,12 +55,12 @@
 
    <div class="cart-section-head">
   <input type="checkbox" class="cart-cb" id="checkAll" checked>
-  <h2>장바구니</h2>
+  <h2>전체 선택</h2>
   <span class="cart-count">${cartItems.size()}</span>
   <%-- 지윤 26.07.08 추가: 선택삭제(체크된 것만) / 전체삭제(장바구니 통째로) 버튼 --%>
   <div style="margin-left:auto;display:flex;gap:8px;">
-    <button type="button" id="btnDeleteSelected" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">선택삭제</button>
-    <button type="button" id="btnDeleteAll" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">전체삭제</button>
+    <button type="button" id="btnDeleteSelected" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">선택 삭제</button>
+    <button type="button" id="btnDeleteAll" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">전체 삭제</button>
   </div>
 </div>
 
@@ -95,8 +95,6 @@
     <div class="summary-row"><span>상품 금액</span><span id="sumProduct">98,900원</span></div>
     <%-- 지윤 26.07.09 배송비 무료 고정 텍스트 -> 5만원 기준 실시간 계산으로 변경 --%>
     <div class="summary-row"><span>배송비</span><span id="sumDelivery" style="color:var(--primary);font-weight:700">무료</span></div>
-    <div class="summary-row"><span>쿠폰 할인</span><span style="color:var(--accent)">-0원</span></div>
-    <div class="coupon-input"><input type="text" placeholder="쿠폰 코드 입력"><button>적용</button></div>
     <div class="summary-row total"><span>총 결제금액</span><span id="sumTotal">98,900원</span></div>
     <button class="btn-order" id="btnOrder">주문하기 (3개)</button>
   </div>

@@ -72,6 +72,11 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             // 2026/07/08 장우철 — 마이페이지 A단계: TB_MEMBER 보유 포인트 세션에 담기
             sessionMember.setPointBalance(
                     found.getPointBalance() != null ? found.getPointBalance() : 0L);
+            // 2026/07/10 지윤 — 주문서 배송지 자동입력용으로 추가
+            sessionMember.setPhone(found.getPhone());
+            sessionMember.setZipcode(found.getZipcode());
+            sessionMember.setAddr1(found.getAddr1());
+            sessionMember.setAddr2(found.getAddr2());
             return sessionMember;
         }
 

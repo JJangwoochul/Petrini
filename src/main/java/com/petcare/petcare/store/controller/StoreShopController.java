@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CategoryVO;
+import com.petcare.petcare.store.vo.CartItemVO;
+import com.petcare.petcare.store.vo.CouponVO;
+import java.util.List;
 import com.petcare.petcare.member.vo.MemberVO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -153,12 +156,90 @@ public int getCartCount(HttpSession session) {
         return "store/cart";
     }
 
-    @GetMapping("/payment")
+    /*@GetMapping("/payment")
     public String payment(Model model) {
         //HYJ 26.07.03 결제 api key
         model.addAttribute("tossApiKey", tossApiKey);
         return "store/payment";
+    }*/
+    //지윤 26.07.10 수정: GET -> POST, 쿠폰/포인트 서버 재검증 후 결제페이지에 실데이터 전달
+@PostMapping("/payment")
+public String payment(@RequestParam(required = false) Long productId,
+                       @RequestParam(required = false) Long optionId,
+                       @RequestParam(defaultValue = "1") int qty,
+                       @RequestParam(required = false) List<Long> cartItemIds,
+                       @RequestParam(required = false, defaultValue = "0") Long couponId,
+                       @RequestParam(required = false, defaultValue = "0") Long point,
+                       @RequestParam String recvName,
+                       @RequestParam String recvPhone,
+                       @RequestParam String zipCode,
+                       @RequestParam String addr1,
+                       @RequestParam(required = false) String addr2,
+                       @RequestParam(required = false) String deliveryMemo,
+                       Model model,
+                       HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "redirect:/login";
     }
+    MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
+
+    // 지윤 26.07.10 주문 아이템은 클라이언트 값 안 믿고 서버에서 다시 조회
+    List<CartItemVO> orderItems = (productId != null)
+            ? storeShopService.getDirectOrderItem(productId, optionId, qty)
+            : storeShopService.getCartOrderItems(cartItemIds);
+
+    int productTotal = 0;
+    for (CartItemVO item : orderItems) {
+        productTotal += item.getPrice() * item.getQty();
+    }
+    int deliveryFee = (productTotal == 0 || productTotal >= 50000) ? 0 : 3000;
+
+    // 지윤 26.07.10 쿠폰 재검증: 본인이 실제 보유한(UNUSED) 쿠폰인지 확인
+    int couponDiscount = 0;
+    String couponName = null;
+    if (couponId != null && couponId > 0) {
+        for (CouponVO c : storeShopService.getMemberCoupons(memberNo)) {
+            if (c.getMemberCouponId().equals(couponId)) {
+                if (productTotal >= c.getMinOrderAmt()) {
+                    couponDiscount = "RATE".equals(c.getCouponType())
+                            ? productTotal * c.getDiscountValue() / 100
+                            : c.getDiscountValue();
+                    couponName = c.getCouponName();
+                }
+                break;
+            }
+        }
+    }
+
+    // 지윤 26.07.10 포인트 재검증: 보유 포인트, 결제금액 넘게 사용 못 하도록 제한
+    long memberPoint = (memberInfo != null && memberInfo.getPointBalance() != null)
+            ? memberInfo.getPointBalance() : 0L;
+    long maxUsable = Math.max(0, Math.min(memberPoint, productTotal + deliveryFee - couponDiscount));
+    long pointUsed = Math.max(0, Math.min(point == null ? 0 : point, maxUsable));
+
+    int totalDiscount = couponDiscount + (int) pointUsed;
+    int finalTotal = Math.max(0, productTotal + deliveryFee - totalDiscount);
+
+    model.addAttribute("orderItems", orderItems);
+    model.addAttribute("productTotal", productTotal);
+    model.addAttribute("deliveryFee", deliveryFee);
+    model.addAttribute("couponName", couponName);
+    model.addAttribute("couponDiscount", couponDiscount);
+    model.addAttribute("pointUsed", pointUsed);
+    model.addAttribute("totalDiscount", totalDiscount);
+    model.addAttribute("finalTotal", finalTotal);
+    model.addAttribute("recvName", recvName);
+    model.addAttribute("recvPhone", recvPhone);
+    model.addAttribute("zipCode", zipCode);
+    model.addAttribute("addr1", addr1);
+    model.addAttribute("addr2", addr2);
+    model.addAttribute("deliveryMemo", deliveryMemo);
+    //HYJ 26.07.03 결제 api key
+    model.addAttribute("tossApiKey", tossApiKey);
+
+    return "store/payment";
+}
 
     // HYJ 26.07.03 결제 요청 성공 시 여기로 돌아옴 (아직 승인 API는 호출 안 함)
     @GetMapping("/test/payment/success")
@@ -181,7 +262,7 @@ public int getCartCount(HttpSession session) {
         return "store/order-complete";
     }
 
-    //지윤 26.07.09 수정: cartItemIds 파라미터 추가 - 장바구니에서 주문하기로 들어온 경우도 처리
+    //지윤 26.07.09 수정: cartItemIds 파라미터 추가 - 장바구니에서 주문하기로 들어온 경우 처리
 @GetMapping("/order")
 public String order(@RequestParam(required = false) Long productId,
                 @RequestParam(required = false) Long optionId,
@@ -193,6 +274,15 @@ public String order(@RequestParam(required = false) Long productId,
     if (memberNo == null) {
         return "redirect:/login";
     }
+
+//지윤 26.07.10 보유 포인트 + 기본 배송지 실데이터 연동 (세션의 memberInfo에서 그대로 가져옴)
+MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
+model.addAttribute("memberPoint", memberInfo != null && memberInfo.getPointBalance() != null ? memberInfo.getPointBalance() : 0L);
+model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
+model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
+model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
+model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
+
     // 바로구매로 들어온 경우: 상품 1개만 주문서에 넘김
     if (productId != null) {
         model.addAttribute("orderItems",
