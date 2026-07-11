@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,6 +43,43 @@ public class BizHospitalController extends BizBaseController {
     private BizHospitalService bizHospitalService;
     @Autowired
     private FileService fileService;
+
+    // 2026/07/11 장우철 — 모든 병원 사업자 화면에 PENDING 배지 건수 전달
+    // [변경 전] sidebar_hospital.jsp 에 더미 5 고정
+    @ModelAttribute("pendingReserveCount")
+    public int pendingReserveCount(HttpSession session) {
+        try {
+            MemberVO member = getBizMember(session);
+            if (member == null || member.getMemberId() == null) {
+                return 0;
+            }
+            HospitalVO hospital = bizHospitalService.getHospitalByBizId(member.getMemberId());
+            if (hospital == null || hospital.getHospitalId() == null) {
+                return 0;
+            }
+            return bizHospitalService.countPendingReservations(hospital.getHospitalId());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 2026/07/11 장우철 — 캘린더 메뉴: 오늘 예약확정(CONFIRMED) 건수
+    @ModelAttribute("todayConfirmedCount")
+    public int todayConfirmedCount(HttpSession session) {
+        try {
+            MemberVO member = getBizMember(session);
+            if (member == null || member.getMemberId() == null) {
+                return 0;
+            }
+            HospitalVO hospital = bizHospitalService.getHospitalByBizId(member.getMemberId());
+            if (hospital == null || hospital.getHospitalId() == null) {
+                return 0;
+            }
+            return bizHospitalService.countTodayConfirmedReservations(hospital.getHospitalId());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 
     // ── 병원 (HOSPITAL) ──────────────────────────────────────
     @GetMapping({"", "/"})
@@ -77,9 +115,11 @@ public class BizHospitalController extends BizBaseController {
     }
 
     // 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5)
+    // 2026/07/11 장우철 — cancelReason: CANCEL 시 필수
     @PostMapping("/reserve/status")
     public String updateReservationStatus(@RequestParam("resvId") Long resvId,
                                           @RequestParam("statusCd") String statusCd,
+                                          @RequestParam(value = "cancelReason", required = false) String cancelReason,
                                           HttpSession session,
                                           RedirectAttributes rttr) throws Exception {
         MemberVO member = getBizMember(session);
@@ -92,8 +132,13 @@ public class BizHospitalController extends BizBaseController {
             return "redirect:/mypage/biz";
         }
 
-        bizHospitalService.updateReservationStatus(hospital.getHospitalId(), resvId, statusCd);
-        rttr.addFlashAttribute("msg", "예약 상태가 변경되었습니다.");
+        try {
+            bizHospitalService.updateReservationStatus(
+                    hospital.getHospitalId(), resvId, statusCd, cancelReason);
+            rttr.addFlashAttribute("msg", "예약 상태가 변경되었습니다.");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/biz/hospital/reserve";
     }
 

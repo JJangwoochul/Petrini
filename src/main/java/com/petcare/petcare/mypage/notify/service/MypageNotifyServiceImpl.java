@@ -79,6 +79,65 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026/07/11 장우철 — 병원 예약 확정 알림
+    @Override
+    @Transactional
+    public void sendReserveConfirmNotification(Long memberNo, String hospitalName,
+                                               java.util.Date resvDate, String resvTime, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String when = formatResvWhen(resvDate, resvTime);
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String content = "[" + safeName + "] 예약이 확정되었습니다.\n\n예약 일시: " + when;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("병원 예약이 확정되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/07/11 장우철 — 병원 예약 취소 알림 (취소 사유 포함)
+    @Override
+    @Transactional
+    public void sendReserveCancelNotification(Long memberNo, String hospitalName,
+                                              java.util.Date resvDate, String resvTime,
+                                              String cancelReason, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String when = formatResvWhen(resvDate, resvTime);
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String reason = (cancelReason != null && !cancelReason.isBlank()) ? cancelReason.trim() : "-";
+        String content = "[" + safeName + "] 예약이 취소되었습니다.\n\n예약 일시: " + when
+                + "\n취소 사유: " + reason;
+        if (content.length() > 500) {
+            content = content.substring(0, 497) + "...";
+        }
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("병원 예약이 취소되었습니다");
+        vo.setContent(content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    private String formatResvWhen(java.util.Date resvDate, String resvTime) {
+        String datePart = "-";
+        if (resvDate != null) {
+            datePart = new java.text.SimpleDateFormat("yyyy-MM-dd").format(resvDate);
+        }
+        String timePart = (resvTime != null && !resvTime.isBlank()) ? resvTime : "";
+        return (datePart + " " + timePart).trim();
+    }
+
     private String resolveBizTypeLabel(String bizType) {
         if (bizType == null) {
             return "사업자";
@@ -137,5 +196,15 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
             return 0;
         }
         return mypageNotifyMapper.deleteAllNotificationsByMemberNo(memberNo);
+    }
+
+    // 2026/07/11 장우철 — 헤더 미읽음 알림 배지
+    @Override
+    @Transactional(readOnly = true)
+    public int countUnreadNotifications(Long memberNo) {
+        if (memberNo == null) {
+            return 0;
+        }
+        return mypageNotifyMapper.countUnreadNotifications(memberNo);
     }
 }

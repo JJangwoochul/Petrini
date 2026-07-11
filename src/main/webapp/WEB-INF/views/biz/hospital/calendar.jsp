@@ -35,12 +35,13 @@
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">예약 캘린더</h1>
-    <p class="biz-page-desc">월별 진료 예약 현황을 한눈에 확인하세요.</p>
+    <p class="biz-page-desc">월별 진료 예약 현황을 한눈에 확인하세요. 오늘 남은 확정 예약 수는 사이드바 캘린더 배지에서 확인하세요.</p>
   </div>
 
   <div class="biz-card" style="margin-bottom:16px">
     <div class="cal-legend">
-      <span><span class="dot" style="background:#F5A623"></span>예약대기</span>
+      <span><span class="dot" style="background:#F5A623"></span>예약신청</span>
+      <span><span class="dot" style="background:#3B82F6"></span>예약확정</span>
       <span><span class="dot" style="background:#2BAB82"></span>진료완료</span>
     </div>
     <div id="calendar"></div>
@@ -54,13 +55,14 @@
 
 <script>
   // 2026-07-10 장우철 — 서버 예약 데이터 → FullCalendar (F7)
+  // 2026/07/11 장우철 — 상태 분리 / 날짜 칸 숫자 제거(사이드바 배지로 이동)
   function toKey(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  var statusLabel = { wait:'예약대기', done:'진료완료' };
-  var statusColor = { wait:'#F5A623', done:'#2BAB82' };
-  var statusBadgeClass = { wait:'bs-wait', done:'bs-done' };
+  var statusLabel = { pending:'예약신청', confirmed:'예약확정', done:'진료완료' };
+  var statusColor = { pending:'#F5A623', confirmed:'#3B82F6', done:'#2BAB82' };
+  var statusBadgeClass = { pending:'bs-wait', confirmed:'bs-ready', done:'bs-done' };
 
   var reservations = [
     <c:forEach var="r" items="${calendarReservations}" varStatus="st">
@@ -70,9 +72,10 @@
       time: '<c:out value="${r.resvTime}"/>',
       date: '<fmt:formatDate value="${r.resvDate}" pattern="yyyy-MM-dd"/>',
       status: (function(cd){
-        if (cd === 'PENDING' || cd === 'CONFIRMED') return 'wait';
+        if (cd === 'PENDING') return 'pending';
+        if (cd === 'CONFIRMED') return 'confirmed';
         if (cd === 'DONE') return 'done';
-        return 'wait';
+        return 'pending';
       })('<c:out value="${r.statusCd}"/>')
     }<c:if test="${!st.last}">,</c:if>
     </c:forEach>
@@ -92,10 +95,15 @@
                         .sort(function (a, b) { return a.time.localeCompare(b.time); });
   }
 
+  function confirmedCountOnDay(key) {
+    return reservations.filter(function (r) { return r.date === key && r.status === 'confirmed'; }).length;
+  }
+
   function renderDetail(key) {
     var d = new Date(key);
+    var confirmedCnt = confirmedCountOnDay(key);
     document.getElementById('detailTitle').textContent =
-      (d.getMonth() + 1) + '월 ' + d.getDate() + '일 예약 (' + eventsOnDay(key).length + '건)';
+      (d.getMonth() + 1) + '월 ' + d.getDate() + '일 예약 (확정 ' + confirmedCnt + '건 / 전체 ' + eventsOnDay(key).length + '건)';
 
     var box = document.getElementById('calDetail');
     var list = eventsOnDay(key);

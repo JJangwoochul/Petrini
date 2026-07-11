@@ -85,4 +85,12 @@
     WHERE  MEMBER_NO = #{memberNo}
   </delete>
 
+  <!-- 2026/07/11 장우철 — 헤더 미읽음 알림 배지 -->
+  <select id="countUnreadNotifications" resultType="int">
+    SELECT COUNT(*)
+    FROM   TB_NOTIFICATION
+    WHERE  MEMBER_NO = #{memberNo}
+      AND  NVL(IS_READ, 'N') = 'N'
+  </select>
+
 </mapper>

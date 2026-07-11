@@ -34,6 +34,7 @@
 <script src="${contextPath}/resources/js/search.js?v=20260705"></script>
 <script src="${contextPath}/resources/js/wishlist.js?v=20260705"></script>
 <%-- 지윤 26.07.08 추가: 헤더 장바구니 뱃지 숫자 실시간 갱신. 모든 페이지 로드마다 호출되고, 담기/삭제 후에도 재호출됨 --%>
+<%-- 2026/07/11 장우철 — 헤더 미읽음 알림 배지 (장바구니와 동일 패턴) --%>
 <script>
 window.refreshCartCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/store/cart/count')
@@ -42,5 +43,18 @@ window.refreshCartCount = function () {
       document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = count; });
     });
 };
+window.refreshNotiCount = function () {
+  fetch(window.__CONTEXT_PATH__ + '/mypage/notifications/count')
+    .then(function(res){ return res.text(); })
+    .then(function(count){
+      var n = parseInt(count, 10) || 0;
+      document.querySelectorAll('.noti-count').forEach(function(el){
+        el.textContent = n > 99 ? '99+' : String(n);
+        el.style.display = n > 0 ? 'flex' : 'none';
+      });
+    })
+    .catch(function(){ /* 비로그인 등 */ });
+};
 refreshCartCount();
+refreshNotiCount();
 </script>

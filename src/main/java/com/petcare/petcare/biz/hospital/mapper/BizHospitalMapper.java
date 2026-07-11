@@ -49,9 +49,19 @@ public interface BizHospitalMapper {
 
     int updateReservationStatus(@Param("resvId") Long resvId,
                                 @Param("hospitalId") Long hospitalId,
-                                @Param("statusCd") String statusCd) throws Exception;
+                                @Param("statusCd") String statusCd,
+                                @Param("rejectReason") String rejectReason) throws Exception;
 
     List<ReservationVO> selectReservationCalendarList(@Param("hospitalId") Long hospitalId,
                                                         @Param("fromDate") String fromDate,
                                                         @Param("toDate") String toDate) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 배지: PENDING(예약신청) 건수
+    int countPendingReservations(@Param("hospitalId") Long hospitalId) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 캘린더 배지: 오늘 CONFIRMED 건수
+    int countTodayConfirmedReservations(@Param("hospitalId") Long hospitalId) throws Exception;
+
+    // 2026/07/11 장우철 — 알림 문구용 병원명
+    String selectHospitalNameById(@Param("hospitalId") Long hospitalId) throws Exception;
 }

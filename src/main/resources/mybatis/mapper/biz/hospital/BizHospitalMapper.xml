@@ -101,6 +101,7 @@
                 R.SYMPTOMS     AS symptoms,
                 R.REQUEST_MEMO AS requestMemo,
                 R.STATUS_CD    AS statusCd,
+                R.REJECT_REASON AS rejectReason,
                 R.REG_DATE     AS regDate,
                 M.MEMBER_NAME  AS memberName,
                 P.PET_NAME     AS petName,
@@ -113,8 +114,11 @@
          WHERE  R.RESV_TYPE  = 'HOSPITAL'
            AND  R.TARGET_ID  = TO_CHAR(#{hospitalId})
         <choose>
-            <when test="tab == 'wait'">
-           AND  R.STATUS_CD IN ('PENDING', 'CONFIRMED')
+            <when test="tab == 'wait' or tab == 'pending'">
+           AND  R.STATUS_CD = 'PENDING'
+            </when>
+            <when test="tab == 'confirmed'">
+           AND  R.STATUS_CD = 'CONFIRMED'
             </when>
             <when test="tab == 'done'">
            AND  R.STATUS_CD = 'DONE'
@@ -139,6 +143,7 @@
                 R.SYMPTOMS     AS symptoms,
                 R.REQUEST_MEMO AS requestMemo,
                 R.STATUS_CD    AS statusCd,
+                R.REJECT_REASON AS rejectReason,
                 R.REG_DATE     AS regDate,
                 M.MEMBER_NAME  AS memberName,
                 P.PET_NAME     AS petName,
@@ -154,9 +159,11 @@
     </select>
 
     <!-- 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5) -->
+    <!-- 2026/07/11 장우철 — CANCEL 시 REJECT_REASON(취소 사유) 저장 -->
     <update id="updateReservationStatus">
         UPDATE TB_RESERVATION
-           SET STATUS_CD = #{statusCd}
+           SET STATUS_CD = #{statusCd},
+               REJECT_REASON = #{rejectReason, jdbcType=VARCHAR}
          WHERE RESV_ID   = #{resvId}
            AND TARGET_ID = TO_CHAR(#{hospitalId})
            AND RESV_TYPE = 'HOSPITAL'
@@ -180,5 +187,32 @@
            AND  R.RESV_DATE &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
            AND  R.RESV_DATE &lt;  TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
          ORDER BY R.RESV_DATE, R.RESV_TIME
+    </select>
+
+    <!-- 2026/07/11 장우철 — 사이드바 예약관리 배지 (PENDING만) -->
+    <select id="countPendingReservations" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION R
+         WHERE R.RESV_TYPE  = 'HOSPITAL'
+           AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
+           AND R.STATUS_CD  = 'PENDING'
+    </select>
+
+    <!-- 2026/07/11 장우철 — 사이드바 캘린더 배지 (오늘 CONFIRMED) -->
+    <select id="countTodayConfirmedReservations" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION R
+         WHERE R.RESV_TYPE  = 'HOSPITAL'
+           AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
+           AND R.STATUS_CD  = 'CONFIRMED'
+           AND R.RESV_DATE &gt;= TRUNC(SYSDATE)
+           AND R.RESV_DATE &lt;  TRUNC(SYSDATE) + 1
+    </select>
+
+    <!-- 2026/07/11 장우철 — 예약 알림용 병원명 -->
+    <select id="selectHospitalNameById" resultType="string">
+        SELECT NAME
+          FROM TB_HOSPITAL
+         WHERE HOSPITAL_ID = #{hospitalId}
     </select>
 </mapper>

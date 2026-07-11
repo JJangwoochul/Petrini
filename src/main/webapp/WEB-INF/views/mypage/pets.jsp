@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="mypage" />
 <c:set var="sec" value="pets" />
@@ -11,50 +13,74 @@
 <%@ include file="/WEB-INF/views/mypage/sidebar.jsp" %>
 <div class="mypage-content">
 
-<%-- ── 반려동물 관리 ── --%>
+<%-- 2026/07/11 장우철 — 반려동물 목록 DB 연동 (더미 카드 제거) --%>
 <div class="mp-section active">
     <div class="pets-header">
         <div>
             <h2 class="mp-title" style="margin-bottom:4px">반려동물 관리</h2>
             <p class="mp-desc" style="margin-bottom:0">등록된 반려동물을 관리하고 새로 추가하세요.</p>
         </div>
-        <%-- <button class="btn-primary">+ 반려동물 추가</button> --%>
     </div>
     <div class="pets-grid">
-        <div class="pet-card">
-            <div class="pet-thumb-wrap">
-                <img class="pet-thumb"
-                     src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&q=70&auto=format&fit=crop"
-                     alt="몽이"
-                     onerror="this.src='https://placehold.co/300x225/EAF7F2/2BAB82?text=반려동물'">
-                <span class="pet-species-badge">강아지</span>
+        <c:forEach var="p" items="${petList}">
+            <div class="pet-card">
+                <div class="pet-thumb-wrap">
+                    <c:choose>
+                        <c:when test="${not empty p.photoUrl}">
+                            <img class="pet-thumb" src="${p.photoUrl}" alt="<c:out value='${p.petName}'/>"
+                                 onerror="this.src='https://placehold.co/300x225/EAF7F2/2BAB82?text=반려동물'">
+                        </c:when>
+                        <c:otherwise>
+                            <img class="pet-thumb"
+                                 src="https://placehold.co/300x225/EAF7F2/2BAB82?text=${fn:escapeXml(p.petName)}"
+                                 alt="<c:out value='${p.petName}'/>">
+                        </c:otherwise>
+                    </c:choose>
+                    <span class="pet-species-badge">
+                        <c:choose>
+                            <c:when test="${p.species eq 'DOG'}">강아지</c:when>
+                            <c:when test="${p.species eq 'CAT'}">고양이</c:when>
+                            <c:otherwise>기타</c:otherwise>
+                        </c:choose>
+                    </span>
+                </div>
+                <div class="pet-body">
+                    <div class="p-name">
+                        <c:out value="${p.petName}"/>
+                        <c:if test="${p.isRepresent eq 'Y'}"><span style="font-size:12px;color:var(--primary);font-weight:700"> · 대표</span></c:if>
+                    </div>
+                    <div class="p-meta">
+                        <c:out value="${p.breed}"/>
+                        ·
+                        <c:choose>
+                            <c:when test="${p.gender eq 'M'}">수컷</c:when>
+                            <c:when test="${p.gender eq 'F'}">암컷</c:when>
+                            <c:otherwise>-</c:otherwise>
+                        </c:choose>
+                        <br>
+                        <c:choose>
+                            <c:when test="${not empty p.birthDate}">
+                                생년월일: ${p.birthDate}
+                                <c:if test="${not empty p.age}"> (${p.age}살)</c:if>
+                            </c:when>
+                            <c:when test="${not empty p.age}">나이: ${p.age}살</c:when>
+                            <c:otherwise>생년월일: -</c:otherwise>
+                        </c:choose>
+                        <br>
+                        체중:
+                        <c:choose>
+                            <c:when test="${not empty p.weight}"><fmt:formatNumber value="${p.weight}" pattern="#0.#"/>kg</c:when>
+                            <c:otherwise>-</c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+                <div class="pet-footer">
+                    <button type="button" class="btn-sm" onclick="openPetModal(${p.petId})">수정</button>
+                    <button type="button" class="btn-sm danger" onclick="deletePet(${p.petId}, '<c:out value="${p.petName}"/>')">삭제</button>
+                </div>
             </div>
-            <div class="pet-body">
-                <div class="p-name">몽이</div>
-                <div class="p-meta">골든 리트리버 · 수컷 · 중성화 O<br>생년월일: 2021.03.15 (4살)<br>체중: 28kg</div>
-            </div>
-            <div class="pet-footer">
-                <button class="btn-sm">수정</button>
-                <button class="btn-sm danger">삭제</button>
-            </div>
-        </div>
-        <div class="pet-card">
-            <div class="pet-thumb-wrap">
-                <img class="pet-thumb"
-                     src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&q=70&auto=format&fit=crop"
-                     alt="나비"
-                     onerror="this.src='https://placehold.co/300x225/EAF7F2/2BAB82?text=반려동물'">
-                <span class="pet-species-badge">고양이</span>
-            </div>
-            <div class="pet-body">
-                <div class="p-name">나비</div>
-                <div class="p-meta">페르시안 · 암컷 · 중성화 O<br>생년월일: 2022.07.01 (2살)<br>체중: 4.2kg</div>
-            </div>
-            <div class="pet-footer">
-                <button class="btn-sm">수정</button>
-                <button class="btn-sm danger">삭제</button>
-            </div>
-        </div>
+        </c:forEach>
+
         <a href="#" class="pet-add-card" onclick="openPetModal(null);return false;">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             <span>반려동물 추가하기</span>
@@ -94,7 +120,6 @@
   .pm-close:hover { background: var(--border); }
   .pm-body { padding: 22px; }
 
-  /* 사진 업로드 */
   .pm-photo-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 22px; }
   .pm-photo-circle {
       width: 100px; height: 100px; border-radius: 50%;
@@ -107,7 +132,6 @@
   .pm-photo-circle svg { width: 28px; height: 28px; stroke: var(--text-muted); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .pm-photo-hint { font-size: 12px; color: var(--text-muted); }
 
-  /* 폼 */
   .pm-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .pm-group { display: flex; flex-direction: column; gap: 5px; }
   .pm-group.full { grid-column: 1 / -1; }
@@ -122,7 +146,6 @@
   .pm-group input:focus, .pm-group select:focus { border-color: var(--primary); }
   .pm-group .pm-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
-  /* 중성화 토글 */
   .pm-neuter-row { display: flex; align-items: center; gap: 12px; }
   .pm-neuter-btn {
       flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -132,7 +155,6 @@
   .pm-neuter-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .pm-neuter-btn.on { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
 
-  /* 특징 태그 */
   .pm-trait-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
   .pm-trait {
       padding: 6px 13px; border: 1px solid var(--border); border-radius: 50px;
@@ -148,28 +170,30 @@
   .btn-pm-cancel { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; }
   .btn-pm-save   { flex: 2; padding: 12px; border: none; border-radius: var(--radius-sm); background: var(--primary); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; transition: var(--transition); }
   .btn-pm-save:hover { background: var(--primary-dark); }
+  .btn-pm-save:disabled { opacity: .6; cursor: not-allowed; }
 </style>
 
 <div class="pet-modal-bg" id="petModalBg" onclick="if(event.target===this) closeModal()">
   <div class="pet-modal">
     <div class="pm-header">
       <h3 id="pm-title">반려동물 등록</h3>
-      <button class="pm-close" onclick="closeModal()">×</button>
+      <button type="button" class="pm-close" onclick="closeModal()">×</button>
     </div>
     <div class="pm-body">
-      <%-- 사진 --%>
       <div class="pm-photo-wrap">
-        <div class="pm-photo-circle" onclick="alert('사진 업로드 — S3 연동 예정')">
+        <div class="pm-photo-circle" onclick="alert('사진 업로드 — 추후 연동 예정')">
           <img id="pm-preview" src="" alt="미리보기">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
-        <span class="pm-photo-hint">클릭하여 사진 등록 (선택)</span>
+        <span class="pm-photo-hint">클릭하여 사진 등록 (선택 · 추후 연동)</span>
       </div>
+
+      <input type="hidden" id="pm-petId" value="">
 
       <div class="pm-form-grid">
         <div class="pm-group full">
           <label>이름 <span class="req">*</span></label>
-          <input type="text" id="pm-name" placeholder="예) 몽이">
+          <input type="text" id="pm-name" placeholder="예) 몽이" maxlength="30">
         </div>
         <div class="pm-group">
           <label>종류 <span class="req">*</span></label>
@@ -203,63 +227,84 @@
           <label>체중 (kg)</label>
           <input type="number" id="pm-weight" placeholder="예) 3.5" step="0.1" min="0" max="200">
         </div>
+        <%-- TB_PET 에 컬럼 없음 — UI만 유지, 저장 안 함 --%>
         <div class="pm-group">
           <label>털 색상</label>
-          <input type="text" id="pm-color" placeholder="예) 황갈색, 검은색">
+          <input type="text" id="pm-color" placeholder="예) 황갈색, 검은색" disabled title="DB 컬럼 추가 후 연동 예정">
         </div>
         <div class="pm-group full">
-          <label>중성화 여부</label>
+          <label>중성화 여부 <span class="pm-hint">(추후 연동)</span></label>
           <div class="pm-neuter-row">
-            <button class="pm-neuter-btn on" id="neuter-Y" onclick="selNeuter('Y')">
+            <button type="button" class="pm-neuter-btn" id="neuter-Y" onclick="selNeuter('Y')" disabled>
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 완료
             </button>
-            <button class="pm-neuter-btn" id="neuter-N" onclick="selNeuter('N')">
+            <button type="button" class="pm-neuter-btn" id="neuter-N" onclick="selNeuter('N')" disabled>
               <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> 미완료
             </button>
-            <button class="pm-neuter-btn" id="neuter-U" onclick="selNeuter('U')">
+            <button type="button" class="pm-neuter-btn on" id="neuter-U" onclick="selNeuter('U')" disabled>
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 모름
             </button>
           </div>
         </div>
         <div class="pm-group full">
-          <label>성격 / 특징 (복수 선택 가능)</label>
+          <label>성격 / 특징 <span class="pm-hint">(추후 연동)</span></label>
           <div class="pm-trait-wrap">
-            <span class="pm-trait" onclick="this.classList.toggle('on')">활발해요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">얌전해요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">낯가림 있어요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">사람 좋아해요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">다른 동물과 잘 어울려요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">겁이 많아요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">식탐이 강해요</span>
-            <span class="pm-trait" onclick="this.classList.toggle('on')">알레르기 있어요</span>
+            <span class="pm-trait" style="opacity:.5;cursor:default">활발해요</span>
+            <span class="pm-trait" style="opacity:.5;cursor:default">얌전해요</span>
+            <span class="pm-trait" style="opacity:.5;cursor:default">낯가림 있어요</span>
+            <span class="pm-trait" style="opacity:.5;cursor:default">사람 좋아해요</span>
           </div>
         </div>
         <div class="pm-group full">
           <label>메모</label>
-          <input type="text" id="pm-memo" placeholder="특이사항, 주의사항, 좋아하는 것 등 자유롭게 입력하세요.">
+          <input type="text" id="pm-memo" placeholder="특이사항 등 (추후 연동)" disabled>
         </div>
       </div>
     </div>
     <div class="pm-footer">
-      <button class="btn-pm-cancel" onclick="closeModal()">취소</button>
-      <button class="btn-pm-save" onclick="savePet()">저장하기</button>
+      <button type="button" class="btn-pm-cancel" onclick="closeModal()">취소</button>
+      <button type="button" class="btn-pm-save" id="pm-save-btn" onclick="savePet()">저장하기</button>
     </div>
   </div>
 </div>
 
 <script>
+const CTX = '${contextPath}';
 const BREEDS = {
     dog: ['골든 리트리버','래브라도 리트리버','비숑 프리제','말티즈','푸들','시바이누','진돗개','포메라니안','치와와','코기','불독','허스키','닥스훈트','슈나우저','믹스견 (모름)'],
     cat: ['코리안숏헤어','페르시안','메인쿤','브리티시숏헤어','러시안블루','스코티시폴드','아비시니안','벵갈','샴','믹스묘 (모름)'],
     etc: ['토끼','햄스터','앵무새','고슴도치','페럿','기니피그','직접 입력']
 };
 
-function updateBreed() {
+const PET_LIST = ${empty petListJson ? '[]' : petListJson};
+const PET_MAP = {};
+PET_LIST.forEach(function (p) { PET_MAP[p.petId] = p; });
+
+function speciesToKind(species) {
+    if (species === 'DOG') return 'dog';
+    if (species === 'CAT') return 'cat';
+    return 'etc';
+}
+
+function updateBreed(selected) {
     const kind = document.getElementById('pm-kind').value;
     const sel  = document.getElementById('pm-breed');
-    sel.innerHTML = kind
-        ? BREEDS[kind].map(b => `<option>${b}</option>`).join('')
-        : '<option value="">종류를 먼저 선택하세요</option>';
+    if (!kind) {
+        sel.innerHTML = '<option value="">종류를 먼저 선택하세요</option>';
+        return;
+    }
+    const list = BREEDS[kind] || [];
+    // 2026/07/11 장우철 — JSP EL 과 충돌하지 않도록 JS 템플릿 리터럴 대신 문자열 연결 사용
+    let html = '<option value="">품종 선택</option>';
+    for (let i = 0; i < list.length; i++) {
+        const b = list[i];
+        html += '<option value="' + b + '">' + b + '</option>';
+    }
+    if (selected && list.indexOf(selected) < 0) {
+        html = '<option value="' + selected + '">' + selected + '</option>' + html;
+    }
+    sel.innerHTML = html;
+    if (selected) sel.value = selected;
 }
 
 function selNeuter(v) {
@@ -267,35 +312,89 @@ function selNeuter(v) {
     document.getElementById('neuter-'+v).classList.add('on');
 }
 
-function openPetModal(petData) {
+function openPetModal(petId) {
+    const petData = petId != null ? PET_MAP[petId] : null;
     document.getElementById('pm-title').textContent = petData ? '반려동물 수정' : '반려동물 등록';
-    if (!petData) {
-        document.getElementById('pm-name').value = '';
+    document.getElementById('pm-petId').value = petData ? petData.petId : '';
+    document.getElementById('pm-name').value = petData ? (petData.petName || '') : '';
+    document.getElementById('pm-gender').value = petData ? (petData.gender || '') : '';
+    document.getElementById('pm-birth').value = petData && petData.birthDate ? String(petData.birthDate).substring(0, 10) : '';
+    document.getElementById('pm-weight').value = petData && petData.weight != null ? petData.weight : '';
+
+    if (petData) {
+        const kind = speciesToKind(petData.species);
+        document.getElementById('pm-kind').value = kind;
+        updateBreed(petData.breed || '');
+    } else {
         document.getElementById('pm-kind').value = '';
-        document.getElementById('pm-breed').innerHTML = '<option>종류를 먼저 선택하세요</option>';
-        document.getElementById('pm-gender').value = '';
-        document.getElementById('pm-birth').value = '';
-        document.getElementById('pm-weight').value = '';
-        document.getElementById('pm-color').value = '';
-        document.getElementById('pm-memo').value = '';
-        selNeuter('U');
-        document.querySelectorAll('.pm-trait').forEach(t => t.classList.remove('on'));
+        document.getElementById('pm-breed').innerHTML = '<option value="">종류를 먼저 선택하세요</option>';
     }
+
     document.getElementById('petModalBg').classList.add('open');
     document.body.style.overflow = 'hidden';
 }
+
 function closeModal() {
     document.getElementById('petModalBg').classList.remove('open');
     document.body.style.overflow = '';
 }
-function savePet() {
+
+async function savePet() {
     const name = document.getElementById('pm-name').value.trim();
+    const kind = document.getElementById('pm-kind').value;
+    const breed = document.getElementById('pm-breed').value;
+    const gender = document.getElementById('pm-gender').value;
     if (!name) { alert('이름을 입력해 주세요.'); return; }
-    if (!document.getElementById('pm-kind').value) { alert('종류를 선택해 주세요.'); return; }
-    closeModal();
-    alert(`${name} 정보가 저장되었습니다!`);
+    if (!kind) { alert('종류를 선택해 주세요.'); return; }
+    if (!breed) { alert('품종을 선택해 주세요.'); return; }
+    if (!gender) { alert('성별을 선택해 주세요.'); return; }
+
+    const fd = new FormData();
+    const petId = document.getElementById('pm-petId').value;
+    if (petId) fd.append('petId', petId);
+    fd.append('petName', name);
+    fd.append('kind', kind);
+    fd.append('breed', breed);
+    fd.append('gender', gender);
+    const birth = document.getElementById('pm-birth').value;
+    if (birth) fd.append('birthDate', birth);
+    const weight = document.getElementById('pm-weight').value;
+    if (weight) fd.append('weight', weight);
+
+    const btn = document.getElementById('pm-save-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch(CTX + '/mypage/pets/save', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.success) {
+            alert(data.message || '저장에 실패했습니다.');
+            return;
+        }
+        closeModal();
+        location.reload();
+    } catch (e) {
+        alert('저장 중 오류가 발생했습니다.');
+    } finally {
+        btn.disabled = false;
+    }
 }
-document.querySelectorAll('.btn-sm:not(.danger)').forEach(b => b.addEventListener('click', () => openPetModal({})));
+
+async function deletePet(petId, petName) {
+    if (!confirm('"' + petName + '" 정보를 삭제할까요?')) return;
+    const fd = new FormData();
+    fd.append('petId', petId);
+    try {
+        const res = await fetch(CTX + '/mypage/pets/delete', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.success) {
+            alert(data.message || '삭제에 실패했습니다.');
+            return;
+        }
+        location.reload();
+    } catch (e) {
+        alert('삭제 중 오류가 발생했습니다.');
+    }
+}
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

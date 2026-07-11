@@ -134,9 +134,10 @@
         <div class="adm-card">
             <div class="adm-card-head">
                 <span class="adm-card-head-title">사업자 승인 대기
-                    <span style="margin-left:8px;background:#EEF2FF;color:#3B5BDB;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px">3건</span>
+                    <%-- 2026/07/11 장우철 — PENDING 실건수 (더미 3건 제거) --%>
+                    <span style="margin-left:8px;background:#EEF2FF;color:#3B5BDB;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px">${pendingBizApproveCount}건</span>
                 </span>
-                <a href="${contextPath}/admin/biz/list" class="adm-btn blue" style="font-size:12px">승인 관리</a>
+                <a href="${contextPath}/admin/biz/list?status=PENDING" class="adm-btn blue" style="font-size:12px">승인 관리</a>
             </div>
             <div class="adm-table-wrap">
                 <table class="adm-table">

@@ -4,17 +4,153 @@
 <mapper namespace="com.petcare.petcare.pet.profile.mapper.PetProfileMapper">
 
 <!--
-  역할: PetProfileMapper SQL 정의
-
-  쿼리 id 예시
-  - selectPetList
-  - selectPetDetail
-  - insertPet
-  - updatePet
-  - deletePet
-
-  테이블
-  - TB_PET
+  2026/07/11 장우철 — 마이페이지 반려동물 CRUD
+  테이블: TB_PET
+  ※ DEL_YN 컬럼 필요 (없으면 아래 SQL 실행)
+     ALTER TABLE TB_PET ADD DEL_YN CHAR(1) DEFAULT 'N';
+     UPDATE TB_PET SET DEL_YN = 'N' WHERE DEL_YN IS NULL;
+     COMMIT;
 -->
+
+    <select id="selectPetList" parameterType="long"
+            resultType="com.petcare.petcare.pet.profile.vo.PetProfileVO">
+        SELECT  P.PET_ID        AS petId,
+                P.MEMBER_NO     AS memberNo,
+                P.PET_NAME      AS petName,
+                P.SPECIES       AS species,
+                P.BREED         AS breed,
+                P.GENDER        AS gender,
+                P.BIRTH_DATE    AS birthDate,
+                P.AGE           AS age,
+                P.WEIGHT        AS weight,
+                P.IS_REPRESENT  AS isRepresent,
+                P.PHOTO_URL     AS photoUrl,
+                P.DEL_YN        AS delYn,
+                P.REG_DATE      AS regDate
+          FROM  TB_PET P
+         WHERE  P.MEMBER_NO = #{memberNo}
+           AND  NVL(P.DEL_YN, 'N') = 'N'
+         ORDER BY P.IS_REPRESENT DESC NULLS LAST, P.PET_ID ASC
+    </select>
+
+    <select id="selectPetDetail" resultType="com.petcare.petcare.pet.profile.vo.PetProfileVO">
+        SELECT  P.PET_ID        AS petId,
+                P.MEMBER_NO     AS memberNo,
+                P.PET_NAME      AS petName,
+                P.SPECIES       AS species,
+                P.BREED         AS breed,
+                P.GENDER        AS gender,
+                P.BIRTH_DATE    AS birthDate,
+                P.AGE           AS age,
+                P.WEIGHT        AS weight,
+                P.IS_REPRESENT  AS isRepresent,
+                P.PHOTO_URL     AS photoUrl,
+                P.DEL_YN        AS delYn,
+                P.REG_DATE      AS regDate
+          FROM  TB_PET P
+         WHERE  P.PET_ID    = #{petId}
+           AND  P.MEMBER_NO = #{memberNo}
+           AND  NVL(P.DEL_YN, 'N') = 'N'
+    </select>
+
+    <select id="countPetsByMember" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_PET
+         WHERE MEMBER_NO = #{memberNo}
+           AND NVL(DEL_YN, 'N') = 'N'
+    </select>
+
+    <!-- PENDING/CONFIRMED 만 삭제 불가 (DONE/CANCEL 은 허용) -->
+    <select id="countActiveReservationsByPetId" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE PET_ID = #{petId}
+           AND STATUS_CD IN ('PENDING', 'CONFIRMED')
+    </select>
+
+    <select id="countAllReservationsByPetId" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE PET_ID = #{petId}
+    </select>
+
+    <insert id="insertPet" parameterType="com.petcare.petcare.pet.profile.vo.PetProfileVO">
+        <selectKey keyProperty="petId" resultType="long" order="BEFORE">
+            SELECT SEQ_PET.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TB_PET (
+            PET_ID,
+            MEMBER_NO,
+            PET_NAME,
+            SPECIES,
+            BREED,
+            GENDER,
+            BIRTH_DATE,
+            AGE,
+            WEIGHT,
+            IS_REPRESENT,
+            PHOTO_URL,
+            DEL_YN,
+            REG_DATE
+        ) VALUES (
+            #{petId},
+            #{memberNo},
+            #{petName},
+            #{species},
+            #{breed, jdbcType=VARCHAR},
+            #{gender, jdbcType=CHAR},
+            #{birthDate, jdbcType=DATE},
+            #{age, jdbcType=NUMERIC},
+            #{weight, jdbcType=NUMERIC},
+            #{isRepresent, jdbcType=CHAR},
+            #{photoUrl, jdbcType=VARCHAR},
+            'N',
+            SYSDATE
+        )
+    </insert>
+
+    <update id="updatePet" parameterType="com.petcare.petcare.pet.profile.vo.PetProfileVO">
+        UPDATE TB_PET
+           SET PET_NAME    = #{petName},
+               SPECIES     = #{species},
+               BREED       = #{breed, jdbcType=VARCHAR},
+               GENDER      = #{gender, jdbcType=CHAR},
+               BIRTH_DATE  = #{birthDate, jdbcType=DATE},
+               AGE         = #{age, jdbcType=NUMERIC},
+               WEIGHT      = #{weight, jdbcType=NUMERIC}
+         WHERE PET_ID    = #{petId}
+           AND MEMBER_NO = #{memberNo}
+           AND NVL(DEL_YN, 'N') = 'N'
+    </update>
+
+    <!-- 예약 이력 없음 → 물리 삭제 -->
+    <delete id="deletePet">
+        DELETE FROM TB_PET
+         WHERE PET_ID    = #{petId}
+           AND MEMBER_NO = #{memberNo}
+    </delete>
+
+    <!-- 과거 예약(DONE/CANCEL) 있음 → 소프트 삭제 (FK 유지) -->
+    <update id="softDeletePet">
+        UPDATE TB_PET
+           SET DEL_YN       = 'Y',
+               IS_REPRESENT = 'N'
+         WHERE PET_ID    = #{petId}
+           AND MEMBER_NO = #{memberNo}
+           AND NVL(DEL_YN, 'N') = 'N'
+    </update>
+
+    <update id="promoteFirstRepresent" parameterType="long">
+        UPDATE TB_PET
+           SET IS_REPRESENT = 'Y'
+         WHERE PET_ID = (
+               SELECT t.pet_id FROM (
+                   SELECT MIN(PET_ID) AS pet_id
+                     FROM TB_PET
+                    WHERE MEMBER_NO = #{memberNo}
+                      AND NVL(DEL_YN, 'N') = 'N'
+               ) t
+         )
+    </update>
 
 </mapper>

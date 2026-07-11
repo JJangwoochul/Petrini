@@ -110,6 +110,8 @@
                         <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 01-3.46 0"/>
                     </svg>
+                    <%-- 2026/07/11 장우철 — 미읽음 알림 배지 (장바구니 cart-count 와 동일 UX) --%>
+                    <span class="noti-count" style="display:none">0</span>
                     <span>알림</span>
                 </a>
             </div>

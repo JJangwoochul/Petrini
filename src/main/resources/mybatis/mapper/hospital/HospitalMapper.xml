@@ -68,6 +68,7 @@
                 P.AGE        AS age
           FROM  TB_PET P
          WHERE  P.MEMBER_NO = #{memberNo}
+           AND  NVL(P.DEL_YN, 'N') = 'N'
          ORDER BY P.IS_REPRESENT DESC, P.PET_ID ASC
     </select>
 

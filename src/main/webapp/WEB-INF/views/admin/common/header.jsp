@@ -31,10 +31,13 @@
     <div class="adm-header-divider"></div>
     <span class="adm-header-title">관리자 센터</span>
     <div class="adm-header-right">
-        <a href="${contextPath}/admin/biz/list">
+        <a href="${contextPath}/admin/biz/list?status=PENDING">
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             사업자 승인 대기
-            <span class="adm-noti-badge">3</span>
+            <%-- 2026/07/11 장우철 — PENDING 실건수 (더미 3 제거, 사이드바 배지와 동일) --%>
+            <c:if test="${pendingBizApproveCount > 0}">
+              <span class="adm-noti-badge">${pendingBizApproveCount}</span>
+            </c:if>
         </a>
         <div class="adm-header-divider"></div>
         <a href="${contextPath}/">

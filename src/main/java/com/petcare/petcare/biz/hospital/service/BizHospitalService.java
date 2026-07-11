@@ -50,7 +50,14 @@ public interface BizHospitalService {
 
     ReservationVO getReservationDetail(Long hospitalId, Long resvId) throws Exception;
 
-    void updateReservationStatus(Long hospitalId, Long resvId, String statusCd) throws Exception;
+    // 2026/07/11 장우철 — cancelReason: CANCEL 일 때 필수
+    void updateReservationStatus(Long hospitalId, Long resvId, String statusCd, String cancelReason) throws Exception;
 
     List<ReservationVO> getCalendarReservations(Long hospitalId, String fromDate, String toDate) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 배지용 PENDING 건수
+    int countPendingReservations(Long hospitalId) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 캘린더 배지: 오늘 CONFIRMED
+    int countTodayConfirmedReservations(Long hospitalId) throws Exception;
 }

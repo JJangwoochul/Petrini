@@ -5,14 +5,82 @@
 
 <!--
   역할: MypageReserveMapper SQL 정의
-
-  쿼리 id 예시
-  - selectReservationList
-  - selectReservationDetail
-  - cancelReservation
-
-  테이블
-  - TB_RESERVATION
+  2026/07/11 장우철 — 마이페이지 예약 내역·상세 (2차)
+  테이블: TB_RESERVATION, TB_HOSPITAL, TB_PET
 -->
+
+  <select id="selectMyReservationList"
+          resultType="com.petcare.petcare.mypage.reserve.vo.MypageReserveVO">
+    SELECT  R.RESV_ID       AS resvId,
+            R.RESV_NO       AS resvNo,
+            R.RESV_TYPE     AS resvType,
+            R.MEMBER_NO     AS memberNo,
+            R.PET_ID        AS petId,
+            R.TARGET_ID     AS targetId,
+            R.RESV_DATE     AS resvDate,
+            R.RESV_TIME     AS resvTime,
+            R.SYMPTOMS      AS symptoms,
+            R.REQUEST_MEMO  AS requestMemo,
+            R.STATUS_CD     AS statusCd,
+            R.REJECT_REASON AS rejectReason,
+            R.REG_DATE      AS regDate,
+            P.PET_NAME      AS petName,
+            P.SPECIES       AS petSpecies,
+            P.BREED         AS petBreed,
+            H.NAME          AS hospitalName,
+            H.ADDR          AS hospitalAddr
+      FROM  TB_RESERVATION R
+      JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+      LEFT JOIN TB_HOSPITAL H
+             ON R.RESV_TYPE = 'HOSPITAL'
+            AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+     WHERE  R.MEMBER_NO = #{memberNo}
+       AND  R.RESV_TYPE = 'HOSPITAL'
+    <choose>
+      <when test="statusFilter == 'pending'">
+       AND  R.STATUS_CD = 'PENDING'
+      </when>
+      <when test="statusFilter == 'confirmed'">
+       AND  R.STATUS_CD = 'CONFIRMED'
+      </when>
+      <when test="statusFilter == 'done'">
+       AND  R.STATUS_CD = 'DONE'
+      </when>
+      <when test="statusFilter == 'cancel'">
+       AND  R.STATUS_CD IN ('CANCEL', 'REJECTED')
+      </when>
+    </choose>
+     ORDER BY R.RESV_DATE DESC, R.RESV_TIME DESC, R.RESV_ID DESC
+  </select>
+
+  <select id="selectMyReservationDetail"
+          resultType="com.petcare.petcare.mypage.reserve.vo.MypageReserveVO">
+    SELECT  R.RESV_ID       AS resvId,
+            R.RESV_NO       AS resvNo,
+            R.RESV_TYPE     AS resvType,
+            R.MEMBER_NO     AS memberNo,
+            R.PET_ID        AS petId,
+            R.TARGET_ID     AS targetId,
+            R.RESV_DATE     AS resvDate,
+            R.RESV_TIME     AS resvTime,
+            R.SYMPTOMS      AS symptoms,
+            R.REQUEST_MEMO  AS requestMemo,
+            R.STATUS_CD     AS statusCd,
+            R.REJECT_REASON AS rejectReason,
+            R.REG_DATE      AS regDate,
+            P.PET_NAME      AS petName,
+            P.SPECIES       AS petSpecies,
+            P.BREED         AS petBreed,
+            H.NAME          AS hospitalName,
+            H.ADDR          AS hospitalAddr
+      FROM  TB_RESERVATION R
+      JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+      LEFT JOIN TB_HOSPITAL H
+             ON R.RESV_TYPE = 'HOSPITAL'
+            AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+     WHERE  R.MEMBER_NO = #{memberNo}
+       AND  R.RESV_ID   = #{resvId}
+       AND  R.RESV_TYPE = 'HOSPITAL'
+  </select>
 
 </mapper>

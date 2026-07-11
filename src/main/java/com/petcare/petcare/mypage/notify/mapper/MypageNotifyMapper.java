@@ -45,4 +45,7 @@ public interface MypageNotifyMapper {
 
     // 2026-07-10 장우철 — 알림함 전체 삭제 (본인 알림만)
     int deleteAllNotificationsByMemberNo(@Param("memberNo") Long memberNo);
+
+    // 2026/07/11 장우철 — 헤더 배지용 미읽음 건수
+    int countUnreadNotifications(@Param("memberNo") Long memberNo);
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -84,5 +85,16 @@ public class MypageNotifyController {
         int count = mypageNotifyService.deleteAllNotifications(member.getMemberNo());
         rttr.addFlashAttribute("msg", count > 0 ? "모든 알림을 삭제했습니다." : "삭제할 알림이 없습니다.");
         return "redirect:/mypage/notifications";
+    }
+
+    // 2026/07/11 장우철 — 헤더 미읽음 알림 배지 (장바구니 /store/cart/count 와 동일 패턴)
+    @GetMapping("/notifications/count")
+    @ResponseBody
+    public int unreadNotificationCount(HttpSession session) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return 0;
+        }
+        return mypageNotifyService.countUnreadNotifications(member.getMemberNo());
     }
 }

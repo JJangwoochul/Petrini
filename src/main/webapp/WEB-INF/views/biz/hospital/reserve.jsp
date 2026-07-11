@@ -31,12 +31,17 @@
   <c:if test="${not empty msg}">
     <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px">${msg}</div>
   </c:if>
+  <c:if test="${not empty errorMsg}">
+    <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px">${errorMsg}</div>
+  </c:if>
 
   <div class="biz-card">
     <div style="padding:20px 20px 0">
+      <%-- 2026/07/11 장우철 — 예약신청(PENDING) / 예약확정(CONFIRMED) 탭 분리 --%>
       <div class="biz-tabs">
         <button type="button" class="biz-tab active" data-tab="all" onclick="switchTab('all')">전체<span class="biz-tab-count" id="cntAll"></span></button>
-        <button type="button" class="biz-tab" data-tab="wait" onclick="switchTab('wait')">예약대기<span class="biz-tab-count" id="cntWait"></span></button>
+        <button type="button" class="biz-tab" data-tab="pending" onclick="switchTab('pending')">예약신청<span class="biz-tab-count" id="cntPending"></span></button>
+        <button type="button" class="biz-tab" data-tab="confirmed" onclick="switchTab('confirmed')">예약확정<span class="biz-tab-count" id="cntConfirmed"></span></button>
         <button type="button" class="biz-tab" data-tab="done" onclick="switchTab('done')">진료완료<span class="biz-tab-count" id="cntDone"></span></button>
         <button type="button" class="biz-tab" data-tab="cancel" onclick="switchTab('cancel')">취소<span class="biz-tab-count" id="cntCancel"></span></button>
       </div>
@@ -80,8 +85,29 @@
   </div>
 </div>
 
+<%-- 2026/07/11 장우철 — 예약취소 사유 필수 모달 --%>
+<div class="rv-modal-bg" id="cancelModalBg" onclick="if(event.target===this) closeCancelModal()">
+  <div class="rv-modal">
+    <div class="rv-modal-head">
+      <h3>예약 취소</h3>
+      <button type="button" class="rv-modal-close" onclick="closeCancelModal()">×</button>
+    </div>
+    <div class="rv-modal-body">
+      <p style="margin:0 0 8px;font-size:13px;color:#666">취소 사유를 입력해 주세요. (필수)</p>
+      <textarea id="cancelReasonInput" maxlength="500" rows="4"
+        style="width:100%;box-sizing:border-box;border:1px solid #E2E8E4;border-radius:8px;padding:12px;font-size:14px;font-family:inherit;resize:vertical"
+        placeholder="예: 당일 진료 일정 변경으로 예약이 어렵습니다."></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button type="button" class="biz-btn ghost" onclick="closeCancelModal()">닫기</button>
+        <button type="button" class="biz-btn danger" onclick="submitCancel()">예약취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // 2026-07-10 장우철 — 서버 목록 → JS (탭 필터·모달)
+  // 2026/07/11 장우철 — PENDING/CONFIRMED 분리, 신청→확정→완료 버튼
   var reservations = [
     <c:forEach var="r" items="${reservationList}" varStatus="st">
     {
@@ -96,10 +122,11 @@
       requestMemo: '<c:out value="${r.requestMemo}"/>',
       statusCd: '<c:out value="${r.statusCd}"/>',
       status: (function(cd){
-        if (cd === 'PENDING' || cd === 'CONFIRMED') return 'wait';
+        if (cd === 'PENDING') return 'pending';
+        if (cd === 'CONFIRMED') return 'confirmed';
         if (cd === 'DONE') return 'done';
         if (cd === 'CANCEL' || cd === 'REJECTED') return 'cancel';
-        return 'wait';
+        return 'pending';
       })('<c:out value="${r.statusCd}"/>')
     }<c:if test="${!st.last}">,</c:if>
     </c:forEach>
@@ -109,9 +136,10 @@
   var contextPath = '${contextPath}';
 
   var badgeMap = {
-    wait:   { cls: 'bs-wait',   label: '예약대기' },
-    done:   { cls: 'bs-done',   label: '진료완료' },
-    cancel: { cls: 'bs-cancel', label: '취소' }
+    pending:   { cls: 'bs-wait',   label: '예약신청' },
+    confirmed: { cls: 'bs-ready',  label: '예약확정' },
+    done:      { cls: 'bs-done',   label: '진료완료' },
+    cancel:    { cls: 'bs-cancel', label: '취소' }
   };
 
   function switchTab(tab) {
@@ -124,7 +152,8 @@
     var list = reservations.filter(function (r) { return currentTab === 'all' || r.status === currentTab; });
 
     document.getElementById('cntAll').textContent = reservations.length;
-    document.getElementById('cntWait').textContent = reservations.filter(function (r) { return r.status === 'wait'; }).length;
+    document.getElementById('cntPending').textContent = reservations.filter(function (r) { return r.status === 'pending'; }).length;
+    document.getElementById('cntConfirmed').textContent = reservations.filter(function (r) { return r.status === 'confirmed'; }).length;
     document.getElementById('cntDone').textContent = reservations.filter(function (r) { return r.status === 'done'; }).length;
     document.getElementById('cntCancel').textContent = reservations.filter(function (r) { return r.status === 'cancel'; }).length;
 
@@ -137,15 +166,19 @@
     }
 
     list.forEach(function (r) {
-      var badge = badgeMap[r.status];
+      var badge = badgeMap[r.status] || badgeMap.pending;
       var tr = document.createElement('tr');
 
       var actionHtml =
         '<button type="button" class="biz-btn ghost" onclick="openReserveModal(' + r.resvId + ')">상세</button> ';
-      if (r.status === 'wait') {
+      if (r.status === 'pending') {
         actionHtml +=
-          '<button type="button" class="biz-btn danger" onclick="postStatus(' + r.resvId + ',\'CANCEL\')">예약취소</button> ' +
-          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'DONE\')">진료완료</button>';
+          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'CONFIRMED\')">예약확정</button> ' +
+          '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
+      } else if (r.status === 'confirmed') {
+        actionHtml +=
+          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'DONE\')">진료완료</button> ' +
+          '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
       }
 
       tr.innerHTML =
@@ -160,7 +193,7 @@
   }
 
   function postStatus(resvId, statusCd) {
-    if (statusCd === 'CANCEL' && !confirm('예약을 취소하시겠습니까?')) return;
+    if (statusCd === 'CONFIRMED' && !confirm('예약을 확정하시겠습니까?')) return;
     if (statusCd === 'DONE' && !confirm('진료완료로 처리하시겠습니까?')) return;
 
     var form = document.createElement('form');
@@ -169,6 +202,41 @@
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + resvId + '">' +
       '<input type="hidden" name="statusCd" value="' + statusCd + '">';
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // 2026/07/11 장우철 — 취소 사유 모달
+  var cancelTargetResvId = null;
+
+  function openCancelModal(resvId) {
+    cancelTargetResvId = resvId;
+    document.getElementById('cancelReasonInput').value = '';
+    document.getElementById('cancelModalBg').classList.add('open');
+  }
+
+  function closeCancelModal() {
+    cancelTargetResvId = null;
+    document.getElementById('cancelModalBg').classList.remove('open');
+  }
+
+  function submitCancel() {
+    var reason = document.getElementById('cancelReasonInput').value.trim();
+    if (!reason) {
+      alert('취소 사유를 입력해 주세요.');
+      document.getElementById('cancelReasonInput').focus();
+      return;
+    }
+    if (!cancelTargetResvId) return;
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = contextPath + '/biz/hospital/reserve/status';
+    form.innerHTML =
+      '<input type="hidden" name="resvId" value="' + cancelTargetResvId + '">' +
+      '<input type="hidden" name="statusCd" value="CANCEL">' +
+      '<input type="hidden" name="cancelReason" value="">';
+    form.querySelector('input[name="cancelReason"]').value = reason;
     document.body.appendChild(form);
     form.submit();
   }
