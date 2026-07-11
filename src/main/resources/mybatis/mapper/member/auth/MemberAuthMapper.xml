@@ -175,6 +175,7 @@
     </insert>
 
     <!-- 반려동물 INSERT (join — register 3단계, petName 있을 때만) -->
+    <!-- 2026/07/11 장우철 — DEL_YN='N' 명시 (DATABASE_TABLE TB_PET.DEL_YN 소프트삭제 컬럼) -->
     <insert id="insertPet" parameterType="com.petcare.petcare.member.auth.vo.MemberRegisterVO">
         <selectKey keyProperty="petId" resultType="long" order="BEFORE">
             SELECT SEQ_PET.NEXTVAL FROM DUAL
@@ -188,6 +189,7 @@
             AGE,
             WEIGHT,
             IS_REPRESENT,
+            DEL_YN,
             REG_DATE
         ) VALUES (
             #{petId},
@@ -198,6 +200,7 @@
             #{petAge, jdbcType=NUMERIC},
             #{petWeight, jdbcType=NUMERIC},
             'Y',
+            'N',
             SYSDATE
         )
     </insert>
