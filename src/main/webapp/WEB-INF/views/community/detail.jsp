@@ -199,17 +199,34 @@
   <c:if test="${param.error eq 'seq'}">
     <p class="comment-error">댓글 시퀀스(SEQ_TB_POST_COMMENT)가 DB에 없습니다. DBA 또는 팀원에게 시퀀스 생성을 요청해 주세요.</p>
   </c:if>
+  <%-- 2026/07/11 장우철 — LIFE 댓글 권한 거부 안내 --%>
+  <c:if test="${param.error eq 'lifeComment'}">
+    <p class="comment-error">수의사 상담 글에는 병원 사업자만 답변할 수 있고, 질문자는 답글(추가 질문)만 작성할 수 있습니다.</p>
+  </c:if>
 
-  <form method="post" action="${contextPath}/community/comment">
-    <input type="hidden" name="postId" value="${post.postId}">
-    <div class="comment-write">
-      <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=ME" alt="내 아바타">
-      <div class="comment-input-wrap">
-        <textarea class="comment-input" name="body" placeholder="댓글을 입력하세요..." required></textarea>
-        <div class="comment-submit"><button type="submit">등록</button></div>
-      </div>
-    </div>
-  </form>
+  <%-- 2026/07/11 장우철 — LIFE: 최상위 댓글은 병원 사업자만 (canWriteTopComment) --%>
+  <c:choose>
+    <c:when test="${canWriteTopComment}">
+      <form method="post" action="${contextPath}/community/comment">
+        <input type="hidden" name="postId" value="${post.postId}">
+        <div class="comment-write">
+          <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=ME" alt="내 아바타">
+          <div class="comment-input-wrap">
+            <textarea class="comment-input" name="body"
+              placeholder="${post.boardType eq 'LIFE' ? '수의사 답변을 입력하세요...' : '댓글을 입력하세요...'}"
+              required></textarea>
+            <div class="comment-submit"><button type="submit">등록</button></div>
+          </div>
+        </div>
+      </form>
+    </c:when>
+    <c:when test="${post.boardType eq 'LIFE' && isLoggedIn && !canWriteTopComment}">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+        수의사 상담 답변은 병원 사업자만 작성할 수 있습니다.
+        <c:if test="${canWriteReply}"> 추가 질문은 아래 답글로 남겨 주세요.</c:if>
+      </p>
+    </c:when>
+  </c:choose>
 
   <c:forEach var="cmt" items="${comments}">
     <div class="comment-item">
@@ -254,16 +271,23 @@
           </form>
         </div>
         <div class="comment-actions">
-          <button type="button" class="reply-btn" onclick="toggleReplyForm(${cmt.commentId})">↳ 답글</button>
+          <%-- 2026/07/11 장우철 — LIFE: 답글은 병원 사업자 또는 질문자만 (canWriteReply) --%>
+          <c:if test="${canWriteReply}">
+            <button type="button" class="reply-btn" onclick="toggleReplyForm(${cmt.commentId})">↳ 답글</button>
+          </c:if>
         </div>
+        <c:if test="${canWriteReply}">
         <div id="replyForm-${cmt.commentId}" class="reply-form">
           <form method="post" action="${contextPath}/community/comment">
             <input type="hidden" name="postId" value="${post.postId}">
             <input type="hidden" name="parentId" value="${cmt.commentId}">
-            <textarea class="comment-input reply-input" name="body" placeholder="답글을 입력하세요..." required></textarea>
+            <textarea class="comment-input reply-input" name="body"
+              placeholder="${post.boardType eq 'LIFE' ? '추가 질문을 입력하세요...' : '답글을 입력하세요...'}"
+              required></textarea>
             <div class="comment-submit"><button type="submit">등록</button></div>
           </form>
         </div>
+        </c:if>
       </div>
     </div>
 
@@ -342,11 +366,17 @@
 
 <script>
   const isLoggedIn = ${isLoggedIn == true};
+  // 2026/07/11 장우철 — LIFE 답글 권한 (서버 canWriteReply 와 동일)
+  const canWriteReply = ${canWriteReply == true};
 
   function toggleReplyForm(commentId) {
     if (!isLoggedIn) {
       alert('로그인 후 답글을 작성할 수 있습니다.');
       location.href = '${contextPath}/login?redirect=/community/detail?id=${post.postId}';
+      return;
+    }
+    if (!canWriteReply) {
+      alert('수의사 상담 글에는 병원 사업자 또는 질문자만 답글을 작성할 수 있습니다.');
       return;
     }
     var form = document.getElementById('replyForm-' + commentId);

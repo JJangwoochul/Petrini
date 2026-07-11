@@ -148,6 +148,31 @@ public class CommunityPostController {
             loginMemberNo = communityCommentService.resolveLoginMemberNo(member);
         }
         model.addAttribute("loginMemberNo", loginMemberNo);
+
+        // 2026/07/11 장우철 — LIFE 댓글 UI 권한 플래그 (서버 검증과 동일 규칙)
+        // canWriteTopComment: 최상위 댓글 폼 / canWriteReply: 대댓글(답글) 폼
+        boolean canWriteTopComment = false;
+        boolean canWriteReply = false;
+        if (member != null) {
+            boolean isLife = post.getBoardType() != null
+                    && "LIFE".equalsIgnoreCase(post.getBoardType().trim());
+            if (!isLife) {
+                canWriteTopComment = true;
+                canWriteReply = true;
+            } else {
+                boolean hospitalBiz = member.getRole() != null
+                        && member.getBizType() != null
+                        && "BIZ".equalsIgnoreCase(member.getRole().trim())
+                        && "HOSPITAL".equalsIgnoreCase(member.getBizType().trim());
+                boolean isAuthor = loginMemberNo != null
+                        && post.getMemberNo() != null
+                        && loginMemberNo.equals(post.getMemberNo());
+                canWriteTopComment = hospitalBiz;
+                canWriteReply = hospitalBiz || isAuthor;
+            }
+        }
+        model.addAttribute("canWriteTopComment", canWriteTopComment);
+        model.addAttribute("canWriteReply", canWriteReply);
         return "community/detail";
     }
 
@@ -180,6 +205,10 @@ public class CommunityPostController {
             }
             if ("LOGIN_REQUIRED".equals(e.getMessage())) {
                 return "redirect:/login?redirect=/community/detail?id=" + postId;
+            }
+            // 2026/07/11 장우철 — LIFE 댓글 권한 거부
+            if ("LIFE_COMMENT_FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=lifeComment";
             }
             return "redirect:/community/detail?id=" + postId + "&error=comment";
         } catch (IllegalArgumentException e) {

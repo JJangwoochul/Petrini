@@ -238,6 +238,14 @@ public String payment(@RequestParam(required = false) Long productId,
     //HYJ 26.07.03 결제 api key
     model.addAttribute("tossApiKey", tossApiKey);
 
+    // 2026/07/11 장우철 — 장바구니 주문이면 결제 완료 후 삭제할 cartItemIds 세션에 보관
+    // [변경 전] 주문 완료(/order-complete)에서 장바구니 미삭제 → 결제 후에도 동일 상품 잔존
+    if (cartItemIds != null && !cartItemIds.isEmpty()) {
+        session.setAttribute("pendingOrderCartItemIds", cartItemIds);
+    } else {
+        session.removeAttribute("pendingOrderCartItemIds");
+    }
+
     return "store/payment";
 }
 
@@ -258,7 +266,16 @@ public String payment(@RequestParam(required = false) Long productId,
     }
 
     @GetMapping("/order-complete")
-    public String orderComplete() {
+    public String orderComplete(HttpSession session) {
+        // 2026/07/11 장우철 — 토스 결제 성공 후 진입 시, 주문한 장바구니 항목 삭제
+        // [변경 전] 화면만 반환하고 TB_CART_ITEM 미삭제
+        Long memberNo = getLoginMemberNo(session);
+        @SuppressWarnings("unchecked")
+        List<Long> cartItemIds = (List<Long>) session.getAttribute("pendingOrderCartItemIds");
+        if (memberNo != null && cartItemIds != null && !cartItemIds.isEmpty()) {
+            storeShopService.deleteCartItems(cartItemIds);
+            session.removeAttribute("pendingOrderCartItemIds");
+        }
         return "store/order-complete";
     }
 

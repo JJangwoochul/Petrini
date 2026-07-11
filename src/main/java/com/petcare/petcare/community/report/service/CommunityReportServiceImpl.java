@@ -68,9 +68,16 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         CommunityReportVO vo = new CommunityReportVO();
         vo.setPostId(postId);
         vo.setMemberNo(memberNo);
-        vo.setReasonCd(normalizedReason);
+        // 2026/07/11 장우철 — TB_POST_REPORT.REASON(VARCHAR2)에 사유코드(+상세) 저장
+        // [변경 전] REASON_CD / REASON_DETAIL 컬럼 가정 → 실제 DB에는 REASON 만 존재
         if (reasonDetail != null && !reasonDetail.isBlank()) {
-            vo.setReasonDetail(reasonDetail.trim());
+            String detail = reasonDetail.trim();
+            if (detail.length() > 150) {
+                detail = detail.substring(0, 150);
+            }
+            vo.setReasonCd(normalizedReason + ": " + detail);
+        } else {
+            vo.setReasonCd(normalizedReason);
         }
         vo.setStatusCd("PENDING");
 

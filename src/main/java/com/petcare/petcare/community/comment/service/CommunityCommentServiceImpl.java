@@ -10,7 +10,8 @@
  * [insertComment — 댓글·대댓글 등록]
  * 1. 로그인 확인 + 본문 검증
  * 2. parentId 있으면 → 같은 글의 일반댓글인지 검증
- * 3. TB_POST_COMMENT INSERT (PARENT_ID)
+ * 3. LIFE(수의사 상담) 권한 검증 — 병원 사업자 / 질문자 대댓글
+ * 4. TB_POST_COMMENT INSERT (PARENT_ID)
  *
  * [deleteComment — 댓글 삭제]
  * 1. 작성자 본인 확인 (memberNo)
@@ -28,15 +29,21 @@ import org.springframework.stereotype.Service;
 
 import com.petcare.petcare.community.comment.mapper.CommunityCommentMapper;
 import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
+import com.petcare.petcare.community.post.mapper.CommunityPostMapper;
+import com.petcare.petcare.community.post.vo.CommunityPostVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
 @Service
 public class CommunityCommentServiceImpl implements CommunityCommentService {
 
     private final CommunityCommentMapper communityCommentMapper;
+    private final CommunityPostMapper communityPostMapper;
 
-    public CommunityCommentServiceImpl(CommunityCommentMapper communityCommentMapper) {
+    public CommunityCommentServiceImpl(
+            CommunityCommentMapper communityCommentMapper,
+            CommunityPostMapper communityPostMapper) {
         this.communityCommentMapper = communityCommentMapper;
+        this.communityPostMapper = communityPostMapper;
     }
 
     @Override
@@ -98,6 +105,10 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
             validateParentComment(postId, parentId);
         }
 
+        // 2026/07/11 장우철 — 수의사 상담(LIFE) 댓글 권한
+        // 병원 사업자: 댓글·대댓글 가능 / 질문자: 대댓글만 / 그 외: 불가
+        validateLifeCommentPermission(postId, loginMember, memberNo, parentId);
+
         CommunityCommentVO vo = new CommunityCommentVO();
         vo.setPostId(postId);
         vo.setParentId(parentId);
@@ -105,6 +116,41 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         vo.setBody(body.trim());
 
         communityCommentMapper.insertComment(vo);
+    }
+
+    /**
+     * 2026/07/11 장우철 — LIFE(수의사 상담) 댓글 권한 검증
+     * - TOWN/SHARE 등: 제한 없음 (기존과 동일)
+     * - LIFE + 병원 사업자(BIZ/HOSPITAL): 최상위 댓글·대댓글 모두 허용
+     * - LIFE + 질문자(글 작성자): parentId 있는 대댓글만 허용 (추가 질문)
+     * - LIFE + 그 외: LIFE_COMMENT_FORBIDDEN
+     */
+    private void validateLifeCommentPermission(
+            long postId, MemberVO loginMember, Long memberNo, Long parentId) {
+        CommunityPostVO post = communityPostMapper.selectPostDetail(postId);
+        if (post == null) {
+            throw new IllegalArgumentException("POST_NOT_FOUND");
+        }
+        if (post.getBoardType() == null || !"LIFE".equalsIgnoreCase(post.getBoardType().trim())) {
+            return;
+        }
+        if (isHospitalBiz(loginMember)) {
+            return;
+        }
+        boolean isAuthor = post.getMemberNo() != null && post.getMemberNo().equals(memberNo);
+        if (parentId != null && isAuthor) {
+            return;
+        }
+        throw new IllegalStateException("LIFE_COMMENT_FORBIDDEN");
+    }
+
+    /** 2026/07/11 장우철 — 승인된 병원 사업자 여부 (세션 role/bizType) */
+    private boolean isHospitalBiz(MemberVO loginMember) {
+        if (loginMember == null || loginMember.getRole() == null || loginMember.getBizType() == null) {
+            return false;
+        }
+        return "BIZ".equalsIgnoreCase(loginMember.getRole().trim())
+                && "HOSPITAL".equalsIgnoreCase(loginMember.getBizType().trim());
     }
 
     private void validateParentComment(long postId, long parentId) {
