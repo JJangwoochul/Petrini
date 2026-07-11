@@ -12,7 +12,9 @@
 
   [등록] insertReport → TB_POST
   [사진] insertFile → TB_FILE (로컬 C:/upload/ 저장 후)
-  [조회] selectReportList / selectReportDetail / selectFileUrlsByPostId
+  [조회] selectReportList / selectReportDetail / selectReportCount / selectFileUrlsByPostId
+  [목록 정렬] 전체 탭 — 찾는 중 우선 / 상태 탭 — 최신순
+  [목록 필터] status — FINDING / OWNER_FOUND / RESCUED
 -->
 
   <insert id="insertReport" parameterType="com.petcare.petcare.give.report.vo.GiveReportVO">
@@ -104,7 +106,40 @@
     FROM TB_POST
     WHERE BOARD_TYPE = 'LOST'
       AND STATUS_CD = 'ACTIVE'
-    ORDER BY REG_DATE DESC
+    <choose>
+      <when test="status == 'FINDING'">
+        AND TAGS NOT LIKE '%OWNER_FOUND%'
+        AND TAGS NOT LIKE '%RESCUED%'
+      </when>
+      <when test="status == 'OWNER_FOUND'">
+        AND TAGS LIKE '%OWNER_FOUND%'
+      </when>
+      <when test="status == 'RESCUED'">
+        AND TAGS LIKE '%RESCUED%'
+        AND TAGS NOT LIKE '%OWNER_FOUND%'
+      </when>
+    </choose>
+    <choose>
+      <when test="status == null or status == ''">
+        ORDER BY
+          CASE
+            WHEN TAGS LIKE '%OWNER_FOUND%' THEN 3
+            WHEN TAGS LIKE '%RESCUED%' THEN 2
+            ELSE 1
+          END,
+          REG_DATE DESC
+      </when>
+      <otherwise>
+        ORDER BY REG_DATE DESC
+      </otherwise>
+    </choose>
+  </select>
+
+  <select id="selectReportCount" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_POST
+    WHERE BOARD_TYPE = 'LOST'
+      AND STATUS_CD = 'ACTIVE'
   </select>
 
   <!-- TB_FILE INSERT — 제보 사진 메타 (로컬 저장 후 호출) -->
@@ -139,5 +174,13 @@
       AND REF_ID = #{postId}
     ORDER BY FILE_ID
   </select>
+
+    <!-- 진행 상태 변경 — TAGS 컬럼만 UPDATE -->
+  <update id="updateReportTags">
+    UPDATE TB_POST
+    SET TAGS = #{tags}
+    WHERE POST_ID = #{postId}
+      AND BOARD_TYPE = 'LOST'
+  </update>
 
 </mapper>

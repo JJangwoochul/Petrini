@@ -35,6 +35,12 @@ public interface GiveReportService {
     // 2. 상세 페이지 조회
     GiveReportVO getReportDetail(long postId);
 
-    // 3. 목록 조회
-    List<GiveReportVO> getReportList();
+    // 3. 목록 조회 (status: 빈값=전체, FINDING/OWNER_FOUND/RESCUED)
+    List<GiveReportVO> getReportList(String status);
+
+    // 4. 게시글 수 (탭 배지용)
+    int getReportCount();
+
+    // 5. 진행 상태 변경 (FINDING / RESCUED / OWNER_FOUND)
+    void updateFindingStatus(long postId, String findingStatus, MemberVO loginMember);
 }

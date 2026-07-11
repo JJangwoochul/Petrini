@@ -1,13 +1,11 @@
 /**
  * 역할: 커뮤니티 게시글 비즈니스 로직 (interface)
  *
- * - 박유정 / 2026-07-08
- * - STEP 3: 목록 조회 (getPostList)
- * - STEP 4~: insertPost 등 추가 예정
+ * - 박유정 / 2026-07-08~09
  *
  * 담당 화면
- * - community/list.jsp        게시글 목록
- * - community/detail.jsp      게시글 상세
+ * - community/list.jsp        게시글 목록 (탭·검색·페이징)
+ * - community/detail.jsp      게시글 상세 (조회수·좋아요·댓글)
  * - community/write.jsp       게시글 작성
  *
  * 연결
@@ -24,9 +22,25 @@ package com.petcare.petcare.community.post.service;
 
 import java.util.List;
 import com.petcare.petcare.community.post.vo.CommunityPostVO;
+import org.springframework.web.multipart.MultipartFile;
+import com.petcare.petcare.member.vo.MemberVO;
 
 public interface CommunityPostService {
 
-    // 게시글 목록 (boardType: TOWN/SHARE/LIFE, 빈값=전체)
-    List<CommunityPostVO> getPostList(String boardType);
+    // 게시글 목록 (boardType, keyword, page, LIFE 필터: petSpecies, vetStatus)
+    List<CommunityPostVO> getPostList(
+            String boardType, String keyword, int page, String petSpecies, String vetStatus);
+
+    int getPostCount(String boardType, String keyword, String petSpecies, String vetStatus);
+
+    int getTotalPages(String boardType, String keyword, String petSpecies, String vetStatus);
+
+    // 게시글 상세 1건 (TB_POST + 사진 URL 목록)
+    CommunityPostVO getPostDetail(long postId);
+
+    // 게시글 등록 (TB_POST + 사진 TB_FILE)
+    void insertPost(CommunityPostVO vo, MemberVO loginMember, MultipartFile[] photos);
+
+    // LIFE 상담 — 답변 완료 (TAGS = ANSWERED)
+    void markLifeAnswered(long postId);
 }

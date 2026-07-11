@@ -5,15 +5,135 @@
 
 <!--
   역할: CommunityCommentMapper SQL 정의
+  - 박유정 / 2026-07-09
 
-  쿼리 id 예시
-  - selectCommentList
-  - insertComment
-  - updateComment
-  - deleteComment
+  테이블: TB_POST_COMMENT, TB_MEMBER
+  시퀀스: SEQ_TB_POST_COMMENT
 
-  테이블
-  - TB_COMMUNITY_COMMENT
+  [조회] selectCommentList — 게시글 일반댓글만 (레거시)
+  [조회] selectAllCommentsByPostId — 일반 + 대댓글 전체
+  [조회] selectCommentById — 부모 댓글 검증
+  [등록] insertComment — PARENT_ID 포함 INSERT
+  [삭제] softDeleteComment — IS_DELETED='Y'
+  [수정] updateCommentBody — BODY UPDATE
 -->
+
+  <sql id="commentColumns">
+      c.COMMENT_ID  AS commentId,
+      c.POST_ID     AS postId,
+      c.PARENT_ID   AS parentId,
+      c.MEMBER_NO   AS memberNo,
+      DBMS_LOB.SUBSTR(c.BODY, 32000, 1) AS body,
+      c.IS_DELETED  AS isDeleted,
+      c.REG_DATE    AS regDate,
+      NVL(m.NICKNAME, '익명') AS nickname
+  </sql>
+
+  <select id="selectCommentList"
+          parameterType="long"
+          resultType="com.petcare.petcare.community.comment.vo.CommunityCommentVO">
+    SELECT
+      <include refid="commentColumns"/>
+    FROM TB_POST_COMMENT c
+    LEFT JOIN TB_MEMBER m ON c.MEMBER_NO = m.MEMBER_NO
+    WHERE c.POST_ID = #{postId}
+      AND NVL(c.IS_DELETED, 'N') = 'N'
+      AND c.PARENT_ID IS NULL
+    ORDER BY c.REG_DATE ASC
+  </select>
+
+  <select id="selectRepliesByPostId"
+          parameterType="long"
+          resultType="com.petcare.petcare.community.comment.vo.CommunityCommentVO">
+    SELECT
+      <include refid="commentColumns"/>
+    FROM TB_POST_COMMENT c
+    LEFT JOIN TB_MEMBER m ON c.MEMBER_NO = m.MEMBER_NO
+    WHERE c.POST_ID = #{postId}
+      AND NVL(c.IS_DELETED, 'N') = 'N'
+      AND c.PARENT_ID IS NOT NULL
+    ORDER BY c.REG_DATE ASC
+  </select>
+
+  <select id="selectAllCommentsByPostId"
+          parameterType="long"
+          resultType="com.petcare.petcare.community.comment.vo.CommunityCommentVO">
+    SELECT
+      <include refid="commentColumns"/>
+    FROM TB_POST_COMMENT c
+    LEFT JOIN TB_MEMBER m ON c.MEMBER_NO = m.MEMBER_NO
+    WHERE c.POST_ID = #{postId}
+      AND NVL(c.IS_DELETED, 'N') = 'N'
+    ORDER BY NVL(c.PARENT_ID, c.COMMENT_ID), c.REG_DATE ASC
+  </select>
+
+  <select id="selectCommentById"
+          parameterType="long"
+          resultType="com.petcare.petcare.community.comment.vo.CommunityCommentVO">
+    SELECT
+      <include refid="commentColumns"/>
+    FROM TB_POST_COMMENT c
+    LEFT JOIN TB_MEMBER m ON c.MEMBER_NO = m.MEMBER_NO
+    WHERE c.COMMENT_ID = #{commentId}
+      AND NVL(c.IS_DELETED, 'N') = 'N'
+  </select>
+
+  <select id="selectCommentCountByPostId" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_POST_COMMENT
+    WHERE POST_ID = #{postId}
+      AND NVL(IS_DELETED, 'N') = 'N'
+  </select>
+
+  <insert id="insertComment"
+          parameterType="com.petcare.petcare.community.comment.vo.CommunityCommentVO">
+    <selectKey keyProperty="commentId" resultType="long" order="BEFORE">
+      SELECT SEQ_TB_POST_COMMENT.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO TB_POST_COMMENT (
+      COMMENT_ID,
+      POST_ID,
+      <if test="parentId != null">PARENT_ID,</if>
+      MEMBER_NO,
+      BODY,
+      IS_DELETED,
+      REG_DATE
+    ) VALUES (
+      #{commentId},
+      #{postId},
+      <if test="parentId != null">#{parentId},</if>
+      #{memberNo},
+      #{body},
+      'N',
+      SYSDATE
+    )
+  </insert>
+
+  <select id="selectMemberNoByMemberId" resultType="long">
+    SELECT MEMBER_NO
+    FROM TB_MEMBER
+    WHERE MEMBER_ID = #{memberId}
+  </select>
+
+  <select id="selectMemberNoByEmail" resultType="long">
+    SELECT MEMBER_NO
+    FROM TB_MEMBER
+    WHERE EMAIL = #{email}
+  </select>
+
+    <!-- 댓글 삭제(soft) — 작성자 본인만 Service에서 검증 후 호출 -->
+  <update id="softDeleteComment">
+    UPDATE TB_POST_COMMENT
+    SET IS_DELETED = 'Y'
+    WHERE COMMENT_ID = #{commentId}
+      AND NVL(IS_DELETED, 'N') = 'N'
+  </update>
+
+  <update id="updateCommentBody">
+    UPDATE TB_POST_COMMENT
+    SET BODY = #{body}
+    WHERE COMMENT_ID = #{commentId}
+      AND NVL(IS_DELETED, 'N') = 'N'
+  </update>
 
 </mapper>

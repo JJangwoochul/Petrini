@@ -1,4 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  - 박유정 / 2026-07-09
+  - 게시글 작성 화면
+
+  [작성 화면 흐름]
+  1. GET /community/write → 로그인 확인 후 이 JSP 표시
+  2. form POST /community/write (multipart/form-data)
+  3. 성공 → /community/detail?id=... redirect + successMessage
+  4. 실패 → ?error=member / ?error=save
+
+  [form 필드]
+  - boardType : TOWN / SHARE / LIFE
+  - title, body, photos(최대 5장)
+--%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="community" />
@@ -22,49 +36,64 @@
   .btn-cancel-write{padding:12px 28px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text-sub);font-size:15px;font-weight:700;cursor:pointer}
   .btn-submit-write{padding:12px 32px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:var(--transition)}
   .btn-submit-write:hover{background:var(--primary-dark)}
+  .write-error{background:#FEE2E2;border:1px solid #FCA5A5;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;font-size:14px;color:#B91C1C;line-height:1.6}
 </style>
+
+<form method="post"
+      action="${contextPath}/community/write"
+      enctype="multipart/form-data">
 <div class="write-wrap">
   <h1 class="write-title">게시글 작성</h1>
+  <c:if test="${param.error eq 'member'}">
+    <div class="write-error">로그인은 되어 있지만 <strong>DB에 회원 정보가 없습니다.</strong> 테스트 계정이 아닌, <strong>회원가입으로 만든 계정</strong>으로 로그인했는지 확인해 주세요.</div>
+  </c:if>
+  <c:if test="${param.error eq 'save'}">
+    <div class="write-error">등록에 실패했습니다. 잠시 후 다시 시도해 주세요. (이미지 용량·로그인 계정도 확인해 주세요)</div>
+  </c:if>
   <div class="write-form-group">
     <label>게시판 선택</label>
-    <select>
-      <option value="">게시판을 선택하세요</option>
-      <option>동네소식</option>
-      <option>분실·보호</option>
-      <option>무료나눔</option>
-      <option>집사생활</option>
-    </select>
+    <select name="boardType" required>
+  <option value="">게시판을 선택하세요</option>
+  <option value="TOWN">집사생활</option>
+  <option value="SHARE">무료나눔</option>
+  <option value="LIFE">수의사 상담</option>
+</select>
   </div>
   <div class="write-form-group">
     <label>제목</label>
-    <input type="text" placeholder="제목을 입력하세요">
+    <input type="text" name="title" placeholder="제목을 입력하세요" required>
   </div>
   <div class="write-form-group">
     <label>내용</label>
     <div class="write-editor">
       <div class="write-toolbar">
-        <button class="toolbar-btn"><strong>B</strong></button>
-        <button class="toolbar-btn"><em>I</em></button>
-        <button class="toolbar-btn"><u>U</u></button>
-        <button class="toolbar-btn">H1</button>
-        <button class="toolbar-btn">H2</button>
-        <button class="toolbar-btn">목록</button>
-        <button class="toolbar-btn">링크</button>
+        <button type="button" class="toolbar-btn"><strong>B</strong></button>
+        <button type="button" class="toolbar-btn"><em>I</em></button>
+        <button type="button" class="toolbar-btn"><u>U</u></button>
+        <button type="button" class="toolbar-btn">H1</button>
+        <button type="button" class="toolbar-btn">H2</button>
+        <button type="button" class="toolbar-btn">목록</button>
+        <button type="button" class="toolbar-btn">링크</button>
       </div>
-      <textarea class="write-textarea" placeholder="내용을 입력하세요..."></textarea>
+      <textarea class="write-textarea" name="body" placeholder="내용을 입력하세요..." required></textarea>
     </div>
   </div>
   <div class="write-form-group">
     <label>이미지 첨부 (최대 5장)</label>
-    <div class="write-img-upload">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      <span>클릭하여 이미지 업로드</span>
-      <small>JPG, PNG, GIF (개당 최대 10MB)</small>
-    </div>
+    <label class="write-img-upload" style="cursor:pointer">
+  <input type="file" name="photos" accept="image/*" multiple style="display:none"
+         onchange="this.closest('.write-form-group').querySelector('.upload-label').textContent =
+         this.files.length ? this.files.length + '장 선택됨' : '클릭하여 이미지 업로드'">
+  <svg viewBox="0 0 24 24">...</svg>
+  <span class="upload-label">클릭하여 이미지 업로드</span>
+  <small>JPG, PNG, GIF (최대 5장)</small>
+    </label>
   </div>
   <div class="write-btn-row">
-    <button class="btn-cancel-write" onclick="history.back()">취소</button>
-    <button class="btn-submit-write" onclick="alert('게시글이 등록되었습니다.')">등록하기</button>
+    <button type="button" class="btn-cancel-write" onclick="history.back()">취소</button>
+    <button type="submit" class="btn-submit-write">등록하기</button>
   </div>
 </div>
+</form>
+ 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

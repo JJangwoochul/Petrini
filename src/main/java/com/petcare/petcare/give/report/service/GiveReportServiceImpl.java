@@ -177,15 +177,46 @@ public class GiveReportServiceImpl implements GiveReportService {
     public GiveReportVO getReportDetail(long postId) {
         GiveReportVO report = giveReportMapper.selectReportDetail(postId);
         if (report != null) {
+            parseLostFeature(report);
             // TB_FILE에서 사진 URL 목록 조회 → detail.jsp photoUrls
             report.setPhotoUrls(giveReportMapper.selectFileUrlsByPostId(postId));
         }
         return report;
     }
 
+    /** LOST_FEATURE(크기|색|성별|특징) → VO 폼 필드. 빈 구간도 인덱스 유지 */
+    private void parseLostFeature(GiveReportVO vo) {
+        String raw = vo.getLostFeature();
+        if (raw == null || raw.isBlank()) {
+            return;
+        }
+        String[] parts = raw.split("\\|", -1);
+        if (parts.length > 0 && !parts[0].isBlank()) {
+            vo.setAnimalSize(parts[0].trim());
+        }
+        if (parts.length > 1 && !parts[1].isBlank()) {
+            vo.setFurColor(parts[1].trim());
+        }
+        if (parts.length > 2 && !parts[2].isBlank()) {
+            vo.setGender(parts[2].trim());
+        }
+        if (parts.length > 3 && !parts[3].isBlank()) {
+            String tags = parts[3].trim();
+            if (parts.length > 4) {
+                StringBuilder sb = new StringBuilder(tags);
+                for (int i = 4; i < parts.length; i++) {
+                    sb.append('|').append(parts[i]);
+                }
+                tags = sb.toString();
+            }
+            vo.setFeatureTags(tags);
+        }
+    }
+
     @Override
-    public List<GiveReportVO> getReportList() {
-        List<GiveReportVO> list = giveReportMapper.selectReportList();
+    public List<GiveReportVO> getReportList(String status) {
+        String normalized = normalizeListStatus(status);
+        List<GiveReportVO> list = giveReportMapper.selectReportList(normalized);
         for (GiveReportVO item : list) {
             // 첫 번째 사진을 목록 썸네일로 사용 → list.jsp thumbUrl
             List<String> urls = giveReportMapper.selectFileUrlsByPostId(item.getPostId());
@@ -194,6 +225,21 @@ public class GiveReportServiceImpl implements GiveReportService {
             }
         }
         return list;
+    }
+
+    private String normalizeListStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "";
+        }
+        return switch (status.trim().toUpperCase()) {
+            case "FINDING", "OWNER_FOUND", "RESCUED" -> status.trim().toUpperCase();
+            default -> "";
+        };
+    }
+
+    @Override
+    public int getReportCount() {
+        return giveReportMapper.selectReportCount();
     }
 
     /**
@@ -255,4 +301,66 @@ public class GiveReportServiceImpl implements GiveReportService {
         }
         return ".jpg";
     }
+
+    private static final java.util.Set<String> FINDING_STATUS_CODES =
+        java.util.Set.of("FINDING", "RESCUED", "OWNER_FOUND");
+
+    @Override
+    public void updateFindingStatus(long postId, String findingStatus, MemberVO loginMember) {
+    // 1) 로그인 확인
+    if (loginMember == null) {
+        throw new IllegalStateException("LOGIN_REQUIRED");
+    }
+
+    // 2) 허용된 상태값인지 확인
+    if (findingStatus == null || !FINDING_STATUS_CODES.contains(findingStatus)) {
+        throw new IllegalArgumentException("INVALID_STATUS");
+    }
+
+    // 3) 글 조회
+    GiveReportVO report = giveReportMapper.selectReportDetail(postId);
+    if (report == null) {
+        throw new IllegalStateException("REPORT_NOT_FOUND");
+    }
+
+    // 4) 작성자 본인만 변경 가능
+    Long loginMemberNo = lookupMemberNo(loginMember);
+    if (loginMemberNo == null || !loginMemberNo.equals(report.getMemberNo())) {
+        throw new IllegalStateException("FORBIDDEN");
+    }
+
+    // 5) 기존 tags에서 진행상태만 교체 (FOUND/LOST/TEMP_CARE 는 유지)
+    String newTags = replaceFindingStatus(report.getTags(), findingStatus);
+
+    GiveReportVO updateVo = new GiveReportVO();
+    updateVo.setPostId(postId);
+    updateVo.setTags(truncate(newTags, 500));
+
+    giveReportMapper.updateReportTags(updateVo);  
+    }
+
+    /**
+ * TAGS 예: FOUND,FINDING,TEMP_CARE
+ * → FOUND,RESCUED,TEMP_CARE (진행상태 토큰만 교체)
+ */
+private String replaceFindingStatus(String oldTags, String newStatus) {
+    java.util.List<String> parts = new java.util.ArrayList<>();
+    if (oldTags != null && !oldTags.isBlank()) {
+        for (String part : oldTags.split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            // 진행상태 코드는 제외하고 나머지만 유지
+            if (!FINDING_STATUS_CODES.contains(trimmed)) {
+                parts.add(trimmed);
+            }
+        }
+    }
+    parts.add(newStatus);
+    return String.join(",", parts);
+}
+
+
+
 }

@@ -1,14 +1,29 @@
 /**
  * 역할: 커뮤니티 게시글 URL 처리 → Service 호출 → JSP 반환
  *
- * - 박유정 / 2026-07-08
- * - STEP 3: 목록 DB 연동 (탭별 boardType 필터)
+ * - 박유정 / 2026-07-08~10
  *
  * [목록 화면 흐름]
- * 1. 사용자가 /community 또는 /community?boardType=TOWN 등으로 접속
- * 2. boardType 파라미터 받음 (빈값=전체, TOWN/SHARE/LIFE=탭별)
- * 3. communityPostService.getPostList(boardType) 호출
- * 4. list, boardType 을 model 에 넣고 community/list.jsp 반환
+ * 1. GET /community?boardType=...&keyword=...&page=...
+ * 2. communityPostService.getPostList() → TB_POST + 썸네일
+ * 3. list.jsp 에 ${list} 전달
+ *
+ * [상세 화면 흐름]
+ * 1. GET /community/detail?id=번호
+ * 2. getPostDetail() → 조회수 +1, 사진 URL 조회
+ * 3. comments 목록 + liked(좋아요 여부) model 추가
+ * 4. detail.jsp 반환
+ *
+ * [작성 화면 흐름]
+ * 1. GET /community/write → 로그인 확인 후 write.jsp
+ * 2. POST /community/write → insertPost() → 상세 redirect + flash 메시지
+ *
+ * [댓글]
+ * 1. GET detail → communityCommentService.getCommentList()
+ * 2. POST /community/comment → TB_POST_COMMENT INSERT
+ * 3. POST /community/comment/delete → IS_DELETED='Y' (작성자 본인)
+ * 4. POST /community/comment/update → BODY 수정 (작성자 본인)
+ * 5. POST /community/report → TB_POST_REPORT INSERT
  *
  * [탭 ↔ boardType]
  * - 전체     → "" (빈값)
@@ -18,58 +33,374 @@
  * - 재능나눔 → /community/talent/list (별도 Controller)
  *
  * 연결
- * - Service: CommunityPostService
+ * - Service: CommunityPostService, CommunityReactionService, CommunityCommentService
  *
  * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
- * return 경로는 담당 JSP와 동일하게 맞출 것
  */
 
 package com.petcare.petcare.community.post.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/*
- *  2026/07/06 장우철
- * id 파라미터 추가
- */
-import org.springframework.web.bind.annotation.RequestParam;
-
+import com.petcare.petcare.community.comment.service.CommunityCommentService;
+import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.community.post.service.CommunityPostService;
+import com.petcare.petcare.community.post.vo.CommunityPostVO;
+import com.petcare.petcare.community.reaction.service.CommunityReactionService;
+import com.petcare.petcare.community.report.service.CommunityReportService;
+import com.petcare.petcare.member.vo.MemberVO;
 
- @Controller("communityController")
+import java.util.List;
+
+import jakarta.servlet.http.HttpSession;
+
+@Controller("communityController")
 @RequestMapping("/community")
 public class CommunityPostController {
 
-    private final CommunityPostService communityPostService;
+    private static final Logger log = LoggerFactory.getLogger(CommunityPostController.class);
 
-    public CommunityPostController(CommunityPostService communityPostService) {
+    private final CommunityPostService communityPostService;
+    private final CommunityReactionService communityReactionService;
+    private final CommunityCommentService communityCommentService;
+    private final CommunityReportService communityReportService;
+
+    public CommunityPostController(
+            CommunityPostService communityPostService,
+            CommunityReactionService communityReactionService,
+            CommunityCommentService communityCommentService,
+            CommunityReportService communityReportService) {
         this.communityPostService = communityPostService;
+        this.communityReactionService = communityReactionService;
+        this.communityCommentService = communityCommentService;
+        this.communityReportService = communityReportService;
     }
 
     /** 게시글 목록 — boardType 으로 탭별 필터, list.jsp 에 ${list} 전달 */
     @GetMapping({"", "/"})
     public String list(
             @RequestParam(defaultValue = "") String boardType,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "") String petSpecies,
+            @RequestParam(defaultValue = "") String vetStatus,
+            @RequestParam(defaultValue = "1") int page,
             Model model) {
-        model.addAttribute("list", communityPostService.getPostList(boardType));
-        model.addAttribute("boardType", boardType); // index.jsp 탭 .on 표시용
+        if (page < 1) {
+            page = 1;
+        }
+        int totalPages = communityPostService.getTotalPages(boardType, keyword, petSpecies, vetStatus);
+        if (page > totalPages) {
+            page = totalPages;
+        }
+        model.addAttribute("list",
+                communityPostService.getPostList(boardType, keyword, page, petSpecies, vetStatus));
+        model.addAttribute("boardType", boardType);
+        model.addAttribute("keyword", keyword != null ? keyword.trim() : "");
+        model.addAttribute("petSpecies", petSpecies != null ? petSpecies.trim() : "");
+        model.addAttribute("vetStatus", vetStatus != null ? vetStatus.trim() : "");
+        model.addAttribute("page", page);
+        model.addAttribute("totalCount",
+                communityPostService.getPostCount(boardType, keyword, petSpecies, vetStatus));
+        model.addAttribute("totalPages", totalPages);
         return "community/list";
     }
     
-    /* 상세 DB조회 -> defaultValue 값에는 상세보기 기능 구현시 id값 입력 / 현재-> 상세기능 x */
-    /** 게시글 상세 — STEP 5 에서 DB 연동 예정 */
+    /** 게시글 상세 — post + comments + liked → detail.jsp */
     @GetMapping("/detail")
-    public String detail(@RequestParam(defaultValue = "1") String id) {
+    public String detail(@RequestParam long id, Model model, HttpSession session) {
+        CommunityPostVO post = communityPostService.getPostDetail(id);
+        if (post == null) {
+            return "redirect:/community?error=notfound";
+        }
+        MemberVO member = getMemberOrNull(session);
+
+        List<CommunityCommentVO> comments = List.of();
+        try {
+            comments = communityCommentService.getCommentList(id);
+        } catch (Exception e) {
+            log.warn("community comment load failed: postId={}", id, e);
+        }
+
+        boolean liked = false;
+        try {
+            liked = communityReactionService.isLiked(id, member, session);
+        } catch (Exception e) {
+            log.warn("community like check failed: postId={}", id, e);
+        }
+
+        model.addAttribute("post", post);
+        model.addAttribute("comments", comments);
+        model.addAttribute("commentCount", countComments(comments));
+        model.addAttribute("liked", liked);
+        model.addAttribute("isLoggedIn", member != null);
+        Long loginMemberNo = null;
+        if (member != null) {
+            loginMemberNo = communityCommentService.resolveLoginMemberNo(member);
+        }
+        model.addAttribute("loginMemberNo", loginMemberNo);
         return "community/detail";
     }
 
-    /** 게시글 작성 화면 — STEP 4 에서 POST 연동 예정 */
+    /**
+     * [댓글·대댓글 등록 화면 흐름]
+     * 1. POST /community/comment (postId, body, parentId 선택)
+     * 2. parentId 없음 → 일반댓글 / 있음 → 대댓글 (PARENT_ID)
+     * 3. 성공 시 상세 redirect / 실패 시 ?error=...
+     */
+    @PostMapping("/comment")
+    public String insertComment(
+            @RequestParam long postId,
+            @RequestParam String body,
+            @RequestParam(required = false) Long parentId,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/detail?id=" + postId;
+        }
+        try {
+            communityCommentService.insertComment(postId, body, member, parentId);
+            if (parentId == null) {
+                communityPostService.markLifeAnswered(postId);
+            }
+            return "redirect:/community/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            log.warn("community comment insert state error: {}", e.getMessage());
+            if ("MEMBER_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=member";
+            }
+            if ("LOGIN_REQUIRED".equals(e.getMessage())) {
+                return "redirect:/login?redirect=/community/detail?id=" + postId;
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        } catch (IllegalArgumentException e) {
+            if ("INVALID_PARENT".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=comment";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=empty";
+        } catch (Exception e) {
+            log.error("community comment insert failed", e);
+            if (isSequenceError(e)) {
+                return "redirect:/community/detail?id=" + postId + "&error=seq";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        }
+    }
+     
+    /**
+    * [댓글 삭제 화면 흐름]
+    * 1. POST /community/comment/delete (commentId, postId)
+    * 2. 작성자 본인 확인 → IS_DELETED='Y'
+    * 3. 상세 redirect
+    */
+    @PostMapping("/comment/delete")
+    public String deleteComment(
+            @RequestParam long commentId,
+            @RequestParam long postId,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/detail?id=" + postId;
+        }
+        try {
+            communityCommentService.deleteComment(commentId, postId, member);
+            return "redirect:/community/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=forbidden";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        } catch (Exception e) {
+            log.error("community comment delete failed", e);
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        }
+    }
+
+    /**
+     * [댓글 수정]
+     * POST /community/comment/update
+     */
+    @PostMapping("/comment/update")
+    public String updateComment(
+            @RequestParam long commentId,
+            @RequestParam long postId,
+            @RequestParam String body,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/detail?id=" + postId;
+        }
+        try {
+            communityCommentService.updateComment(commentId, postId, body, member);
+            return "redirect:/community/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=forbidden";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        } catch (IllegalArgumentException e) {
+            if ("EMPTY_BODY".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=empty";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        } catch (Exception e) {
+            log.error("community comment update failed", e);
+            return "redirect:/community/detail?id=" + postId + "&error=comment";
+        }
+    }
+
+    /**
+     * [게시글 신고]
+     * POST /community/report
+     */
+    @PostMapping("/report")
+    public String reportPost(
+            @RequestParam long postId,
+            @RequestParam String reasonCd,
+            @RequestParam(required = false) String reasonDetail,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/detail?id=" + postId;
+        }
+        try {
+            communityReportService.insertPostReport(postId, reasonCd, reasonDetail, member);
+            return "redirect:/community/detail?id=" + postId + "&reported=1";
+        } catch (IllegalStateException e) {
+            if ("SELF_REPORT".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=selfReport";
+            }
+            if ("DUPLICATE_REPORT".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=duplicateReport";
+            }
+            if ("MEMBER_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=member";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=report";
+        } catch (IllegalArgumentException e) {
+            if ("EMPTY_REASON".equals(e.getMessage()) || "INVALID_REASON".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=reportReason";
+            }
+            if ("POST_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/community?error=notfound";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=report";
+        } catch (Exception e) {
+            log.error("community post report failed", e);
+            if (isReportSequenceError(e)) {
+                return "redirect:/community/detail?id=" + postId + "&error=reportSeq";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=report";
+        }
+    }
+
+    private boolean isSequenceError(Throwable e) {
+        Throwable cur = e;
+        while (cur != null) {
+            String msg = cur.getMessage();
+            if (msg != null && (msg.contains("ORA-02289")
+                    || msg.contains("SEQ_TB_POST_COMMENT")
+                    || msg.contains("sequence does not exist"))) {
+                return true;
+            }
+            cur = cur.getCause();
+        }
+        return false;
+    }
+
+    private boolean isReportSequenceError(Throwable e) {
+        Throwable cur = e;
+        while (cur != null) {
+            String msg = cur.getMessage();
+            if (msg != null && (msg.contains("ORA-02289")
+                    || msg.contains("SEQ_TB_POST_REPORT")
+                    || msg.contains("sequence does not exist"))) {
+                return true;
+            }
+            cur = cur.getCause();
+        }
+        return false;
+    }
+
+
+    /** 게시글 작성 화면 — 로그인 확인 후 write.jsp */
     @GetMapping("/write")
-    public String write() {
+    public String write(HttpSession session) {
+        if (getMemberOrNull(session) == null) {
+            return "redirect:/login?redirect=/community/write";
+        }
         return "community/write";
+    }
+
+    /** 게시글 등록 — TB_POST + 사진 저장 후 상세 또는 LIFE 목록 redirect */
+    @PostMapping("/write")
+    public String writeSubmit(
+            @ModelAttribute CommunityPostVO vo,
+            @RequestParam(value = "photos", required = false) MultipartFile[] photos,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        boolean isLife = vo.getBoardType() != null && "LIFE".equalsIgnoreCase(vo.getBoardType().trim());
+        String lifeListUrl = "/community?boardType=LIFE";
+        String loginRedirect = isLife ? lifeListUrl : "/community/write";
+
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=" + loginRedirect;
+        }
+        try {
+            communityPostService.insertPost(vo, member, photos);
+            if (isLife) {
+                redirectAttributes.addFlashAttribute("successMessage", "상담 글이 등록되었습니다.");
+                return "redirect:" + lifeListUrl;
+            }
+            redirectAttributes.addFlashAttribute("successMessage", "게시글이 등록되었습니다.");
+            return "redirect:/community/detail?id=" + vo.getPostId();
+        } catch (IllegalStateException e) {
+            log.warn("community write failed: {}", e.getMessage(), e);
+            if ("MEMBER_NOT_FOUND".equals(e.getMessage())) {
+                return isLife
+                        ? "redirect:" + lifeListUrl + "&error=member"
+                        : "redirect:/community/write?error=member";
+            }
+            if ("LOGIN_REQUIRED".equals(e.getMessage())) {
+                return "redirect:/login?redirect=" + loginRedirect;
+            }
+            return isLife
+                    ? "redirect:" + lifeListUrl + "&error=save"
+                    : "redirect:/community/write?error=save";
+        } catch (Exception e) {
+            log.error("community write failed", e);
+            return isLife
+                    ? "redirect:" + lifeListUrl + "&error=save"
+                    : "redirect:/community/write?error=save";
+        }
+    }
+
+    private MemberVO getMemberOrNull(HttpSession session) {
+        Object member = session.getAttribute("memberInfo");
+        if (member instanceof MemberVO memberVO) {
+            return memberVO;
+        }
+        return null;
+    }
+
+    private int countComments(List<CommunityCommentVO> parents) {
+        int count = 0;
+        for (CommunityCommentVO parent : parents) {
+            count++;
+            if (parent.getReplies() != null) {
+                count += parent.getReplies().size();
+            }
+        }
+        return count;
     }
 }
