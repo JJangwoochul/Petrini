@@ -191,120 +191,9 @@
   <a href="${sortBaseUrl}&sort=priceAsc" class="sort-btn ${selectedSort == 'priceAsc' ? 'on' : ''}">낮은가격</a>
   <a href="${sortBaseUrl}&sort=priceDesc" class="sort-btn ${selectedSort == 'priceDesc' ? 'on' : ''}">높은가격</a>
 </div>
+</div>
 
-    </div>
-
-    <%--<div class="product-grid">
-      <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=1'">
-        <div class="product-thumb-wrap">
-          <img class="product-thumb" src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=400&q=70&auto=format&fit=crop" alt="사료" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <span class="product-badge">BEST</span>
-          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
-        </div>
-        <div class="product-body">
-          <div class="product-brand">로얄캐닌</div>
-          <div class="product-name">미디엄 어덜트 사료 4kg</div>
-          <div class="product-rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>4.8 (324)</span>
-          </div>
-          <div class="product-price">
-            <span class="price-rate">11%</span>
-            <span class="price-sale">48,900원</span>
-            <span class="price-origin">55,000원</span>
-          </div>
-        </div>
-        <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
-      </div>
-
-      <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=2'">
-        <div class="product-thumb-wrap">
-          <img class="product-thumb" src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&q=70&auto=format&fit=crop" alt="장난감" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
-        </div>
-        <div class="product-body">
-          <div class="product-brand">PetPlay</div>
-          <div class="product-name">노즈워크 매트 오렌지 — 인지력 향상 장난감</div>
-          <div class="product-rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>4.6 (189)</span>
-          </div>
-          <div class="product-price"><span class="price-sale">18,500원</span></div>
-        </div>
-        <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
-      </div>
-
-      <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=3'">
-        <div class="product-thumb-wrap">
-          <img class="product-thumb" src="https://images.unsplash.com/photo-1601758174114-e711c0cbaa69?w=400&q=70&auto=format&fit=crop" alt="간식" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <span class="product-badge">NEW</span>
-          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
-        </div>
-        <div class="product-body">
-          <div class="product-brand">냥냥</div>
-          <div class="product-name">수제 져키 트릿 200g</div>
-          <div class="product-rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>4.7 (241)</span>
-          </div>
-          <div class="product-price"><span class="price-rate">15%</span><span class="price-sale">13,000원</span><span class="price-origin">15,300원</span></div>
-        </div>
-        <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
-      </div>
-
-      <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=4'">
-        <div class="product-thumb-wrap">
-          <img class="product-thumb" src="https://images.unsplash.com/photo-1596854407944-bf87f6fdd049?w=400&q=70&auto=format&fit=crop" alt="하네스" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
-        </div>
-        <div class="product-body">
-          <div class="product-brand">WalkMe</div>
-          <div class="product-name">H형 하네스 M사이즈 블루</div>
-          <div class="product-rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>4.5 (98)</span>
-          </div>
-          <div class="product-price"><span class="price-rate">21%</span><span class="price-sale">22,000원</span><span class="price-origin">28,000원</span></div>
-        </div>
-        <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
-      </div>
-
-      <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=5'">
-        <div class="product-thumb-wrap">
-          <img class="product-thumb" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=70&auto=format&fit=crop" alt="침대" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
-        </div>
-        <div class="product-body">
-          <div class="product-brand">PetNest</div>
-          <div class="product-name">메모리폼 반려견 침대 L사이즈</div>
-          <div class="product-rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>4.9 (412)</span>
-          </div>
-          <div class="product-price"><span class="price-sale">59,000원</span></div>
-        </div>
-        <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
-      </div>
-
-      <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=6'">
-        <div class="product-thumb-wrap">
-          <img class="product-thumb" src="https://images.unsplash.com/photo-1516750105099-4b8a83e217ee?w=400&q=70&auto=format&fit=crop" alt="샴푸" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
-          <span class="product-badge">SALE</span>
-          <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>
-        </div>
-        <div class="product-body">
-          <div class="product-brand">PetClean</div>
-          <div class="product-name">순한 강아지 샴푸 500ml — 민감성 피부용</div>
-          <div class="product-rating">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>4.4 (167)</span>
-          </div>
-          <div class="product-price"><span class="price-rate">30%</span><span class="price-sale">12,600원</span><span class="price-origin">18,000원</span></div>
-        </div>
-        <div class="product-footer"><button class="btn-cart">장바구니 담기</button></div>
-      </div>
-    </div>--%>
-
+   
    <%-- 지윤 26.07.06: 하드코딩 카드 6개 -> productList 실데이터 forEach로 교체 (USER-03) --%>
 <div class="product-grid">
   <c:forEach var="p" items="${productList}">
@@ -336,21 +225,11 @@
           </c:if>
         </div>
       </div>
-      <div class="product-footer"><button class="btn-cart" data-product-id="${p.productId}" data-price="${p.salePrice}">장바구니 담기</button></div>
+      <%--<div class="product-footer"><button class="btn-cart" data-product-id="${p.productId}" data-price="${p.salePrice}">장바구니 담기</button></div> 상품목록에서 장바구니담기 제거 옵션걸려서 애매함--%>
     </div>
   </c:forEach>
 </div>
 
-
-   <%-- <div class="pagination">
-      <button class="page-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <button class="page-btn active">1</button>
-      <button class="page-btn">2</button>
-      <button class="page-btn">3</button>
-      <button class="page-btn">4</button>
-      <button class="page-btn">5</button>
-      <button class="page-btn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-    </div>--%>
     <%-- 지윤 26.07.06 페이지네이션 기능 추가: 하드코딩 1~5 -> totalPages만큼 자동 생성 --%>
 <%--<c:url var="pageBaseUrl" value="/store">
   <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
@@ -380,10 +259,8 @@
     <a class="page-btn" href="${pageBaseUrl}${pageSep}page=${currentPage + 1}"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></a>
   </c:if>
 </div>
-
 </div>
 </div>
-
 <script>
 
 document.querySelectorAll('.sort-btn').forEach(b => b.addEventListener('click', function(){
@@ -391,7 +268,8 @@ document.querySelectorAll('.sort-btn').forEach(b => b.addEventListener('click', 
   this.classList.add('on');
 }));
 //지윤 26.07.08 수정: 가짜 alert -> 실제 /store/cart/add 호출로 변경 (페이지 이동 없이 AJAX로 담기)
-document.querySelectorAll('.btn-cart').forEach(b => b.addEventListener('click', e => {
+//지윤 26.07.09 삭제: 목록카드 장바구니담기 관련 JS 통째로 제거 
+/*document.querySelectorAll('.btn-cart').forEach(b => b.addEventListener('click', e => {
   e.stopPropagation();
   var productId = b.dataset.productId;
   var price = b.dataset.price;
@@ -407,7 +285,7 @@ document.querySelectorAll('.btn-cart').forEach(b => b.addEventListener('click', 
       alert('장바구니 담기에 실패했습니다.');
     }
   });
-}));
+}));*/
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

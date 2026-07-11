@@ -32,6 +32,7 @@ import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.QnaVO;
 import com.petcare.petcare.store.vo.CartItemVO;
+import com.petcare.petcare.store.vo.CouponVO;
 
 @Mapper
 public interface StoreShopMapper {
@@ -90,4 +91,14 @@ public interface StoreShopMapper {
 
    //지윤 26.07.08 헤더 장바구니 뱃지용 - 회원의 장바구니 항목 개수
    int selectCartItemCount(@Param("memberNo") Long memberNo);
+
+   //지윤 26.07.09 회원 보유쿠폰 목록 조회 (미사용 쿠폰만)
+   List<CouponVO> selectMemberCoupons(@Param("memberNo") Long memberNo);
+
+   //지윤 07.09 상품 바로구매 -> 주문페이지
+   CartItemVO selectDirectOrderItem(@Param("productId") Long productId,
+                                 @Param("optionId") Long optionId);
+
+   //지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
+   List<CartItemVO> selectCartItemsByIds(@Param("cartItemIds") java.util.List<Long> cartItemIds);
 }

@@ -74,6 +74,12 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             sessionMember.setPointBalance(
                     found.getPointBalance() != null ? found.getPointBalance() : 0L);
 
+            // 2026/07/10 지윤 — 주문서 배송지 자동입력용으로 추가
+            sessionMember.setPhone(found.getPhone());
+            sessionMember.setZipcode(found.getZipcode());
+            sessionMember.setAddr1(found.getAddr1());
+            sessionMember.setAddr2(found.getAddr2());
+
             // 2026-07-09 장우철 — [변경 후] 승인된 사업자면 role=BIZ + bizType 세팅
             // 이유: TB_BUSINESS.STATUS_CD=APPROVED 일 때 신청 시 저장한 BIZ_TYPE 으로
             //       /biz/hospital, /biz/stay, /biz/store 등 업종별 화면 진입 (test* URL 과 동일 분기)

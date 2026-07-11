@@ -55,12 +55,12 @@
 
    <div class="cart-section-head">
   <input type="checkbox" class="cart-cb" id="checkAll" checked>
-  <h2>장바구니</h2>
+  <h2>전체 선택</h2>
   <span class="cart-count">${cartItems.size()}</span>
   <%-- 지윤 26.07.08 추가: 선택삭제(체크된 것만) / 전체삭제(장바구니 통째로) 버튼 --%>
   <div style="margin-left:auto;display:flex;gap:8px;">
-    <button type="button" id="btnDeleteSelected" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">선택삭제</button>
-    <button type="button" id="btnDeleteAll" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">전체삭제</button>
+    <button type="button" id="btnDeleteSelected" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">선택 삭제</button>
+    <button type="button" id="btnDeleteAll" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;color:var(--text-sub);cursor:pointer;">전체 삭제</button>
   </div>
 </div>
 
@@ -93,16 +93,16 @@
   <div class="cart-summary">
     <h3>주문 요약</h3>
     <div class="summary-row"><span>상품 금액</span><span id="sumProduct">98,900원</span></div>
-    <div class="summary-row"><span>배송비</span><span style="color:var(--primary);font-weight:700">무료</span></div>
-    <div class="summary-row"><span>쿠폰 할인</span><span style="color:var(--accent)">-0원</span></div>
-    <div class="coupon-input"><input type="text" placeholder="쿠폰 코드 입력"><button>적용</button></div>
+    <%-- 지윤 26.07.09 배송비 무료 고정 텍스트 -> 5만원 기준 실시간 계산으로 변경 --%>
+    <div class="summary-row"><span>배송비</span><span id="sumDelivery" style="color:var(--primary);font-weight:700">무료</span></div>
     <div class="summary-row total"><span>총 결제금액</span><span id="sumTotal">98,900원</span></div>
-    <button class="btn-order" id="btnOrder" onclick="location.href='${contextPath}/store/order'">주문하기 (3개)</button>
+    <button class="btn-order" id="btnOrder">주문하기 (3개)</button>
   </div>
 </div>
 <script>
 function won(n){ return n.toLocaleString('ko-KR') + '원'; }
 
+//지윤 26.07.09 배송비 계산 추가 (5만원 이상 무료, 미만은 3,000원)
 function recalc(){
   var total = 0, count = 0;
   document.querySelectorAll('.cart-item').forEach(function(item){
@@ -113,8 +113,10 @@ function recalc(){
     item.querySelector('.cart-price').textContent = won(lineTotal);
     if(checked){ total += lineTotal; count++; }
   });
+  var deliveryFee = (total === 0 || total >= 50000) ? 0 : 3000;
   document.getElementById('sumProduct').textContent = won(total);
-  document.getElementById('sumTotal').textContent = won(total);
+  document.getElementById('sumDelivery').textContent = deliveryFee === 0 ? '무료' : won(deliveryFee);
+  document.getElementById('sumTotal').textContent = won(total + deliveryFee);
   var btn = document.getElementById('btnOrder');
   btn.textContent = '주문하기 (' + count + '개)';
   btn.disabled = count === 0;
@@ -219,6 +221,18 @@ document.getElementById('btnDeleteAll').addEventListener('click', function(){
       alert('삭제에 실패했습니다.');
     }
   });
+});
+
+//지윤 26.07.09 추가: 주문하기 클릭 시 체크된 장바구니 항목ID들을 파라미터로 넘김
+document.getElementById('btnOrder').addEventListener('click', function () {
+  var checkedIds = Array.from(document.querySelectorAll('.cart-item'))
+    .filter(function(item){ return item.querySelector('.cart-cb').checked; })
+    .map(function(item){ return item.dataset.cartItemId; });
+  if (checkedIds.length === 0) {
+    alert('주문할 상품을 선택해주세요.');
+    return;
+  }
+  location.href = '${contextPath}/store/order?cartItemIds=' + checkedIds.join(',');
 });
 
 recalc();

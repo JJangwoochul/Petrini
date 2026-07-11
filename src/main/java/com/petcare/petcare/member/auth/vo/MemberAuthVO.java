@@ -28,4 +28,10 @@ public class MemberAuthVO {
     private String gradeCd;       // 회원 등급 코드 — TB_MEMBER.GRADE_CD (BRONZE/SILVER/GOLD)
     // 2026/07/08 장우철 — 마이페이지 DB 연동 (A단계)
     private Long pointBalance;    // 보유 포인트 — TB_MEMBER.POINT_BALANCE
+    // 2026/07/10 지윤 — 주문서 배송지 자동입력용으로 추가
+    private String phone;         // 휴대폰 번호 — TB_MEMBER.PHONE
+    private String zipcode;       // 우편번호 — TB_MEMBER.ZIP_CODE
+    private String addr1;         // 기본 주소 — TB_MEMBER.ADDR1
+    private String addr2;         // 상세 주소 — TB_MEMBER.ADDR2
 }
+
