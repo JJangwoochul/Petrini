@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="동물병원" />
-<c:set var="bizPage" value="info" />
+<c:set var="bizPage" value="profile" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
@@ -39,6 +39,12 @@
 		outline:none;font-family:inherit;width:100%;box-sizing:border-box;transition:border-color .2s}
 	.info-group input:focus,.info-group select:focus,.info-group textarea:focus{border-color:#2BAB82}
 	.info-group textarea{resize:vertical;min-height:100px;line-height:1.6}
+
+	/* 주소 검색 행 */
+	.info-input-row{display:flex;gap:8px}
+	.info-input-row input{flex:1}
+	.btn-addr{padding:10px 16px;border:none;border-radius:8px;background:#2BAB82;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s}
+	.btn-addr:hover{background:#1F8464}
 	
 	/* ═══════════════════════════════════
 	운영시간 테이블
@@ -189,6 +195,36 @@
           - Controller에서 : vo.setHoursJson()으로 자동 바인딩
       -->
       <input type="hidden" name="hoursJson" id="hoursJsonInput" value='${hospital.hoursJson}'>
+
+      <!-- 2026-07-10 장우철 — 기본 정보(이름/전화/주소)
+           이유: 유저 목록은 LAT 있을 때만 '상세보기' 노출. 주소 저장 시 지오코딩으로 LAT 세팅 -->
+      <div class="info-section">
+        <div class="info-stitle">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          </svg>
+          기본 정보
+        </div>
+        <div class="info-grid">
+          <div class="info-group">
+            <label>병원명 <span class="req">*</span></label>
+            <input type="text" name="name" value="${hospital.name}" required>
+          </div>
+          <div class="info-group">
+            <label>전화번호 <span class="req">*</span></label>
+            <input type="tel" name="phone" value="${hospital.phone}" required>
+          </div>
+          <div class="info-group full">
+            <label>주소 <span class="req">*</span></label>
+            <div class="info-input-row">
+              <input type="text" name="addr" id="addrInput" value="${hospital.addr}" readonly required placeholder="주소 검색 버튼을 눌러 주세요">
+              <button type="button" class="btn-addr" onclick="searchAddr()">주소 검색</button>
+            </div>
+            <input type="text" name="addrDetail" value="${hospital.addrDetail}" style="margin-top:8px" placeholder="상세 주소 (동/호수 등)">
+          </div>
+        </div>
+      </div>
+
       <div class="info-section">
         <div class="info-grid">
           <div class="info-group full">
@@ -556,6 +592,18 @@
 	   - JS 전체에서 이 배열을 순회하며 요일별 처리
 	   =================================== */
 	var DAYS = ['월','화','수','목','금','토','일','공휴일'];
+
+	/* 다음 주소 검색 → addr 입력 후 저장 시 서버에서 LAT/LNG 변환 */
+	function searchAddr() {
+		new daum.Postcode({
+			oncomplete: function(data) {
+				var addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+				document.getElementById('addrInput').value = addr;
+				var detail = document.querySelector('input[name="addrDetail"]');
+				if (detail) detail.focus();
+			}
+		}).open();
+	}
 
 
 	/* ===================================

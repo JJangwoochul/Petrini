@@ -38,8 +38,7 @@
         WHERE   B.BIZ_ID = #{bizId}
     </select> 
     
-    <!-- 2026-07-10 장우철 — 병원 최초 등록 (승인 시 빈 껍데기)
-         이유: HOSPITAL_ID NOT NULL PK — 미지정 시 ORA-01400 으로 승인 전체 롤백 -->
+    <!-- 2026-07-10 장우철 — 승인 시 병원 생성: 상호/전화/주소 복사 (LAT는 병원정보 저장 시 지오코딩) -->
     <insert id="insertHospital" parameterType="string">
         INSERT INTO TB_HOSPITAL (
                                     HOSPITAL_ID,
@@ -47,6 +46,8 @@
                                     MEMBER_NO,
                                     NAME,
                                     PHONE,
+                                    ADDR,
+                                    ADDR_DETAIL,
                                     APPROVE_DATE,
                                     STATUS_CD
                                 )
@@ -59,6 +60,8 @@
                   FETCH FIRST 1 ROW ONLY),
                 B.BIZ_NAME,
                 B.PHONE,
+                B.ADDR,
+                B.ADDR_DETAIL,
                 SYSDATE,
                 'ACTIVE'
         FROM    TB_BUSINESS B
@@ -70,18 +73,18 @@
               )
     </insert>
     
-    <!-- 병원(PK)로 수정 -->
+    <!-- 병원(PK)로 수정 — Oracle null 바인딩용 jdbcType 명시 (ORA-17004 방지) -->
     <update id="updateHospitalInfo" parameterType="com.petcare.petcare.hospital.vo.HospitalVO">
         UPDATE TB_HOSPITAL
-        SET    NAME         = #{name},
-               PHONE        = #{phone},
-               ADDR         = #{addr},
-               ADDR_DETAIL  = #{addrDetail},
-               DESCRIPTION  = #{description},
-               HOURS_JSON   = #{hoursJson},
-               TAG_LIST     = #{tagList},
-               LAT          = #{lat},
-               LNG          = #{lng}
+        SET    NAME         = #{name, jdbcType=VARCHAR},
+               PHONE        = #{phone, jdbcType=VARCHAR},
+               ADDR         = #{addr, jdbcType=VARCHAR},
+               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
+               DESCRIPTION  = #{description, jdbcType=VARCHAR},
+               HOURS_JSON   = #{hoursJson, jdbcType=CLOB},
+               TAG_LIST     = #{tagList, jdbcType=VARCHAR},
+               LAT          = #{lat, jdbcType=DOUBLE},
+               LNG          = #{lng, jdbcType=DOUBLE}
         WHERE  HOSPITAL_ID  = #{hospitalId}
     </update>
 

@@ -58,7 +58,7 @@ public class BizHospitalServiceImpl implements BizHospitalService {
     @Override
     @Transactional
     public void updateHospitalInfo(HospitalVO vo) {
-        // 주소가 있으면 좌표 변환
+        // 2026-07-10 장우철 — 주소 있으면 좌표 변환 (유저 목록 '상세보기'는 LAT 필수)
         if (vo.getAddr() != null && !vo.getAddr().isBlank()) {
             Map<String, Double> coords = kakaoMapService.geocodeAddress(vo.getAddr());
             if (coords != null) {
@@ -66,7 +66,7 @@ public class BizHospitalServiceImpl implements BizHospitalService {
                 vo.setLng(coords.get("lng"));
             }
         }
-        
+
         bizHospitalMapper.updateHospitalInfo(vo);
     }
 

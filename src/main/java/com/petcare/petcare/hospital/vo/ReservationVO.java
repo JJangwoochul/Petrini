@@ -8,6 +8,8 @@ package com.petcare.petcare.hospital.vo;
 
 import java.util.Date;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Getter;
@@ -26,6 +28,8 @@ public class ReservationVO {
     private String  targetId;       // 병원 예약 시 HOSPITAL_ID (VARCHAR2)
     private Long    roomId;
     private String  serviceName;
+    // 2026-07-11 장우철 — 폼(yyyy-MM-dd) 바인딩용 DateTimeFormat (@JsonFormat 만으로는 MVC 변환 실패)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date    resvDate;
     private String  resvTime;

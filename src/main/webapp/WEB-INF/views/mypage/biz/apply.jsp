@@ -163,11 +163,12 @@
                         <div class="biz-group full">
                             <label>사업장 주소 <span class="req">*</span></label>
                             <div class="biz-input-row">
-                                <input type="text" name="bizZipcode" placeholder="우편번호" style="max-width:120px">
+                                <!-- 2026-07-10 장우철 — VO(zipCode/addr/addrDetail)와 필드명 통일, DB 저장 -->
+                                <input type="text" name="zipCode" placeholder="우편번호" style="max-width:120px" readonly>
                                 <button class="btn-verify" id="btnAddr" type="button">주소 검색</button>
                             </div>
-                            <input type="text" name="bizAddr1" placeholder="기본 주소" style="margin-top:8px" value="판교역로 166">
-                            <input type="text" name="bizAddr2" placeholder="상세 주소" style="margin-top:8px">
+                            <input type="text" name="addr" placeholder="기본 주소" style="margin-top:8px" value="판교역로 166" readonly>
+                            <input type="text" name="addrDetail" placeholder="상세 주소" style="margin-top:8px">
                         </div>
                     </div>
                 </div>
@@ -312,9 +313,9 @@
         }
 
         // 주소
-        if (!$("input[name='bizZipcode']").val().trim()) {
+        if (!$("input[name='zipCode']").val().trim() || !$("input[name='addr']").val().trim()) {
             alert("주소를 입력하세요.");
-            $("input[name='bizName']").focus();
+            $("input[name='addr']").focus();
             return;
         }
 
@@ -357,9 +358,9 @@
                     addr = data.jibunAddress;
                 }
 
-                $("input[name='bizZipcode']").val(data.zonecode);
-                $("input[name='bizAddr1']").val(addr + extraAddr);
-                $("input[name='bizAddr2']").focus();
+                $("input[name='zipCode']").val(data.zonecode);
+                $("input[name='addr']").val(addr + extraAddr);
+                $("input[name='addrDetail']").focus();
             }
         }).open();
     });

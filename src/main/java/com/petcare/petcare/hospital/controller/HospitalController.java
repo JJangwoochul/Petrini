@@ -10,9 +10,6 @@
 
 package com.petcare.petcare.hospital.controller;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,10 +102,10 @@ public class HospitalController extends CommonConfigController {
     }
 
     // 2026-07-10 장우철 — 병원 예약 저장 (F2)
+    // 2026-07-11 장우철 — resvDate 는 VO @DateTimeFormat 으로 바인딩 (별도 String 파싱 제거)
     @PostMapping("/reserve")
     public String saveReserve(@ModelAttribute ReservationVO vo,
                               @RequestParam("hospitalId") Long hospitalId,
-                              @RequestParam("resvDate") String resvDateStr,
                               HttpSession session,
                               RedirectAttributes rttr) throws Exception {
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
@@ -118,12 +115,6 @@ public class HospitalController extends CommonConfigController {
 
         vo.setMemberNo(member.getMemberNo());
         vo.setTargetId(String.valueOf(hospitalId));
-
-        // 2026-07-10 장우철 — JSP hidden date(yyyy-MM-dd) 파싱
-        if (resvDateStr != null && !resvDateStr.isBlank()) {
-            LocalDate localDate = LocalDate.parse(resvDateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-            vo.setResvDate(java.util.Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        }
 
         Long resvId = hospitalService.createHospitalReservation(vo);
         return "redirect:/hospital/complete?resvId=" + resvId;

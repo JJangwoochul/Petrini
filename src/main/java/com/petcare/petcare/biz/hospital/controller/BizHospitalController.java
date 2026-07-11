@@ -242,9 +242,28 @@ public class BizHospitalController extends BizBaseController {
         }
         vo.setHospitalId(hospital.getHospitalId());
 
-        if (tagList != null) {
-            vo.setTagList(String.join(",", tagList));
+        // 2026-07-10 장우철 — 폼 미전송 필드만 기존값 유지 (주소 있으면 Service에서 지오코딩)
+        if (vo.getName() == null || vo.getName().isBlank()) {
+            vo.setName(hospital.getName());
         }
+        if (vo.getPhone() == null || vo.getPhone().isBlank()) {
+            vo.setPhone(hospital.getPhone());
+        }
+        if (vo.getAddr() == null || vo.getAddr().isBlank()) {
+            vo.setAddr(hospital.getAddr());
+            if (vo.getLat() == null) {
+                vo.setLat(hospital.getLat());
+            }
+            if (vo.getLng() == null) {
+                vo.setLng(hospital.getLng());
+            }
+        }
+        if (vo.getAddrDetail() == null) {
+            vo.setAddrDetail(hospital.getAddrDetail());
+        }
+
+        // 체크 없으면 빈 문자열로 저장 (미선택 = 태그 없음)
+        vo.setTagList(tagList != null ? String.join(",", tagList) : "");
 
         if (deleteFileIds != null) {
             for (Long fileId : deleteFileIds) {
