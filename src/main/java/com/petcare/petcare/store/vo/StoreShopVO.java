@@ -43,8 +43,8 @@ public class StoreShopVO {
     private Integer discountRate;
     private Integer stockQty;
     private String thumbnailUrl;
-
-   private Double avgRating;
+    private String description;
+    private Double avgRating;
     private Integer reviewCount;
 
     //지윤 26.07.07 상품 상세 이미지 목록

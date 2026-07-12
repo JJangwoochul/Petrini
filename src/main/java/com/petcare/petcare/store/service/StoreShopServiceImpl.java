@@ -28,6 +28,7 @@ import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.QnaVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.BrandVO;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
@@ -38,11 +39,11 @@ public class StoreShopServiceImpl implements StoreShopService {
     //지윤 26.07.06 페이지당 상품 개수 (요구사항 고정값)
     private static final int PAGE_SIZE = 12;
 
-    //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(pageNo) 추가
+    //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(pageNo) 추가, 26.07.12 가격대·브랜드 필터 파라미터 추가
     @Override
-    public List<StoreShopVO> getProductList(Long categoryId, String keyword, String sort, int pageNo) {
+    public List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand, String sort, int pageNo) {
         int offset = (pageNo - 1) * PAGE_SIZE;
-        List<StoreShopVO> list = storeShopMapper.selectProductList(categoryId, keyword, sort, offset, PAGE_SIZE);
+        List<StoreShopVO> list = storeShopMapper.selectProductList(categoryId, keyword, minPrice, maxPrice, brand, sort, offset, PAGE_SIZE);
         for (StoreShopVO p : list) {
             if (p.getPrice() != null && p.getSalePrice() != null && p.getPrice() > 0) {
                 int rate = (int) Math.round((p.getPrice() - p.getSalePrice()) * 100.0 / p.getPrice());
@@ -55,10 +56,17 @@ public class StoreShopServiceImpl implements StoreShopService {
     }
 
 //지윤 26.07.06 총 페이지 수 계산 (전체개수 / 12, 나머지 있으면 올림)
+//지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
   @Override
-  public int getTotalPages(Long categoryId, String keyword) {
-      int totalCount = storeShopMapper.selectProductCount(categoryId, keyword);
+  public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand) {
+      int totalCount = storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
       return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
+  }
+
+//지윤 26.07.12 사이드바 브랜드별 상품 수 조회 (브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능)
+  @Override
+  public List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice) {
+      return storeShopMapper.selectBrandCounts(categoryId, keyword, minPrice, maxPrice);
   }
 
 //지윤 26.07.06 카테고리 트리는 가공 없이 그대로 전달
@@ -170,5 +178,18 @@ public List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qt
 @Override
 public List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds) {
     return storeShopMapper.selectCartItemsByIds(cartItemIds);
+}
+//지윤 26.07.10 상품 Q&A 문의 등록
+//지윤 26.07.12 수정: 등록 직후 QNA_ID 조회해서 반환하도록 변경 (프론트에서 삭제버튼 바로 붙이기 위함)
+@Override
+public Long addProductQna(Long productId, Long memberNo, String question) {
+    storeShopMapper.insertProductQna(productId, memberNo, question);
+    return storeShopMapper.selectLatestQnaId(productId, memberNo);
+}
+
+//지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 삭제된 row수가 0이면 실패(본인 아니거나 답변 이미 달림)
+@Override
+public boolean deleteProductQna(Long qnaId, Long memberNo) {
+    return storeShopMapper.deleteProductQna(qnaId, memberNo) > 0;
 }
 }

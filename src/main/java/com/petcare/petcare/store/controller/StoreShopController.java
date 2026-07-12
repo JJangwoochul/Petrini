@@ -57,12 +57,16 @@ public class StoreShopController {
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
     //지윤 26.07.06 카테고리 트리(species/category/age 3단계) 적용
     // 우선순위: age > category > species (더 세부적으로 고른 게 있으면 그걸로 필터링)
+   //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
     @GetMapping({"", "/"})
     public String store(@RequestParam(required = false) String q,
                          @RequestParam(required = false, defaultValue = "5") Long species,
                          @RequestParam(required = false) Long category,
                          @RequestParam(required = false) Long age,
                          @RequestParam(required = false) String keyword,
+                         @RequestParam(required = false) Integer minPrice,
+                         @RequestParam(required = false) Integer maxPrice,
+                         @RequestParam(required = false) String brand,
                          @RequestParam(required = false, defaultValue = "popular") String sort,
                          @RequestParam(required = false, defaultValue = "1") int page,
                          Model model) {
@@ -71,18 +75,21 @@ public class StoreShopController {
         }
         Long effectiveCategoryId = (age != null) ? age : (category != null ? category : species);
 
-        model.addAttribute("productList", storeShopService.getProductList(effectiveCategoryId, keyword, sort, page));
+        model.addAttribute("productList", storeShopService.getProductList(effectiveCategoryId, keyword, minPrice, maxPrice, brand, sort, page));
         model.addAttribute("categoryTree", storeShopService.getCategoryTree());
+        model.addAttribute("brandList", storeShopService.getBrandList(effectiveCategoryId, keyword, minPrice, maxPrice));
         model.addAttribute("selectedSpecies", species);
         model.addAttribute("selectedCategory", category);
         model.addAttribute("selectedAge", age);
         model.addAttribute("selectedKeyword", keyword);
+        model.addAttribute("selectedMinPrice", minPrice);
+        model.addAttribute("selectedMaxPrice", maxPrice);
+        model.addAttribute("selectedBrand", brand);
         model.addAttribute("selectedSort", sort);
         model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword));
+        model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
         return "store/list";
     }
-
     
     
    //지윤 26.07.07 상품 상세 실데이터 연동
@@ -295,6 +302,34 @@ model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() !=
     }
     // 기존 쿠폰 조회는 그대로 유지
     model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));
-    return "store/order";
+ return "store/order";
+}
+
+//지윤 26.07.10 상품 Q&A 문의 등록 (AJAX)
+//지윤 26.07.12 수정: 응답을 "OK:qnaId" 형식으로 변경 (등록 직후 삭제버튼 붙이기 위함)
+@PostMapping("/qna/add")
+@ResponseBody
+public String addQna(@RequestParam Long productId, @RequestParam String question, HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "LOGIN_REQUIRED";
+    }
+    if (question == null || question.isBlank()) {
+        return "EMPTY";
+    }
+    Long qnaId = storeShopService.addProductQna(productId, memberNo, question.trim());
+    return "OK:" + qnaId;
+}
+
+//지윤 26.07.12 상품 Q&A 삭제 (AJAX, 본인 글 + 답변 미완료 건만 삭제 가능)
+@PostMapping("/qna/delete")
+@ResponseBody
+public String deleteQna(@RequestParam Long qnaId, HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "LOGIN_REQUIRED";
+    }
+    boolean deleted = storeShopService.deleteProductQna(qnaId, memberNo);
+    return deleted ? "OK" : "FAILED";
 }
 }
