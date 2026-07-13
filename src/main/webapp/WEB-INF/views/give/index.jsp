@@ -45,7 +45,7 @@
            class="give-tab ${giveTab eq 'report' ? 'active' : ''}">
           <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           분실·보호
-          <span class="tab-count">328</span>
+          <span class="tab-count">${empty reportCount ? 0 : reportCount}</span>
         </a>
     </div>
 </div>

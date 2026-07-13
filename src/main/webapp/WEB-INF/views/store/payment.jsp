@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -52,13 +54,18 @@
 
   <div class="order-section">
     <h3>주문 요약</h3>
-    <div class="summary-recap-row"><span>주문 상품</span><span>로얄캐닌 사료 4kg 외 2건</span></div>
-    <div class="summary-recap-row"><span>배송지</span>
-      <span class="recap-addr" style="display:inline-block;max-width:60%">
-        <strong>${memberInfo.memberName}</strong> · 010-0000-0000<br>서울특별시 마포구 합정동 123-4 (2층)
-      </span>
-    </div>
-    <div class="summary-recap-row"><span>배송 메모</span><span>문 앞에 놓아주세요</span></div>
+    <div class="summary-recap-row"><span>주문 상품</span>
+  <span>
+    <c:out value="${orderItems[0].productName}"/>
+    <c:if test="${fn:length(orderItems) > 1}"> 외 ${fn:length(orderItems) - 1}건</c:if>
+  </span>
+</div>
+<div class="summary-recap-row"><span>배송지</span>
+  <span class="recap-addr" style="display:inline-block;max-width:60%">
+    <strong>${recvName}</strong> · ${recvPhone}<br>${addr1} ${addr2}
+  </span>
+</div>
+<div class="summary-recap-row"><span>배송 메모</span><span>${deliveryMemo}</span></div>
   </div>
 
   <div class="order-section">
@@ -70,21 +77,26 @@
   <div class="order-section">
     <h3>최종 결제 금액</h3>
     <div class="order-total-box">
-      <div class="order-total-row"><span>상품 금액</span><span>98,900원</span></div>
-      <div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">무료</span></div>
-      <div class="order-total-row"><span>쿠폰/포인트 할인</span><span style="color:var(--accent)">-0원</span></div>
-      <div class="order-total-row final"><span>총 결제금액</span><span>98,900원</span></div>
+      <div class="order-total-row"><span>상품 금액</span><span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span></div>
+<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">
+        <c:choose>
+          <c:when test="${deliveryFee == 0}">무료</c:when>
+          <c:otherwise><fmt:formatNumber value="${deliveryFee}" pattern="#,###"/>원</c:otherwise>
+        </c:choose>
+      </span></div>
+<div class="order-total-row"><span>쿠폰/포인트 할인</span><span style="color:var(--accent)">-<fmt:formatNumber value="${totalDiscount}" pattern="#,###"/>원</span></div>
+<div class="order-total-row final"><span>총 결제금액</span><span><fmt:formatNumber value="${finalTotal}" pattern="#,###"/>원</span></div>
     </div>
     <div class="agree-row" style="margin-top:16px">
       <input type="checkbox" id="agreePay" checked onchange="document.getElementById('btnPayFinal').disabled=!this.checked">
       <label for="agreePay">주문 내용을 확인했으며 결제에 동의합니다.<a href="#" onclick="event.preventDefault()">전자결제 이용약관 보기</a></label>
     </div>
-    <button id="btnPayFinal" class="btn-pay" onclick="requestPayment()">98,900원 결제하기</button>
+   <button id="btnPayFinal" class="btn-pay" onclick="requestPayment()"><fmt:formatNumber value="${finalTotal}" pattern="#,###"/>원 결제하기</button>
   </div>
 </div>
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
-  const amount = 98900;
+  const amount = ${finalTotal};
   const clientKey = "${tossApiKey}"; // 토스 공개 테스트 키
   const customerKey = "petcare_user_${memberInfo.memberId}";
 

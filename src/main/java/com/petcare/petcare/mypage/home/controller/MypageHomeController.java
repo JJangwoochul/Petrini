@@ -43,12 +43,7 @@ public class MypageHomeController {
         return "mypage/dashboard";
     }
 
-    @GetMapping("/pets")
-    public String pets(HttpSession session) {
-        if (session.getAttribute("memberInfo") == null)
-            return "redirect:/login";
-        return "mypage/pets";
-    }
+    // 2026/07/11 장우철 — /mypage/pets 는 PetProfileController 로 이동
 
     @GetMapping("/health")
     public String health(HttpSession session) {

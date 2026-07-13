@@ -95,11 +95,13 @@ public class AdminBizServiceImpl implements AdminBizService {
 
         //HYJ 26.07.09 병원 사업자인 경우, TB_HOSPITAL 빈 껍데기 INSERT
         if ("HOSPITAL".equals(biz.getBizType())) {
-            try {
-                bizHospitalMapper.insertHospital(biz.getBizId());
-            } catch (Exception e) {
-                throw new RuntimeException("병원 정보 생성 실패", e);
-            }
+            bizHospitalMapper.insertHospital(biz.getBizId());
+        }
+
+        // 2026-07-10 장우철 — 승인 알림 INSERT (반려와 동일하게 TB_NOTIFICATION, 이메일/푸시 후순위)
+        Long memberNo = adminBizMapper.selectMemberNoByBizId(biz.getBizId());
+        if (memberNo != null) {
+            mypageNotifyService.sendBizApproveNotification(memberNo, biz.getBizName(), biz.getBizType());
         }
     }
 

@@ -31,6 +31,7 @@ import java.util.List;
 import com.petcare.petcare.store.vo.StoreShopVO;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.CartItemVO;
+import com.petcare.petcare.store.vo.CouponVO;
 
 public interface StoreShopService {
 //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
@@ -62,4 +63,13 @@ void deleteCartItems(java.util.List<Long> cartItemIds);
 
 //장바구니 숫자뱃지
 int getCartItemCount(Long memberNo);
+
+//지윤 26.07.09 회원 보유쿠폰 목록 조회
+List<CouponVO> getMemberCoupons(Long memberNo);
+
+//지윤 26.07.09 바로구매 클릭 시 해당 상품 주문페이지 이동
+List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qty);
+
+//지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
+List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds);
 }

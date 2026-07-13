@@ -8,7 +8,7 @@
         - MEMBER_ID, EMAIL 둘 다 비교 (화면에서 이메일로 로그인)
         - resultType: MemberAuthVO (camelCase 매핑)
         2026/07/08 장우철 — POINT_BALANCE 추가 (마이페이지 보유 포인트 세션용)
-    -->
+    
     <select id="selectMemberByLoginId"
             resultType="com.petcare.petcare.member.auth.vo.MemberAuthVO">
         SELECT
@@ -24,8 +24,30 @@
         FROM TB_MEMBER
         WHERE MEMBER_ID = #{loginId}
            OR EMAIL = #{loginId}
-    </select>
+    </select> -->
 
+    <!--2026/07/10 지윤 — 주문서(order.jsp) 배송지 자동 셋팅용 PHONE, ZIP_CODE, ADDR1, ADDR2 컬럼 추가 조회-->
+    <select id="selectMemberByLoginId"
+            resultType="com.petcare.petcare.member.auth.vo.MemberAuthVO">
+        SELECT
+            MEMBER_NO      AS memberNo,
+            MEMBER_ID      AS memberId,
+            MEMBER_PWD     AS memberPwd,
+            MEMBER_NAME    AS memberName,
+            NICKNAME       AS nickname,
+            EMAIL          AS email,
+            PHONE          AS phone,
+            ZIP_CODE       AS zipcode,
+            ADDR1          AS addr1,
+            ADDR2          AS addr2,
+            STATUS_CD      AS statusCd,
+            GRADE_CD       AS gradeCd,
+            POINT_BALANCE  AS pointBalance
+        FROM TB_MEMBER
+        WHERE MEMBER_ID = #{loginId}
+           OR EMAIL = #{loginId}
+    </select>
+    
     <!-- [변경 전] 2026/07/06 — POINT_BALANCE 미조회
     <select id="selectMemberByLoginId" ...>
         SELECT MEMBER_NO AS memberNo, ... GRADE_CD AS gradeCd
@@ -153,6 +175,7 @@
     </insert>
 
     <!-- 반려동물 INSERT (join — register 3단계, petName 있을 때만) -->
+    <!-- 2026/07/11 장우철 — DEL_YN='N' 명시 (DATABASE_TABLE TB_PET.DEL_YN 소프트삭제 컬럼) -->
     <insert id="insertPet" parameterType="com.petcare.petcare.member.auth.vo.MemberRegisterVO">
         <selectKey keyProperty="petId" resultType="long" order="BEFORE">
             SELECT SEQ_PET.NEXTVAL FROM DUAL
@@ -166,6 +189,7 @@
             AGE,
             WEIGHT,
             IS_REPRESENT,
+            DEL_YN,
             REG_DATE
         ) VALUES (
             #{petId},
@@ -176,6 +200,7 @@
             #{petAge, jdbcType=NUMERIC},
             #{petWeight, jdbcType=NUMERIC},
             'Y',
+            'N',
             SYSDATE
         )
     </insert>

@@ -1,24 +1,33 @@
 /**
- * 역할: 커뮤니티 반응(좋아요·신고) 비즈니스 로직 (interface)
+ * 역할: 커뮤니티 좋아요 비즈니스 로직 (interface)
+ *
+ * - 박유정 / 2026-07-09
  *
  * 담당 화면
- * - community/detail.jsp      좋아요·신고 (게시글 상세 내)
- *
- * 구현할 기능 예시
- * - 좋아요 토글
- * - 신고 등록
- * - 좋아요 수 조회
+ * - community/detail.jsp   좋아요 버튼 Ajax 토글
  *
  * 연결
  * - 구현: CommunityReactionServiceImpl
- * - 호출: CommunityReactionController
- * - DB: CommunityReactionMapper
+ * - 호출: CommunityReactionController, CommunityPostController (isLiked)
+ * - DB: CommunityReactionMapper, CommunityPostMapper (LIKE_CNT)
  *
  * 참고 테이블
- * - TB_COMMUNITY_LIKE
- * - TB_COMMUNITY_REPORT
+ * - TB_POST_LIKE
+ * - TB_POST.LIKE_CNT
  */
 
 package com.petcare.petcare.community.reaction.service;
 
-public interface CommunityReactionService {}
+import com.petcare.petcare.community.reaction.vo.CommunityLikeToggleResult;
+import com.petcare.petcare.member.vo.MemberVO;
+
+import jakarta.servlet.http.HttpSession;
+
+public interface CommunityReactionService {
+
+    // 상세 진입 시 — 현재 회원이 이 글에 좋아요 눌렀는지
+    boolean isLiked(long postId, MemberVO loginMember, HttpSession session);
+
+    // Ajax 토글 — TB_POST_LIKE INSERT/DELETE + LIKE_CNT 증감
+    CommunityLikeToggleResult toggleLike(long postId, MemberVO loginMember, HttpSession session);
+}

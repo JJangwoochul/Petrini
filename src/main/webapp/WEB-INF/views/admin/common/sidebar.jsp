@@ -41,12 +41,15 @@
         <a href="${contextPath}/admin/biz/list" class="adm-nav-link ${adminPage eq 'biz-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
             사업자 승인
-            <span class="adm-nav-badge">3</span>
+            <%-- 2026/07/11 장우철 — PENDING 승인대기 건수 (더미 3 제거) --%>
+            <c:if test="${pendingBizApproveCount > 0}">
+              <span class="adm-nav-badge">${pendingBizApproveCount}</span>
+            </c:if>
         </a>
         <a href="${contextPath}/admin/biz/talent" class="adm-nav-link ${adminPage eq 'biz-talent' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
             재능나눔 승인
-            <span class="adm-nav-badge">3</span>
+            <%-- 재능나눔 대기 건수 연동 전: 더미 배지 제거 --%>
         </a>
         <a href="${contextPath}/admin/community/list" class="adm-nav-link ${adminPage eq 'community-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>

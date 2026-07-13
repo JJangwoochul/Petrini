@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.give.animal.service.GiveAnimalService;
 import com.petcare.petcare.give.animal.vo.GiveAnimalListResult;
+import com.petcare.petcare.give.report.service.GiveReportService;
 
 @Controller("giveAnimalController")
 @RequestMapping("/give/animal")
@@ -36,6 +37,9 @@ public class GiveAnimalController {
 
     @Autowired
     private GiveAnimalService giveAnimalService;
+
+    @Autowired
+    private GiveReportService giveReportService;
 
     /**
      * 유기견 목록 페이지
@@ -59,6 +63,7 @@ public class GiveAnimalController {
         model.addAttribute("upkind", upkind);
         model.addAttribute("state", state);
         model.addAttribute("searched", search);
+        model.addAttribute("reportCount", giveReportService.getReportCount());
 
         // 아직 [조회] 안 눌렀으면 API 스킵 (지역 첫 조회 10초+ 대기 방지)
         if (!search) {

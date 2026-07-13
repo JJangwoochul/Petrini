@@ -17,8 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.common.config.controller.CommonConfigController;
 import com.petcare.petcare.common.external.service.KakaoMapService;
@@ -26,6 +29,10 @@ import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.hospital.service.HospitalService;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.member.vo.MemberVO;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller("hospitalController")
 @RequestMapping("/hospital")
@@ -68,16 +75,56 @@ public class HospitalController extends CommonConfigController {
         return "hospital/detail";
     }
 
-    // ── 병원 예약 ───────────────────────────────────────────
+    // 2026-07-10 장우철 — 병원 예약 폼 (F1~F2) hospitalId 필수 + 펫 목록
     @GetMapping("/reserve")
-    public String reserve(@RequestParam(defaultValue = "1") String id, Model model) throws Exception {
-        model.addAttribute("id", id);
+    public String reserve(@RequestParam("id") String id,
+                          HttpSession session,
+                          Model model) throws Exception {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) {
+            return "redirect:/login";
+        }
+
+        Long hospitalId = Long.parseLong(id);
+        HospitalVO hospital = hospitalService.getHospitalById(hospitalId);
+        if (hospital == null) {
+            return "redirect:/hospital";
+        }
+
+        model.addAttribute("hospitalId", hospitalId);
+        model.addAttribute("hospital", hospital);
+        model.addAttribute("petList", hospitalService.getPetListForReserve(member.getMemberNo()));
         return "hospital/reserve";
+
+        /* [변경 전] 2026-07-10 장우철 — id 하드코딩·목업만
+        model.addAttribute("id", id);
+        */
     }
 
-    // ── 예약 완료 ───────────────────────────────────────────
+    // 2026-07-10 장우철 — 병원 예약 저장 (F2)
+    // 2026-07-11 장우철 — resvDate 는 VO @DateTimeFormat 으로 바인딩 (별도 String 파싱 제거)
+    @PostMapping("/reserve")
+    public String saveReserve(@ModelAttribute ReservationVO vo,
+                              @RequestParam("hospitalId") Long hospitalId,
+                              HttpSession session,
+                              RedirectAttributes rttr) throws Exception {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) {
+            return "redirect:/login";
+        }
+
+        vo.setMemberNo(member.getMemberNo());
+        vo.setTargetId(String.valueOf(hospitalId));
+
+        Long resvId = hospitalService.createHospitalReservation(vo);
+        return "redirect:/hospital/complete?resvId=" + resvId;
+    }
+
+    // 2026-07-10 장우철 — 예약 완료 (F3)
     @GetMapping("/complete")
-    public String complete() {
+    public String complete(@RequestParam("resvId") Long resvId, Model model) throws Exception {
+        ReservationVO reservation = hospitalService.getReservationById(resvId);
+        model.addAttribute("reservation", reservation);
         return "hospital/complete";
     }
 }

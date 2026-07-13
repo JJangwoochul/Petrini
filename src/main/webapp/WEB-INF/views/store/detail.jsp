@@ -170,7 +170,6 @@
 <div class="detail-btn-row">
 <button type="button" class="btn-wish-detail wish-btn" data-wish-id="store:${productId}" aria-label="찜하기">찜</button>
 <%-- 지윤 26.07.08 수정: alert만 뜨던 가짜 버튼 -> 실제 TB_CART_ITEM에 저장하는 폼으로 변경 --%>
-<%-- 지윤 26.07.08 수정: form submit(즉시 이동) -> AJAX로 먼저 담고, confirm으로 이동 여부 물어보는 방식으로 변경 --%>
 <form id="cartForm" style="display:contents">
   <input type="hidden" name="productId" value="${product.productId}">
   <input type="hidden" name="optionId" id="cartOptionId">
@@ -308,8 +307,15 @@ function showTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('on');
   btn.classList.add('on');
 }
-//지윤 26.07.08 수정: form submit -> AJAX로 먼저 담고, confirm으로 이동 여부 물어본 뒤 이동
+//지윤 26.07.09 수정: 로그인 안 했으면 AJAX 요청 전에 confirm으로 로그인페이지 이동 여부부터 물어봄
 document.getElementById('btnAddCart').addEventListener('click', function () {
+  var isLoggedIn = ${not empty sessionScope.memberInfo};
+  if (!isLoggedIn) {
+    if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?')) {
+      location.href = '${contextPath}/login';
+    }
+    return;
+  }
   var sel = document.getElementById('optionSelect');
   var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
   var addPrice = (sel && sel.options.length > 0) ? (parseInt(sel.value) || 0) : 0;
@@ -334,7 +340,14 @@ document.getElementById('btnAddCart').addEventListener('click', function () {
 
 //지윤 26.07.08 추가: 바로구매 -> 주문서 페이지로 바로 이동 (장바구니 거치지 않음)
 document.getElementById('btnBuyNow').addEventListener('click', function () {
-  location.href = '${contextPath}/store/order';
+  var sel = document.getElementById('optionSelect');
+  var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
+  var qty = parseInt(document.getElementById('qty').value);
+
+  location.href = '${contextPath}/store/order'
+    + '?productId=${product.productId}'
+    + '&optionId=' + optionId
+    + '&qty=' + qty;
 });
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

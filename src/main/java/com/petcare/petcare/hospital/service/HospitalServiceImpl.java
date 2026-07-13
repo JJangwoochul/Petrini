@@ -15,13 +15,18 @@
 
 package com.petcare.petcare.hospital.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.hospital.mapper.HospitalMapper;
+import com.petcare.petcare.hospital.vo.HospitalPetVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 
 @Service
 public class HospitalServiceImpl implements HospitalService {
@@ -37,5 +42,39 @@ public class HospitalServiceImpl implements HospitalService {
     @Override
     public HospitalVO getHospitalById(Long hospitalId) throws Exception {
         return hospitalMapper.selectHospitalById(hospitalId);
+    }
+
+    // 2026-07-10 장우철 — 예약 폼 펫 목록 (F2)
+    @Override
+    @Transactional(readOnly = true)
+    public List<HospitalPetVO> getPetListForReserve(Long memberNo) throws Exception {
+        return hospitalMapper.selectPetListByMemberNo(memberNo);
+    }
+
+    // 2026-07-10 장우철 — 병원 예약 저장 (F2)
+    @Override
+    @Transactional
+    public Long createHospitalReservation(ReservationVO vo) throws Exception {
+        vo.setResvType("HOSPITAL");
+        vo.setStatusCd("PENDING");
+        if (vo.getResvNo() == null || vo.getResvNo().isBlank()) {
+            vo.setResvNo(buildResvNo());
+        }
+        hospitalMapper.insertReservation(vo);
+        return vo.getResvId();
+    }
+
+    // 2026-07-10 장우철 — 예약 완료 화면 (F3)
+    @Override
+    @Transactional(readOnly = true)
+    public ReservationVO getReservationById(Long resvId) throws Exception {
+        return hospitalMapper.selectReservationById(resvId);
+    }
+
+    /** 2026-07-10 장우철 — 예약번호 생성 (TOTAL_DATA 패턴: RyyyyMMdd + 일련) */
+    private String buildResvNo() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        long suffix = System.currentTimeMillis() % 10000;
+        return "R" + datePart + String.format("%04d", suffix);
     }
 }

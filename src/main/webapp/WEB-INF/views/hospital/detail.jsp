@@ -138,8 +138,8 @@
     <div class="reserve-info-row"><span>진료 대기시간</span><strong>약 10분</strong></div>
     <div class="reserve-info-row"><span>오늘 예약 가능</span><strong style="color:var(--primary)">8슬롯 남음</strong></div>
     <div class="reserve-info-row"><span>진료비</span><strong>기본 15,000원~</strong></div>
-    <button class="btn-reserve-big" onclick="location.href='${contextPath}/hospital/reserve?id=1'">예약하기</button>
-    <button class="btn-call"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>02-1234-5678</button>
+    <button class="btn-reserve-big" onclick="location.href='${contextPath}/hospital/reserve?id=${hospital.hospitalId}'">예약하기</button>
+    <button class="btn-call" onclick="location.href='tel:${hospital.phone}'"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>${hospital.phone}</button>
   </div>
 </div>
 

@@ -12,13 +12,17 @@
         <selectKey keyProperty="bizNo" resultType="long" order="AFTER">
             SELECT MAX(BIZ_NO) FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
         </selectKey>
+        <!-- 2026-07-10 장우철 — 신청 주소(ZIP/ADDR) 저장 → 승인 시 병원 ADDR 복사 -->
         INSERT INTO TB_BUSINESS (
                                     BIZ_ID, 
                                     BIZ_TYPE, 
                                     BIZ_REG_NO, 
                                     BIZ_NAME, 
                                     CEO_NAME, 
-                                    PHONE, 
+                                    PHONE,
+                                    ZIP_CODE,
+                                    ADDR,
+                                    ADDR_DETAIL,
                                     STATUS_CD, 
                                     JOIN_DATE
                                 ) 
@@ -28,7 +32,10 @@
                                     #{bizRegNo}, 
                                     #{bizName}, 
                                     #{ceoName}, 
-                                    #{phone, jdbcType=VARCHAR}, 
+                                    #{phone, jdbcType=VARCHAR},
+                                    #{zipCode, jdbcType=VARCHAR},
+                                    #{addr, jdbcType=VARCHAR},
+                                    #{addrDetail, jdbcType=VARCHAR},
                                     'PENDING', 
                                     SYSDATE
                                 )
@@ -80,6 +87,9 @@
                     BIZ_NAME    AS bizName,
                     CEO_NAME    AS ceoName,
                     PHONE       AS phone,
+                    ZIP_CODE    AS zipCode,
+                    ADDR        AS addr,
+                    ADDR_DETAIL AS addrDetail,
                     STATUS_CD   AS statusCd
         FROM        TB_BUSINESS
         WHERE       BIZ_ID = #{bizId}
@@ -87,15 +97,18 @@
 
     <update id="updateBusinessForReapply" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
         UPDATE TB_BUSINESS
-        SET    BIZ_TYPE   = #{bizType},
-               BIZ_REG_NO = #{bizRegNo},
-               BIZ_NAME   = #{bizName},
-               CEO_NAME   = #{ceoName},
-               PHONE      = #{phone, jdbcType=VARCHAR},
-               STATUS_CD  = 'PENDING'
-        WHERE  BIZ_NO     = #{bizNo}
-          AND  BIZ_ID     = #{bizId}
-          AND  STATUS_CD  = 'REJECTED'
+        SET    BIZ_TYPE     = #{bizType},
+               BIZ_REG_NO   = #{bizRegNo},
+               BIZ_NAME     = #{bizName},
+               CEO_NAME     = #{ceoName},
+               PHONE        = #{phone, jdbcType=VARCHAR},
+               ZIP_CODE     = #{zipCode, jdbcType=VARCHAR},
+               ADDR         = #{addr, jdbcType=VARCHAR},
+               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
+               STATUS_CD    = 'PENDING'
+        WHERE  BIZ_NO       = #{bizNo}
+          AND  BIZ_ID       = #{bizId}
+          AND  STATUS_CD    = 'REJECTED'
     </update>
 
     <select id="countActiveBizRegNo" resultType="int">

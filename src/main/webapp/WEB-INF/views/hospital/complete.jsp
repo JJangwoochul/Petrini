@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="hospital" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -22,18 +23,28 @@
   .btn-complete-store{flex:1;padding:13px;border:none;border-radius:var(--radius-sm);background:#0284C7;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 </style>
 
+<%-- 2026-07-10 장우철 — 예약 완료 DB 연동 (F3) --%>
 <div class="complete-wrap">
   <div class="complete-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
   <div class="complete-title">예약이 완료되었습니다!</div>
-  <div class="complete-desc">예약번호 <strong>#RSV-2025-0142</strong><br>예약 내역은 마이페이지에서 확인하세요.</div>
+  <div class="complete-desc">
+    예약번호 <strong>#${reservation.resvNo}</strong><br>
+    예약 내역은 마이페이지에서 확인하세요.
+  </div>
+  <c:if test="${not empty reservation}">
   <div class="complete-card">
     <h3>예약 정보</h3>
-    <div class="complete-row"><span>예약번호</span><span>#RSV-2025-0142</span></div>
-    <div class="complete-row"><span>병원</span><span>행복 동물병원</span></div>
-    <div class="complete-row"><span>반려동물</span><span>몽이 (골든 리트리버 · 4세)</span></div>
-    <div class="complete-row"><span>예약 일시</span><span>2025.07.14 (월) 오후 2:00</span></div>
-    <div class="complete-row"><span>주증상</span><span>피부 트러블</span></div>
+    <div class="complete-row"><span>예약번호</span><span>#${reservation.resvNo}</span></div>
+    <div class="complete-row"><span>병원</span><span>${reservation.hospitalName}</span></div>
+    <div class="complete-row"><span>반려동물</span><span>${reservation.petName}
+      <c:if test="${not empty reservation.petBreed}"> (${reservation.petBreed}<c:if test="${not empty reservation.petAge}"> · ${reservation.petAge}세</c:if>)</c:if>
+    </span></div>
+    <div class="complete-row"><span>예약 일시</span><span>
+      <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy.MM.dd"/> ${reservation.resvTime}
+    </span></div>
+    <div class="complete-row"><span>주증상</span><span>${empty reservation.symptoms ? '-' : reservation.symptoms}</span></div>
   </div>
+  </c:if>
   <div class="complete-notice">
     진료 시간 <strong>10분 전</strong>까지 내원해주세요. 예약 변경·취소는 마이페이지 &gt; 예약내역에서 가능합니다.
   </div>

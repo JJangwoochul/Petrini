@@ -18,6 +18,14 @@
  * 1. GET /give/report/detail?id=번호 → giveReportService.getReportDetail()
  * 2. TB_POST + TB_FILE photoUrls 조회
  * 3. detail.jsp 에 표시
+ * 
+ * 4. POST /give/report/status → 상태 변경
+ *
+ * [댓글]
+ * 1. GET detail → comments 목록 조회 (대댓글 포함)
+ * 2. POST /give/report/comment → TB_POST_COMMENT INSERT (parentId → 대댓글)
+ * 3. POST /give/report/comment/delete → IS_DELETED='Y' (작성자 본인)
+ * 4. POST /give/report/comment/update → BODY 수정 (작성자 본인)
  *
  * 연결
  * - Service: GiveReportService
@@ -39,6 +47,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
+import com.petcare.petcare.community.comment.service.CommunityCommentService;
+import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.give.controller.GiveBaseController;
 import com.petcare.petcare.give.report.service.GiveReportService;
 import com.petcare.petcare.give.report.vo.GiveReportVO;
@@ -53,24 +65,42 @@ public class GiveReportController extends GiveBaseController {
     private static final Logger log = LoggerFactory.getLogger(GiveReportController.class);
 
     private final GiveReportService giveReportService;
+    private final CommunityCommentService communityCommentService;
 
-    public GiveReportController(GiveReportService giveReportService) {
+    public GiveReportController(
+            GiveReportService giveReportService,
+            CommunityCommentService communityCommentService) {
         this.giveReportService = giveReportService;
+        this.communityCommentService = communityCommentService;
     }
     //@GetMapping("/write")   // 주소창 / 링크 클릭 → 화면만 보여줌
     @GetMapping("/list")
-    public String reportList(Model model) {
-        model.addAttribute("list", giveReportService.getReportList());
+    public String reportList(
+            @RequestParam(defaultValue = "") String status,
+            Model model) {
+        model.addAttribute("list", giveReportService.getReportList(status));
+        model.addAttribute("reportCount", giveReportService.getReportCount());
+        model.addAttribute("status", status != null ? status.trim() : "");
         return "give/report/list";
     }
 
     @GetMapping("/detail")
-    public String reportDetail(@RequestParam long id, Model model) {
+    public String reportDetail(@RequestParam long id, Model model, HttpSession session) {
         GiveReportVO report = giveReportService.getReportDetail(id);
         if (report == null) {
             return "redirect:/give/report/list";
         }
+        MemberVO member = getMemberOrNull(session);
+        List<CommunityCommentVO> comments = communityCommentService.getCommentList(id);
         model.addAttribute("report", report);
+        model.addAttribute("comments", comments);
+        model.addAttribute("commentCount", countComments(comments));
+        model.addAttribute("isLoggedIn", member != null);
+        Long loginMemberNo = null;
+        if (member != null) {
+            loginMemberNo = communityCommentService.resolveLoginMemberNo(member);
+        }
+        model.addAttribute("loginMemberNo", loginMemberNo);
         return "give/report/detail";
     }
 
@@ -109,6 +139,169 @@ public class GiveReportController extends GiveBaseController {
             log.error("report write failed", e);
             return "redirect:/give/report/write?error=save";
         }
+    }
+
+     /**
+     * 진행 상태 변경
+     * POST /give/report/status
+     * 파라미터: postId, findingStatus (FINDING / RESCUED / OWNER_FOUND)
+     */
+    @PostMapping("/status")
+    public String updateStatus(
+            @RequestParam long postId,
+            @RequestParam String findingStatus,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/give/report/detail?id=" + postId;
+        }
+        try {
+            giveReportService.updateFindingStatus(postId, findingStatus, member);
+            return "redirect:/give/report/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=forbidden";
+            }
+            if ("REPORT_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/give/report/list";
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=status";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/give/report/detail?id=" + postId + "&error=status";
+        } catch (Exception e) {
+            log.error("report status update failed", e);
+            return "redirect:/give/report/detail?id=" + postId + "&error=status";
+        }
+    }
+
+    /**
+     * 댓글·대댓글 등록
+     * POST /give/report/comment
+     */
+    @PostMapping("/comment")
+    public String insertComment(
+            @RequestParam long postId,
+            @RequestParam String body,
+            @RequestParam(required = false) Long parentId,
+            HttpSession session) {
+
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/give/report/detail?id=" + postId;
+        }
+
+        try {
+            communityCommentService.insertComment(postId, body, member, parentId);
+            return "redirect:/give/report/detail?id=" + postId;
+
+        } catch (IllegalStateException e) {
+            log.warn("report comment insert state error: {}", e.getMessage());
+            if ("MEMBER_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=member";
+            }
+            if ("LOGIN_REQUIRED".equals(e.getMessage())) {
+                return "redirect:/login?redirect=/give/report/detail?id=" + postId;
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+
+        } catch (IllegalArgumentException e) {
+            if ("INVALID_PARENT".equals(e.getMessage())) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=empty";
+
+        } catch (Exception e) {
+            log.error("report comment insert failed", e);
+            if (isSequenceError(e)) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=seq";
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+        }
+    }
+
+    /**
+     * 댓글 삭제
+     * POST /give/report/comment/delete
+     */
+    @PostMapping("/comment/delete")
+    public String deleteComment(
+            @RequestParam long commentId,
+            @RequestParam long postId,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/give/report/detail?id=" + postId;
+        }
+        try {
+            communityCommentService.deleteComment(commentId, postId, member);
+            return "redirect:/give/report/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=commentForbidden";
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+        } catch (Exception e) {
+            log.error("report comment delete failed", e);
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+        }
+    }
+
+    /**
+     * 댓글 수정
+     * POST /give/report/comment/update
+     */
+    @PostMapping("/comment/update")
+    public String updateComment(
+            @RequestParam long commentId,
+            @RequestParam long postId,
+            @RequestParam String body,
+            HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/give/report/detail?id=" + postId;
+        }
+        try {
+            communityCommentService.updateComment(commentId, postId, body, member);
+            return "redirect:/give/report/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=commentForbidden";
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+        } catch (IllegalArgumentException e) {
+            if ("EMPTY_BODY".equals(e.getMessage())) {
+                return "redirect:/give/report/detail?id=" + postId + "&error=empty";
+            }
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+        } catch (Exception e) {
+            log.error("report comment update failed", e);
+            return "redirect:/give/report/detail?id=" + postId + "&error=comment";
+        }
+    }
+
+    private int countComments(List<CommunityCommentVO> parents) {
+        int count = 0;
+        for (CommunityCommentVO parent : parents) {
+            count++;
+            if (parent.getReplies() != null) {
+                count += parent.getReplies().size();
+            }
+        }
+        return count;
+    }
+
+    private boolean isSequenceError(Throwable e) {
+        Throwable cur = e;
+        while (cur != null) {
+            String msg = cur.getMessage();
+            if (msg != null && (msg.contains("ORA-02289")
+                    || msg.contains("SEQ_TB_POST_COMMENT")
+                    || msg.contains("sequence does not exist"))) {
+                return true;
+            }
+            cur = cur.getCause();
+        }
+        return false;
     }
 
     private MemberVO getMemberOrNull(HttpSession session) {

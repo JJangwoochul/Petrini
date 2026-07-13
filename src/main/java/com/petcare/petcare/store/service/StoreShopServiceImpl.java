@@ -27,6 +27,7 @@ import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.QnaVO;
 import com.petcare.petcare.store.vo.CartItemVO;
+import com.petcare.petcare.store.vo.CouponVO;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
@@ -149,5 +150,25 @@ public void deleteCartItems(java.util.List<Long> cartItemIds) {
 @Override
 public int getCartItemCount(Long memberNo) {
     return storeShopMapper.selectCartItemCount(memberNo);
+}
+
+//지윤 26.07.09 회원 보유쿠폰은 가공 없이 그대로 전달
+@Override
+public List<CouponVO> getMemberCoupons(Long memberNo) {
+    return storeShopMapper.selectMemberCoupons(memberNo);
+ }
+
+//지윤 07.09 바로구매 클릭 시 해당상품 주문페이지로 이동
+@Override
+public List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qty) {
+    CartItemVO item = storeShopMapper.selectDirectOrderItem(productId, optionId);
+    item.setQty(qty);
+    return java.util.List.of(item);
+}
+
+//지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
+@Override
+public List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds) {
+    return storeShopMapper.selectCartItemsByIds(cartItemIds);
 }
 }

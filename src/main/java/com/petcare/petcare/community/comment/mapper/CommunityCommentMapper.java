@@ -1,26 +1,54 @@
 /**
- * 역할: 커뮤니티 댓글 DB 접근 (MyBatis interface)
+ * 역할: 게시글 댓글 DB 접근 (MyBatis interface)
+ *
+ * - 박유정 / 2026-07-09~10
+ *
+ * 쿼리
+ * - selectAllCommentsByPostId   일반 + 대댓글 전체
+ * - selectCommentById         부모 댓글 검증
+ * - selectCommentCountByPostId 댓글 총 개수
+ * - insertComment             PARENT_ID 포함 INSERT
+ * - softDeleteComment         IS_DELETED='Y'
  *
  * XML: resources/mybatis/mapper/community/comment/CommunityCommentMapper.xml
- * namespace: com.petcare.petcare.community.comment.mapper.CommunityCommentMapper
- *
- * 쿼리 예시
- * - selectCommentList
- * - insertComment
- * - updateComment
- * - deleteComment
  *
  * 참고 테이블
- * - TB_COMMUNITY_COMMENT
- *
- * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
+ * - TB_POST_COMMENT
  */
 
 package com.petcare.petcare.community.comment.mapper;
 
-import org.apache.ibatis.annotations.Mapper;
+import java.util.List;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 
 @Mapper
-public interface CommunityCommentMapper {}
+public interface CommunityCommentMapper {
+
+    // 게시글 일반댓글만 (PARENT_ID IS NULL)
+    List<CommunityCommentVO> selectCommentList(long postId);
+
+    // 게시글 대댓글만 (PARENT_ID IS NOT NULL)
+    List<CommunityCommentVO> selectRepliesByPostId(long postId);
+
+    // 게시글 전체 댓글 (일반 + 대댓글) — Service 에서 parentId 로 묶음
+    List<CommunityCommentVO> selectAllCommentsByPostId(long postId);
+
+    // 대댓글 등록 시 부모 댓글 검증용
+    CommunityCommentVO selectCommentById(long commentId);
+
+    int selectCommentCountByPostId(long postId);
+
+    int insertComment(CommunityCommentVO vo);
+
+    Long selectMemberNoByMemberId(String memberId);
+
+    Long selectMemberNoByEmail(String email);
+
+    int softDeleteComment(long commentId);
+
+    int updateCommentBody(@Param("commentId") long commentId, @Param("body") String body);
+}

@@ -31,9 +31,33 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
+import java.util.List;
+
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 
 public interface BizHospitalService {
-    public HospitalVO getHospitalByBizId(String bizId) throws Exception;    
-    public void updateHospitalInfo(HospitalVO vo) throws Exception;
+
+    HospitalVO getHospitalByBizId(String bizId);
+
+    // 2026-07-10 장우철 — 승인됐는데 TB_HOSPITAL 없으면 껍데기 생성 후 반환
+    HospitalVO resolveHospitalByBizId(String bizId);
+
+    void updateHospitalInfo(HospitalVO vo);
+
+    // 2026-07-10 장우철 — 병원 예약 1차 (F4~F7) 사업자 Service
+    List<ReservationVO> getReservationList(Long hospitalId, String tab) throws Exception;
+
+    ReservationVO getReservationDetail(Long hospitalId, Long resvId) throws Exception;
+
+    // 2026/07/11 장우철 — cancelReason: CANCEL 일 때 필수
+    void updateReservationStatus(Long hospitalId, Long resvId, String statusCd, String cancelReason) throws Exception;
+
+    List<ReservationVO> getCalendarReservations(Long hospitalId, String fromDate, String toDate) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 배지용 PENDING 건수
+    int countPendingReservations(Long hospitalId) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 캘린더 배지: 오늘 CONFIRMED
+    int countTodayConfirmedReservations(Long hospitalId) throws Exception;
 }
