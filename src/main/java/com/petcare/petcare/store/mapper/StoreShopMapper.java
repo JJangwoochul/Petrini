@@ -116,9 +116,46 @@ public interface StoreShopMapper {
    //지윤 26.07.10 상품 Q&A 문의 등록
    void insertProductQna(@Param("productId") Long productId, @Param("memberNo") Long memberNo, @Param("question") String question);
 
-    //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 삭제된 row수 반환 (0이면 실패 원인 구분용)
-    int deleteProductQna(@Param("qnaId") Long qnaId, @Param("memberNo") Long memberNo);
+   //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 삭제된 row수 반환 (0이면 실패 원인 구분용)
+   int deleteProductQna(@Param("qnaId") Long qnaId, @Param("memberNo") Long memberNo);
 
+   //지윤 26.07.13 주문 저장 (결제 완료 시)
+   void insertOrder(@Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
+                      @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
+                      @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
+                      @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
+                      @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
+                      @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.13 방금 저장한 주문의 ORDER_ID 조회 (ORDER_NO는 UNIQUE라 이걸로 되짚어 조회)
+    Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo);
+
+    //지윤 26.07.13 주문상품 저장 (주문 1건당 여러 번 호출)
+    void insertOrderItem(@Param("orderId") Long orderId, @Param("productId") Long productId,
+                          @Param("optionId") Long optionId, @Param("optionColor") String optionColor,
+                          @Param("optionSize") String optionSize, @Param("productName") String productName,
+                          @Param("qty") Integer qty, @Param("unitPrice") Integer unitPrice, @Param("totalPrice") Integer totalPrice);
+
+    //지윤 26.07.13 결제내역 저장
+    void insertPayment(@Param("orderId") Long orderId, @Param("payMethod") String payMethod,
+                        @Param("payAmount") Integer payAmount, @Param("tossPaymentKey") String tossPaymentKey,
+                        @Param("tossOrderId") String tossOrderId);
+
+    //지윤 26.07.13 쿠폰 사용 처리
+    void updateCouponUsed(@Param("memberCouponId") Long memberCouponId);
+
+    //지윤 26.07.13 포인트 차감
+    void updateMemberPointBalance(@Param("memberNo") Long memberNo, @Param("pointUsed") Integer pointUsed);
+
+    //지윤 26.07.13 포인트 사용 이력 저장
+    void insertPointHistory(@Param("memberNo") Long memberNo, @Param("pointUsed") Integer pointUsed, @Param("orderId") Long orderId);
+    
     //지윤 26.07.12 방금 등록한 문의의 QNA_ID 조회 (등록 직후 화면에 삭제버튼 바로 붙이기 위함)
     Long selectLatestQnaId(@Param("productId") Long productId, @Param("memberNo") Long memberNo);
+
+    //지윤 26.07.13 주문 완료 시 재고 차감 - 옵션 없는 상품용 (TB_PRODUCT.STOCK_QTY)
+    void updateProductStock(@Param("productId") Long productId, @Param("qty") Integer qty);
+
+    //지윤 26.07.13 주문 완료 시 재고 차감 - 옵션 있는 상품용 (TB_PRODUCT_OPTION.STOCK_QTY)
+    void updateOptionStock(@Param("optionId") Long optionId, @Param("qty") Integer qty);
 }

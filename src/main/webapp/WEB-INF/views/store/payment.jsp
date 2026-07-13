@@ -78,7 +78,17 @@
     <h3>최종 결제 금액</h3>
     <div class="order-total-box">
       <div class="order-total-row"><span>상품 금액</span><span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span></div>
-<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">${deliveryFee == 0 ? '무료' : deliveryFee.concat('원')}</span></div>
+      
+<%-- 지윤 26.07.13 수정: deliveryFee(숫자)에 문자열 전용 메서드 concat() 호출하던 버그로 500 에러 발생 -> fmt:formatNumber로 수정 --%>
+<%--<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">${deliveryFee == 0 ? '무료' : deliveryFee.concat('원')}</span></div>--%>
+<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">
+  <c:choose>
+    <c:when test="${deliveryFee == 0}">무료</c:when>
+    <c:otherwise><fmt:formatNumber value="${deliveryFee}" pattern="#,###"/>원</c:otherwise>
+  </c:choose>
+</span></div>
+
+
 <div class="order-total-row"><span>쿠폰/포인트 할인</span><span style="color:var(--accent)">-<fmt:formatNumber value="${totalDiscount}" pattern="#,###"/>원</span></div>
 <div class="order-total-row final"><span>총 결제금액</span><span><fmt:formatNumber value="${finalTotal}" pattern="#,###"/>원</span></div>
     </div>
@@ -90,21 +100,32 @@
   </div>
 </div>
 <script src="https://js.tosspayments.com/v2/standard"></script>
+
 <script>
   const amount = ${finalTotal};
   const clientKey = "${tossApiKey}"; // 토스 공개 테스트 키
   const customerKey = "petcare_user_${memberInfo.memberId}";
-
   const tossPayments = TossPayments(clientKey);
   const widgets = tossPayments.widgets({ customerKey });
 
+  //지윤 26.07.13 추가: 필수약관 동의 상태 저장용 변수 (기본 false, 위젯 이벤트로 갱신됨)
+  let agreedRequiredTerms = false;
   (async () => {
     await widgets.setAmount({ currency: "KRW", value: amount });
     await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
-    await widgets.renderAgreement({ selector: "#agreement" });
-  })();
+    const agreementWidget = await widgets.renderAgreement({ selector: "#agreement" });
 
+    //지윤 26.07.13 추가: 약관 체크 상태가 바뀔 때마다 agreedRequiredTerms 값 갱신
+    agreementWidget.on('agreementStatusChange', function (agreementStatus) {
+      agreedRequiredTerms = agreementStatus.agreedRequiredTerms;
+    });
+  })();
   async function requestPayment() {
+    //지윤 26.07.13 추가: 필수약관 미동의 상태면 안내 팝업 띄우고 결제 요청 자체를 안 보냄
+    if (!agreedRequiredTerms) {
+      alert('결제 서비스 이용약관, 개인정보 처리 동의는 필수입니다.');
+      return;
+    }
     await widgets.requestPayment({
       orderId: "order-" + Date.now(),
       orderName: "로얄캐닌 사료 4kg 외 2건",
@@ -113,4 +134,5 @@
     });
   }
 </script>
+
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

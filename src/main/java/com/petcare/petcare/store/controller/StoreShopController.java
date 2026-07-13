@@ -24,6 +24,9 @@ import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.OrderTempVO;
+
+
 import java.util.List;
 import com.petcare.petcare.member.vo.MemberVO;
 import jakarta.servlet.http.HttpSession;
@@ -245,6 +248,27 @@ public String payment(@RequestParam(required = false) Long productId,
     //HYJ 26.07.03 결제 api key
     model.addAttribute("tossApiKey", tossApiKey);
 
+    //지윤 26.07.13 추가: 토스 위젯이 결제 인증 후 우리 서버를 거치지 않고 order-complete로 바로 이동시키기 때문에,
+    //그 사이 없어질 주문정보(상품/배송지/쿠폰/포인트)를 세션에 담아뒀다가 order-complete에서 꺼내 씀
+    OrderTempVO orderTemp = new OrderTempVO();
+    orderTemp.setMemberNo(memberNo);
+    orderTemp.setOrderItems(orderItems);
+    orderTemp.setProductTotal(productTotal);
+    orderTemp.setDeliveryFee(deliveryFee);
+    orderTemp.setCouponMemberCouponId((couponId != null && couponId > 0) ? couponId : null);
+    orderTemp.setCouponDiscount(couponDiscount);
+    orderTemp.setPointUsed((int) pointUsed);
+    orderTemp.setTotalDiscount(totalDiscount);
+    orderTemp.setFinalTotal(finalTotal);
+    orderTemp.setRecvName(recvName);
+    orderTemp.setRecvPhone(recvPhone);
+    orderTemp.setZipCode(zipCode);
+    orderTemp.setAddr1(addr1);
+    orderTemp.setAddr2(addr2);
+    orderTemp.setDeliveryMemo(deliveryMemo);
+    orderTemp.setCartItemIds(cartItemIds);
+    session.setAttribute("orderTemp", orderTemp);
+
     return "store/payment";
 }
 
@@ -264,8 +288,27 @@ public String payment(@RequestParam(required = false) Long productId,
         return "결제 요청 실패: " + code + " - " + message;
     }
 
+    //지윤 26.07.13 수정: 하드코딩된 화면 -> 세션에 저장해둔 주문정보로 실제 DB 저장 후 실데이터 표시
     @GetMapping("/order-complete")
-    public String orderComplete() {
+    public String orderComplete(@RequestParam(required = false) String orderId,
+                                 @RequestParam(required = false) String paymentKey,
+                                 @RequestParam(required = false) String paymentType,
+                                 HttpSession session, Model model) {
+        OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
+
+        // 새로고침 등으로 세션에 남은 주문정보가 없으면 저장할 게 없다는 안내만 보여줌
+        if (orderTemp == null) {
+            model.addAttribute("noOrderData", true);
+            return "store/order-complete";
+        }
+
+        String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, orderId);
+        session.removeAttribute("orderTemp"); // 새로고침해도 중복저장 안 되게 바로 비움
+
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("orderItems", orderTemp.getOrderItems());
+        model.addAttribute("payAmount", orderTemp.getFinalTotal());
+        model.addAttribute("payMethodLabel", "NORMAL".equals(paymentType) ? "일반결제" : paymentType);
         return "store/order-complete";
     }
 

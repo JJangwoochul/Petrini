@@ -22,4 +22,5 @@ public class CartItemVO {
     private Integer qty;
     private Integer price;
     private Integer stockQty;
+    private Long bizNo; //지윤 26.07.13 추가: 주문 저장 시 TB_ORDER.BIZ_NO에 넣어야 해서 추가
 }

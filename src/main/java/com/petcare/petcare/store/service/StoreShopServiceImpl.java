@@ -29,6 +29,9 @@ import com.petcare.petcare.store.vo.QnaVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
 import com.petcare.petcare.store.vo.BrandVO;
+import com.petcare.petcare.store.vo.OrderTempVO;
+import com.petcare.petcare.store.vo.CartItemVO;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
@@ -191,5 +194,52 @@ public Long addProductQna(Long productId, Long memberNo, String question) {
 @Override
 public boolean deleteProductQna(Long qnaId, Long memberNo) {
     return storeShopMapper.deleteProductQna(qnaId, memberNo) > 0;
+}
+
+//지윤 26.07.13 결제 완료 처리 (주문/주문상품/결제내역 저장 + 쿠폰/포인트 반영 + 장바구니 정리)
+//@Transactional: 중간에 하나라도 실패하면 전부 롤백됨
+@Override
+@Transactional
+public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrderId) {
+    String orderNo = "ORD-" + System.currentTimeMillis();
+
+    // 상품이 전부 같은 사업자(BIZ_NO)라고 가정 (현재 테스트데이터가 단일 셀러 구조라 첫 상품 기준으로 넣음)
+    Long bizNo = p.getOrderItems().get(0).getBizNo();
+
+    storeShopMapper.insertOrder(orderNo, p.getMemberNo(), p.getProductTotal(), p.getDeliveryFee(),
+            p.getTotalDiscount(), p.getPointUsed(), p.getFinalTotal(),
+            p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo);
+
+    Long orderId = storeShopMapper.selectOrderIdByOrderNo(orderNo);
+
+    for (CartItemVO item : p.getOrderItems()) {
+        storeShopMapper.insertOrderItem(orderId, item.getProductId(), item.getOptionId(),
+                item.getOptionColor(), item.getOptionSize(), item.getProductName(),
+                item.getQty(), item.getPrice(), item.getPrice() * item.getQty());
+
+        //지윤 26.07.13 추가: 주문 확정된 만큼 재고 차감 (옵션 있으면 옵션 재고, 없으면 상품 재고)
+        if (item.getOptionId() != null) {
+            storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
+        } else {
+            storeShopMapper.updateProductStock(item.getProductId(), item.getQty());
+        }
+    }
+
+    storeShopMapper.insertPayment(orderId, "TOSS", p.getFinalTotal(), tossPaymentKey, tossOrderId);
+
+    if (p.getCouponMemberCouponId() != null) {
+        storeShopMapper.updateCouponUsed(p.getCouponMemberCouponId());
+    }
+
+    if (p.getPointUsed() != null && p.getPointUsed() > 0) {
+        storeShopMapper.updateMemberPointBalance(p.getMemberNo(), p.getPointUsed());
+        storeShopMapper.insertPointHistory(p.getMemberNo(), p.getPointUsed(), orderId);
+    }
+
+    if (p.getCartItemIds() != null && !p.getCartItemIds().isEmpty()) {
+        storeShopMapper.deleteCartItems(p.getCartItemIds());
+    }
+
+    return orderNo;
 }
 }
