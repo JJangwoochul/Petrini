@@ -24,12 +24,17 @@
     </a>
     <%--사업자(숙박) 숙소관리 왼쪽 메뉴사이드바에 추가(지윤)--%>
     <div class="biz-nav-group">숙소 관리</div>
-    <a href="${contextPath}/biz/stay/lodge" class="biz-nav-link ${bizPage eq 'lodge' ? 'active' : ''}">
+    <a href="${contextPath}/biz/stay/profile" class="biz-nav-link ${bizPage eq 'profile' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
         <path d="M9 22V12h6v10"/>
       </svg>
       숙소 관리
+    </a>
+    <a href="${contextPath}/biz/stay/rooms" class="biz-nav-link ${bizPage eq 'rooms' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      객실 관리
     </a>
     <a href="${contextPath}/biz/stay/reserve" class="biz-nav-link ${bizPage eq 'reserve' ? 'active' : ''}">
 
@@ -40,11 +45,6 @@
         <line x1="16" y1="2" x2="16" y2="6"/>
       </svg>
       예약 관리<span class="biz-nav-badge">3</span>
-    </a>
-    
-    <a href="${contextPath}/biz/stay/rooms" class="biz-nav-link ${bizPage eq 'rooms' ? 'active' : ''}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>객실 관리
     </a>
     <a href="${contextPath}/biz/stay/calendar" class="biz-nav-link ${bizPage eq 'calendar' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

@@ -25,11 +25,15 @@ import lombok.Setter;
 public class StayVO implements Mapperable {
     // ── TB_STAY ──
     private Long   stayId;
+    private Long   memberNo;
     private Long   bizNo;
     private String name;
+    private String zipcode;
     private String addr;
-    private String lat;
-    private String lng;
+    private String addrDetail;
+    private Double lat;
+    private Double lng;
+    private String phone;
     private String petPolicy;
     private String refundPolicy;
     private String statusCd;
@@ -53,6 +57,6 @@ public class StayVO implements Mapperable {
     // ── Mapperble 구현 (카카오맵 마커용) ──
     public String getMarkerId()   { return stayId != null ? String.valueOf(stayId) : "0"; }
     public String getMarkerName() { return name; }
-    public Double getMarkerLat()  { return lat != null ? Double.parseDouble(lat) : null; }
-    public Double getMarkerLng()  { return lng != null ? Double.parseDouble(lng) : null; }
+    public Double getMarkerLat()  { return lat; }
+    public Double getMarkerLng()  { return lng; }
 }

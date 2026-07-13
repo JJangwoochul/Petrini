@@ -2,7 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.petcare.petcare.biz.stay.mapper.BizStayMapper">
-
 <!--
   역할: BizStayMapper SQL 정의
 
@@ -18,5 +17,89 @@
   - TB_RESERVATION
   - TB_REVIEW
 -->
+    <!-- 회원ID로 조회 -->
+    <select id="selectStayByBizId" parameterType="string" resultType="com.petcare.petcare.stay.vo.StayVO">
+        SELECT  S.STAY_ID, 
+                S.BIZ_NO,
+                S.NAME, 
+                S.PHONE,
+                S.ZIPCODE,
+                S.ADDR, 
+                S.ADDR_DETAIL,
+                S.DESCRIPTION, 
+                S.LAT, 
+                S.LNG,
+                S.CHECK_IN,
+                S.CHECK_OUT,
+                S.PET_POLICY,
+                S.REFUND_POLICY,
+                S.FACILITIES,
+                S.PET_FEE
+        FROM    TB_STAY S
+        JOIN    TB_BUSINESS B 
+        ON      S.BIZ_NO = B.BIZ_NO
+        WHERE   B.BIZ_ID = #{bizId}
+    </select> 
 
+    <insert id="insertStay" parameterType="string">
+        INSERT INTO TB_STAY (
+                                    STAY_ID,
+                                    BIZ_NO,
+                                    MEMBER_NO,
+                                    NAME,
+                                    PHONE,
+                                    ZIPCODE,
+                                    ADDR,
+                                    ADDR_DETAIL,
+                                    APPROVE_DATE,
+                                    STATUS_CD
+                                )
+        SELECT  (SELECT NVL(MAX(STAY_ID), 0) + 1 FROM TB_STAY),
+                B.BIZ_NO,
+                (SELECT MEMBER_NO
+                   FROM TB_MEMBER
+                  WHERE MEMBER_ID = B.BIZ_ID
+                     OR EMAIL     = B.BIZ_ID
+                  FETCH FIRST 1 ROW ONLY),
+                B.BIZ_NAME,
+                B.PHONE,
+                B.ZIP_CODE,
+                B.ADDR,
+                B.ADDR_DETAIL,
+                SYSDATE,
+                'ACTIVE'
+        FROM    TB_BUSINESS B
+        WHERE   B.BIZ_ID = #{bizId}
+          AND NOT EXISTS (
+                SELECT 1
+                  FROM TB_STAY S
+                 WHERE S.BIZ_NO = B.BIZ_NO
+              )
+    </insert>
+  
+    <update id="updateStayInfo" parameterType="com.petcare.petcare.stay.vo.StayVO">
+        UPDATE TB_STAY
+        SET    NAME         = #{name, jdbcType=VARCHAR},
+               PHONE        = #{phone, jdbcType=VARCHAR},
+               ADDR         = #{addr, jdbcType=VARCHAR},
+               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
+               DESCRIPTION  = #{description, jdbcType=VARCHAR},
+               LAT          = #{lat, jdbcType=DOUBLE},
+               LNG          = #{lng, jdbcType=DOUBLE}
+        WHERE  STAY_ID      = #{stayId}
+    </update>
+
+    <update id="updateStayProfile" parameterType="com.petcare.petcare.stay.vo.StayVO">
+        UPDATE TB_STAY
+        SET    CHECK_IN      = #{checkIn,      jdbcType=VARCHAR},
+               CHECK_OUT     = #{checkOut,     jdbcType=VARCHAR},
+               DESCRIPTION  = #{description, jdbcType=VARCHAR},
+               LAT          = #{lat, jdbcType=DOUBLE},
+               LNG          = #{lng, jdbcType=DOUBLE},
+               PET_FEE       = #{petFee,       jdbcType=VARCHAR},
+               PET_POLICY    = #{petPolicy,    jdbcType=CLOB},
+               REFUND_POLICY = #{refundPolicy, jdbcType=CLOB},
+               FACILITIES    = #{facilities,   jdbcType=VARCHAR}
+        WHERE  STAY_ID       = #{stayId}
+    </update>
 </mapper>

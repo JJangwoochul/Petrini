@@ -29,4 +29,18 @@
 
 package com.petcare.petcare.biz.stay.service;
 
-public interface BizStayService {}
+import java.util.List;
+
+import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayVO;
+
+public interface BizStayService {
+    StayVO getHospitalByBizId(String bizId);
+
+    // 2026-07-10 장우철 — 승인됐는데 TB_HOSPITAL 없으면 껍데기 생성 후 반환
+    StayVO resolveStayByBizId(String bizId);
+
+    void updateStayInfo(StayVO vo);
+
+    void updateStayProfile(StayVO vo);
+}

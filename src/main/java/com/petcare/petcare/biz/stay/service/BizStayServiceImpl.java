@@ -15,7 +15,65 @@
 
 package com.petcare.petcare.biz.stay.service;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
+import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
+import com.petcare.petcare.stay.vo.StayVO;
+
 @Service
-public class BizStayServiceImpl implements BizStayService {}
+public class BizStayServiceImpl implements BizStayService {
+    @Autowired
+    private BizStayMapper bizStayMapper;
+    @Autowired
+    private KakaoMapService kakaoMapService;
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
+    
+    @Override
+    public StayVO getHospitalByBizId(String bizId) {
+        return bizStayMapper.selectStayByBizId(bizId);
+    }
+    @Override
+    public StayVO resolveStayByBizId(String bizId) {
+        if (bizId == null || bizId.isBlank()) {
+            return null;
+        }
+        StayVO stay = bizStayMapper.selectStayByBizId(bizId);
+        if (stay == null) {
+            bizStayMapper.insertStay(bizId);
+            stay = bizStayMapper.selectStayByBizId(bizId);
+        }
+        return stay;
+    }
+    @Override
+    public void updateStayInfo(StayVO vo) {
+        // 2026-07-10 장우철 — 주소 있으면 좌표 변환 (유저 목록 '상세보기'는 LAT 필수)
+        if (vo.getAddr() != null && !vo.getAddr().isBlank()) {
+            Map<String, Double> coords = kakaoMapService.geocodeAddress(vo.getAddr());
+            if (coords != null) {
+                vo.setLat(coords.get("lat"));
+                vo.setLng(coords.get("lng"));
+            }
+        }
+
+        bizStayMapper.updateStayInfo(vo);
+    }
+
+    @Override
+    public void updateStayProfile(StayVO vo) {
+        if (vo.getAddr() != null && !vo.getAddr().isBlank()) {
+            Map<String, Double> coords = kakaoMapService.geocodeAddress(vo.getAddr());
+            if (coords != null) {
+                vo.setLat(coords.get("lat"));
+                vo.setLng(coords.get("lng"));
+            }
+        }
+        
+        bizStayMapper.updateStayProfile(vo);
+    }
+}

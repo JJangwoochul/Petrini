@@ -145,24 +145,24 @@ public int getCartCount(HttpSession session) {
     return storeShopService.getCartItemCount(memberNo);
 }
 
-    //지윤 26.07.09 장바구니 실데이터 연동 
-    @GetMapping("/cart")
-    public String cart(Model model, HttpSession session) {
-        Long memberNo = getLoginMemberNo(session);
-        if (memberNo == null) {
-            return "redirect:/login";
-        }
-        model.addAttribute("cartItems", storeShopService.getCartItems(memberNo));
-        return "store/cart";
+//지윤 26.07.09 장바구니 실데이터 연동 
+@GetMapping("/cart")
+public String cart(Model model, HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "redirect:/login";
     }
+    model.addAttribute("cartItems", storeShopService.getCartItems(memberNo));
+    return "store/cart";
+}
 
-    /*@GetMapping("/payment")
-    public String payment(Model model) {
-        //HYJ 26.07.03 결제 api key
-        model.addAttribute("tossApiKey", tossApiKey);
-        return "store/payment";
-    }*/
-    //지윤 26.07.10 수정: GET -> POST, 쿠폰/포인트 서버 재검증 후 결제페이지에 실데이터 전달
+/*@GetMapping("/payment")
+public String payment(Model model) {
+    //HYJ 26.07.03 결제 api key
+    model.addAttribute("tossApiKey", tossApiKey);
+    return "store/payment";
+}*/
+//지윤 26.07.10 수정: GET -> POST, 쿠폰/포인트 서버 재검증 후 결제페이지에 실데이터 전달
 @PostMapping("/payment")
 public String payment(@RequestParam(required = false) Long productId,
                        @RequestParam(required = false) Long optionId,

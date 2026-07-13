@@ -17,7 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.stay.service.BizStayService;
@@ -55,13 +59,6 @@ public class BizStayController extends BizBaseController {
         return "biz/stay/reserve";
     }
 
-    @GetMapping("/rooms")
-    public String stayRooms(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
-        return "biz/stay/rooms";
-    }
-
     @GetMapping("/calendar")
     public String stayCalendar(HttpSession session) {
         if (getBizMember(session) == null)
@@ -95,23 +92,99 @@ public class BizStayController extends BizBaseController {
         MemberVO member = getBizMember(session);
         if (member == null) return "redirect:/login";
 
-        // 승인 시 TB_HOSPITAL이 이미 INSERT됨 → null일 수 없음
-        // StayVO stay = bizStayService.getStayByBizId(member.getMemberId());
-        // model.addAttribute("stay", stay);
-
-        // List<FileVO> imgList = fileService.getFileList("STAY", stay.getStayId());
-        // model.addAttribute("imgList", imgList);        
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null) {
+            return "redirect:/mypage/biz";
+        }
+        model.addAttribute("stay", stay);   
         return "biz/stay/info";
 
     }
 
-/*사업자 숙소관리 메뉴 0702지윤*/
-    @GetMapping("/lodge")
-    public String stayLodge(HttpSession session) {
-        if (getBizMember(session) == null) 
+    /*사업자 숙소관리 메뉴 0702지윤*/
+    @GetMapping("/profile")
+    public String stayLodge(HttpSession session, Model model) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null) return "redirect:/mypage/biz";
+
+        model.addAttribute("stay", stay);
+
+        List<FileVO> imgList = fileService.getFileList("STAY", stay.getStayId());
+        model.addAttribute("imgList", imgList);
+
+        return "biz/stay/profile";
+    }
+
+    @PostMapping("/profile")
+    public String saveProfile(StayVO vo,
+                              @RequestParam(value = "facilities", required = false) String[] facilities,
+                              @RequestParam(value = "imgList", required = false) MultipartFile[] imgList,
+                              @RequestParam(value = "deleteFileIds", required = false) Long[] deleteFileIds,
+                              HttpSession session,
+                              RedirectAttributes rttr) throws Exception {
+
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+        
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getStayId() == null) {
+            rttr.addFlashAttribute("errorMsg", "숙소 정보를 불러올 수 없습니다.");
+            return "redirect:/biz/stay/profile";
+        }
+        vo.setStayId(stay.getStayId());        
+        
+        // DB에서 stayId 확보 (폼 조작 방지)
+        if (vo.getName() == null || vo.getName().isBlank()) {
+            vo.setName(vo.getName());
+        }
+        if (vo.getPhone() == null || vo.getPhone().isBlank()) {
+            vo.setPhone(vo.getPhone());
+        }
+        if (vo.getAddr() == null || stay.getAddr().isBlank()) {
+            vo.setAddr(stay.getAddr());
+            if (vo.getLat() == null) {
+                vo.setLat(stay.getLat());
+            }
+            if (vo.getLng() == null) {
+                vo.setLng(vo.getLng());
+            }
+        }
+        if (vo.getAddrDetail() == null) {
+            vo.setAddrDetail(vo.getAddrDetail());
+        }
+
+        // 편의시설 체크박스 배열 → 콤마 구분 문자열
+        vo.setFacilities(facilities != null ? String.join(",", facilities) : "");
+
+        // 기존 이미지 삭제
+        if (deleteFileIds != null) {
+            for (Long fileId : deleteFileIds) {
+                fileService.deleteFile(fileId);
+            }
+        }
+
+        // 새 이미지 업로드
+        if (imgList != null) {
+            for (MultipartFile img : imgList) {
+                if (img == null || img.isEmpty()) continue;
+                fileService.uploadFile(img, "STAY", stay.getStayId());
+            }
+        }
+
+        // TB_STAY 운영정보 업데이트
+        bizStayService.updateStayProfile(vo);
+
+        rttr.addFlashAttribute("msg", "저장되었습니다.");
+        return "redirect:/biz/stay/profile";
+    }
+
+    @GetMapping("/rooms")
+    public String stayRooms(HttpSession session) {
+        if (getBizMember(session) == null)
             return "redirect:/login";
-
-        return "biz/stay/lodge";
-
+        return "biz/stay/rooms";
     }
 }

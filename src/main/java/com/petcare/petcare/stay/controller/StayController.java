@@ -40,7 +40,10 @@ public class StayController {
     @GetMapping({"", "/"})
     public String list(Model model) {
         List<StayVO> stayList = stayService.getStayList();
+        kakaoMapService.addMapAttributes(model, stayList);
+        
         model.addAttribute("stayList", stayList);
+        model.addAttribute("skipAutoMarkers", "true");
         return "stay/list";
     }
 

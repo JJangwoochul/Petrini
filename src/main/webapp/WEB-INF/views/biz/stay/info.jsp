@@ -73,10 +73,13 @@
                     <label>전화번호</label>
                     <input type="tel" value="${stay.phone}" readonly>
                 </div>
-                <div class="info-group full">
-                    <label>주소</label>
-                    <input type="text" value="${stay.addr}" readonly>
-                </div>
+				<div class="info-group full">
+					<label>주소 <span class="req">*</span></label>
+					<div class="info-input-row">
+						<input type="text" name="addr" value="${stay.addr}" readonly>
+					</div>
+					<input type="text" name="addrDetail" value="${stay.addrDetail}" style="margin-top:8px" readonly>
+				</div>
             </div>
         </div>
 

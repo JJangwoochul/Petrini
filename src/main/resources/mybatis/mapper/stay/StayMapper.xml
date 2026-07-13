@@ -41,7 +41,7 @@
                 WHERE STATUS_CD = 'APPROVE'
                 GROUP BY STAY_ID
           ) R ON S.STAY_ID = R.STAY_ID
-         WHERE S.STATUS_CD = 'APPROVE'
+         WHERE S.STATUS_CD IN ('ACTIVE', 'NORMAL')
          ORDER BY S.STAY_ID
     </select>
 
