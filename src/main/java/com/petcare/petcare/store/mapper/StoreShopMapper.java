@@ -33,16 +33,27 @@ import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.QnaVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.BrandVO;
 
 @Mapper
 public interface StoreShopMapper {
 
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(offset, size) 추가
+    //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
     List<StoreShopVO> selectProductList(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
+                                         @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
+                                         @Param("brand") String brand,
                                          @Param("sort") String sort, @Param("offset") int offset, @Param("size") int size);
 
     //지윤 26.07.06 페이지네이션용 전체 상품 개수 조회 (카테고리/검색 조건은 목록과 동일하게 적용)
-    int selectProductCount(@Param("categoryId") Long categoryId, @Param("keyword") String keyword);
+    //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
+    int selectProductCount(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
+                            @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
+                            @Param("brand") String brand);
+
+    //지윤 26.07.12 브랜드별 상품 수 집계 (카테고리/검색/가격 조건은 목록과 동일하게 적용, 브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능하게 함)
+    List<BrandVO> selectBrandCounts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
+                                     @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice);
 
     //지윤 26.07.06 카테고리 트리 전체 조회
     List<CategoryVO> selectCategoryTree();
@@ -101,4 +112,13 @@ public interface StoreShopMapper {
 
    //지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
    List<CartItemVO> selectCartItemsByIds(@Param("cartItemIds") java.util.List<Long> cartItemIds);
+
+   //지윤 26.07.10 상품 Q&A 문의 등록
+   void insertProductQna(@Param("productId") Long productId, @Param("memberNo") Long memberNo, @Param("question") String question);
+
+    //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 삭제된 row수 반환 (0이면 실패 원인 구분용)
+    int deleteProductQna(@Param("qnaId") Long qnaId, @Param("memberNo") Long memberNo);
+
+    //지윤 26.07.12 방금 등록한 문의의 QNA_ID 조회 (등록 직후 화면에 삭제버튼 바로 붙이기 위함)
+    Long selectLatestQnaId(@Param("productId") Long productId, @Param("memberNo") Long memberNo);
 }

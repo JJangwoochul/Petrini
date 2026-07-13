@@ -78,7 +78,7 @@
     <h3>최종 결제 금액</h3>
     <div class="order-total-box">
       <div class="order-total-row"><span>상품 금액</span><span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span></div>
-<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">
+      <div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">
         <c:choose>
           <c:when test="${deliveryFee == 0}">무료</c:when>
           <c:otherwise><fmt:formatNumber value="${deliveryFee}" pattern="#,###"/>원</c:otherwise>

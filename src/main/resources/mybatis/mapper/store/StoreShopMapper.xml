@@ -28,9 +28,23 @@
             CONNECT BY PRIOR CATEGORY_ID = PARENT_ID
         )
     </if>
-    <if test="keyword != null and keyword != ''">
+     <if test="keyword != null and keyword != ''">
         AND (UPPER(p.PRODUCT_NAME) LIKE '%' || UPPER(#{keyword}) || '%'
              OR UPPER(p.BRAND_NAME) LIKE '%' || UPPER(#{keyword}) || '%')
+    </if>
+    <!-- 지윤 26.07.12 가격대 필터 추가 (SALE_PRICE 기준) -->
+    <if test="minPrice != null">
+        AND TO_NUMBER(p.SALE_PRICE) &gt;= #{minPrice}
+    </if>
+    <if test="maxPrice != null">
+        AND TO_NUMBER(p.SALE_PRICE) &lt;= #{maxPrice}
+    </if>
+</sql>
+
+<!-- 지윤 26.07.12 브랜드 필터는 브랜드 카운트 집계 쿼리와 별개 적용해야 해서 productFilter와 분리 -->
+<sql id="brandFilter">
+    <if test="brand != null and brand != ''">
+        AND p.BRAND_NAME = #{brand}
     </if>
 </sql>
 
@@ -66,6 +80,7 @@
         WHERE REF_TYPE = 'PRODUCT'
     ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
     WHERE <include refid="productFilter"/>
+    <include refid="brandFilter"/>
     <choose>
         <when test="sort == 'latest'">ORDER BY p.PRODUCT_ID DESC</when>
         <when test="sort == 'priceAsc'">ORDER BY TO_NUMBER(p.SALE_PRICE) ASC</when>
@@ -80,6 +95,17 @@
     SELECT COUNT(*)
     FROM TB_PRODUCT p
     WHERE <include refid="productFilter"/>
+    <include refid="brandFilter"/>
+</select>
+
+<!-- 지윤 26.07.12 브랜드별 상품 수 집계 (브랜드 필터 자체는 미적용 -> 사이드바에서 다른 브랜드도 계속 선택 가능) -->
+<select id="selectBrandCounts" resultType="com.petcare.petcare.store.vo.BrandVO">
+    SELECT p.BRAND_NAME AS BRAND_NAME, COUNT(*) AS PRODUCT_COUNT
+    FROM TB_PRODUCT p
+    WHERE <include refid="productFilter"/>
+    AND p.BRAND_NAME IS NOT NULL
+    GROUP BY p.BRAND_NAME
+    ORDER BY COUNT(*) DESC
 </select>
 
 <!-- 지윤 26.07.06 카테고리 트리 전체 조회 -->
@@ -327,6 +353,24 @@
     JOIN TB_COUPON c ON c.COUPON_ID = mc.COUPON_ID
     WHERE mc.MEMBER_NO = #{memberNo} AND mc.STATUS_CD = 'UNUSED'
     ORDER BY mc.MEMBER_COUPON_ID
+</select>
+
+<!-- 지윤 26.07.10 상품 Q&A 문의 등록 -->
+<insert id="insertProductQna">
+    INSERT INTO TB_PRODUCT_QNA (QNA_ID, PRODUCT_ID, MEMBER_NO, QUESTION, REG_DATE)
+    VALUES ((SELECT NVL(MAX(QNA_ID), 0) + 1 FROM TB_PRODUCT_QNA), #{productId}, #{memberNo}, #{question}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'))
+</insert>
+
+<!-- 지윤 26.07.12 상품 Q&A 삭제: MEMBER_NO 조건으로 본인 글만, ANSWER IS NULL 조건으로 답변 달린 글은 삭제 불가 -->
+<delete id="deleteProductQna">
+    DELETE FROM TB_PRODUCT_QNA
+    WHERE QNA_ID = #{qnaId} AND MEMBER_NO = #{memberNo} AND ANSWER IS NULL
+</delete>
+
+<!-- 지윤 26.07.12 방금 등록한 문의의 QNA_ID 조회 (MAX+1 채번 방식이라 등록 직후 다시 조회해서 값을 알아냄) -->
+<select id="selectLatestQnaId" resultType="Long">
+    SELECT MAX(QNA_ID) FROM TB_PRODUCT_QNA
+    WHERE PRODUCT_ID = #{productId} AND MEMBER_NO = #{memberNo}
 </select>
 
 </mapper>

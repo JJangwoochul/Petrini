@@ -32,13 +32,19 @@ import com.petcare.petcare.store.vo.StoreShopVO;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.BrandVO;
 
 public interface StoreShopService {
 //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
-List<StoreShopVO> getProductList(Long categoryId, String keyword, String sort, int pageNo);
+//지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
+List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand, String sort, int pageNo);
 
 //지윤 26.07.06 페이지네이션용 총 페이지 수 계산
-int getTotalPages(Long categoryId, String keyword);
+//지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
+int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand);
+
+//지윤 26.07.12 사이드바 브랜드별 상품 수 조회
+List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice);
 
 //지윤 26.07.06 카테고리 트리 조회
 List<CategoryVO> getCategoryTree();
@@ -72,4 +78,10 @@ List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qty);
 
 //지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동
 List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds);
+
+//지윤 26.07.12 수정: 등록 직후 삭제버튼 붙이려면 새로 생긴 QNA_ID가 필요해서 void -> Long으로 변경
+Long addProductQna(Long productId, Long memberNo, String question);
+
+//지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 성공 여부 반환
+boolean deleteProductQna(Long qnaId, Long memberNo);
 }

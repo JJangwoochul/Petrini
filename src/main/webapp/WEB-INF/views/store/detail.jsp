@@ -189,14 +189,39 @@
     <button class="detail-tab" onclick="showTab('qna',this)">Q&A (${product.qnaList.size()})</button>
   </div>
 
+  <%-- 지윤 26.07.12 수정: 하드코딩 이미지/주요특징 -> product.imageList(실제 상품이미지)/product.description(실제 설명) 실데이터로 교체 --%>
   <div class="tab-section on" id="tab-info">
-    <img src="https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=900&q=70&auto=format&fit=crop" style="width:100%;border-radius:var(--radius-md)" alt="상품상세" onerror="this.src='https://placehold.co/900x400/EAF7F2/2BAB82?text=상품상세이미지'">
+    <c:choose>
+      <c:when test="${not empty product.imageList}">
+        <img src="${product.imageList[0]}" style="width:100%;border-radius:var(--radius-md)" alt="상품상세" onerror="this.src='https://placehold.co/900x400/EAF7F2/2BAB82?text=상품상세이미지'">
+      </c:when>
+      <c:otherwise>
+        <img src="https://placehold.co/900x400/EAF7F2/2BAB82?text=상품상세이미지" style="width:100%;border-radius:var(--radius-md)" alt="상품상세">
+      </c:otherwise>
+    </c:choose>
     <div style="padding:24px;background:var(--bg-page);border-radius:var(--radius-md);margin-top:20px;font-size:14px;color:var(--text-sub);line-height:1.8">
-      <strong style="display:block;font-size:16px;color:var(--text-main);margin-bottom:12px">주요 특징</strong>
-      · 중형견(11~25kg)의 유지기에 적합한 맞춤 영양 설계<br>
-      · 관절 건강을 위한 오메가3 지방산 함유<br>
-      · 소화 흡수율을 높인 고품질 단백질 원료<br>
-      · 글루코사민·콘드로이틴으로 연골 보호
+      <strong style="display:block;font-size:16px;color:var(--text-main);margin-bottom:12px">상품 설명</strong>
+      <c:choose>
+        <c:when test="${not empty product.description}">${product.description}</c:when>
+        <c:otherwise>등록된 상품 설명이 없습니다.</c:otherwise>
+      </c:choose>
+    </div>
+
+    <%-- 사이트 공통 배송/교환/반품 안내 (상품마다 다르지 않은 고정 정책) --%>
+    <div style="margin-top:24px;padding:24px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:13px;color:var(--text-sub);line-height:1.8">
+      <strong style="display:block;font-size:16px;color:var(--text-main);margin-bottom:14px">배송 및 교환/반품 안내</strong>
+      <div style="margin-bottom:14px">
+        <strong style="color:var(--text-main)">배송 안내</strong><br>
+        · 오후 1시 이전 주문 건에 한해 당일 출고됩니다.<br>
+        · 출고일로부터 평균 1~2일 소요됩니다.<br>
+        · 5만원 이상 구매 시 무료배송, 미만 시 배송비 3,000원이 부과됩니다.
+      </div>
+      <div>
+        <strong style="color:var(--text-main)">교환/반품 안내</strong><br>
+        · 제품 하자가 있을 경우 수령 후 7일 이내 교환/반품이 가능합니다.<br>
+        · 제품 포장 훼손 및 사용된 제품은 교환/반품이 불가능합니다.<br>
+        · 단순 변심으로 인한 반품은 왕복 배송비가 발생할 수 있습니다.
+      </div>
     </div>
   </div>
 
@@ -232,17 +257,27 @@
     </c:forEach>
   </div>
 
-  <%-- 지윤 26.07.07 수정: "상품상세페이지 Q&A -> TB_PRODUCT_QNA 실데이터로 변경
-     관리자 답변 화면은 아직 담당자 미정이라, 유저가 보는 질문/답변 목록만 우선 구현 --%>
+ <%-- 지윤 26.07.10 수정: 문의 등록(AJAX) 기능 추가 --%>
 <div class="tab-section" id="tab-qna">
-    <c:if test="${empty product.qnaList}">
-      <div style="text-align:center;padding:60px 0;color:var(--text-muted)">아직 등록된 문의가 없습니다.</div>
-    </c:if>
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <input type="text" id="qnaInput" maxlength="500" placeholder="상품에 대해 궁금한 점을 문의해보세요" style="flex:1; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; font-size:14px; outline:none;">
+      <button type="button" id="btnAddQna" style="padding:10px 20px; border:1px solid var(--primary); border-radius:var(--radius-sm); background:#fff; color:var(--primary); font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;">문의하기</button>
+    </div>
+    <div id="qnaEmptyMsg" style="text-align:center;padding:60px 0;color:var(--text-muted); ${empty product.qnaList ? '' : 'display:none;'}">아직 등록된 문의가 없습니다.</div>
+    <div id="qnaList">
     <c:forEach var="qna" items="${product.qnaList}">
-      <div class="review-card">
+
+    
+      <%-- 지윤 26.07.12 수정: data-qna-id 부여, 본인 글 + 답변 미완료 건에만 삭제 버튼 노출 --%>
+      <div class="review-card" data-qna-id="${qna.qnaId}">
         <div class="review-card-head">
           <span class="reviewer">Q. ${qna.nickname}</span>
-          <span class="review-date">${qna.regDate}</span>
+          <span style="display:flex; align-items:center; gap:10px;">
+            <span class="review-date">${qna.regDate}</span>
+            <c:if test="${not empty sessionScope.memberInfo && sessionScope.memberInfo.memberNo == qna.memberNo && empty qna.answer}">
+              <button type="button" class="btnDeleteQna" data-qna-id="${qna.qnaId}" style="border:none; background:none; color:var(--text-muted); font-size:12px; cursor:pointer; text-decoration:underline;">삭제</button>
+            </c:if>
+          </span>
         </div>
         <div class="review-text">${qna.question}</div>
         <c:if test="${not empty qna.answer}">
@@ -250,11 +285,13 @@
             <strong style="color:var(--primary-dark);">A.</strong> ${qna.answer}
           </div>
         </c:if>
-        <c:if test="${empty qna.answer}">
+
+      <c:if test="${empty qna.answer}">
           <div style="margin-top:10px; font-size:12px; color:var(--text-muted);">답변 대기중입니다.</div>
         </c:if>
       </div>
     </c:forEach>
+    </div>
 </div>
 
 </div>
@@ -343,11 +380,97 @@ document.getElementById('btnBuyNow').addEventListener('click', function () {
   var sel = document.getElementById('optionSelect');
   var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
   var qty = parseInt(document.getElementById('qty').value);
-
   location.href = '${contextPath}/store/order'
     + '?productId=${product.productId}'
     + '&optionId=' + optionId
     + '&qty=' + qty;
 });
+
+//지윤 26.07.10 수정: 등록 성공 시 새로고침 없이 화면에 바로 질문 추가
+//지윤 26.07.12 수정: 응답이 "OK:qnaId" 형식으로 바뀜에 따라 파싱 로직 추가, 새 카드에도 삭제버튼 부여
+document.getElementById('btnAddQna').addEventListener('click', function () {
+  var isLoggedIn = ${not empty sessionScope.memberInfo};
+  if (!isLoggedIn) {
+    if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?')) {
+      location.href = '${contextPath}/login';
+    }
+    return;
+  }
+  var input = document.getElementById('qnaInput');
+  var question = input.value.trim();
+  if (question === '') {
+    alert('문의 내용을 입력해주세요.');
+    return;
+  }
+  fetch('${contextPath}/store/qna/add', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: 'productId=${product.productId}&question=' + encodeURIComponent(question)
+  }).then(function(res){ return res.text(); })
+    .then(function(result){
+      if (result.indexOf('OK:') === 0) {
+        var newQnaId = result.substring(3);
+        var myNickname = '${sessionScope.memberInfo.nickname}';
+        var today = new Date();
+        var dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+        document.getElementById('qnaEmptyMsg').style.display = 'none';
+
+        var newCard = document.createElement('div');
+        newCard.className = 'review-card';
+        newCard.dataset.qnaId = newQnaId;
+        newCard.innerHTML =
+          '<div class="review-card-head">' +
+            '<span class="reviewer">Q. ' + myNickname + '</span>' +
+            '<span style="display:flex; align-items:center; gap:10px;">' +
+              '<span class="review-date">' + dateStr + '</span>' +
+              '<button type="button" class="btnDeleteQna" data-qna-id="' + newQnaId + '" style="border:none; background:none; color:var(--text-muted); font-size:12px; cursor:pointer; text-decoration:underline;">삭제</button>' +
+            '</span>' +
+          '</div>' +
+          '<div class="review-text"></div>' +
+          '<div style="margin-top:10px; font-size:12px; color:var(--text-muted);">답변 대기중입니다.</div>';
+        newCard.querySelector('.review-text').textContent = question;
+
+        document.getElementById('qnaList').prepend(newCard);
+        input.value = '';
+      } else if (result === 'LOGIN_REQUIRED') {
+        alert('로그인이 필요합니다.');
+        location.href = '${contextPath}/login';
+      } else {
+        alert('문의 등록에 실패했습니다.');
+      }
+    });
+});
+
+//지윤 26.07.12 상품 Q&A 삭제: 기존 글/새로 추가된 글 모두 처리되도록 qnaList에 이벤트 위임
+document.getElementById('qnaList').addEventListener('click', function (e) {
+  var btn = e.target.closest('.btnDeleteQna');
+  if (!btn) return;
+  if (!confirm('문의를 삭제하시겠습니까?')) return;
+  var qnaId = btn.dataset.qnaId;
+  fetch('${contextPath}/store/qna/delete', {
+    method: 'POST',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: 'qnaId=' + qnaId
+  }).then(function(res){ return res.text(); })
+    .then(function(result){
+      if (result === 'OK') {
+        var card = document.querySelector('#qnaList [data-qna-id="' + qnaId + '"]');
+        if (card) card.remove();
+        if (document.getElementById('qnaList').children.length === 0) {
+          document.getElementById('qnaEmptyMsg').style.display = '';
+        }
+      } else if (result === 'LOGIN_REQUIRED') {
+        alert('로그인이 필요합니다.');
+        location.href = '${contextPath}/login';
+      } else if (result === 'FAILED') {
+        alert('답변이 이미 등록된 문의는 삭제할 수 없습니다.');
+      } else {
+        alert('삭제에 실패했습니다.');
+      }
+    });
+});
 </script>
+
+
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

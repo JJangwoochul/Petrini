@@ -100,23 +100,46 @@
         </c:forEach>
       </ul>
     </div>
+    <%-- 지윤 26.07.12 수정: 가격대 슬라이더 -> maxPrice 파라미터로 실제 필터링 (최소값은 0 고정, 슬라이더 놓을 때 기존 필터 유지한 채 이동) --%>
     <div class="store-sidebar-card">
       <div class="store-sidebar-title">가격대</div>
       <div class="price-range">
-        <input type="range" min="0" max="100000" step="1000" value="100000">
-        <div class="price-range-vals"><span>0원</span><span>100,000원 이하</span></div>
+        <input type="range" id="priceRangeInput" min="0" max="150000" step="5000"
+               value="${empty selectedMaxPrice ? 150000 : selectedMaxPrice}">
+        <div class="price-range-vals"><span>0원</span><span id="priceRangeLabel">
+          <c:choose>
+            <c:when test="${empty selectedMaxPrice || selectedMaxPrice >= 150000}">전체</c:when>
+            <c:otherwise><fmt:formatNumber value="${selectedMaxPrice}" pattern="#,###"/>원 이하</c:otherwise>
+          </c:choose>
+        </span></div>
       </div>
     </div>
+    <%-- 지윤 26.07.12 수정: 브랜드 하드코딩 5개 -> TB_PRODUCT.BRAND_NAME 실데이터 집계로 교체, 현재 카테고리/가격 조건 내 브랜드만 노출 --%>
     <div class="store-sidebar-card">
       <div class="store-sidebar-title">브랜드</div>
       <ul class="store-cat-list">
-        <li><a href="#">로얄캐닌<span class="cat-count">18</span></a></li>
-        <li><a href="#">Hill's<span class="cat-count">14</span></a></li>
-        <li><a href="#">냥냥<span class="cat-count">22</span></a></li>
-        <li><a href="#">PetPlay<span class="cat-count">16</span></a></li>
-        <li><a href="#">WalkMe<span class="cat-count">12</span></a></li>
+        <c:url var="brandAllUrl" value="/store">
+          <c:param name="species" value="${selectedSpecies}"/>
+          <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
+          <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
+          <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+          <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
+        </c:url>
+        <li><a href="${brandAllUrl}" class="${empty selectedBrand ? 'active' : ''}">전체</a></li>
+        <c:forEach var="b" items="${brandList}">
+          <c:url var="brandUrl" value="/store">
+            <c:param name="species" value="${selectedSpecies}"/>
+            <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
+            <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
+            <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+            <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
+            <c:param name="brand" value="${b.brandName}"/>
+          </c:url>
+          <li><a href="${brandUrl}" class="${selectedBrand == b.brandName ? 'active' : ''}">${b.brandName}<span class="cat-count">${b.productCount}</span></a></li>
+        </c:forEach>
       </ul>
     </div>
+
   </aside>
 
   <%-- 상품 목록 --%>
@@ -175,6 +198,9 @@
   <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
   <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
   <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+  <%-- 지윤 26.07.12 추가: 정렬 바뀌어도 가격/브랜드 필터 유지 --%>
+  <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
+  <c:if test="${not empty selectedBrand}"><c:param name="brand" value="${selectedBrand}"/></c:if>
 </c:url>
 
 <%--<div class="store-sort">
@@ -242,6 +268,9 @@
   <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
   <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
   <c:if test="${not empty selectedSort}"><c:param name="sort" value="${selectedSort}"/></c:if>
+  <%-- 지윤 26.07.12 추가: 페이지 이동해도 가격/브랜드 필터 유지 --%>
+  <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
+  <c:if test="${not empty selectedBrand}"><c:param name="brand" value="${selectedBrand}"/></c:if>
 </c:url>
 
 <%--<c:set var="pageSep" value="${empty selectedCategory && empty selectedKeyword && empty selectedSort ? '?' : '&'}"/>--%>
@@ -286,6 +315,28 @@ document.querySelectorAll('.sort-btn').forEach(b => b.addEventListener('click', 
     }
   });
 }));*/
+
+//지윤 26.07.12 가격대 슬라이더: 드래그 중엔 라벨만 갱신, 손 뗄 때(change) 기존 필터 유지한 채 maxPrice로 이동
+var priceRangeInput = document.getElementById('priceRangeInput');
+var priceRangeLabel = document.getElementById('priceRangeLabel');
+if (priceRangeInput) {
+  priceRangeInput.addEventListener('input', function () {
+    var v = parseInt(priceRangeInput.value);
+    priceRangeLabel.textContent = (v >= 150000) ? '전체' : v.toLocaleString() + '원 이하';
+  });
+  priceRangeInput.addEventListener('change', function () {
+    var v = parseInt(priceRangeInput.value);
+    var params = new URLSearchParams();
+    params.set('species', '${selectedSpecies}');
+    <c:if test="${not empty selectedCategory}">params.set('category', '${selectedCategory}');</c:if>
+    <c:if test="${not empty selectedAge}">params.set('age', '${selectedAge}');</c:if>
+    <c:if test="${not empty selectedKeyword}">params.set('keyword', '${selectedKeyword}');</c:if>
+    <c:if test="${not empty selectedSort}">params.set('sort', '${selectedSort}');</c:if>
+    <c:if test="${not empty selectedBrand}">params.set('brand', '${selectedBrand}');</c:if>
+    if (v < 150000) { params.set('maxPrice', v); }
+    location.href = '${contextPath}/store?' + params.toString();
+  });
+}
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
