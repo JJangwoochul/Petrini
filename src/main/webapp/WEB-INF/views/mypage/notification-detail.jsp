@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="mypage" />
 <c:set var="sec" value="notifications" />
@@ -63,9 +64,28 @@
         </div>
         <div class="noti-detail-body"><c:out value="${noti.content}"/></div>
 
+        <%-- 2026/07/13 장우철 — 알림 종류별 CTA 문구 --%>
         <c:if test="${not empty noti.linkUrl}">
+        <c:set var="ctaLabel" value="관련 화면으로 이동"/>
+        <c:choose>
+            <c:when test="${fn:contains(noti.title, '확정')}">
+                <c:set var="ctaLabel" value="예약 상세 보기"/>
+            </c:when>
+            <c:when test="${fn:contains(noti.title, '완료')}">
+                <c:set var="ctaLabel" value="예약 상세 · 리뷰 작성"/>
+            </c:when>
+            <c:when test="${fn:contains(noti.title, '취소')}">
+                <c:set var="ctaLabel" value="취소 내역 보기"/>
+            </c:when>
+            <c:when test="${fn:contains(noti.title, '답글')}">
+                <c:set var="ctaLabel" value="병원 상세 · 리뷰 확인"/>
+            </c:when>
+            <c:when test="${fn:contains(noti.title, '리뷰')}">
+                <c:set var="ctaLabel" value="리뷰 관리로 이동"/>
+            </c:when>
+        </c:choose>
         <div class="noti-detail-actions">
-            <a href="${contextPath}${noti.linkUrl}" class="btn-noti-primary">관련 화면으로 이동</a>
+            <a href="${contextPath}${noti.linkUrl}" class="btn-noti-primary"><c:out value="${ctaLabel}"/></a>
         </div>
         </c:if>
 

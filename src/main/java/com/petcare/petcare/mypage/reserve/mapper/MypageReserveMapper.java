@@ -11,6 +11,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
 
 @Mapper
@@ -23,4 +24,20 @@ public interface MypageReserveMapper {
     // 2026/07/11 장우철 — 회원 예약 상세 (본인 건만)
     MypageReserveVO selectMyReservationDetail(@Param("memberNo") Long memberNo,
                                               @Param("resvId") Long resvId);
+
+    // 2026/07/13 장우철 — 예약당 병원 리뷰 1건 여부
+    int countHospitalReviewByResvId(@Param("resvId") Long resvId,
+                                    @Param("memberNo") Long memberNo);
+
+    // 2026/07/13 장우철 — 병원 리뷰 INSERT (REVIEW_TYPE=HOSPITAL)
+    int insertHospitalReview(HospitalReviewVO review);
+
+    // 2026/07/13 장우철 — 병원 소유 회원번호 (리뷰 알림)
+    Long selectHospitalMemberNo(@Param("hospitalId") Long hospitalId);
+
+    // 2026/07/13 장우철 — 리뷰 알림용 닉네임
+    String selectMemberNickname(@Param("memberNo") Long memberNo);
+
+    // 2026/07/13 장우철 — TB_HOSPITAL 평균별점·리뷰수 갱신
+    int updateHospitalRatingSummary(@Param("hospitalId") Long hospitalId);
 }

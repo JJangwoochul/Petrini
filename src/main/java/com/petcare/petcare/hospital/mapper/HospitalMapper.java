@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.petcare.petcare.hospital.vo.HospitalPetVO;
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 
@@ -38,4 +39,7 @@ public interface HospitalMapper {
     List<HospitalPetVO> selectPetListByMemberNo(Long memberNo) throws Exception;
     int insertReservation(ReservationVO vo) throws Exception;
     ReservationVO selectReservationById(Long resvId) throws Exception;
+
+    // 2026/07/13 장우철 — 병원 상세 리뷰 목록 (REVIEW_TYPE=HOSPITAL)
+    List<HospitalReviewVO> selectHospitalReviews(Long hospitalId) throws Exception;
 }

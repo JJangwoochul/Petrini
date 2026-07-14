@@ -20,6 +20,9 @@
     <c:if test="${param.error eq 'notfound'}">
       <p style="color:#B91C1C;font-size:14px;margin-bottom:12px">예약을 찾을 수 없습니다.</p>
     </c:if>
+    <c:if test="${not empty msg}">
+      <p style="color:#166534;font-size:14px;margin-bottom:12px"><c:out value="${msg}"/></p>
+    </c:if>
 
     <div class="order-filter" style="margin-bottom:20px">
         <a class="filter-btn ${statusFilter eq 'all' or empty statusFilter ? 'on' : ''}"
@@ -73,6 +76,13 @@
             </c:when>
             <c:when test="${r.statusCd eq 'DONE'}">
               <span class="badge-status badge-done">진료완료</span>
+              <%-- 2026/07/13 장우철 — DONE + 미작성 시 리뷰 안내 --%>
+              <c:if test="${r.reviewedYn ne 'Y'}">
+                <span class="btn-sm" style="pointer-events:none;margin-top:6px;background:#2BAB82;color:#fff">리뷰 작성</span>
+              </c:if>
+              <c:if test="${r.reviewedYn eq 'Y'}">
+                <span style="font-size:12px;color:#888;margin-top:6px">리뷰 완료</span>
+              </c:if>
             </c:when>
             <c:otherwise>
               <span class="badge-status badge-cancel">취소</span>

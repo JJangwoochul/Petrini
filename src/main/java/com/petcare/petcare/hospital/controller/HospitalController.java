@@ -71,6 +71,8 @@ public class HospitalController extends CommonConfigController {
 
         model.addAttribute("hospital", hospital);
         model.addAttribute("imgList", imgList);
+        // 2026/07/13 장우철 — 더미 리뷰 대신 DB 리뷰 목록
+        model.addAttribute("reviewList", hospitalService.getHospitalReviews(hospitalId));
 
         return "hospital/detail";
     }

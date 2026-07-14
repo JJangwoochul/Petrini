@@ -24,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
@@ -144,6 +146,10 @@ public class BizHospitalServiceImpl implements BizHospitalService {
             mypageNotifyService.sendReserveCancelNotification(
                     current.getMemberNo(), hospitalName, current.getResvDate(), current.getResvTime(),
                     rejectReason, resvId);
+        } else if ("DONE".equals(next)) {
+            // 2026/07/13 장우철 — 진료완료 알림 (상세·리뷰 작성으로 이동)
+            mypageNotifyService.sendReserveDoneNotification(
+                    current.getMemberNo(), hospitalName, current.getResvDate(), current.getResvTime(), resvId);
         }
     }
 
@@ -186,5 +192,144 @@ public class BizHospitalServiceImpl implements BizHospitalService {
             return 0;
         }
         return bizHospitalMapper.countTodayConfirmedReservations(hospitalId);
+    }
+
+    // 2026/07/13 장우철 — CONFIRMED 예약 → 진료기록 INSERT + DONE
+    @Override
+    @Transactional
+    public void completeReservationWithRecord(Long hospitalId, MedicalRecordVO record) throws Exception {
+        if (hospitalId == null || record == null || record.getResvId() == null) {
+            throw new IllegalArgumentException("진료기록 정보가 올바르지 않습니다.");
+        }
+        if (record.getSymptoms() == null || record.getSymptoms().isBlank()) {
+            throw new IllegalArgumentException("주증상을 입력해 주세요.");
+        }
+        if (record.getDiagnosis() == null || record.getDiagnosis().isBlank()) {
+            throw new IllegalArgumentException("진단명을 입력해 주세요.");
+        }
+
+        ReservationVO current = bizHospitalMapper.selectReservationDetail(record.getResvId(), hospitalId);
+        if (current == null) {
+            throw new IllegalStateException("예약을 찾을 수 없습니다.");
+        }
+        if (!"CONFIRMED".equalsIgnoreCase(current.getStatusCd())) {
+            throw new IllegalStateException("예약확정 상태에서만 진료완료·기록 저장이 가능합니다.");
+        }
+        if (bizHospitalMapper.countMedicalRecordByResvId(record.getResvId()) > 0) {
+            throw new IllegalStateException("이미 진료기록이 등록된 예약입니다.");
+        }
+
+        record.setHospitalId(hospitalId);
+        record.setPetId(current.getPetId());
+        record.setMemberNo(current.getMemberNo());
+        if (record.getVisitDate() == null) {
+            record.setVisitDate(current.getResvDate() != null ? current.getResvDate() : new java.util.Date());
+        }
+        // 화면 보조항목(유형·체중 등)은 MEMO 앞에 붙여 보관
+        record.setMemo(buildRecordMemo(record));
+
+        bizHospitalMapper.insertMedicalRecord(record);
+        updateReservationStatus(hospitalId, record.getResvId(), "DONE", null);
+    }
+
+    private String buildRecordMemo(MedicalRecordVO record) {
+        StringBuilder sb = new StringBuilder();
+        if (record.getTreatType() != null && !record.getTreatType().isBlank()) {
+            sb.append("[유형:").append(record.getTreatType().trim()).append("] ");
+        }
+        if (record.getWeight() != null && !record.getWeight().isBlank()) {
+            sb.append("[체중:").append(record.getWeight().trim()).append("kg] ");
+        }
+        if (record.getTemperature() != null && !record.getTemperature().isBlank()) {
+            sb.append("[체온:").append(record.getTemperature().trim()).append("℃] ");
+        }
+        if (record.getHeartRate() != null && !record.getHeartRate().isBlank()) {
+            sb.append("[심박:").append(record.getHeartRate().trim()).append("bpm] ");
+        }
+        if (record.getBreathRate() != null && !record.getBreathRate().isBlank()) {
+            sb.append("[호흡:").append(record.getBreathRate().trim()).append("회/분] ");
+        }
+        if (record.getExamItems() != null && !record.getExamItems().isBlank()) {
+            sb.append("[검사:").append(record.getExamItems().trim()).append("] ");
+        }
+        if (record.getNextVisit() != null && !record.getNextVisit().isBlank()) {
+            sb.append("[다음방문:").append(record.getNextVisit().trim()).append("] ");
+        }
+        if (record.getMemo() != null && !record.getMemo().isBlank()) {
+            sb.append(record.getMemo().trim());
+        }
+        String memo = sb.toString().trim();
+        return memo.isEmpty() ? null : memo;
+    }
+
+    // 2026/07/13 장우철 — 진료기록 목록
+    @Override
+    @Transactional(readOnly = true)
+    public List<MedicalRecordVO> getMedicalRecords(Long hospitalId, String keyword, Integer periodMonths)
+            throws Exception {
+        if (hospitalId == null) {
+            return List.of();
+        }
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        return bizHospitalMapper.selectMedicalRecords(hospitalId, kw, periodMonths);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MedicalRecordVO getMedicalRecordDetail(Long hospitalId, Long recordId) throws Exception {
+        if (hospitalId == null || recordId == null) {
+            return null;
+        }
+        return bizHospitalMapper.selectMedicalRecordDetail(hospitalId, recordId);
+    }
+
+    // 2026/07/13 장우철 — 진료기록 작성 모달용
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservationVO> getConfirmedWithoutRecord(Long hospitalId) throws Exception {
+        if (hospitalId == null) {
+            return List.of();
+        }
+        return bizHospitalMapper.selectConfirmedWithoutRecord(hospitalId);
+    }
+
+    // 2026/07/14 장우철 — 사업자 리뷰관리 목록
+    @Override
+    @Transactional(readOnly = true)
+    public List<HospitalReviewVO> getBizHospitalReviews(Long hospitalId) throws Exception {
+        if (hospitalId == null) {
+            return List.of();
+        }
+        return bizHospitalMapper.selectBizHospitalReviews(hospitalId);
+    }
+
+    // 2026/07/14 장우철 — 답글 작성/수정 + 회원 알림
+    @Override
+    @Transactional
+    public void saveReviewBizReply(Long hospitalId, Long reviewId, String bizReply) throws Exception {
+        if (hospitalId == null || reviewId == null) {
+            throw new IllegalArgumentException("리뷰 정보가 올바르지 않습니다.");
+        }
+        if (bizReply == null || bizReply.isBlank()) {
+            throw new IllegalArgumentException("답글 내용을 입력해 주세요.");
+        }
+        String reply = bizReply.trim();
+        if (reply.length() > 2000) {
+            reply = reply.substring(0, 2000);
+        }
+
+        HospitalReviewVO current = bizHospitalMapper.selectBizHospitalReview(hospitalId, reviewId);
+        if (current == null) {
+            throw new IllegalStateException("리뷰를 찾을 수 없거나 권한이 없습니다.");
+        }
+
+        int updated = bizHospitalMapper.updateReviewBizReply(hospitalId, reviewId, reply);
+        if (updated == 0) {
+            throw new IllegalStateException("답글 저장에 실패했습니다.");
+        }
+
+        String hospitalName = bizHospitalMapper.selectHospitalNameById(hospitalId);
+        mypageNotifyService.sendHospitalReviewReplyNotification(
+                current.getMemberNo(), hospitalName, current.getResvId(), hospitalId);
     }
 }

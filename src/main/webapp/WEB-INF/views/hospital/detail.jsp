@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="hospital" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -63,7 +64,16 @@
         <div class="hdetail-name">${hospital.name}</div>
         <div class="hdetail-rating">
           <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(128개 리뷰)</span>
+          <%-- 2026/07/13 장우철 — TB_HOSPITAL.AVG_RATING / REVIEW_CNT --%>
+          <c:choose>
+            <c:when test="${not empty hospital.avgRating}">
+              <fmt:formatNumber value="${hospital.avgRating}" pattern="0.0"/>
+            </c:when>
+            <c:otherwise>0.0</c:otherwise>
+          </c:choose>
+          <span style="font-size:13px;color:var(--text-muted);font-weight:400">
+            (<c:out value="${empty hospital.reviewCnt ? 0 : hospital.reviewCnt}"/>개 리뷰)
+          </span>
         </div>
       </div>
     </div>
@@ -110,27 +120,39 @@
     </div> --%>
     <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
     <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">진료 리뷰 (128)</h3>
-    <div class="review-item">
-      <div class="review-item-head">
-        <div><span class="reviewer-name">김민준</span> <span style="color:var(--text-muted);font-size:12px">· 골든 리트리버</span></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-          <div class="review-item-stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <span class="review-item-date">2025.06.20</span>
+    <%-- 2026/07/13 장우철 — 더미 리뷰 제거, TB_REVIEW 실데이터 --%>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">
+      진료 리뷰 (<c:out value="${empty hospital.reviewCnt ? 0 : hospital.reviewCnt}"/>)
+    </h3>
+    <c:if test="${empty reviewList}">
+      <p style="font-size:14px;color:var(--text-muted);padding:12px 0">아직 등록된 리뷰가 없습니다.</p>
+    </c:if>
+    <c:forEach var="rv" items="${reviewList}">
+      <div class="review-item">
+        <div class="review-item-head">
+          <div>
+            <span class="reviewer-name"><c:out value="${empty rv.nickname ? '회원' : rv.nickname}"/></span>
+            <c:if test="${not empty rv.petName}">
+              <span style="color:var(--text-muted);font-size:12px">· <c:out value="${rv.petName}"/>
+                <c:if test="${not empty rv.petSpecies}"> (<c:out value="${rv.petSpecies}"/>)</c:if>
+              </span>
+            </c:if>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+            <div class="review-item-stars" style="font-size:13px;color:var(--yellow);font-weight:700">
+              ★ <fmt:formatNumber value="${rv.rating}" pattern="0.#"/>
+            </div>
+            <span class="review-item-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
+          </div>
         </div>
+        <div class="review-item-text"><c:out value="${rv.content}"/></div>
+        <c:if test="${not empty rv.bizReply}">
+          <div style="margin-top:10px;padding:10px 12px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-sub)">
+            <strong>병원 답글</strong><br><c:out value="${rv.bizReply}"/>
+          </div>
+        </c:if>
       </div>
-      <div class="review-item-text">수의사 선생님이 매우 친절하고 상세하게 설명해주셨습니다. 우리 몽이가 피부 트러블로 갔는데 정확히 진단하고 처방해주셔서 금방 좋아졌어요.</div>
-    </div>
-    <div class="review-item">
-      <div class="review-item-head">
-        <div><span class="reviewer-name">이서연</span> <span style="color:var(--text-muted);font-size:12px">· 페르시안 고양이</span></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-          <div class="review-item-stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <span class="review-item-date">2025.06.15</span>
-        </div>
-      </div>
-      <div class="review-item-text">예약하고 갔는데 대기 없이 바로 진료받았어요. 고양이 전문 선생님이 계셔서 안심이 됐습니다. 접수 직원분들도 친절하고 병원이 깔끔해요.</div>
-    </div>
+    </c:forEach>
   </div>
 
   <div class="reserve-card">

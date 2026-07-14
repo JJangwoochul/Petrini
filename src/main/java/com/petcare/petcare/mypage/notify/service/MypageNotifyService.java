@@ -39,6 +39,18 @@ public interface MypageNotifyService {
     void sendReserveCancelNotification(Long memberNo, String hospitalName, java.util.Date resvDate,
                                        String resvTime, String cancelReason, Long resvId);
 
+    // 2026/07/13 장우철 — 진료완료 알림 → 예약 상세(리뷰 작성)
+    void sendReserveDoneNotification(Long memberNo, String hospitalName, java.util.Date resvDate,
+                                     String resvTime, Long resvId);
+
+    // 2026/07/13 장우철 — 유저 리뷰 등록 → 사업자(병원 회원) 알림
+    void sendHospitalReviewToBizNotification(Long bizMemberNo, String hospitalName,
+                                             String reviewerNickname, Double rating, Long resvId);
+
+    // 2026/07/14 장우철 — 병원 답글 → 리뷰 작성 회원 알림
+    void sendHospitalReviewReplyNotification(Long memberNo, String hospitalName,
+                                             Long resvId, Long hospitalId);
+
     // 2026-07-09 장우철 — 알림함 목록·상세 (DB only, 이메일/FCM 은 후속 API)
     List<MypageNotifyVO> getNotificationList(Long memberNo);
 

@@ -33,7 +33,9 @@ package com.petcare.petcare.biz.hospital.service;
 
 import java.util.List;
 
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 
 public interface BizHospitalService {
@@ -60,4 +62,20 @@ public interface BizHospitalService {
 
     // 2026/07/11 장우철 — 사이드바 캘린더 배지: 오늘 CONFIRMED
     int countTodayConfirmedReservations(Long hospitalId) throws Exception;
+
+    // 2026/07/13 장우철 — 진료완료 + 진료기록 동시 저장
+    void completeReservationWithRecord(Long hospitalId, MedicalRecordVO record) throws Exception;
+
+    // 2026/07/13 장우철 — 진료기록 목록
+    List<MedicalRecordVO> getMedicalRecords(Long hospitalId, String keyword, Integer periodMonths) throws Exception;
+
+    MedicalRecordVO getMedicalRecordDetail(Long hospitalId, Long recordId) throws Exception;
+
+    // 2026/07/13 장우철 — 작성 모달용 확정·미기록 예약
+    List<ReservationVO> getConfirmedWithoutRecord(Long hospitalId) throws Exception;
+
+    // 2026/07/14 장우철 — 사업자 리뷰관리
+    List<HospitalReviewVO> getBizHospitalReviews(Long hospitalId) throws Exception;
+
+    void saveReviewBizReply(Long hospitalId, Long reviewId, String bizReply) throws Exception;
 }

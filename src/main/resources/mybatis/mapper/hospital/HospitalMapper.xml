@@ -133,4 +133,27 @@
           LEFT JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
          WHERE  R.RESV_ID = #{resvId}
     </select>
+
+    <!-- 2026/07/13 장우철 — 병원 상세 진료 리뷰 목록 -->
+    <select id="selectHospitalReviews" parameterType="long"
+            resultType="com.petcare.petcare.hospital.vo.HospitalReviewVO">
+        SELECT  R.REVIEW_ID   AS reviewId,
+                R.TARGET_ID   AS targetId,
+                R.MEMBER_NO   AS memberNo,
+                R.RESV_ID     AS resvId,
+                R.RATING      AS rating,
+                R.CONTENT     AS content,
+                R.BIZ_REPLY   AS bizReply,
+                R.REG_DATE    AS regDate,
+                M.NICKNAME    AS nickname,
+                P.PET_NAME    AS petName,
+                P.SPECIES     AS petSpecies
+          FROM  TB_REVIEW R
+          JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          LEFT JOIN TB_RESERVATION RV ON RV.RESV_ID = R.RESV_ID
+          LEFT JOIN TB_PET P ON P.PET_ID = RV.PET_ID
+         WHERE  R.REVIEW_TYPE = 'HOSPITAL'
+           AND  R.TARGET_ID = #{hospitalId}
+         ORDER BY R.REG_DATE DESC, R.REVIEW_ID DESC
+    </select>
 </mapper>

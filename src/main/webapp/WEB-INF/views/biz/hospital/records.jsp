@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath"  value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="동물병원" />
 <c:set var="bizPage"      value="records" />
@@ -214,13 +215,15 @@
     .rm-patient-badge { margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: #EAF7F2; color: #1F8464; white-space: nowrap; }
 
     /* 환자 검색 (신규 작성 시 표시) */
-    .rm-patient-search { display: flex; gap: 8px; margin-bottom: 20px; }
-    .rm-patient-search input {
+    .rm-patient-search { display: flex; gap: 8px; margin-bottom: 20px; flex-direction: column; }
+    .rm-patient-search input,
+    .rm-patient-search select {
         flex: 1; border: 1px solid #E2E8E4; border-radius: 8px;
         padding: 10px 14px; font-size: 14px; outline: none; transition: border-color .2s;
-        box-sizing: border-box;
+        box-sizing: border-box; width: 100%; font-family: inherit; background: #fff;
     }
-    .rm-patient-search input:focus { border-color: #2BAB82; }
+    .rm-patient-search input:focus,
+    .rm-patient-search select:focus { border-color: #2BAB82; }
 
     .rm-section-label {
         font-size: 13px; font-weight: 700; color: #2BAB82;
@@ -279,283 +282,287 @@
         <p class="biz-page-desc">내원 환자의 진료기록을 조회하고 관리하세요.</p>
     </div>
 
-    <%-- 검색 바 --%>
- 
-    <div class="rec-search-bar">
-        <input type="text" class="rec-search-input" id="rec-search-input" placeholder="보호자명 또는 반려동물명으로 검색">
-        <select class="rec-search-select" id="rec-type-filter">
-            <option value="">진료 유형 전체</option>
-            <option value="정기검진">정기검진</option>
-            <option value="진료">진료</option>
-            <option value="예방접종">예방접종</option>
-            <option value="수술">수술</option>
-        </select>
-        <select class="rec-search-select" id="rec-period-filter">
-            <option value="">기간 전체</option>
-            <option value="1">최근 1개월</option>
-            <option value="3">최근 3개월</option>
-            <option value="6">최근 6개월</option>
-            <option value="12">최근 1년</option>
-        </select>
-        <button class="rec-search-btn" onclick="filterRecords()">
+    <%-- 2026/07/13 장우철 — 검색·기간 필터 서버 조회 --%>
+    <c:if test="${not empty msg}">
+      <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px">${msg}</div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+      <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px">${errorMsg}</div>
+    </c:if>
 
+    <form class="rec-search-bar" method="get" action="${contextPath}/biz/hospital/records">
+        <input type="text" class="rec-search-input" name="keyword" value="${keyword}"
+               placeholder="보호자명 또는 반려동물명으로 검색">
+        <select class="rec-search-select" name="period">
+            <option value="">기간 전체</option>
+            <option value="1"  ${period == 1  ? 'selected' : ''}>최근 1개월</option>
+            <option value="3"  ${period == 3  ? 'selected' : ''}>최근 3개월</option>
+            <option value="6"  ${period == 6  ? 'selected' : ''}>최근 6개월</option>
+            <option value="12" ${period == 12 ? 'selected' : ''}>최근 1년</option>
+        </select>
+        <button type="submit" class="rec-search-btn">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             조회
         </button>
+        <%-- 2026/07/13 장우철 — 작성 버튼 복구 (확정·미기록 예약 선택 후 저장) --%>
         <button type="button" class="rec-write-btn" onclick="openRecordModal(null)">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             진료기록 작성
         </button>
-    </div>
+    </form>
 
-    <%-- 진료기록 카드 1 --%>
-    <div class="rec-card" data-pet="몽이" data-guardian="최유나" data-type="진료" data-date="2025-06-26">
+    <c:if test="${empty recordList}">
+      <p style="text-align:center; color:#aaa; padding:40px 0; font-size:14px;">
+        등록된 진료기록이 없습니다. [진료기록 작성]으로 예약확정 건을 완료·저장할 수 있습니다.
+      </p>
+    </c:if>
+
+    <c:forEach var="rec" items="${recordList}">
+    <div class="rec-card">
         <div class="rec-card-head">
             <img class="rec-pet-thumb"
-                 src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=88&q=70&auto=format&fit=crop"
-                 alt="몽이"
-                 onerror="this.src='https://placehold.co/44x44/EAF7F2/2BAB82?text=DOG'">
+                 src="https://placehold.co/44x44/EAF7F2/2BAB82?text=PET"
+                 alt="${rec.petName}">
             <div class="rec-pet-info">
-                <div class="pet-name">몽이</div>
-                <div class="pet-meta">골든 리트리버 / 수컷 / 4세 · 보호자: 최유나</div>
+                <div class="pet-name"><c:out value="${rec.petName}"/></div>
+                <div class="pet-meta">
+                  <c:out value="${rec.petBreed}"/>
+                  <c:if test="${not empty rec.petSpecies}"> / <c:out value="${rec.petSpecies}"/></c:if>
+                  <c:if test="${not empty rec.petAge}"> · <c:out value="${rec.petAge}"/>세</c:if>
+                  · 보호자: <c:out value="${rec.memberName}"/>
+                </div>
             </div>
             <div class="rec-head-right">
-                <span class="rec-date">2025.06.26</span>
-                <span class="rec-type rec-treat">진료</span>
+                <span class="rec-date"><fmt:formatDate value="${rec.visitDate}" pattern="yyyy.MM.dd"/></span>
+                <span class="rec-type rec-treat">진료기록</span>
             </div>
         </div>
         <div class="rec-card-body">
-            <div class="rec-field"><label>주증상</label><span>피부 트러블, 긁음</span></div>
-            <div class="rec-field"><label>진단명</label><span>알레르기성 피부염</span></div>
-            <div class="rec-field"><label>처방</label><span>덱사메타손 5일치</span></div>
-            <div class="rec-field"><label>체중 / 체온</label><span>28.2 kg / 38.5 ℃</span></div>
+            <div class="rec-field"><label>주증상</label><span><c:out value="${rec.symptoms}"/></span></div>
+            <div class="rec-field"><label>진단명</label><span><c:out value="${rec.diagnosis}"/></span></div>
+            <div class="rec-field"><label>처방</label><span><c:out value="${empty rec.prescription ? '-' : rec.prescription}"/></span></div>
+            <div class="rec-field"><label>메모</label><span><c:out value="${empty rec.memo ? '-' : rec.memo}"/></span></div>
         </div>
         <div class="rec-card-foot">
             <span class="rec-foot-vet">
                 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                김철수 수의사
+                <c:out value="${empty rec.vetName ? '담당 수의사 미입력' : rec.vetName}"/>
             </span>
             <div class="rec-action-btns">
-                
-                <button class="biz-btn" onclick="openRecordModal({
-                    thumb:'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=128&q=80&auto=format&fit=crop',
-                    name:'몽이', meta:'골든 리트리버 · 수컷 · 4세 · 보호자: 최유나', date:'2025.06.26',
-                    type:'진료', symptom:'피부 트러블, 긁음', diagnosis:'알레르기성 피부염',
-                    exam:'', prescription:'덱사메타손 5일치', weight:'28.2', temp:'38.5',
-                    heartRate:'', breath:'', memo:'', nextVisit:'', vet:'김철수 수의사'
-                })">상세보기</button>
+                <button type="button" class="biz-btn"
+                        data-name="<c:out value='${rec.petName}'/>"
+                        data-meta="<c:out value='${rec.petBreed}'/> · 보호자: <c:out value='${rec.memberName}'/>"
+                        data-date="<fmt:formatDate value='${rec.visitDate}' pattern='yyyy.MM.dd'/>"
+                        data-symptom="<c:out value='${rec.symptoms}'/>"
+                        data-diagnosis="<c:out value='${rec.diagnosis}'/>"
+                        data-prescription="<c:out value='${rec.prescription}'/>"
+                        data-memo="<c:out value='${rec.memo}'/>"
+                        data-vet="<c:out value='${rec.vetName}'/>"
+                        onclick="openRecordFromBtn(this)">상세보기</button>
             </div>
         </div>
     </div>
-
-    <%-- 진료기록 카드 2 --%>
-    <div class="rec-card" data-pet="루비" data-guardian="최유나" data-type="수술" data-date="2025-06-24">
-        <div class="rec-card-head">
-            <img class="rec-pet-thumb"
-                 src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=88&q=70&auto=format&fit=crop"
-                 alt="루비"
-                 onerror="this.src='https://placehold.co/44x44/EAF7F2/2BAB82?text=DOG'">
-            <div class="rec-pet-info">
-                <div class="pet-name">루비</div>
-                <div class="pet-meta">푸들 / 암컷 / 1세 · 보호자: 최유나</div>
-            </div>
-            <div class="rec-head-right">
-                <span class="rec-date">2025.06.24</span>
-                <span class="rec-type rec-surgery">수술</span>
-            </div>
-        </div>
-        <div class="rec-card-body">
-            <div class="rec-field"><label>주증상</label><span>중성화 수술</span></div>
-            <div class="rec-field"><label>진단명</label><span>수술 완료 (이상 없음)</span></div>
-            <div class="rec-field"><label>처방</label><span>항생제 7일치, 소염제</span></div>
-            <div class="rec-field"><label>체중 / 체온</label><span>3.8 kg / 38.2 ℃</span></div>
-        </div>
-        <div class="rec-card-foot">
-            <span class="rec-foot-vet">
-                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                이영희 수의사
-            </span>
-            <div class="rec-action-btns">
-               
-                <button class="biz-btn" onclick="openRecordModal({
-                    thumb:'https://images.unsplash.com/photo-1552053831-71594a27632d?w=128&q=80&auto=format&fit=crop',
-                    name:'루비', meta:'푸들 · 암컷 · 1세 · 보호자: 최유나', date:'2025.06.24',
-                    type:'수술', symptom:'중성화 수술', diagnosis:'수술 완료 (이상 없음)',
-                    exam:'', prescription:'항생제 7일치, 소염제', weight:'3.8', temp:'38.2',
-                    heartRate:'', breath:'', memo:'', nextVisit:'', vet:'이영희 수의사'
-                })">상세보기</button>
-            </div>
-        </div>
-    </div>
-
-    <%-- 진료기록 카드 3 --%>
-    <div class="rec-card" data-pet="나비" data-guardian="이서연" data-type="예방접종" data-date="2025-06-20">
-        <div class="rec-card-head">
-            <img class="rec-pet-thumb"
-                 src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=88&q=70&auto=format&fit=crop"
-                 alt="나비"
-                 onerror="this.src='https://placehold.co/44x44/F3E8FF/9333EA?text=CAT'">
-            <div class="rec-pet-info">
-                <div class="pet-name">나비</div>
-                <div class="pet-meta">페르시안 / 암컷 / 2세 · 보호자: 이서연</div>
-            </div>
-            <div class="rec-head-right">
-                <span class="rec-date">2025.06.20</span>
-                <span class="rec-type rec-vaccine">예방접종</span>
-            </div>
-        </div>
-        <div class="rec-card-body">
-            <div class="rec-field"><label>접종 항목</label><span>고양이 종합백신 3차</span></div>
-            <div class="rec-field"><label>이상반응</label><span>없음</span></div>
-            <div class="rec-field"><label>다음 접종</label><span>2026.06.20</span></div>
-            <div class="rec-field"><label>체중 / 체온</label><span>4.2 kg / 38.6 ℃</span></div>
-        </div>
-        <div class="rec-card-foot">
-            <span class="rec-foot-vet">
-                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                김철수 수의사
-            </span>
-            <div class="rec-action-btns">
-                
-                <button class="biz-btn" onclick="openRecordModal({
-                    thumb:'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=128&q=70&auto=format&fit=crop',
-                    name:'나비', meta:'페르시안 · 암컷 · 2세 · 보호자: 이서연', date:'2025.06.20',
-                    type:'예방접종', symptom:'고양이 종합백신 3차', diagnosis:'이상반응 없음',
-                    exam:'', prescription:'', weight:'4.2', temp:'38.6',
-                    heartRate:'', breath:'', memo:'', nextVisit:'2026-06-20', vet:'김철수 수의사'
-                })">상세보기</button>
-            </div>
-        </div>
-    </div>
-
-<p id="rec-empty-state" style="display:none; text-align:center; color:#aaa; padding:40px 0; font-size:14px;">검색 조건에 맞는 진료기록이 없습니다.</p>
-
-    <%-- 페이지네이션 --%>
-    <div class="rec-pagination">
-        <button class="rec-page-btn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <button class="rec-page-btn active">1</button>
-        <button class="rec-page-btn">2</button>
-        <button class="rec-page-btn">3</button>
-        <button class="rec-page-btn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-    </div>
+    </c:forEach>
 
 </main>
 
-<%-- ── 진료기록 작성/수정 모달 ── --%>
+<%-- ── 진료기록 작성/상세 모달 (2026/07/13 장우철 — 저장 연동) ── --%>
 <div class="rm-modal-bg" id="recordModalBg" onclick="if(event.target===this) closeRecordModal()">
   <div class="rm-modal">
     <div class="rm-header">
       <h3 id="rm-title">진료기록 작성</h3>
       <button type="button" class="rm-close" onclick="closeRecordModal()">×</button>
     </div>
-    <div class="rm-body">
+    <form id="recordWriteForm" method="post" action="${contextPath}/biz/hospital/records/complete">
+      <input type="hidden" name="redirect" value="records">
+      <input type="hidden" name="resvId" id="rm-resv-id" value="">
+      <input type="hidden" name="treatType" id="rm-treat-type" value="진료">
+      <div class="rm-body">
 
-      <%-- 환자 정보 (수정 시 표시) --%>
-      <div class="rm-patient-card" id="rm-patient-card" style="display:none">
-        <img class="rm-patient-thumb" id="rm-patient-thumb" src="" alt="환자">
-        <div>
-          <div class="rm-patient-name" id="rm-patient-name"></div>
-          <div class="rm-patient-meta" id="rm-patient-meta"></div>
+        <div class="rm-patient-card" id="rm-patient-card" style="display:none">
+          <img class="rm-patient-thumb" id="rm-patient-thumb" src="" alt="환자">
+          <div>
+            <div class="rm-patient-name" id="rm-patient-name"></div>
+            <div class="rm-patient-meta" id="rm-patient-meta"></div>
+          </div>
+          <span class="rm-patient-badge" id="rm-patient-badge"></span>
         </div>
-        <span class="rm-patient-badge" id="rm-patient-badge"></span>
-      </div>
 
-      <%-- 환자 검색 (신규 작성 시 표시) --%>
-      <div class="rm-patient-search" id="rm-patient-search">
-        <input type="text" id="rm-pet-name-search" placeholder="반려동물명 *">
-        <input type="text" id="rm-guardian-search" placeholder="보호자명">
-      </div>
+        <%-- 신규: 확정·미기록 예약 선택 --%>
+        <div class="rm-patient-search" id="rm-patient-search">
+          <label style="font-size:13px;font-weight:600;color:#555">대상 예약 <span class="req" style="color:#FF6B6B">*</span></label>
+          <select id="rm-resv-select" onchange="onWritableResvChange()">
+            <option value="">예약확정 · 기록 미작성 건을 선택하세요</option>
+            <c:forEach var="wr" items="${writableReserves}">
+              <option value="${wr.resvId}"
+                      data-member="<c:out value='${wr.memberName}'/>"
+                      data-pet="<c:out value='${wr.petName}'/>"
+                      data-breed="<c:out value='${wr.petBreed}'/>"
+                      data-species="<c:out value='${wr.petSpecies}'/>"
+                      data-date="<fmt:formatDate value='${wr.resvDate}' pattern='yyyy-MM-dd'/>"
+                      data-time="<c:out value='${wr.resvTime}'/>"
+                      data-symptoms="<c:out value='${wr.symptoms}'/>">
+                <c:out value="${wr.petName}"/> / <c:out value="${wr.memberName}"/>
+                · <fmt:formatDate value="${wr.resvDate}" pattern="MM/dd"/>
+                <c:if test="${not empty wr.resvTime}"> ${wr.resvTime}</c:if>
+                (<c:out value="${wr.resvNo}"/>)
+              </option>
+            </c:forEach>
+          </select>
+          <div id="rm-resv-hint" style="font-size:12px;color:#999;display:none"></div>
+        </div>
 
-      <div class="rm-section-label">진료 정보</div>
-      <div class="rm-grid">
-        <div class="rm-group full">
-          <label>진료 유형 <span class="req">*</span></label>
-          <div class="rm-type-group">
-            <input type="radio" name="rmRecType" id="rm-type-check" class="rm-type-item" value="정기검진">
-            <label for="rm-type-check" class="rm-type-label">정기검진</label>
-            <input type="radio" name="rmRecType" id="rm-type-treat" class="rm-type-item" value="진료" checked>
-            <label for="rm-type-treat" class="rm-type-label">진료</label>
-            <input type="radio" name="rmRecType" id="rm-type-vaccine" class="rm-type-item" value="예방접종">
-            <label for="rm-type-vaccine" class="rm-type-label">예방접종</label>
-            <input type="radio" name="rmRecType" id="rm-type-surgery" class="rm-type-item" value="수술">
-            <label for="rm-type-surgery" class="rm-type-label">수술</label>
+        <div class="rm-section-label">진료 정보</div>
+        <div class="rm-grid">
+          <div class="rm-group full">
+            <label>진료 유형 <span class="req">*</span></label>
+            <div class="rm-type-group">
+              <input type="radio" name="rmRecType" id="rm-type-check" class="rm-type-item" value="정기검진" onchange="syncTreatType()">
+              <label for="rm-type-check" class="rm-type-label">정기검진</label>
+              <input type="radio" name="rmRecType" id="rm-type-treat" class="rm-type-item" value="진료" checked onchange="syncTreatType()">
+              <label for="rm-type-treat" class="rm-type-label">진료</label>
+              <input type="radio" name="rmRecType" id="rm-type-vaccine" class="rm-type-item" value="예방접종" onchange="syncTreatType()">
+              <label for="rm-type-vaccine" class="rm-type-label">예방접종</label>
+              <input type="radio" name="rmRecType" id="rm-type-surgery" class="rm-type-item" value="수술" onchange="syncTreatType()">
+              <label for="rm-type-surgery" class="rm-type-label">수술</label>
+            </div>
+          </div>
+          <div class="rm-group full">
+            <label>주증상 <span class="req">*</span></label>
+            <input type="text" name="symptoms" id="rm-symptom" placeholder="예) 피부 트러블, 긁음 반복">
+          </div>
+          <div class="rm-group">
+            <label>진단명 <span class="req">*</span></label>
+            <input type="text" name="diagnosis" id="rm-diagnosis" placeholder="예) 알레르기성 피부염">
+          </div>
+          <div class="rm-group">
+            <label>검사 항목</label>
+            <input type="text" name="examItems" id="rm-exam" placeholder="예) 혈액검사, 심장사상충">
+          </div>
+          <div class="rm-group full">
+            <label>처방 내용</label>
+            <textarea name="prescription" id="rm-prescription" placeholder="처방한 약물명, 용량, 투약 기간 등을 입력하세요."></textarea>
           </div>
         </div>
-        <div class="rm-group full">
-          <label>주증상 <span class="req">*</span></label>
-          <input type="text" id="rm-symptom" placeholder="예) 피부 트러블, 긁음 반복">
-        </div>
-        <div class="rm-group">
-          <label>진단명 <span class="req">*</span></label>
-          <input type="text" id="rm-diagnosis" placeholder="예) 알레르기성 피부염">
-        </div>
-        <div class="rm-group">
-          <label>검사 항목</label>
-          <input type="text" id="rm-exam" placeholder="예) 혈액검사, 심장사상충">
-        </div>
-        <div class="rm-group full">
-          <label>처방 내용</label>
-          <textarea id="rm-prescription" placeholder="처방한 약물명, 용량, 투약 기간 등을 입력하세요."></textarea>
-        </div>
-      </div>
 
-      <div class="rm-section-label">신체 계측</div>
-      <div class="rm-grid">
-        <div class="rm-group">
-          <label>체중</label>
-          <div class="rm-input-unit"><input type="number" id="rm-weight" placeholder="0.0" step="0.1"><span>kg</span></div>
+        <div class="rm-section-label">신체 계측</div>
+        <div class="rm-grid">
+          <div class="rm-group">
+            <label>체중</label>
+            <div class="rm-input-unit"><input type="number" name="weight" id="rm-weight" placeholder="0.0" step="0.1"><span>kg</span></div>
+          </div>
+          <div class="rm-group">
+            <label>체온</label>
+            <div class="rm-input-unit"><input type="number" name="temperature" id="rm-temp" placeholder="0.0" step="0.1"><span>℃</span></div>
+            <span class="rm-hint">정상 범위: 개 37.5~39.2℃ / 고양이 38.1~39.2℃</span>
+          </div>
+          <div class="rm-group">
+            <label>심박수</label>
+            <div class="rm-input-unit"><input type="number" name="heartRate" id="rm-heart" placeholder="0"><span>bpm</span></div>
+          </div>
+          <div class="rm-group">
+            <label>호흡수</label>
+            <div class="rm-input-unit"><input type="number" name="breathRate" id="rm-breath" placeholder="0"><span>회/분</span></div>
+          </div>
         </div>
-        <div class="rm-group">
-          <label>체온</label>
-          <div class="rm-input-unit"><input type="number" id="rm-temp" placeholder="0.0" step="0.1"><span>℃</span></div>
-          <span class="rm-hint">정상 범위: 개 37.5~39.2℃ / 고양이 38.1~39.2℃</span>
-        </div>
-        <div class="rm-group">
-          <label>심박수</label>
-          <div class="rm-input-unit"><input type="number" id="rm-heart" placeholder="0"><span>bpm</span></div>
-        </div>
-        <div class="rm-group">
-          <label>호흡수</label>
-          <div class="rm-input-unit"><input type="number" id="rm-breath" placeholder="0"><span>회/분</span></div>
-        </div>
-      </div>
 
-      <div class="rm-section-label">추가 정보</div>
-      <div class="rm-grid">
-        <div class="rm-group full">
-          <label>수의사 메모</label>
-          <textarea id="rm-memo" placeholder="보호자에게 전달할 주의사항, 재방문 권장 이유, 관리 방법 등을 입력하세요."></textarea>
+        <div class="rm-section-label">추가 정보</div>
+        <div class="rm-grid">
+          <div class="rm-group full">
+            <label>수의사 메모</label>
+            <textarea name="memo" id="rm-memo" placeholder="보호자에게 전달할 주의사항, 재방문 권장 이유, 관리 방법 등을 입력하세요."></textarea>
+          </div>
+          <div class="rm-group">
+            <label>다음 방문 권장일</label>
+            <input type="date" name="nextVisit" id="rm-next-visit">
+            <span class="rm-hint">기록에 함께 저장됩니다.</span>
+          </div>
+          <div class="rm-group">
+            <label>담당 수의사</label>
+            <input type="text" name="vetName" id="rm-vet" placeholder="예) 김철수 수의사" list="rm-vet-list">
+            <datalist id="rm-vet-list">
+              <option value="김철수 수의사">
+              <option value="이영희 수의사">
+            </datalist>
+          </div>
         </div>
-        <div class="rm-group">
-          <label>다음 방문 권장일</label>
-          <input type="date" id="rm-next-visit">
-          <span class="rm-hint">입력 시 보호자에게 알림이 발송됩니다.</span>
-        </div>
-        <div class="rm-group">
-          <label>담당 수의사</label>
-          <select id="rm-vet">
-            <option>김철수 수의사</option>
-            <option>이영희 수의사</option>
-          </select>
-        </div>
-      </div>
 
-    </div>
-    <div class="rm-footer">
-      <button type="button" class="btn-rm-cancel" onclick="closeRecordModal()">취소</button>
-      <button type="button" class="btn-rm-save" onclick="saveRecord()">
-        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        저장
-      </button>
-    </div>
+      </div>
+      <div class="rm-footer" id="rm-footer-write">
+        <button type="button" class="btn-rm-cancel" onclick="closeRecordModal()">취소</button>
+        <button type="button" class="btn-rm-save" onclick="saveRecord()">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          저장 · 진료완료
+        </button>
+      </div>
+      <div class="rm-footer" id="rm-footer-view" style="display:none">
+        <button type="button" class="btn-rm-cancel" style="flex:1" onclick="closeRecordModal()">닫기</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <script>
+    // 2026/07/13 장우철 — DB 카드 data-* 로 상세 모달 오픈
+    function openRecordFromBtn(btn) {
+        openRecordModal({
+            name: btn.dataset.name || '',
+            meta: btn.dataset.meta || '',
+            date: btn.dataset.date || '',
+            type: '진료',
+            symptom: btn.dataset.symptom || '',
+            diagnosis: btn.dataset.diagnosis || '',
+            prescription: btn.dataset.prescription || '',
+            memo: btn.dataset.memo || '',
+            vet: btn.dataset.vet || ''
+        });
+    }
+
     function selRecType(v) {
         const map = {'정기검진':'rm-type-check','진료':'rm-type-treat','예방접종':'rm-type-vaccine','수술':'rm-type-surgery'};
         const id = map[v] || 'rm-type-treat';
         document.getElementById(id).checked = true;
+        syncTreatType();
+    }
+
+    function syncTreatType() {
+        var checked = document.querySelector('input[name="rmRecType"]:checked');
+        document.getElementById('rm-treat-type').value = checked ? checked.value : '진료';
+    }
+
+    function resetRecordForm() {
+        document.getElementById('recordWriteForm').reset();
+        document.getElementById('rm-resv-id').value = '';
+        document.getElementById('rm-treat-type').value = '진료';
+        document.getElementById('rm-type-treat').checked = true;
+        document.getElementById('rm-resv-hint').style.display = 'none';
+        setRecordFieldsReadonly(false);
+    }
+
+    function setRecordFieldsReadonly(ro) {
+        ['rm-symptom','rm-diagnosis','rm-exam','rm-prescription','rm-weight','rm-temp','rm-heart','rm-breath','rm-memo','rm-next-visit','rm-vet'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.readOnly = !!ro;
+        });
+        document.querySelectorAll('input[name="rmRecType"]').forEach(function(r) { r.disabled = !!ro; });
+    }
+
+    function onWritableResvChange() {
+        var sel = document.getElementById('rm-resv-select');
+        var opt = sel.options[sel.selectedIndex];
+        document.getElementById('rm-resv-id').value = sel.value || '';
+        var hint = document.getElementById('rm-resv-hint');
+        if (!sel.value) {
+            hint.style.display = 'none';
+            return;
+        }
+        var meta = (opt.dataset.pet || '') + ' · 보호자 ' + (opt.dataset.member || '')
+            + ' · ' + (opt.dataset.date || '') + ' ' + (opt.dataset.time || '');
+        hint.textContent = meta;
+        hint.style.display = 'block';
+        if (opt.dataset.symptoms) {
+            document.getElementById('rm-symptom').value = opt.dataset.symptoms;
+        }
     }
 
     function openRecordModal(data) {
@@ -563,9 +570,17 @@
         document.getElementById('rm-title').textContent = isEdit ? '진료기록 상세보기' : '진료기록 작성';
         document.getElementById('rm-patient-card').style.display = isEdit ? 'flex' : 'none';
         document.getElementById('rm-patient-search').style.display = isEdit ? 'none' : 'flex';
+        document.getElementById('rm-footer-write').style.display = isEdit ? 'none' : 'flex';
+        document.getElementById('rm-footer-view').style.display = isEdit ? 'flex' : 'none';
 
-        if (isEdit) {
-            document.getElementById('rm-patient-thumb').src = data.thumb || '';
+        if (!isEdit) {
+            resetRecordForm();
+            <c:if test="${empty writableReserves}">
+            alert('작성 가능한 예약확정 건이 없습니다. 예약관리에서 먼저 예약을 확정해 주세요.');
+            return;
+            </c:if>
+        } else {
+            document.getElementById('rm-patient-thumb').src = data.thumb || 'https://placehold.co/44x44/EAF7F2/2BAB82?text=PET';
             document.getElementById('rm-patient-name').textContent = data.name || '';
             document.getElementById('rm-patient-meta').textContent = data.meta || '';
             document.getElementById('rm-patient-badge').textContent = (data.date || '') + ' 작성';
@@ -579,26 +594,9 @@
             document.getElementById('rm-breath').value = data.breath || '';
             document.getElementById('rm-memo').value = data.memo || '';
             document.getElementById('rm-next-visit').value = data.nextVisit || '';
-            const vetSel = document.getElementById('rm-vet');
-            if (data.vet) {
-                [...vetSel.options].forEach((o, i) => { if (o.text === data.vet) vetSel.selectedIndex = i; });
-            }
+            document.getElementById('rm-vet').value = data.vet || '';
             selRecType(data.type || '진료');
-        } else {
-            document.getElementById('rm-pet-name-search').value = '';
-            document.getElementById('rm-guardian-search').value = '';
-            document.getElementById('rm-symptom').value = '';
-            document.getElementById('rm-diagnosis').value = '';
-            document.getElementById('rm-exam').value = '';
-            document.getElementById('rm-prescription').value = '';
-            document.getElementById('rm-weight').value = '';
-            document.getElementById('rm-temp').value = '';
-            document.getElementById('rm-heart').value = '';
-            document.getElementById('rm-breath').value = '';
-            document.getElementById('rm-memo').value = '';
-            document.getElementById('rm-next-visit').value = '';
-            document.getElementById('rm-vet').selectedIndex = 0;
-            selRecType('진료');
+            setRecordFieldsReadonly(true);
         }
 
         document.getElementById('recordModalBg').classList.add('open');
@@ -608,61 +606,20 @@
     function closeRecordModal() {
         document.getElementById('recordModalBg').classList.remove('open');
         document.body.style.overflow = '';
+        setRecordFieldsReadonly(false);
     }
 
+    // 2026/07/13 장우철 — 작성 모달 → complete API (진료완료 + TB_MEDICAL_RECORD)
     function saveRecord() {
-        const isCreate = document.getElementById('rm-patient-search').style.display !== 'none';
-        if (isCreate && !document.getElementById('rm-pet-name-search').value.trim()) {
-            alert('반려동물명을 입력해 주세요.');
-            return;
-        }
-        if (!document.getElementById('rm-symptom').value.trim()) {
-            alert('주증상을 입력해 주세요.');
-            return;
-        }
-        if (!document.getElementById('rm-diagnosis').value.trim()) {
-            alert('진단명을 입력해 주세요.');
-            return;
-        }
-        if (confirm('진료를 완료 처리하고 기록을 저장하시겠습니까?\n저장 후 보호자에게 알림이 발송됩니다.')) {
-            closeRecordModal();
-            alert('진료기록이 저장되었습니다.');
-        }
-    }
-
-    function filterRecords() {
-        const keyword = document.getElementById('rec-search-input').value.trim().toLowerCase();
-        const type = document.getElementById('rec-type-filter').value;
-        const months = parseInt(document.getElementById('rec-period-filter').value, 10);
-        const cards = document.querySelectorAll('.rec-card');
-
-        let maxDate = null;
-        cards.forEach(c => {
-            const d = new Date(c.dataset.date);
-            if (!maxDate || d > maxDate) maxDate = d;
-        });
-
-        let visibleCount = 0;
-        cards.forEach(card => {
-            const pet = (card.dataset.pet || '').toLowerCase();
-            const guardian = (card.dataset.guardian || '').toLowerCase();
-            const cType = card.dataset.type || '';
-            const cDate = new Date(card.dataset.date);
-
-            let show = true;
-            if (keyword && !pet.includes(keyword) && !guardian.includes(keyword)) show = false;
-            if (type && cType !== type) show = false;
-            if (months && maxDate) {
-                const cutoff = new Date(maxDate);
-                cutoff.setMonth(cutoff.getMonth() - months);
-                if (cDate < cutoff) show = false;
-            }
-
-            card.style.display = show ? '' : 'none';
-            if (show) visibleCount++;
-        });
-
-        document.getElementById('rec-empty-state').style.display = visibleCount === 0 ? 'block' : 'none';
+        var resvId = document.getElementById('rm-resv-id').value;
+        if (!resvId) { alert('대상 예약을 선택해 주세요.'); return; }
+        var symptoms = document.getElementById('rm-symptom').value.trim();
+        var diagnosis = document.getElementById('rm-diagnosis').value.trim();
+        if (!symptoms) { alert('주증상을 입력해 주세요.'); return; }
+        if (!diagnosis) { alert('진단명을 입력해 주세요.'); return; }
+        syncTreatType();
+        if (!confirm('진료완료로 처리하고 기록을 저장할까요?')) return;
+        document.getElementById('recordWriteForm').submit();
     }
 </script>
 

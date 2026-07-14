@@ -129,6 +129,80 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026/07/13 장우철 — 진료완료 알림 (상세에서 리뷰 작성)
+    @Override
+    @Transactional
+    public void sendReserveDoneNotification(Long memberNo, String hospitalName,
+                                            java.util.Date resvDate, String resvTime, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String when = formatResvWhen(resvDate, resvTime);
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String content = "[" + safeName + "] 진료가 완료되었습니다.\n\n예약 일시: " + when
+                + "\n예약 상세에서 진료 내용을 확인하고 리뷰를 작성해 주세요.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("병원 진료가 완료되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/07/13 장우철 — 리뷰 등록 → 사업자 알림
+    @Override
+    @Transactional
+    public void sendHospitalReviewToBizNotification(Long bizMemberNo, String hospitalName,
+                                                    String reviewerNickname, Double rating, Long resvId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String who = (reviewerNickname != null && !reviewerNickname.isBlank()) ? reviewerNickname : "회원";
+        String star = rating != null ? String.valueOf(rating) : "-";
+        String content = "[" + safeName + "] 새 진료 리뷰가 등록되었습니다.\n\n작성자: " + who
+                + "\n별점: " + star;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("병원 리뷰가 등록되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/hospital/reviews");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/07/14 장우철 — 병원 답글 → 회원 알림
+    @Override
+    @Transactional
+    public void sendHospitalReviewReplyNotification(Long memberNo, String hospitalName,
+                                                    Long resvId, Long hospitalId) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String content = "[" + safeName + "] 회원님의 리뷰에 병원 답글이 등록되었습니다.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("병원 리뷰 답글이 등록되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        if (hospitalId != null) {
+            vo.setLinkUrl("/hospital/detail?id=" + hospitalId);
+        } else if (resvId != null) {
+            vo.setLinkUrl("/mypage/reserve/detail?resvId=" + resvId);
+        } else {
+            vo.setLinkUrl("/mypage/reserve");
+        }
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     private String formatResvWhen(java.util.Date resvDate, String resvTime) {
         String datePart = "-";
         if (resvDate != null) {

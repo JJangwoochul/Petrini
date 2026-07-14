@@ -34,4 +34,7 @@ public class MypageReserveVO {
     private String petBreed;
     private String hospitalName;
     private String hospitalAddr;
+
+    // 2026/07/13 장우철 — DONE 예약 리뷰 작성 여부 (Y/N)
+    private String reviewedYn;
 }

@@ -19,6 +19,42 @@
   .rv-row{display:flex;justify-content:space-between;font-size:14px;gap:12px}
   .rv-row span:first-child{color:#888;flex-shrink:0}
   .rv-row span:last-child{color:#1A1A2E;font-weight:600;text-align:right}
+
+  /* 2026/07/13 장우철 — 진료완료 풀모달 (records 와 동일) */
+  .rm-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+  .rm-modal-bg.open{display:flex}
+  .rm-modal{background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+  .rm-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #E2E8E4;position:sticky;top:0;background:#fff;z-index:1}
+  .rm-header h3{font-size:18px;font-weight:800;color:#1A1A2E;margin:0}
+  .rm-close{width:32px;height:32px;border:none;background:#F0F4F8;border-radius:50%;cursor:pointer;font-size:18px;color:#999}
+  .rm-body{padding:22px 24px}
+  .rm-patient-card{display:flex;align-items:center;gap:14px;background:#FAFBFA;border:1px solid #E2E8E4;border-radius:10px;padding:14px 16px;margin-bottom:20px}
+  .rm-patient-thumb{width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #E2E8E4}
+  .rm-patient-name{font-size:15px;font-weight:700;color:#1A1A2E}
+  .rm-patient-meta{font-size:12.5px;color:#999;margin-top:3px}
+  .rm-patient-badge{margin-left:auto;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:#EAF7F2;color:#1F8464;white-space:nowrap}
+  .rm-section-label{font-size:13px;font-weight:700;color:#2BAB82;margin:4px 0 12px;padding-top:14px;border-top:1px solid #F0F4F8}
+  .rm-section-label:first-of-type{padding-top:0;border-top:none}
+  .rm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px}
+  .rm-group{display:flex;flex-direction:column;gap:5px}
+  .rm-group.full{grid-column:1/-1}
+  .rm-group label{font-size:13px;font-weight:600;color:#555}
+  .rm-group label .req{color:#FF6B6B;margin-left:2px}
+  .rm-group input,.rm-group select,.rm-group textarea{border:1px solid #E2E8E4;border-radius:8px;padding:9px 13px;font-size:14px;color:#1A1A2E;outline:none;font-family:inherit;width:100%;box-sizing:border-box}
+  .rm-group textarea{min-height:64px;resize:vertical;line-height:1.6}
+  .rm-input-unit{display:flex;align-items:center;gap:8px}
+  .rm-input-unit input{flex:1}
+  .rm-input-unit span{font-size:13px;color:#555;white-space:nowrap}
+  .rm-hint{font-size:11px;color:#aaa;margin-top:2px}
+  .rm-type-group{display:flex;gap:8px;flex-wrap:wrap}
+  .rm-type-item{display:none}
+  .rm-type-label{padding:7px 16px;border:1px solid #E2E8E4;border-radius:50px;font-size:13px;font-weight:600;color:#555;cursor:pointer}
+  .rm-type-item:checked+.rm-type-label{background:#EAF7F2;border-color:#2BAB82;color:#1F8464}
+  .rm-footer{display:flex;gap:10px;padding:16px 24px;border-top:1px solid #E2E8E4;position:sticky;bottom:0;background:#fff}
+  .btn-rm-cancel{flex:1;padding:12px;border:1px solid #E2E8E4;border-radius:8px;background:#fff;color:#555;font-size:14px;font-weight:700;cursor:pointer}
+  .btn-rm-save{flex:2;padding:12px;border:none;border-radius:8px;background:#2BAB82;color:#fff;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn-rm-save svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  @media (max-width:600px){.rm-grid{grid-template-columns:1fr}}
 </style>
 
 <%-- 2026-07-10 장우철 — 사업자 예약 관리 DB 연동 (F4~F6) --%>
@@ -82,6 +118,108 @@
       <div class="rv-row"><span>증상</span><span id="mdSymptoms">-</span></div>
       <div class="rv-row"><span>요청사항</span><span id="mdMemo">-</span></div>
     </div>
+  </div>
+</div>
+
+<%-- 2026/07/13 장우철 — 진료완료 + 풀 진료기록 모달 (records 와 동일 필드) --%>
+<div class="rm-modal-bg" id="completeModalBg" onclick="if(event.target===this) closeCompleteModal()">
+  <div class="rm-modal">
+    <div class="rm-header">
+      <h3>진료완료 · 진료기록 작성</h3>
+      <button type="button" class="rm-close" onclick="closeCompleteModal()">×</button>
+    </div>
+    <form id="completeRecordForm" method="post" action="${contextPath}/biz/hospital/records/complete">
+      <input type="hidden" name="resvId" id="cmResvId" value="">
+      <input type="hidden" name="treatType" id="cmTreatType" value="진료">
+      <div class="rm-body">
+        <div class="rm-patient-card">
+          <img class="rm-patient-thumb" src="https://placehold.co/44x44/EAF7F2/2BAB82?text=PET" alt="환자">
+          <div>
+            <div class="rm-patient-name" id="cmPet">-</div>
+            <div class="rm-patient-meta" id="cmMemberMeta">-</div>
+          </div>
+          <span class="rm-patient-badge" id="cmDateBadge">-</span>
+        </div>
+
+        <div class="rm-section-label">진료 정보</div>
+        <div class="rm-grid">
+          <div class="rm-group full">
+            <label>진료 유형 <span class="req">*</span></label>
+            <div class="rm-type-group">
+              <input type="radio" name="cmRecType" id="cm-type-check" class="rm-type-item" value="정기검진" onchange="syncCmTreatType()">
+              <label for="cm-type-check" class="rm-type-label">정기검진</label>
+              <input type="radio" name="cmRecType" id="cm-type-treat" class="rm-type-item" value="진료" checked onchange="syncCmTreatType()">
+              <label for="cm-type-treat" class="rm-type-label">진료</label>
+              <input type="radio" name="cmRecType" id="cm-type-vaccine" class="rm-type-item" value="예방접종" onchange="syncCmTreatType()">
+              <label for="cm-type-vaccine" class="rm-type-label">예방접종</label>
+              <input type="radio" name="cmRecType" id="cm-type-surgery" class="rm-type-item" value="수술" onchange="syncCmTreatType()">
+              <label for="cm-type-surgery" class="rm-type-label">수술</label>
+            </div>
+          </div>
+          <div class="rm-group full">
+            <label>주증상 <span class="req">*</span></label>
+            <input type="text" name="symptoms" id="cmSymptoms" placeholder="예) 피부 트러블, 긁음 반복">
+          </div>
+          <div class="rm-group">
+            <label>진단명 <span class="req">*</span></label>
+            <input type="text" name="diagnosis" id="cmDiagnosis" placeholder="예) 알레르기성 피부염">
+          </div>
+          <div class="rm-group">
+            <label>검사 항목</label>
+            <input type="text" name="examItems" id="cmExam" placeholder="예) 혈액검사, 심장사상충">
+          </div>
+          <div class="rm-group full">
+            <label>처방 내용</label>
+            <textarea name="prescription" id="cmPrescription" placeholder="처방한 약물명, 용량, 투약 기간 등을 입력하세요."></textarea>
+          </div>
+        </div>
+
+        <div class="rm-section-label">신체 계측</div>
+        <div class="rm-grid">
+          <div class="rm-group">
+            <label>체중</label>
+            <div class="rm-input-unit"><input type="number" name="weight" id="cmWeight" placeholder="0.0" step="0.1"><span>kg</span></div>
+          </div>
+          <div class="rm-group">
+            <label>체온</label>
+            <div class="rm-input-unit"><input type="number" name="temperature" id="cmTemp" placeholder="0.0" step="0.1"><span>℃</span></div>
+            <span class="rm-hint">정상 범위: 개 37.5~39.2℃ / 고양이 38.1~39.2℃</span>
+          </div>
+          <div class="rm-group">
+            <label>심박수</label>
+            <div class="rm-input-unit"><input type="number" name="heartRate" id="cmHeart" placeholder="0"><span>bpm</span></div>
+          </div>
+          <div class="rm-group">
+            <label>호흡수</label>
+            <div class="rm-input-unit"><input type="number" name="breathRate" id="cmBreath" placeholder="0"><span>회/분</span></div>
+          </div>
+        </div>
+
+        <div class="rm-section-label">추가 정보</div>
+        <div class="rm-grid">
+          <div class="rm-group full">
+            <label>수의사 메모</label>
+            <textarea name="memo" id="cmMemo" placeholder="보호자에게 전달할 주의사항, 재방문 권장 이유, 관리 방법 등을 입력하세요."></textarea>
+          </div>
+          <div class="rm-group">
+            <label>다음 방문 권장일</label>
+            <input type="date" name="nextVisit" id="cmNextVisit">
+            <span class="rm-hint">기록에 함께 저장됩니다.</span>
+          </div>
+          <div class="rm-group">
+            <label>담당 수의사</label>
+            <input type="text" name="vetName" id="cmVetName" placeholder="예) 김철수 수의사">
+          </div>
+        </div>
+      </div>
+      <div class="rm-footer">
+        <button type="button" class="btn-rm-cancel" onclick="closeCompleteModal()">취소</button>
+        <button type="button" class="btn-rm-save" onclick="submitCompleteRecord()">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          저장 · 진료완료
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -177,7 +315,7 @@
           '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
       } else if (r.status === 'confirmed') {
         actionHtml +=
-          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'DONE\')">진료완료</button> ' +
+          '<button type="button" class="biz-btn" onclick="openCompleteModal(' + r.resvId + ')">진료완료</button> ' +
           '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
       }
 
@@ -194,7 +332,7 @@
 
   function postStatus(resvId, statusCd) {
     if (statusCd === 'CONFIRMED' && !confirm('예약을 확정하시겠습니까?')) return;
-    if (statusCd === 'DONE' && !confirm('진료완료로 처리하시겠습니까?')) return;
+    // 2026/07/13 장우철 — DONE 은 openCompleteModal 로 분리 (바로 postStatus 호출 안 함)
 
     var form = document.createElement('form');
     form.method = 'POST';
@@ -204,6 +342,51 @@
       '<input type="hidden" name="statusCd" value="' + statusCd + '">';
     document.body.appendChild(form);
     form.submit();
+  }
+
+  // 2026/07/13 장우철 — 진료완료: 상세 조회 후 풀모달 자동채움
+  function syncCmTreatType() {
+    var checked = document.querySelector('input[name="cmRecType"]:checked');
+    document.getElementById('cmTreatType').value = checked ? checked.value : '진료';
+  }
+
+  function openCompleteModal(resvId) {
+    fetch(contextPath + '/biz/hospital/reserve/detail?resvId=' + resvId)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data) { alert('예약 정보를 불러올 수 없습니다.'); return; }
+        document.getElementById('completeRecordForm').reset();
+        document.getElementById('cm-type-treat').checked = true;
+        document.getElementById('cmTreatType').value = '진료';
+        document.getElementById('cmResvId').value = data.resvId;
+        var petLabel = data.petName || '-';
+        if (data.petBreed) petLabel += ' (' + data.petBreed + ')';
+        if (data.petSpecies) petLabel += ' / ' + data.petSpecies;
+        document.getElementById('cmPet').textContent = petLabel;
+        document.getElementById('cmMemberMeta').textContent = '보호자: ' + (data.memberName || '-');
+        var dateLabel = data.resvDate ? String(data.resvDate).substring(0, 10) : '-';
+        if (data.resvTime) dateLabel += ' ' + data.resvTime;
+        document.getElementById('cmDateBadge').textContent = dateLabel;
+        document.getElementById('cmSymptoms').value = data.symptoms || '';
+        document.getElementById('completeModalBg').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      })
+      .catch(function() { alert('예약 정보를 불러올 수 없습니다.'); });
+  }
+
+  function closeCompleteModal() {
+    document.getElementById('completeModalBg').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function submitCompleteRecord() {
+    var symptoms = document.getElementById('cmSymptoms').value.trim();
+    var diagnosis = document.getElementById('cmDiagnosis').value.trim();
+    if (!symptoms) { alert('주증상을 입력해 주세요.'); return; }
+    if (!diagnosis) { alert('진단명을 입력해 주세요.'); return; }
+    syncCmTreatType();
+    if (!confirm('진료완료로 처리하고 기록을 저장할까요?')) return;
+    document.getElementById('completeRecordForm').submit();
   }
 
   // 2026/07/11 장우철 — 취소 사유 모달

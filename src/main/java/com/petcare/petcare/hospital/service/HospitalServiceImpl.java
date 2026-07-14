@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.hospital.mapper.HospitalMapper;
 import com.petcare.petcare.hospital.vo.HospitalPetVO;
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 
@@ -69,6 +70,16 @@ public class HospitalServiceImpl implements HospitalService {
     @Transactional(readOnly = true)
     public ReservationVO getReservationById(Long resvId) throws Exception {
         return hospitalMapper.selectReservationById(resvId);
+    }
+
+    // 2026/07/13 장우철 — 병원 상세 리뷰
+    @Override
+    @Transactional(readOnly = true)
+    public List<HospitalReviewVO> getHospitalReviews(Long hospitalId) throws Exception {
+        if (hospitalId == null) {
+            return List.of();
+        }
+        return hospitalMapper.selectHospitalReviews(hospitalId);
     }
 
     /** 2026-07-10 장우철 — 예약번호 생성 (TOTAL_DATA 패턴: RyyyyMMdd + 일련) */

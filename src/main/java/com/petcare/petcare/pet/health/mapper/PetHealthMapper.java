@@ -1,25 +1,25 @@
 /**
- * 역할: 반려동물 건강 DB 접근 (MyBatis interface)
+ * 역할: 마이페이지 건강수첩 DB 접근 (MyBatis)
  *
  * XML: resources/mybatis/mapper/pet/health/PetHealthMapper.xml
- * namespace: com.petcare.petcare.pet.health.mapper.PetHealthMapper
  *
- * 쿼리 예시
- * - selectHealthList
- * - insertHealthRecord
- * - updateHealthRecord
- *
- * 참고 테이블
- * - TB_PET_HEALTH
- *
- * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
+ * 2026/07/14 장우철 — TB_MEDICAL_RECORD 회원·반려견별 조회
  */
 
 package com.petcare.petcare.pet.health.mapper;
 
-import org.apache.ibatis.annotations.Mapper;
+import java.util.List;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 
 @Mapper
-public interface PetHealthMapper {}
+public interface PetHealthMapper {
+
+    // 2026/07/14 장우철 — 내 반려동물 진료기록 (visitDate DESC)
+    List<MedicalRecordVO> selectMedicalRecordsByMember(
+            @Param("memberNo") Long memberNo,
+            @Param("petId") Long petId);
+}

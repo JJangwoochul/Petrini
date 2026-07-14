@@ -10,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.mypage.reserve.service.MypageReserveService;
@@ -58,5 +60,26 @@ public class MypageReserveController {
         }
         model.addAttribute("reservation", detail);
         return "mypage/reserve-detail";
+    }
+
+    // 2026/07/13 장우철 — 진료완료 예약 병원 리뷰·별점 등록
+    @PostMapping("/reserve/review")
+    public String addHospitalReview(@RequestParam("resvId") Long resvId,
+                                    @RequestParam("rating") Double rating,
+                                    @RequestParam("content") String content,
+                                    HttpSession session,
+                                    RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId;
+        }
+
+        try {
+            mypageReserveService.addHospitalReview(member.getMemberNo(), resvId, rating, content);
+            rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/mypage/reserve/detail?resvId=" + resvId;
     }
 }
