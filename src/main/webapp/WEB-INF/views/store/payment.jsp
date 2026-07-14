@@ -114,7 +114,7 @@
   const widgets = tossPayments.widgets({ customerKey });
 
   //지윤 26.07.13 추가: 필수약관 동의 상태 저장용 변수 (기본 false, 위젯 이벤트로 갱신됨)
-  let agreedRequiredTerms = false;
+  let agreedRequiredTerms = true;
   (async () => {
     await widgets.setAmount({ currency: "KRW", value: amount });
     await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });

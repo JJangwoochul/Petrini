@@ -56,8 +56,16 @@
 
   <select id="countBizApplyByStatus" resultType="int">
     SELECT COUNT(*)
-    FROM TB_BUSINESS
-    WHERE STATUS_CD = #{statusCd}
+    FROM TB_BUSINESS B
+    JOIN TB_BUSINESS_AUTH A ON A.BIZ_NO = B.BIZ_NO
+     AND A.AUTH_ID = (
+       SELECT AUTH_ID
+         FROM TB_BUSINESS_AUTH
+        WHERE BIZ_NO = B.BIZ_NO
+        ORDER BY APPLY_DATE DESC
+        FETCH FIRST 1 ROW ONLY
+     )
+    WHERE B.STATUS_CD = #{statusCd}
   </select>
 
   <update id="updateBusinessStatus">
