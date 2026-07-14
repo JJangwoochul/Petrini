@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.petcare.petcare.hospital.vo.HospitalPetVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -36,5 +38,10 @@ public interface StayMapper {
     StayVO selectStayById(Long stayId);
 
     // 해당 숙소의 객실 목록
-    List<StayRoomVO> selectRoomsByStayId(Long stayId);    
+    List<StayRoomVO> selectRoomsByStayId(Long stayId);   
+    
+    // 예약
+    List<HospitalPetVO> selectPetListByMemberNo(Long memberNo);
+    void insertStayReservation(ReservationVO vo);
+    ReservationVO selectStayReservationById(Long resvId);
 }

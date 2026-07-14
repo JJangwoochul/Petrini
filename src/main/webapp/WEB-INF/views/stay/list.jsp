@@ -1,8 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="pageId"      value="stay" />
+<c:set var="pageId" value="stay" />
+
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <style>
@@ -196,9 +199,19 @@
                 </div>
                 <c:if test="${not empty s.facilities}">
                   <div class="sc-tags">
-                    <c:forTokens items="${s.facilities}" delims="," var="tag">
+                    <%-- <c:forTokens items="${s.facilities}" delims="," var="tag">
                       <span class="sc-tag">${tag}</span>
-                    </c:forTokens>
+                    </c:forTokens> --%>
+                    <c:forEach var="facility" items="${fn:split(s.facilities, ',')}" varStatus="st">
+                      <c:set var="f" value="${fn:trim(facility)}" />
+                      <c:if test="${f == 'PETYARD'}">애견 놀이터</c:if>
+                      <c:if test="${f == 'PETPOOL'}">애견 수영장</c:if>
+                      <c:if test="${f == 'PETAMENITY'}">펫 어메니티 제공</c:if>
+                      <c:if test="${f == 'AGILITY'}">어질리티체험</c:if>
+                      <c:if test="${f == 'CCTV'}">CCTV</c:if>
+                      <c:if test="${f == 'LARGEPET'}">대형견 가능</c:if>
+                      <c:if test="${!st.last}"> · </c:if>
+                    </c:forEach>
                   </div>
                 </c:if>
                 <div class="sc-foot">

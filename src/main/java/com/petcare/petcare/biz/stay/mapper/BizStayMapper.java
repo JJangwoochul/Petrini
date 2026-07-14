@@ -28,6 +28,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
 
@@ -39,12 +40,21 @@ public interface BizStayMapper {
 
     int updateStayInfo(StayVO vo);
 
+    // ── 객실 CRUD ──
+    List<StayRoomVO> selectRoomList(Long stayId);
+
+    int insertRoom(StayRoomVO vo);
+
+    int updateRoom(StayRoomVO vo);
+
+    int deleteRoom(@Param("roomId") Long roomId, @Param("stayId") Long stayId);
+
     // 2026-07-10 장우철 — 병원 예약 1차 (F4~F7) 사업자 측 Mapper
     List<ReservationVO> selectReservationList(@Param("stayId") Long stayId,
                                                @Param("tab") String tab) throws Exception;
 
     ReservationVO selectReservationDetail(@Param("resvId") Long resvId,
-                                          @Param("hospitalId") Long hospitalId) throws Exception;
+                                          @Param("stayId") Long stayId) throws Exception;
 
     int updateReservationStatus(@Param("resvId") Long resvId,
                                 @Param("stayId") Long stayId,

@@ -44,13 +44,13 @@
         <line x1="8" y1="2" x2="8" y2="6"/>
         <line x1="16" y1="2" x2="16" y2="6"/>
       </svg>
-      예약 관리<span class="biz-nav-badge">3</span>
+      예약 관리<c:if test="${pendingReserveCount > 0}"><span class="biz-nav-badge">${pendingReserveCount}</span></c:if>
     </a>
     <a href="${contextPath}/biz/stay/calendar" class="biz-nav-link ${bizPage eq 'calendar' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
-      예약 캘린더
+      예약 캘린더<c:if test="${todayConfirmedCount > 0}"><span class="biz-nav-badge">${todayConfirmedCount}</span></c:if>
     </a>
     <div class="biz-nav-group">운영 관리</div>
     <a href="${contextPath}/biz/stay/reviews" class="biz-nav-link ${bizPage eq 'reviews' ? 'active' : ''}">

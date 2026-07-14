@@ -143,14 +143,12 @@
         편의시설
       </div>
       <div class="tag-checks">
-        <label class="tag-check"><input type="checkbox" name="facilities" value="WIFI"      ${fn:contains(stay.facilities,'WIFI')      ? 'checked':''}>WIFI</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="PARKING"   ${fn:contains(stay.facilities,'PARKING')   ? 'checked':''}>주차장</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="AIRCON"    ${fn:contains(stay.facilities,'AIRCON')    ? 'checked':''}>에어컨</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="POOL"      ${fn:contains(stay.facilities,'POOL')      ? 'checked':''}>수영장</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="CCTV"      ${fn:contains(stay.facilities,'CCTV')      ? 'checked':''}>CCTV</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="YARD"      ${fn:contains(stay.facilities,'YARD')      ? 'checked':''}>마당/정원</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="BBQ"       ${fn:contains(stay.facilities,'BBQ')       ? 'checked':''}>바비큐장</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="NOSMOKING" ${fn:contains(stay.facilities,'NOSMOKING') ? 'checked':''}>금연</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="PETYARD"      ${fn:contains(stay.facilities,'PETYARD') ? 'checked':''}>애견 놀이터</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="PETPOOL"   ${fn:contains(stay.facilities,'PETPOOL') ? 'checked':''}>애견 수영장</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="PETAMENITY"    ${fn:contains(stay.facilities,'PETAMENITY') ? 'checked':''}>펫 어메니티 제공</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="AGILITY"      ${fn:contains(stay.facilities,'AGILITY') ? 'checked':''}>어질리티체험</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="CCTV"      ${fn:contains(stay.facilities,'CCTV') ? 'checked':''}>CCTV</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="LARGEPET" ${fn:contains(stay.facilities,'LARGEPET') ? 'checked':''}>대형견 가능</label>
       </div>
     </div>
 

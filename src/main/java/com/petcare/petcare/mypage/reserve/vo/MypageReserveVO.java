@@ -34,4 +34,14 @@ public class MypageReserveVO {
     private String petBreed;
     private String hospitalName;
     private String hospitalAddr;
+
+    // 숙소 예약용
+    private Date   checkinDate;
+    private Date   checkoutDate;
+    private Integer nightCnt;
+    private Long   totalAmount;
+    private String stayName;
+    private String stayAddr;
+    private Long   roomId;
+    private String roomName;
 }

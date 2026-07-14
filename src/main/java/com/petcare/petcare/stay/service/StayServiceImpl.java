@@ -15,11 +15,15 @@
 
 package com.petcare.petcare.stay.service;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.petcare.petcare.hospital.vo.HospitalPetVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
@@ -36,12 +40,31 @@ public class StayServiceImpl implements StayService {
     }
 
     @Override
-    public StayVO getStayDetail(Long stayId) {
+    public StayVO getStayById(Long stayId) {
         StayVO stay = stayMapper.selectStayById(stayId);
         if (stay != null) {
             List<StayRoomVO> rooms = stayMapper.selectRoomsByStayId(stayId);
             stay.setRooms(rooms);
         }
         return stay;
-    }    
+    }
+
+    @Override
+    public List<HospitalPetVO> getPetList(Long memberNo) {
+        return stayMapper.selectPetListByMemberNo(memberNo);
+    }
+
+    @Override
+    public Long createStayReservation(ReservationVO vo) {
+        vo.setResvType("STAY");
+        vo.setStatusCd("PENDING");
+        vo.setResvNo("S" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
+        stayMapper.insertStayReservation(vo);
+        return vo.getResvId();
+    }
+
+    @Override
+    public ReservationVO getStayReservationById(Long resvId) {
+        return stayMapper.selectStayReservationById(resvId);
+    }
 }

@@ -82,10 +82,7 @@
         SET    NAME         = #{name, jdbcType=VARCHAR},
                PHONE        = #{phone, jdbcType=VARCHAR},
                ADDR         = #{addr, jdbcType=VARCHAR},
-               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
-               DESCRIPTION  = #{description, jdbcType=VARCHAR},
-               LAT          = #{lat, jdbcType=DOUBLE},
-               LNG          = #{lng, jdbcType=DOUBLE}
+               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR}
         WHERE  STAY_ID      = #{stayId}
     </update>
 
@@ -102,4 +99,202 @@
                FACILITIES    = #{facilities,   jdbcType=VARCHAR}
         WHERE  STAY_ID       = #{stayId}
     </update>
+
+    <!-- ═══ 객실 CRUD ═══ -->
+
+    <!-- 해당 숙소의 객실 목록 -->
+    <select id="selectRoomList" parameterType="long"
+            resultType="com.petcare.petcare.stay.vo.StayRoomVO">
+        SELECT  ROOM_ID,
+                STAY_ID,
+                NAME,
+                PRICE_PER_NIGHT,
+                CAPACITY,
+                PET_LIMIT,
+                STATUS_CD,
+                REJECT_REASON
+        FROM    TB_STAY_ROOM
+        WHERE   STAY_ID = #{stayId}
+        ORDER BY ROOM_ID
+    </select>
+
+    <!-- 객실 등록 (PK 수동 채번) -->
+    <insert id="insertRoom" parameterType="com.petcare.petcare.stay.vo.StayRoomVO">
+        INSERT INTO TB_STAY_ROOM (
+            ROOM_ID, STAY_ID, NAME,
+            PRICE_PER_NIGHT, CAPACITY, PET_LIMIT, STATUS_CD
+        ) VALUES (
+            (SELECT NVL(MAX(ROOM_ID), 0) + 1 FROM TB_STAY_ROOM),
+            #{stayId}, #{name},
+            #{pricePerNight}, #{capacity, jdbcType=NUMERIC},
+            #{petLimit, jdbcType=NUMERIC}, #{statusCd}
+        )
+    </insert>
+
+    <!-- 객실 수정 (STAY_ID 조건으로 타 숙소 객실 수정 방지) -->
+    <update id="updateRoom" parameterType="com.petcare.petcare.stay.vo.StayRoomVO">
+        UPDATE TB_STAY_ROOM
+        SET    NAME            = #{name},
+               PRICE_PER_NIGHT = #{pricePerNight},
+               CAPACITY        = #{capacity, jdbcType=NUMERIC},
+               PET_LIMIT       = #{petLimit, jdbcType=NUMERIC}
+        WHERE  ROOM_ID = #{roomId}
+          AND  STAY_ID = #{stayId}
+    </update>
+
+    <!-- 객실 삭제 -->
+    <delete id="deleteRoom">
+        DELETE FROM TB_STAY_ROOM
+        WHERE  ROOM_ID = #{roomId}
+          AND  STAY_ID = #{stayId}
+    </delete>
+
+    <!-- 2026-07-10 장우철 — 사업자 예약 목록 (F4), tab: all / wait / done / cancel -->
+    <select id="selectReservationList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+        SELECT  R.RESV_ID      AS resvId,
+                R.RESV_NO      AS resvNo,
+                R.RESV_TYPE    AS resvType,
+                R.MEMBER_NO    AS memberNo,
+                R.PET_ID       AS petId,
+                R.TARGET_ID    AS targetId,
+                R.RESV_DATE    AS resvDate,
+                R.RESV_TIME    AS resvTime,
+                R.SYMPTOMS     AS symptoms,
+                R.REQUEST_MEMO AS requestMemo,
+                R.STATUS_CD    AS statusCd,
+                R.REJECT_REASON AS rejectReason,
+                R.REG_DATE     AS regDate,
+                R.CHECKIN_DATE  AS checkinDate,
+                R.CHECKOUT_DATE AS checkoutDate,
+                R.NIGHT_CNT     AS nightCnt,
+                R.TOTAL_AMOUNT  AS totalAmount,
+                R.ROOM_ID       AS roomId,                
+                M.MEMBER_NAME  AS memberName,
+                P.PET_NAME     AS petName,
+                P.SPECIES      AS petSpecies,
+                P.BREED        AS petBreed,
+                P.AGE          AS petAge,
+                S.NAME          AS stayName,
+                S.ADDR          AS stayAddr,
+                SR.NAME         AS roomName
+          FROM  TB_RESERVATION R
+          JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
+          LEFT JOIN TB_STAY S ON R.RESV_TYPE = 'STAY'
+          AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+         WHERE  R.RESV_TYPE  = 'STAY'
+           AND  R.TARGET_ID  = TO_CHAR(#{stayId})
+        <choose>
+            <when test="tab == 'wait' or tab == 'pending'">
+           AND  R.STATUS_CD = 'PENDING'
+            </when>
+            <when test="tab == 'confirmed'">
+           AND  R.STATUS_CD = 'CONFIRMED'
+            </when>
+            <when test="tab == 'done'">
+           AND  R.STATUS_CD = 'DONE'
+            </when>
+            <when test="tab == 'cancel'">
+           AND  R.STATUS_CD IN ('CANCEL', 'REJECTED')
+            </when>
+        </choose>
+         ORDER BY R.RESV_DATE DESC, R.RESV_TIME DESC, R.RESV_ID DESC
+    </select>
+
+    <select id="selectReservationDetail" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+        SELECT  R.RESV_ID      AS resvId,
+                R.RESV_NO      AS resvNo,
+                R.RESV_TYPE    AS resvType,
+                R.MEMBER_NO    AS memberNo,
+                R.PET_ID       AS petId,
+                R.TARGET_ID    AS targetId,
+                R.RESV_DATE    AS resvDate,
+                R.RESV_TIME    AS resvTime,
+                R.SYMPTOMS     AS symptoms,
+                R.REQUEST_MEMO AS requestMemo,
+                R.STATUS_CD    AS statusCd,
+                R.REJECT_REASON AS rejectReason,
+                R.REG_DATE     AS regDate,
+                R.CHECKIN_DATE  AS checkinDate,
+                R.CHECKOUT_DATE AS checkoutDate,
+                R.NIGHT_CNT     AS nightCnt,
+                R.TOTAL_AMOUNT  AS totalAmount,
+                R.ROOM_ID       AS roomId,  
+                M.MEMBER_NAME  AS memberName,
+                P.PET_NAME     AS petName,
+                P.SPECIES      AS petSpecies,
+                P.BREED        AS petBreed,
+                P.AGE          AS petAge,
+                S.NAME          AS stayName,
+                S.ADDR          AS stayAddr,
+                SR.NAME         AS roomName                
+          FROM  TB_RESERVATION R
+          JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+        LEFT JOIN TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
+          LEFT JOIN TB_STAY S ON R.RESV_TYPE = 'STAY'
+          AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+         WHERE  R.RESV_ID    = #{resvId}
+           AND  R.TARGET_ID  = TO_CHAR(#{stayId})
+           AND  R.RESV_TYPE  = 'STAY'
+    </select>
+
+    <!-- 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5) -->
+    <!-- 2026/07/11 장우철 — CANCEL 시 REJECT_REASON(취소 사유) 저장 -->
+    <update id="updateReservationStatus">
+        UPDATE TB_RESERVATION
+           SET STATUS_CD = #{statusCd},
+               REJECT_REASON = #{rejectReason, jdbcType=VARCHAR}
+         WHERE RESV_ID   = #{resvId}
+           AND TARGET_ID = TO_CHAR(#{stayId})
+           AND RESV_TYPE = 'STAY'
+    </update>
+
+    <!-- 2026-07-10 장우철 — 사업자 예약 캘린더 (F7) -->
+    <select id="selectReservationCalendarList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+        SELECT  R.RESV_ID      AS resvId,
+                R.RESV_NO      AS resvNo,
+                R.RESV_DATE    AS resvDate,
+                R.RESV_TIME    AS resvTime,
+                R.STATUS_CD    AS statusCd,
+                M.MEMBER_NAME  AS memberName,
+                P.PET_NAME     AS petName
+          FROM  TB_RESERVATION R
+          JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+         WHERE  R.RESV_TYPE  = 'STAY'
+           AND  R.TARGET_ID  = TO_CHAR(#{stayId})
+           AND  R.STATUS_CD IN ('PENDING', 'CONFIRMED', 'DONE')
+           AND  R.RESV_DATE &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
+           AND  R.RESV_DATE &lt;  TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
+         ORDER BY R.RESV_DATE, R.RESV_TIME
+    </select>
+
+    <!-- 2026/07/11 장우철 — 사이드바 예약관리 배지 (PENDING만) -->
+    <select id="countPendingReservations" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION R
+         WHERE R.RESV_TYPE  = 'STAY'
+           AND R.TARGET_ID  = TO_CHAR(#{stayId})
+           AND R.STATUS_CD  = 'PENDING'
+    </select>
+
+    <!-- 2026/07/11 장우철 — 사이드바 캘린더 배지 (오늘 CONFIRMED) -->
+    <select id="countTodayConfirmedReservations" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION R
+         WHERE R.RESV_TYPE  = 'STAY'
+           AND R.TARGET_ID  = TO_CHAR(#{stayId})
+           AND R.STATUS_CD  = 'CONFIRMED'
+           AND R.RESV_DATE &gt;= TRUNC(SYSDATE)
+           AND R.RESV_DATE &lt;  TRUNC(SYSDATE) + 1
+    </select>
+
+    <!-- 2026/07/11 장우철 — 예약 알림용 병원명 -->
+    <select id="selectStayNameById" resultType="string">
+        SELECT NAME
+          FROM TB_STAY
+         WHERE STAY_ID = #{stayId}
+    </select>
 </mapper>

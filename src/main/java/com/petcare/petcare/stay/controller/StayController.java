@@ -16,14 +16,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.stay.service.StayServiceImpl;
 import com.petcare.petcare.stay.vo.StayVO;
+
+import jakarta.servlet.http.HttpSession;
 
 
 @Controller("stayController")
@@ -49,7 +56,7 @@ public class StayController {
 
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") Long id, Model model) throws Exception {
-        StayVO stay = stayService.getStayDetail(id);
+        StayVO stay = stayService.getStayById(id);
         List<FileVO> imgList = fileService.getFileList("STAY", id);
         
         // 지도 표시 (단일마커 — 숙소 1곳)
@@ -66,13 +73,47 @@ public class StayController {
     }
 
     @GetMapping("/reserve")
-    public String reserve(@RequestParam(defaultValue = "1") String id, Model model) {
-        model.addAttribute("id", id);
+    public String reserve(@RequestParam("id") Long id,
+                          @RequestParam(value = "roomId", required = false) Long roomId,
+                          HttpSession session, 
+                          Model model) throws Exception {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        StayVO stay = stayService.getStayById(id);
+        if (stay == null) return "redirect:/stay";
+
+        model.addAttribute("stay", stay);
+        model.addAttribute("roomId", roomId);
+        model.addAttribute("petList", stayService.getPetList(member.getMemberNo()));
         return "stay/reserve";
     }
 
+    // ── 예약 저장 ──
+    @PostMapping("/reserve")
+    public String saveReserve(@ModelAttribute ReservationVO vo,
+                              @RequestParam("stayId") Long stayId,
+                              HttpSession session,
+                              RedirectAttributes rttr) {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        vo.setMemberNo(member.getMemberNo());
+        vo.setTargetId(String.valueOf(stayId));
+
+        Long resvId = stayService.createStayReservation(vo);
+        return "redirect:/stay/complete?resvId=" + resvId;
+    }
+
     @GetMapping("/complete")
-    public String complete() {
+    public String complete(@RequestParam(value = "resvId", required = false) Long resvId,
+                           Model model)  {
+        if (resvId != null) {
+            ReservationVO reservation = stayService.getStayReservationById(resvId);
+            model.addAttribute("reservation", reservation);
+        }
         return "stay/complete";
     }
 }

@@ -24,18 +24,30 @@
             R.STATUS_CD     AS statusCd,
             R.REJECT_REASON AS rejectReason,
             R.REG_DATE      AS regDate,
+            R.CHECKIN_DATE  AS checkinDate,
+            R.CHECKOUT_DATE AS checkoutDate,
+            R.NIGHT_CNT     AS nightCnt,
+            R.TOTAL_AMOUNT  AS totalAmount,
+            R.ROOM_ID       AS roomId,
             P.PET_NAME      AS petName,
             P.SPECIES       AS petSpecies,
             P.BREED         AS petBreed,
             H.NAME          AS hospitalName,
-            H.ADDR          AS hospitalAddr
+            H.ADDR          AS hospitalAddr,
+            S.NAME          AS stayName,
+            S.ADDR          AS stayAddr,
+            SR.NAME         AS roomName
       FROM  TB_RESERVATION R
       JOIN  TB_PET P ON P.PET_ID = R.PET_ID
       LEFT JOIN TB_HOSPITAL H
              ON R.RESV_TYPE = 'HOSPITAL'
             AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_STAY S
+             ON R.RESV_TYPE = 'STAY'
+            AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_STAY_ROOM SR
+             ON SR.ROOM_ID = R.ROOM_ID
      WHERE  R.MEMBER_NO = #{memberNo}
-       AND  R.RESV_TYPE = 'HOSPITAL'
     <choose>
       <when test="statusFilter == 'pending'">
        AND  R.STATUS_CD = 'PENDING'
@@ -68,19 +80,29 @@
             R.STATUS_CD     AS statusCd,
             R.REJECT_REASON AS rejectReason,
             R.REG_DATE      AS regDate,
+            R.CHECKIN_DATE  AS checkinDate,
+            R.CHECKOUT_DATE AS checkoutDate,
+            R.NIGHT_CNT     AS nightCnt,
+            R.TOTAL_AMOUNT  AS totalAmount,
+            R.ROOM_ID       AS roomId,
             P.PET_NAME      AS petName,
             P.SPECIES       AS petSpecies,
             P.BREED         AS petBreed,
-            H.NAME          AS hospitalName,
-            H.ADDR          AS hospitalAddr
+            COALESCE(H.NAME, S.NAME)  AS hospitalName,
+            COALESCE(H.ADDR, S.ADDR)  AS hospitalAddr,
+            SR.NAME         AS roomName
       FROM  TB_RESERVATION R
       JOIN  TB_PET P ON P.PET_ID = R.PET_ID
       LEFT JOIN TB_HOSPITAL H
              ON R.RESV_TYPE = 'HOSPITAL'
             AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_STAY S
+             ON R.RESV_TYPE = 'STAY'
+            AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_STAY_ROOM SR
+             ON SR.ROOM_ID = R.ROOM_ID
      WHERE  R.MEMBER_NO = #{memberNo}
        AND  R.RESV_ID   = #{resvId}
-       AND  R.RESV_TYPE = 'HOSPITAL'
   </select>
 
 </mapper>

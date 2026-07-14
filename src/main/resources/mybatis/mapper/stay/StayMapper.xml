@@ -81,4 +81,91 @@
            AND STATUS_CD = 'APPROVE'
          ORDER BY PRICE_PER_NIGHT
     </select>
+
+   <!-- 회원의 반려동물 목록 (예약 폼용) -->
+    <select id="selectPetListByMemberNo" parameterType="long"
+            resultType="com.petcare.petcare.hospital.vo.HospitalPetVO">
+        SELECT  P.PET_ID   AS petId,
+                P.PET_NAME AS petName,
+                P.SPECIES  AS species,
+                P.BREED    AS breed,
+                P.AGE      AS age
+          FROM  TB_PET P
+         WHERE  P.MEMBER_NO = #{memberNo}
+           AND  NVL(P.DEL_YN, 'N') = 'N'
+         ORDER BY P.IS_REPRESENT DESC, P.PET_ID ASC
+    </select>
+
+    <!-- 숙소 예약 등록 -->
+    <insert id="insertReservation" parameterType="com.petcare.petcare.hospital.vo.ReservationVO">
+        <selectKey keyProperty="resvId" resultType="long" order="BEFORE">
+            SELECT SEQ_RESERVATION.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TB_RESERVATION (
+            CHECKIN_DATE, 
+            CHECKOUT_DATE, 
+            MEMBER_NO,
+            NIGHT_CNT,
+            PET_ID,
+            REG_DATE,
+            REQUEST_MEMO, 
+            RESV_ID, 
+            RESV_NO, 
+            RESV_TYPE,
+            RESV_DATE,
+            RESV_TIME, 
+            ROOM_ID,
+            STATUS_CD, 
+            TARGET_ID, 
+            TOTAL_AMOUNT,
+        ) VALUES (
+            #{checkinDate}, 
+            #{checkoutDate}, 
+            #{memberNo}, 
+            #{nightCnt},
+            #{petId},
+            SYSDATE,
+            #{requestMemo, jdbcType=VARCHAR}, 
+            #{resvId}, 
+            #{resvNo}, 
+            #{resvType}, 
+            #{resvDate},
+            #{resvTime},
+            #{roomId},
+            #{statusCd}, 
+            #{targetId}, 
+            #{totalAmount}
+        )
+    </insert>
+
+    <!-- 예약 상세 (완료 화면용) -->
+    <select id="selectReservationById" parameterType="long"
+            resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+        SELECT  R.RESV_ID, 
+                R.RESV_NO, 
+                R.RESV_TYPE,
+                R.MEMBER_NO, 
+                R.PET_ID, 
+                R.TARGET_ID, 
+                R.ROOM_ID,
+                R.CHECKIN_DATE  AS checkinDate,
+                R.CHECKOUT_DATE AS checkoutDate,
+                R.NIGHT_CNT     AS nightCnt,
+                R.REQUEST_MEMO  AS requestMemo,
+                R.TOTAL_AMOUNT  AS totalAmount,
+                R.STATUS_CD, 
+                R.REG_DATE,
+                M.MEMBER_NAME   AS memberName,
+                P.PET_NAME      AS petName,
+                P.SPECIES       AS petSpecies,
+                P.BREED         AS petBreed,
+                S.NAME          AS hospitalName,
+                SR.NAME         AS serviceName
+        FROM    TB_RESERVATION R
+        JOIN    TB_MEMBER M    ON M.MEMBER_NO  = R.MEMBER_NO
+        JOIN    TB_PET P       ON P.PET_ID     = R.PET_ID
+        LEFT    JOIN TB_STAY S  ON S.STAY_ID    = TO_NUMBER(R.TARGET_ID)
+        LEFT    JOIN TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
+        WHERE   R.RESV_ID = #{resvId}
+    </select>
 </mapper>

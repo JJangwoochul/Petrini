@@ -246,7 +246,7 @@
         <select>
           <c:forEach var="room" items="${stay.rooms}">
             <option value="${room.roomId}">
-              ${room.roomName} — <fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원
+              ${room.name} — <fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원
             </option>
           </c:forEach>
         </select>
