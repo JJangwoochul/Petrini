@@ -24,6 +24,9 @@ import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.OrderTempVO;
+
+
 import java.util.List;
 import com.petcare.petcare.member.vo.MemberVO;
 import jakarta.servlet.http.HttpSession;
@@ -245,13 +248,26 @@ public String payment(@RequestParam(required = false) Long productId,
     //HYJ 26.07.03 결제 api key
     model.addAttribute("tossApiKey", tossApiKey);
 
-    // 2026/07/11 장우철 — 장바구니 주문이면 결제 완료 후 삭제할 cartItemIds 세션에 보관
-    // [변경 전] 주문 완료(/order-complete)에서 장바구니 미삭제 → 결제 후에도 동일 상품 잔존
-    if (cartItemIds != null && !cartItemIds.isEmpty()) {
-        session.setAttribute("pendingOrderCartItemIds", cartItemIds);
-    } else {
-        session.removeAttribute("pendingOrderCartItemIds");
-    }
+    //지윤 26.07.13 추가: 토스 위젯이 결제 인증 후 우리 서버를 거치지 않고 order-complete로 바로 이동시키기 때문에,
+    //그 사이 없어질 주문정보(상품/배송지/쿠폰/포인트)를 세션에 담아뒀다가 order-complete에서 꺼내 씀
+    OrderTempVO orderTemp = new OrderTempVO();
+    orderTemp.setMemberNo(memberNo);
+    orderTemp.setOrderItems(orderItems);
+    orderTemp.setProductTotal(productTotal);
+    orderTemp.setDeliveryFee(deliveryFee);
+    orderTemp.setCouponMemberCouponId((couponId != null && couponId > 0) ? couponId : null);
+    orderTemp.setCouponDiscount(couponDiscount);
+    orderTemp.setPointUsed((int) pointUsed);
+    orderTemp.setTotalDiscount(totalDiscount);
+    orderTemp.setFinalTotal(finalTotal);
+    orderTemp.setRecvName(recvName);
+    orderTemp.setRecvPhone(recvPhone);
+    orderTemp.setZipCode(zipCode);
+    orderTemp.setAddr1(addr1);
+    orderTemp.setAddr2(addr2);
+    orderTemp.setDeliveryMemo(deliveryMemo);
+    orderTemp.setCartItemIds(cartItemIds);
+    session.setAttribute("orderTemp", orderTemp);
 
     return "store/payment";
 }
@@ -272,17 +288,27 @@ public String payment(@RequestParam(required = false) Long productId,
         return "결제 요청 실패: " + code + " - " + message;
     }
 
+    //지윤 26.07.13 수정: 하드코딩된 화면 -> 세션에 저장해둔 주문정보로 실제 DB 저장 후 실데이터 표시
     @GetMapping("/order-complete")
-    public String orderComplete(HttpSession session) {
-        // 2026/07/11 장우철 — 토스 결제 성공 후 진입 시, 주문한 장바구니 항목 삭제
-        // [변경 전] 화면만 반환하고 TB_CART_ITEM 미삭제
-        Long memberNo = getLoginMemberNo(session);
-        @SuppressWarnings("unchecked")
-        List<Long> cartItemIds = (List<Long>) session.getAttribute("pendingOrderCartItemIds");
-        if (memberNo != null && cartItemIds != null && !cartItemIds.isEmpty()) {
-            storeShopService.deleteCartItems(cartItemIds);
-            session.removeAttribute("pendingOrderCartItemIds");
+    public String orderComplete(@RequestParam(required = false) String orderId,
+                                 @RequestParam(required = false) String paymentKey,
+                                 @RequestParam(required = false) String paymentType,
+                                 HttpSession session, Model model) {
+        OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
+
+        // 새로고침 등으로 세션에 남은 주문정보가 없으면 저장할 게 없다는 안내만 보여줌
+        if (orderTemp == null) {
+            model.addAttribute("noOrderData", true);
+            return "store/order-complete";
         }
+
+        String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, orderId);
+        session.removeAttribute("orderTemp"); // 새로고침해도 중복저장 안 되게 바로 비움
+
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("orderItems", orderTemp.getOrderItems());
+        model.addAttribute("payAmount", orderTemp.getFinalTotal());
+        model.addAttribute("payMethodLabel", "NORMAL".equals(paymentType) ? "일반결제" : paymentType);
         return "store/order-complete";
     }
 

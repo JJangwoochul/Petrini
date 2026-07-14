@@ -33,6 +33,7 @@ import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
 import com.petcare.petcare.store.vo.BrandVO;
+import com.petcare.petcare.store.vo.OrderTempVO;
 
 public interface StoreShopService {
 //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
@@ -84,4 +85,7 @@ Long addProductQna(Long productId, Long memberNo, String question);
 
 //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 성공 여부 반환
 boolean deleteProductQna(Long qnaId, Long memberNo);
+
+//지윤 26.07.13 결제 완료 시 주문/주문상품/결제내역 저장 + 쿠폰사용처리 + 포인트차감 + 주문한 장바구니항목 삭제를 한 트랜잭션으로 처리. 생성된 ORDER_NO 반환
+String completeOrder(OrderTempVO orderTemp, String tossPaymentKey, String tossOrderId);
 }

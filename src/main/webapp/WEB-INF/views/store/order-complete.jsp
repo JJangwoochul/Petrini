@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -20,20 +22,36 @@
 .btn-complete-store{flex:1;padding:13px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 </style>
 <div class="complete-wrap">
-  <div class="complete-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-  <div class="complete-title">주문이 완료되었습니다!</div>
-  <div class="complete-desc">주문번호 <strong>#ORD-2025-0893</strong><br>주문 내역은 마이페이지에서 확인하세요.</div>
-  <div class="complete-card">
-    <h3>주문 정보</h3>
-    <div class="complete-row"><span>주문번호</span><span>#ORD-2025-0893</span></div>
-    <div class="complete-row"><span>주문 상품</span><span>로얄캐닌 사료 4kg 외 2건</span></div>
-    <div class="complete-row"><span>결제 금액</span><span style="color:var(--primary-dark);font-size:16px;font-weight:800">98,900원</span></div>
-    <div class="complete-row"><span>결제 수단</span><span>신용카드</span></div>
-    <div class="complete-row"><span>예상 배송일</span><span>2025.06.28 (토) 도착 예정</span></div>
-  </div>
-  <div class="complete-btns">
-    <button class="btn-complete-my" onclick="location.href='${contextPath}/mypage/orders'">주문 내역 보기</button>
-    <button class="btn-complete-store" onclick="location.href='${contextPath}/store'">쇼핑 계속하기</button>
-  </div>
+<%-- 지윤 26.07.13 수정: 하드코딩 -> 세션 정보로 실제 저장된 orderNo/orderItems/payAmount 표시. 세션 만료 시 안내문구로 대체 --%>
+<c:choose>
+  <c:when test="${not empty noOrderData}">
+    <div class="complete-title">주문 정보를 찾을 수 없습니다.</div>
+    <div class="complete-desc">이 페이지는 결제 직후에만 확인할 수 있어요.<br>주문 내역은 마이페이지에서 확인해주세요.</div>
+    <div class="complete-btns">
+      <button class="btn-complete-store" onclick="location.href='${contextPath}/store'">쇼핑 계속하기</button>
+    </div>
+  </c:when>
+  <c:otherwise>
+    <div class="complete-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="complete-title">주문이 완료되었습니다!</div>
+    <div class="complete-desc">주문번호 <strong>#${orderNo}</strong><br>주문 내역은 마이페이지에서 확인하세요.</div>
+    <div class="complete-card">
+      <h3>주문 정보</h3>
+      <div class="complete-row"><span>주문번호</span><span>#${orderNo}</span></div>
+      <div class="complete-row"><span>주문 상품</span>
+        <span>
+          <c:out value="${orderItems[0].productName}"/>
+          <c:if test="${fn:length(orderItems) > 1}"> 외 ${fn:length(orderItems) - 1}건</c:if>
+        </span>
+      </div>
+      <div class="complete-row"><span>결제 금액</span><span style="color:var(--primary-dark);font-size:16px;font-weight:800"><fmt:formatNumber value="${payAmount}" pattern="#,###"/>원</span></div>
+      <div class="complete-row"><span>결제 수단</span><span>${payMethodLabel}</span></div>
+    </div>
+    <div class="complete-btns">
+      <button class="btn-complete-my" onclick="location.href='${contextPath}/mypage/orders'">주문 내역 보기</button>
+      <button class="btn-complete-store" onclick="location.href='${contextPath}/store'">쇼핑 계속하기</button>
+    </div>
+  </c:otherwise>
+</c:choose>
 </div>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

@@ -223,6 +223,7 @@
         ci.OPTION_ID,
         p.PRODUCT_NAME,
         p.BRAND_NAME,
+        p.BIZ_NO,
         f.FILE_URL          AS THUMBNAIL_URL,
         o.OPTION_COLOR,
         o.OPTION_SIZE,
@@ -230,6 +231,7 @@
         TO_NUMBER(ci.PRICE) AS PRICE,
         o.STOCK_QTY
     FROM TB_CART_ITEM ci
+
     JOIN TB_PRODUCT p ON p.PRODUCT_ID = ci.PRODUCT_ID
     LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = ci.OPTION_ID
     LEFT JOIN (
@@ -248,17 +250,19 @@
 <select id="selectDirectOrderItem"
         resultType="com.petcare.petcare.store.vo.CartItemVO">
 
-    SELECT
+SELECT
         p.PRODUCT_ID,
         #{optionId, jdbcType=NUMERIC} AS OPTION_ID,
         p.PRODUCT_NAME,
         p.BRAND_NAME,
+        p.BIZ_NO,
         f.FILE_URL AS THUMBNAIL_URL,
         o.OPTION_COLOR,
         o.OPTION_SIZE,
         TO_NUMBER(p.SALE_PRICE) + NVL(o.ADD_PRICE, 0) AS PRICE,
         NVL(o.STOCK_QTY, TO_NUMBER(p.STOCK_QTY)) AS STOCK_QTY
     FROM TB_PRODUCT p
+
     LEFT JOIN TB_PRODUCT_OPTION o
         ON o.PRODUCT_ID = p.PRODUCT_ID
         AND o.OPTION_ID = #{optionId, jdbcType=NUMERIC}
@@ -372,5 +376,76 @@
     SELECT MAX(QNA_ID) FROM TB_PRODUCT_QNA
     WHERE PRODUCT_ID = #{productId} AND MEMBER_NO = #{memberNo}
 </select>
+
+<!-- 지윤 26.07.13 주문 저장 (반품/취소 관련 컬럼은 NULL 허용으로 DDL 변경해둠 -> INSERT 시 생략 가능) -->
+<!-- 2026/07/14 장우철 — REQUESTED_AT 등 취소·반품 컬럼은 NULL 허용(주문 생성 시 미삽입) -->
+<insert id="insertOrder">
+    INSERT INTO TB_ORDER (
+        ORDER_ID, ORDER_NO, MEMBER_NO, ORDER_STATUS, TOTAL_AMOUNT, DELIVERY_FEE,
+        DISCOUNT_AMOUNT, POINT_USED, PAY_AMOUNT, ORDER_DATE,
+        RECV_NAME, RECV_PHONE, ZIP_CODE, ADDR1, ADDR2, BIZ_NO
+    ) VALUES (
+        (SELECT NVL(MAX(ORDER_ID), 0) + 1 FROM TB_ORDER), #{orderNo}, #{memberNo}, 'PAID',
+        #{totalAmount}, #{deliveryFee}, #{discountAmount}, #{pointUsed}, #{payAmount},
+        TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
+        #{recvName}, #{recvPhone}, #{zipCode}, #{addr1}, #{addr2}, #{bizNo}
+    )
+</insert>
+
+<select id="selectOrderIdByOrderNo" resultType="Long">
+    SELECT ORDER_ID FROM TB_ORDER WHERE ORDER_NO = #{orderNo}
+</select>
+
+<insert id="insertOrderItem">
+    INSERT INTO TB_ORDER_ITEM (
+        ORDER_ITEM_ID, ORDER_ID, PRODUCT_ID, OPTION_ID, OPTION_COLOR, OPTION_SIZE,
+        PRODUCT_NAME, QTY, UNIT_PRICE, TOTAL_PRICE
+    ) VALUES (
+        (SELECT NVL(MAX(ORDER_ITEM_ID), 0) + 1 FROM TB_ORDER_ITEM), #{orderId}, #{productId},
+        #{optionId, jdbcType=NUMERIC}, #{optionColor, jdbcType=VARCHAR}, #{optionSize, jdbcType=VARCHAR},
+        #{productName}, #{qty}, #{unitPrice}, #{totalPrice}
+    )
+</insert>
+
+<insert id="insertPayment">
+    INSERT INTO TB_PAYMENT (
+        PAYMENT_ID, ORDER_ID, PAY_TYPE, PAY_METHOD, PAY_AMOUNT,
+        TOSS_PAYMENT_KEY, TOSS_ORDER_ID, PAY_STATUS, PAY_DATE
+    ) VALUES (
+        (SELECT NVL(MAX(PAYMENT_ID), 0) + 1 FROM TB_PAYMENT), #{orderId}, 'ORDER', #{payMethod}, #{payAmount},
+        #{tossPaymentKey}, #{tossOrderId}, 'DONE', SYSDATE
+    )
+</insert>
+
+<update id="updateCouponUsed">
+    UPDATE TB_MEMBER_COUPON SET STATUS_CD = 'USED' WHERE MEMBER_COUPON_ID = #{memberCouponId}
+</update>
+
+<update id="updateMemberPointBalance">
+    UPDATE TB_MEMBER SET POINT_BALANCE = NVL(POINT_BALANCE, 0) - #{pointUsed} WHERE MEMBER_NO = #{memberNo}
+</update>
+
+<insert id="insertPointHistory">
+    INSERT INTO TB_POINT (POINT_ID, MEMBER_NO, POINT_TYPE, POINT_AMOUNT, BALANCE_AFTER, REASON_CD, REF_TYPE, REF_ID, REG_DATE)
+    VALUES (
+        (SELECT NVL(MAX(POINT_ID), 0) + 1 FROM TB_POINT), #{memberNo}, 'USE', #{pointUsed},
+        (SELECT POINT_BALANCE FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}),
+        'ORDER_USE', 'ORDER', #{orderId}, TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+    )
+</insert>
+
+<!-- 지윤 26.07.13 주문 완료 시 재고 차감 (옵션 없는 상품, STOCK_QTY가 VARCHAR2라 TO_NUMBER/TO_CHAR 변환. 0 밑으로는 안 내려가게 GREATEST 처리) -->
+<update id="updateProductStock">
+    UPDATE TB_PRODUCT
+    SET STOCK_QTY = TO_CHAR(GREATEST(0, TO_NUMBER(STOCK_QTY) - #{qty}))
+    WHERE PRODUCT_ID = #{productId}
+</update>
+
+<!-- 지윤 26.07.13 주문 완료 시 재고 차감 (옵션 있는 상품, STOCK_QTY는 NUMBER라 그대로 차감) -->
+<update id="updateOptionStock">
+    UPDATE TB_PRODUCT_OPTION
+    SET STOCK_QTY = GREATEST(0, STOCK_QTY - #{qty})
+    WHERE OPTION_ID = #{optionId}
+</update>
 
 </mapper>

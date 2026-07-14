@@ -154,11 +154,13 @@
   <label>수량</label>
   <div class="detail-qty-wrap">
     <button onclick="changeQty(-1)">−</button>
-    <input type="number" id="qty" value="1" min="1" readonly>
+    <input type="number" id="qty" value="1" min="1">
     <button onclick="changeQty(1)">+</button>
   </div>
   <%-- 지윤 26.07.07 추가: 재고 초과 경고 --%>
   <div id="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
+<!-- 지윤 26.07.14 추가: 0개 이하 입력 시 안내문구용 -->
+<div id="qtyLimitMsg" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;"></div>
   </div>
 
   <%-- 지윤 26.07.07 수정: 하드코딩 48,900원 -> 실제 판매가로 변경 --%>
@@ -309,25 +311,55 @@ function getSelectedStock() {
   if (!sel || sel.options.length === 0) return 99;
   return parseInt(sel.options[sel.selectedIndex].dataset.stock) || 0;
 }
+//지윤 26.07.14 추가: 경고문구 초기화 헬퍼
+function hideQtyMessages() {
+  document.getElementById('stockWarning').style.display = 'none';
+  document.getElementById('qtyLimitMsg').style.display = 'none';
+}
 function changeQty(d) {
   const inp = document.getElementById('qty');
-  const maxStock = getSelectedStock();
   let v = parseInt(inp.value) + d;
-  if (v < 1) v = 1;
-  if (v > maxStock) {
-    v = maxStock;
-    document.getElementById('stockWarning').style.display = 'block';
-  } else {
-    document.getElementById('stockWarning').style.display = 'none';
-  }
+  v = applyQtyLimit(v);
   inp.value = v;
   updateTotal();
 }
+//지윤 26.07.14 추가: 직접 타이핑 가능하게 바뀌면서, 입력값 검증하는 함수 분리
+function validateQty() {
+  const inp = document.getElementById('qty');
+  let v = parseInt(inp.value);
+  if (isNaN(v)) v = 1;
+  v = applyQtyLimit(v);
+  inp.value = v;
+  updateTotal();
+
+}
+//지윤 26.07.14 수정: 999 상한 로직 제거, 재고 초과 시 "재고 OO개까지만 구매 가능"으로 안내
+function applyQtyLimit(v) {
+  hideQtyMessages();
+  const stock = getSelectedStock();
+
+  if (v < 1) {
+    v = 1;
+    document.getElementById('qtyLimitMsg').textContent = '1개 이상부터 구매할 수 있는 상품입니다.';
+    document.getElementById('qtyLimitMsg').style.display = 'block';
+  } else if (v > stock) {
+    v = stock;
+    document.getElementById('stockWarning').textContent = '재고 ' + stock + '개까지만 구매할 수 있습니다.';
+    document.getElementById('stockWarning').style.display = 'block';
+  }
+  return v;
+}
 function onOptionChange() {
   document.getElementById('qty').value = 1;
-  document.getElementById('stockWarning').style.display = 'none';
+  hideQtyMessages();
   updateTotal();
 }
+//지윤 26.07.14 추가: 직접 입력 후 포커스를 벗어나는 순간(blur) 검증 실행
+document.getElementById('qty').addEventListener('blur', validateQty);
+//지윤 26.07.14 추가: 타이핑하는 즉시 숫자 외 문자(글자, 음수기호, 소수점 등) 제거
+document.getElementById('qty').addEventListener('input', function () {
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
 function updateTotal() {
   const sel = document.getElementById('optionSelect');
   const addPrice = sel && sel.options.length > 0 ? parseInt(sel.value) || 0 : 0;
