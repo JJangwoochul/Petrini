@@ -1,98 +1,86 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="bizTypeLabel" value="반려동물 숙소" />
-<c:set var="bizPage"      value="info" />
+<c:set var="bizTypeLabel" value="숙소" />
+<c:set var="bizPage" value="info" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
 
-<%-- 7/3, 사업자(숙박) 업체 정보 수정 UI 구성 — 숙소 자체 정보(lodge.jsp)와 별개로,
-     사업자 등록 정보(대표자명/사업자등록번호/업종/사업장 주소·전화번호/사업자등록증)를 관리하는 화면 --%>
+<style>
+	.info-wrap{display:flex;flex-direction:column;gap:20px}
+	.info-hero{background:linear-gradient(135deg,#1F8464 0%,#2BAB82 100%);border-radius:12px;padding:28px 32px;color:#fff;display:flex;align-items:center;gap:20px}
+	.info-hero-icon{width:60px;height:60px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+	.info-hero-icon svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+	.info-hero h2{font-size:20px;font-weight:800;margin:0 0 6px}
+	.info-hero p{font-size:13px;opacity:.85;margin:0;line-height:1.6}
+	.info-section{background:#fff;border:1px solid #E4E6ED;border-radius:12px;padding:24px}
+	.info-stitle{font-size:14px;font-weight:800;color:#1A1A2E;margin:0 0 18px;padding-bottom:12px;border-bottom:1px solid #E4E6ED;display:flex;align-items:center;gap:8px}
+	.info-stitle svg{width:16px;height:16px;stroke:#2BAB82;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+	.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+	.info-group{display:flex;flex-direction:column;gap:6px}
+	.info-group.full{grid-column:1/-1}
+	.info-group label{font-size:13px;font-weight:600;color:#555}
+	.info-group input{
+		border:1px solid #E4E6ED;border-radius:8px;padding:10px 14px;font-size:14px;color:#1A1A2E;
+		outline:none;font-family:inherit;width:100%;box-sizing:border-box;
+		background-color:#f5f5f5;cursor:default}
+	@media (max-width:640px) {
+		.info-hero{flex-direction:column;text-align:center;padding:20px 16px;gap:12px}
+		.info-hero-icon{width:48px;height:48px}
+		.info-section{padding:18px 16px}
+		.info-grid{grid-template-columns:1fr;gap:12px}
+	}
+</style>
+
 <main class="biz-main">
-  <div class="biz-page-head">
-    <h1 class="biz-page-title">사업자 정보 등록</h1>
-    <p class="biz-page-desc">사업자 등록 정보를 확인하고 수정하세요.</p>
-  </div>
+    <div class="biz-page-head">
+        <h1 class="biz-page-title">사업자 정보</h1>
+        <p class="biz-page-desc">사업자 등록 시 입력한 기본 정보입니다. 수정이 필요한 경우 관리자에게 문의하세요.</p>
+    </div>
 
-  <div class="biz-card">
-    <div class="biz-card-head"><span>사업자 정보</span><small>* 표시 항목은 필수 입력입니다</small></div>
+    <div class="info-wrap">
 
-    <form id="bizInfoForm" style="padding:20px;max-width:640px">
-      <div class="biz-form-fields">
-        <div class="biz-form-row">
-          <label>대표자 명<span class="req">*</span></label>
-          <input type="text" id="bOwner" value="김펫케어" placeholder="대표자 명을 입력하세요">
+        <!-- 히어로 배너 -->
+        <div class="info-hero">
+            <div class="info-hero-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    <path d="M9 22V12h6v10"/>
+                </svg>
+            </div>
+            <div>
+                <h2>사업자 정보 확인</h2>
+                <p>아래 정보는 사업자 등록 승인 시 등록된 내용입니다.<br>정보 변경은 고객센터 또는 관리자에게 요청해 주세요.</p>
+            </div>
         </div>
-        <div class="biz-form-row">
-          <label>사업자 등록번호<span class="req">*</span></label>
-          <input type="text" id="bRegNo" value="123-45-67890" placeholder="000-00-00000">
-        </div>
-        <div class="biz-form-row">
-          <label>업종<span class="req">*</span></label>
-          <select id="bType">
-            <option value="stay" selected>반려동물 숙박업</option>
-            <option value="hospital">동물병원</option>
-            <option value="grooming">미용업</option>
-            <option value="store">반려용품 판매업</option>
-          </select>
-        </div>
-        <div class="biz-form-row">
-          <label>사업장 주소<span class="req">*</span></label>
-          <input type="text" id="bAddress" value="대전광역시 유성구 대학로 020" placeholder="사업장 주소를 입력하세요">
-        </div>
-        <div class="biz-form-row">
-          <label>사업장 전화번호<span class="req">*</span></label>
-          <input type="tel" id="bPhone" value="042-000-000" placeholder="예) 042-000-0000">
-        </div>
-        <div class="biz-form-row">
-          <label>사업자 등록증 첨부</label>
-          <div style="display:flex;gap:10px;align-items:center">
-            <input type="text" id="bFileName" value="사업자등록증.pdf" readonly style="flex:1;background:#FAFBFA">
-            <button type="button" class="biz-btn-ghost" style="white-space:nowrap" onclick="document.getElementById('bFile').click()">파일선택</button>
-            <input type="file" id="bFile" accept="image/*,.pdf" style="display:none">
-          </div>
-        </div>
-      </div>
 
-      <div class="biz-form-actions" style="margin-top:20px">
-        <button type="button" class="biz-btn-primary" onclick="saveInfo()">저장</button>
-      </div>
-    </form>
-  </div>
+        <!-- 기본 정보 섹션 -->
+        <div class="info-section">
+            <div class="info-stitle">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                기본 정보
+            </div>
+            <div class="info-grid">
+                <div class="info-group">
+                    <label>숙소명</label>
+                    <input type="text" value="${stay.name}" readonly>
+                </div>
+                <div class="info-group">
+                    <label>전화번호</label>
+                    <input type="tel" value="${stay.phone}" readonly>
+                </div>
+                <div class="info-group full">
+                    <label>주소</label>
+                    <input type="text" value="${stay.addr}" readonly>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </main>
-
-<div class="biz-toast" id="saveToast">
-  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-  사업자 정보가 저장되었습니다.
-</div>
-
-<script>
-  document.getElementById('bFile').addEventListener('change', function (e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    document.getElementById('bFileName').value = file.name;
-  });
-
-  function saveInfo() {
-    var required = [
-      { id: 'bOwner',   label: '대표자 명' },
-      { id: 'bRegNo',   label: '사업자 등록번호' },
-      { id: 'bAddress', label: '사업장 주소' },
-      { id: 'bPhone',   label: '사업장 전화번호' }
-    ];
-    for (var i = 0; i < required.length; i++) {
-      var el = document.getElementById(required[i].id);
-      if (!el.value.trim()) {
-        alert(required[i].label + '을(를) 입력해주세요.');
-        el.focus();
-        return;
-      }
-    }
-    var toast = document.getElementById('saveToast');
-    toast.classList.add('on');
-    setTimeout(function () { toast.classList.remove('on'); }, 2200);
-  }
-</script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

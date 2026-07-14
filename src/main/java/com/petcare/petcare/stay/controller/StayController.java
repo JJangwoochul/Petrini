@@ -10,6 +10,8 @@
 
 package com.petcare.petcare.stay.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,24 +20,45 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.stay.service.StayServiceImpl;
+import com.petcare.petcare.stay.vo.StayVO;
 
 
 @Controller("stayController")
 @RequestMapping("/stay")
-public class StayStayController {
+public class StayController {
 
     @Autowired
     private KakaoMapService kakaoMapService;
+    @Autowired
+    private StayServiceImpl stayService;
+    @Autowired
+    private FileService fileService;
 
     @GetMapping({"", "/"})
-    public String stay() {
+    public String list(Model model) {
+        List<StayVO> stayList = stayService.getStayList();
+        model.addAttribute("stayList", stayList);
         return "stay/list";
     }
 
     @GetMapping("/detail")
-    public String detail(@RequestParam(defaultValue = "1") String id, Model model) {
-        model.addAttribute("id", id);
-        //kakaoMapService.addMapAttributes(model, "서울 중구 세종대로 110", "행복 동물병원");
+    public String detail(@RequestParam(defaultValue = "1") Long id, Model model) throws Exception {
+        StayVO stay = stayService.getStayDetail(id);
+        List<FileVO> imgList = fileService.getFileList("STAY", id);
+        
+        // 지도 표시 (단일마커 — 숙소 1곳)
+        if (stay != null && stay.getLat() != null) {
+            java.util.List<StayVO> singleList = new java.util.ArrayList<>();
+            singleList.add(stay);
+            kakaoMapService.addMapAttributes(model, singleList);
+        }
+
+        model.addAttribute("stay", stay);
+        model.addAttribute("imgList", imgList);
+        
         return "stay/detail";
     }
 

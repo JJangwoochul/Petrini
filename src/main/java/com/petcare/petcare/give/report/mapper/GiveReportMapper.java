@@ -7,7 +7,7 @@
  * namespace: com.petcare.petcare.give.report.mapper.GiveReportMapper
  *
  * 쿼리
- * - insertReport / selectReportList / selectReportDetail
+ * - insertReport / selectReportList / selectReportDetail / selectReportCount
  * - insertFile / selectFileUrlsByPostId (사진)
  *
  * 참고 테이블
@@ -22,6 +22,7 @@ package com.petcare.petcare.give.report.mapper;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.give.report.vo.GiveReportFileVO;
 import com.petcare.petcare.give.report.vo.GiveReportVO;
@@ -31,13 +32,17 @@ public interface GiveReportMapper {
 
     int insertReport(GiveReportVO vo);
 
+    int updateReportTags(GiveReportVO vo);
+
     Long selectMemberNoByMemberId(String memberId);
 
     Long selectMemberNoByEmail(String email);
 
     GiveReportVO selectReportDetail(long postId);
 
-    List<GiveReportVO> selectReportList();
+    List<GiveReportVO> selectReportList(@Param("status") String status);
+
+    int selectReportCount();
 
     // TB_FILE INSERT — 사진 등록
     int insertFile(GiveReportFileVO file);

@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="hospital" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -62,28 +64,54 @@
         <div class="hdetail-name">${hospital.name}</div>
         <div class="hdetail-rating">
           <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(128개 리뷰)</span>
+          <%-- 2026/07/13 장우철 — TB_HOSPITAL.AVG_RATING / REVIEW_CNT --%>
+          <c:choose>
+            <c:when test="${not empty hospital.avgRating}">
+              <fmt:formatNumber value="${hospital.avgRating}" pattern="0.0"/>
+            </c:when>
+            <c:otherwise>0.0</c:otherwise>
+          </c:choose>
+          <span style="font-size:13px;color:var(--text-muted);font-weight:400">
+            (<c:out value="${empty hospital.reviewCnt ? 0 : hospital.reviewCnt}"/>개 리뷰)
+          </span>
         </div>
       </div>
     </div>
     <div class="hdetail-info-grid">
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>주소</div>
-        <div class="hdinfo-val">${hospital.addr}<br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small></div>
+        <div class="hdinfo-val">${hospital.addr}
+          <%-- <br><small style="color:var(--text-muted)">현재 위치에서 0.8km</small> --%>
+        </div>
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>운영시간</div>
-        <div class="hdinfo-val">평일 09:00 ~ 19:00<br>토요일 09:00 ~ 14:00<br>일·공휴일 휴무</div>
+        <input type="hidden" id="hoursJsonData" value='${hospital.hoursJson}'>
+        <div class="hdinfo-val" id="hoursArea">등록된 운영시간이 없습니다</div>
       </div>
       <div class="hdinfo-card">
         <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>전화번호</div>
         <div class="hdinfo-val">${hospital.phone}</div>
       </div>
       <div class="hdinfo-card">
-        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>진료과목</div>
+        <div class="hdinfo-label"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>병원 특성</div>
         <div class="dept-tags">
-          <span class="dept-tag">내과</span><span class="dept-tag">외과</span><span class="dept-tag">피부과</span>
-          <span class="dept-tag">안과</span><span class="dept-tag">치과</span><span class="dept-tag">정형외과</span>
+          <c:choose>
+            <c:when test="${not empty hospital.tagList}">
+              <c:forEach var="tag" items="${fn:split(hospital.tagList, ',')}">
+                <c:set var="t" value="${fn:trim(tag)}" />
+                <c:if test="${t == '24H'}"><span class="dept-tag">24시간 진료</span></c:if>
+                <c:if test="${t == 'EXOTIC'}"><span class="dept-tag">특수동물 진료</span></c:if>
+                <c:if test="${t == 'HOSPITEL'}"><span class="dept-tag">호스피텔 가능</span></c:if>
+                <c:if test="${t == 'INPATIENT'}"><span class="dept-tag">입원 진료</span></c:if>
+                <c:if test="${t == 'EMERGENCY'}"><span class="dept-tag">응급 진료</span></c:if>
+                <c:if test="${t == 'PARKING'}"><span class="dept-tag">주차 가능</span></c:if>
+              </c:forEach>
+            </c:when>
+            <c:otherwise>
+              <span style="font-size:13px;color:var(--text-muted)">등록된 특성이 없습니다</span>
+            </c:otherwise>
+          </c:choose>
         </div>
       </div>
     </div>
@@ -92,27 +120,39 @@
     </div> --%>
     <div id="kakao-map" style="width:100%;height:280px;border-radius:12px;overflow:hidden;margin-bottom:28px"></div>
     <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">진료 리뷰 (128)</h3>
-    <div class="review-item">
-      <div class="review-item-head">
-        <div><span class="reviewer-name">김민준</span> <span style="color:var(--text-muted);font-size:12px">· 골든 리트리버</span></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-          <div class="review-item-stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <span class="review-item-date">2025.06.20</span>
+    <%-- 2026/07/13 장우철 — 더미 리뷰 제거, TB_REVIEW 실데이터 --%>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:16px">
+      진료 리뷰 (<c:out value="${empty hospital.reviewCnt ? 0 : hospital.reviewCnt}"/>)
+    </h3>
+    <c:if test="${empty reviewList}">
+      <p style="font-size:14px;color:var(--text-muted);padding:12px 0">아직 등록된 리뷰가 없습니다.</p>
+    </c:if>
+    <c:forEach var="rv" items="${reviewList}">
+      <div class="review-item">
+        <div class="review-item-head">
+          <div>
+            <span class="reviewer-name"><c:out value="${empty rv.nickname ? '회원' : rv.nickname}"/></span>
+            <c:if test="${not empty rv.petName}">
+              <span style="color:var(--text-muted);font-size:12px">· <c:out value="${rv.petName}"/>
+                <c:if test="${not empty rv.petSpecies}"> (<c:out value="${rv.petSpecies}"/>)</c:if>
+              </span>
+            </c:if>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+            <div class="review-item-stars" style="font-size:13px;color:var(--yellow);font-weight:700">
+              ★ <fmt:formatNumber value="${rv.rating}" pattern="0.#"/>
+            </div>
+            <span class="review-item-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
+          </div>
         </div>
+        <div class="review-item-text"><c:out value="${rv.content}"/></div>
+        <c:if test="${not empty rv.bizReply}">
+          <div style="margin-top:10px;padding:10px 12px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-sub)">
+            <strong>병원 답글</strong><br><c:out value="${rv.bizReply}"/>
+          </div>
+        </c:if>
       </div>
-      <div class="review-item-text">수의사 선생님이 매우 친절하고 상세하게 설명해주셨습니다. 우리 몽이가 피부 트러블로 갔는데 정확히 진단하고 처방해주셔서 금방 좋아졌어요.</div>
-    </div>
-    <div class="review-item">
-      <div class="review-item-head">
-        <div><span class="reviewer-name">이서연</span> <span style="color:var(--text-muted);font-size:12px">· 페르시안 고양이</span></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-          <div class="review-item-stars"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <span class="review-item-date">2025.06.15</span>
-        </div>
-      </div>
-      <div class="review-item-text">예약하고 갔는데 대기 없이 바로 진료받았어요. 고양이 전문 선생님이 계셔서 안심이 됐습니다. 접수 직원분들도 친절하고 병원이 깔끔해요.</div>
-    </div>
+    </c:forEach>
   </div>
 
   <div class="reserve-card">
@@ -120,8 +160,40 @@
     <div class="reserve-info-row"><span>진료 대기시간</span><strong>약 10분</strong></div>
     <div class="reserve-info-row"><span>오늘 예약 가능</span><strong style="color:var(--primary)">8슬롯 남음</strong></div>
     <div class="reserve-info-row"><span>진료비</span><strong>기본 15,000원~</strong></div>
-    <button class="btn-reserve-big" onclick="location.href='${contextPath}/hospital/reserve?id=1'">예약하기</button>
-    <button class="btn-call"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>02-1234-5678</button>
+    <button class="btn-reserve-big" onclick="location.href='${contextPath}/hospital/reserve?id=${hospital.hospitalId}'">예약하기</button>
+    <button class="btn-call" onclick="location.href='tel:${hospital.phone}'"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>${hospital.phone}</button>
   </div>
 </div>
+
+<script>
+  (function() {
+      var jsonText = document.getElementById('hoursJsonData').value;
+      if (!jsonText || jsonText === '' || jsonText === 'null') return;
+
+      var hours;
+      try { hours = JSON.parse(jsonText); } catch(e) { return; }
+
+      var DAYS = ['월','화','수','목','금','토','일','공휴일'];
+      var lines = [];
+
+      for (var i = 0; i < DAYS.length; i++) {
+          var day  = DAYS[i];
+          var info = hours[day];
+
+          if (!info) {
+              lines.push('<span style="color:var(--text-muted)">' + day + '  휴무</span>');
+              continue;
+          }
+
+          var text = day + '  ' + info.open + ' ~ ' + info.close;
+          if (info.lunchStart && info.lunchEnd) {
+              text += '  <span style="color:var(--text-muted);font-size:12px">(점심 '
+                    + info.lunchStart + '~' + info.lunchEnd + ')</span>';
+          }
+          lines.push(text);
+      }
+
+      document.getElementById('hoursArea').innerHTML = lines.join('<br>');
+  })();
+</script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

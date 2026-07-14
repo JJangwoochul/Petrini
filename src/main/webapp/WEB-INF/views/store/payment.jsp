@@ -78,9 +78,14 @@
     <h3>최종 결제 금액</h3>
     <div class="order-total-box">
       <div class="order-total-row"><span>상품 금액</span><span><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span></div>
-      
+            
 <%-- 지윤 26.07.13 수정: deliveryFee(숫자)에 문자열 전용 메서드 concat() 호출하던 버그로 500 에러 발생 -> fmt:formatNumber로 수정 --%>
-<%--<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">${deliveryFee == 0 ? '무료' : deliveryFee.concat('원')}</span></div>--%>
+<%--<div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">
+        <c:choose>
+          <c:when test="${deliveryFee == 0}">무료</c:when>
+          <c:otherwise><fmt:formatNumber value="${deliveryFee}" pattern="#,###"/>원</c:otherwise>
+        </c:choose>
+      </span></div>--%>
 <div class="order-total-row"><span>배송비</span><span style="color:var(--primary)">
   <c:choose>
     <c:when test="${deliveryFee == 0}">무료</c:when>

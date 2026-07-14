@@ -4,31 +4,35 @@
  * XML: resources/mybatis/mapper/mypage/biz/MypageBizMapper.xml
  * namespace: com.petcare.petcare.mypage.biz.mapper.MypageBizMapper
  *
- * 쿼리 예시
- * - selectBusinessByMember
- * - insertBusinessApply
- *
- * 참고 테이블
- * - TB_BUSINESS
- *
- * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
+ * 참고 테이블: TB_BUSINESS, TB_BUSINESS_AUTH
  */
 
 package com.petcare.petcare.mypage.biz.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
-
+import com.petcare.petcare.biz.vo.BusinessVO;
 
 @Mapper
 public interface MypageBizMapper {
-    // TB_BUSINESS INSERT
-    public void insertBusiness(MypageBizVO vo) throws Exception;
 
-    // TB_BUSINESS_AUTH INSERT
-    public void insertBusinessAuth(MypageBizVO vo) throws Exception;
+    public void insertBusiness(BusinessVO vo) throws Exception;
 
-    public MypageBizVO selectBizAuthStatus(String bizId) throws Exception;
+    public void insertBusinessAuth(BusinessVO vo) throws Exception;
+
+    public BusinessVO selectBizAuthStatus(String bizId) throws Exception;
+
+    // 2026-07-09 장우철 — 회원 이메일(BIZ_ID) 기준 TB_BUSINESS 1건
+    // 이유: 재신청 시 INSERT 대신 UPDATE 판단용
+    BusinessVO selectBusinessByBizId(@Param("bizId") String bizId) throws Exception;
+
+    // 2026-07-09 장우철 — 반려 후 재신청 UPDATE
+    // 이유: UK(BIZ_ID, BIZ_REG_NO) 충돌 없이 같은 행을 PENDING 으로 되돌림
+    int updateBusinessForReapply(BusinessVO vo) throws Exception;
+
+    // 2026-07-09 장우철 — 다른 사람이 쓰는 활성 사업자번호인지
+    // 이유: 본인(bizId) 제외, PENDING/APPROVED 만 중복 체크
+    int countActiveBizRegNo(@Param("bizRegNo") String bizRegNo,
+                            @Param("bizId") String bizId) throws Exception;
 }

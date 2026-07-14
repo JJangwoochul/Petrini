@@ -55,14 +55,92 @@
         </div>
     </div>
 
-    <%-- 탭 --%>
+    <%-- 2026-07-09 장우철 — 처리 결과 메시지 (승인/반려 redirect 후) --%>
+    <c:if test="${not empty successMsg}">
+        <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${successMsg}</div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+        <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${errorMsg}</div>
+    </c:if>
+
+    <%-- 2026-07-09 장우철 — [변경 후] 상태 탭 (DB 건수 연동)
+         이유: PENDING/APPROVED/REJECTED 별 TB_BUSINESS 목록 필터 --%>
+    <div style="display:flex;gap:0;border-bottom:2px solid #E4E6ED;margin-bottom:20px">
+        <a href="${contextPath}/admin/biz/list?status=PENDING"
+           style="padding:10px 20px;font-size:14px;font-weight:${status eq 'PENDING' ? '700' : '600'};color:${status eq 'PENDING' ? '#3B5BDB' : '#999'};text-decoration:none;border:none;background:none;border-bottom:2px solid ${status eq 'PENDING' ? '#3B5BDB' : 'transparent'};margin-bottom:-2px">
+            대기 <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">${statusCounts.PENDING}</span>
+        </a>
+        <a href="${contextPath}/admin/biz/list?status=APPROVED"
+           style="padding:10px 20px;font-size:14px;font-weight:${status eq 'APPROVED' ? '700' : '600'};color:${status eq 'APPROVED' ? '#3B5BDB' : '#999'};text-decoration:none;border:none;background:none;border-bottom:2px solid ${status eq 'APPROVED' ? '#3B5BDB' : 'transparent'};margin-bottom:-2px">
+            승인완료 <span style="background:#F0FDF4;color:#16A34A;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">${statusCounts.APPROVED}</span>
+        </a>
+        <a href="${contextPath}/admin/biz/list?status=REJECTED"
+           style="padding:10px 20px;font-size:14px;font-weight:${status eq 'REJECTED' ? '700' : '600'};color:${status eq 'REJECTED' ? '#3B5BDB' : '#999'};text-decoration:none;border:none;background:none;border-bottom:2px solid ${status eq 'REJECTED' ? '#3B5BDB' : 'transparent'};margin-bottom:-2px">
+            반려 <span style="background:#FEF2F2;color:#DC2626;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">${statusCounts.REJECTED}</span>
+        </a>
+    </div>
+
+    <%-- 2026-07-09 장우철 — [변경 후] 신청 목록 실데이터 반복 --%>
+    <c:choose>
+    <c:when test="${empty list}">
+        <p style="text-align:center;color:#999;padding:48px 0">해당 상태의 사업자 신청이 없습니다.</p>
+    </c:when>
+    <c:otherwise>
+    <c:forEach var="item" items="${list}">
+    <div class="biz-apply-card">
+        <div class="biz-apply-head">
+            <c:set var="typeClass" value="hospital"/>
+            <c:if test="${item.bizType eq 'STAY'}"><c:set var="typeClass" value="stay"/></c:if>
+            <c:if test="${item.bizType eq 'GROOMING'}"><c:set var="typeClass" value="grooming"/></c:if>
+            <div class="biz-apply-type ${typeClass}">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            </div>
+            <div>
+                <div class="biz-apply-name">${item.bizName}</div>
+                <div class="biz-apply-meta">
+                    ${item.bizType} · 대표자: ${item.ceoName} · ${item.phone}
+                </div>
+            </div>
+            <c:choose>
+                <c:when test="${item.statusCd eq 'PENDING'}"><span class="adm-badge wait" style="margin-left:12px">승인 대기</span></c:when>
+                <c:when test="${item.statusCd eq 'APPROVED'}"><span class="adm-badge active" style="margin-left:12px">승인 완료</span></c:when>
+                <c:otherwise><span class="adm-badge" style="margin-left:12px;background:#FEE2E2;color:#DC2626">반려</span></c:otherwise>
+            </c:choose>
+            <span class="biz-apply-date">신청일: ${item.applyDate}</span>
+        </div>
+        <div class="biz-apply-body">
+            <div class="biz-apply-field"><label>사업자 등록번호</label><span>${item.bizRegNo}</span></div>
+            <div class="biz-apply-field"><label>신청 계정</label><span>${item.bizId}</span></div>
+            <div class="biz-apply-field"><label>업종</label><span>${item.bizType}</span></div>
+            <div class="biz-apply-field"><label>연락처</label><span>${item.phone}</span></div>
+        </div>
+        <div class="biz-apply-foot">
+            <div>
+                <span class="biz-doc-link">서류는 상세에서 확인</span>
+            </div>
+            <div class="biz-action-area">
+                <a href="${contextPath}/admin/biz/detail?bizNo=${item.bizNo}" class="adm-btn blue">상세 검토</a>
+                <c:if test="${item.statusCd eq 'PENDING'}">
+                <form method="post" action="${contextPath}/admin/biz/approve" style="display:inline"
+                      onsubmit="return confirm('${item.bizName} 신청을 승인하시겠습니까?')">
+                    <input type="hidden" name="bizNo" value="${item.bizNo}">
+                    <button type="submit" class="adm-btn green">승인</button>
+                </form>
+                </c:if>
+            </div>
+        </div>
+    </div>
+    </c:forEach>
+    </c:otherwise>
+    </c:choose>
+
+    <%-- ========== [변경 전] 2026-07-09 장우철 — 더미 카드 3건 (목업) 보존
+         이유: 기존 UI 목업을 삭제하지 않고 참고용으로 남김 ==========
     <div style="display:flex;gap:0;border-bottom:2px solid #E4E6ED;margin-bottom:20px">
         <button style="padding:10px 20px;font-size:14px;font-weight:700;color:#3B5BDB;border:none;background:none;border-bottom:2px solid #3B5BDB;margin-bottom:-2px;cursor:pointer">대기 <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">3</span></button>
         <button style="padding:10px 20px;font-size:14px;font-weight:600;color:#999;border:none;background:none;cursor:pointer">승인완료</button>
         <button style="padding:10px 20px;font-size:14px;font-weight:600;color:#999;border:none;background:none;cursor:pointer">반려</button>
     </div>
-
-    <%-- 신청 카드 1 — 동물병원 --%>
     <div class="biz-apply-card">
         <div class="biz-apply-head">
             <div class="biz-apply-type hospital">
@@ -94,8 +172,6 @@
             </div>
         </div>
     </div>
-
-    <%-- 신청 카드 2 — 숙소 --%>
     <div class="biz-apply-card">
         <div class="biz-apply-head">
             <div class="biz-apply-type stay">
@@ -103,7 +179,7 @@
             </div>
             <div>
                 <div class="biz-apply-name">강아지숲 펫호텔</div>
-                <div class="biz-apply-meta">반려동물 숙소 · 대표자: 이민수 · 010-2345-6789</div>
+                <div class="biz-apply-meta">반려동물 숙소 · 대표자: 이영희 · 010-2345-6789</div>
             </div>
             <span class="adm-badge wait" style="margin-left:12px">승인 대기</span>
             <span class="biz-apply-date">신청일: 2025.06.24</span>
@@ -126,8 +202,6 @@
             </div>
         </div>
     </div>
-
-    <%-- 신청 카드 3 — 미용실 --%>
     <div class="biz-apply-card">
         <div class="biz-apply-head">
             <div class="biz-apply-type grooming">
@@ -142,7 +216,7 @@
         </div>
         <div class="biz-apply-body">
             <div class="biz-apply-field"><label>사업자 등록번호</label><span>345-67-89012 ✓ 인증됨</span></div>
-            <div class="biz-apply-field"><label>사업장 주소</label><span>서울 강남구 청담동 789-1</span></div>
+            <div class="biz-apply-field"><label>사업장 주소</label><span>서울 강남구 역삼동 789-1</span></div>
             <div class="biz-apply-field"><label>이메일</label><span>nyang@grooming.com</span></div>
             <div class="biz-apply-field"><label>연락처</label><span>02-3456-7890</span></div>
         </div>
@@ -159,6 +233,8 @@
             </div>
         </div>
     </div>
+    ========== [변경 전] 끝 ========== --%>
+
 </main>
 
 <%@ include file="/WEB-INF/views/admin/common/footer.jsp" %>

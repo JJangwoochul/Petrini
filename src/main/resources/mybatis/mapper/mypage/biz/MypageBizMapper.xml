@@ -2,29 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-  <!--
+<!--
   역할: MypageBizMapper SQL 정의
-
-  쿼리 id 예시
-  - selectBusinessByMember
-  - insertBusinessApply
-
-  테이블
-  - TB_BUSINESS
+  테이블: TB_BUSINESS, TB_BUSINESS_AUTH
 -->
 
 <mapper namespace="com.petcare.petcare.mypage.biz.mapper.MypageBizMapper">
-    <insert id="insertBusiness" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <insert id="insertBusiness" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
         <selectKey keyProperty="bizNo" resultType="long" order="AFTER">
             SELECT MAX(BIZ_NO) FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
         </selectKey>
+        <!-- 2026-07-10 장우철 — 신청 주소(ZIP/ADDR) 저장 → 승인 시 병원 ADDR 복사 -->
         INSERT INTO TB_BUSINESS (
                                     BIZ_ID, 
                                     BIZ_TYPE, 
                                     BIZ_REG_NO, 
                                     BIZ_NAME, 
                                     CEO_NAME, 
-                                    PHONE, 
+                                    PHONE,
+                                    ZIP_CODE,
+                                    ADDR,
+                                    ADDR_DETAIL,
                                     STATUS_CD, 
                                     JOIN_DATE
                                 ) 
@@ -34,13 +32,16 @@
                                     #{bizRegNo}, 
                                     #{bizName}, 
                                     #{ceoName}, 
-                                    #{phone, jdbcType=VARCHAR}, 
+                                    #{phone, jdbcType=VARCHAR},
+                                    #{zipCode, jdbcType=VARCHAR},
+                                    #{addr, jdbcType=VARCHAR},
+                                    #{addrDetail, jdbcType=VARCHAR},
                                     'PENDING', 
                                     SYSDATE
                                 )
     </insert>
 
-    <insert id="insertBusinessAuth" parameterType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
+    <insert id="insertBusinessAuth" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
         INSERT INTO TB_BUSINESS_AUTH (
                                         BIZ_NO, 
                                         BIZ_REG_NO, 
@@ -57,17 +58,64 @@
                                     )
     </insert>
 
-    <!-- 사업자 신청 상태 조회 -->
-    <select id="selectBizAuthStatus" parameterType="string" resultType="com.petcare.petcare.mypage.biz.vo.MypageBizVO">
-        SELECT      B.BIZ_NO,
-                    B.BIZ_NAME,
-                    B.BIZ_TYPE,
-                    B.BIZ_REG_NO,
-                    A.STATUS_CD
+    <!-- 2026-07-09 장우철 — [변경 후] 최신 AUTH + 반려사유, 상태는 TB_BUSINESS 기준
+         이유: 반려 시 B.STATUS_CD=REJECTED 와 A.REJECT_REASON 을 유저 화면에 표시 -->
+    <select id="selectBizAuthStatus" parameterType="string" resultType="com.petcare.petcare.biz.vo.BusinessVO">
+        SELECT      B.BIZ_NO        AS bizNo,
+                    B.BIZ_NAME      AS bizName,
+                    B.BIZ_TYPE      AS bizType,
+                    B.BIZ_REG_NO    AS bizRegNo,
+                    B.STATUS_CD     AS statusCd,
+                    A.REJECT_REASON AS rejectReason
         FROM        TB_BUSINESS B
         JOIN        TB_BUSINESS_AUTH A ON A.BIZ_NO = B.BIZ_NO
         WHERE       B.BIZ_ID = #{bizId}
         ORDER BY    A.APPLY_DATE DESC
         FETCH FIRST 1 ROW ONLY
+    </select>
+
+    <!-- [변경 전] 2026-07-09 장우철 — A.STATUS_CD 만 조회, REJECT_REASON 없음
+    SELECT B.BIZ_NO, B.BIZ_NAME, B.BIZ_TYPE, B.BIZ_REG_NO, A.STATUS_CD
+    FROM TB_BUSINESS B JOIN TB_BUSINESS_AUTH A ...
+    -->
+
+    <select id="selectBusinessByBizId" resultType="com.petcare.petcare.biz.vo.BusinessVO">
+        SELECT      BIZ_NO      AS bizNo,
+                    BIZ_ID      AS bizId,
+                    BIZ_TYPE    AS bizType,
+                    BIZ_REG_NO  AS bizRegNo,
+                    BIZ_NAME    AS bizName,
+                    CEO_NAME    AS ceoName,
+                    PHONE       AS phone,
+                    ZIP_CODE    AS zipCode,
+                    ADDR        AS addr,
+                    ADDR_DETAIL AS addrDetail,
+                    STATUS_CD   AS statusCd
+        FROM        TB_BUSINESS
+        WHERE       BIZ_ID = #{bizId}
+    </select>
+
+    <update id="updateBusinessForReapply" parameterType="com.petcare.petcare.biz.vo.BusinessVO">
+        UPDATE TB_BUSINESS
+        SET    BIZ_TYPE     = #{bizType},
+               BIZ_REG_NO   = #{bizRegNo},
+               BIZ_NAME     = #{bizName},
+               CEO_NAME     = #{ceoName},
+               PHONE        = #{phone, jdbcType=VARCHAR},
+               ZIP_CODE     = #{zipCode, jdbcType=VARCHAR},
+               ADDR         = #{addr, jdbcType=VARCHAR},
+               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
+               STATUS_CD    = 'PENDING'
+        WHERE  BIZ_NO       = #{bizNo}
+          AND  BIZ_ID       = #{bizId}
+          AND  STATUS_CD    = 'REJECTED'
+    </update>
+
+    <select id="countActiveBizRegNo" resultType="int">
+        SELECT COUNT(*)
+        FROM   TB_BUSINESS
+        WHERE  BIZ_REG_NO = #{bizRegNo}
+          AND  STATUS_CD IN ('PENDING', 'APPROVED')
+          AND  BIZ_ID != #{bizId}
     </select>
 </mapper>

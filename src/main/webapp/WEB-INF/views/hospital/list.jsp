@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="hospital" />
@@ -55,6 +56,9 @@
   .hosp-tag.type{background:var(--primary-light);color:var(--primary-dark)}
   .hosp-tag.open{background:#DCFCE7;color:#16A34A}
   .hosp-tag.close{background:#FEE2E2;color:#DC2626}
+  .hosp-tag.prep{background:#FEF3C7;color:#D97706}
+  .hosp-card.preparing{opacity:.7}
+  .hosp-card.preparing .btn-reserve{display:none}
   .hosp-name{font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:4px}
   .hosp-meta{font-size:13px;color:var(--text-muted);display:flex;flex-direction:column;gap:3px}
   .hosp-meta-row{display:flex;align-items:center;gap:5px}
@@ -131,11 +135,30 @@
       <c:when test="${not empty hospitalList}">
         <c:forEach var="h" items="${hospitalList}">
           <%-- id 추가 + onclick을 selectHospital으로 --%>
-          <div class="hosp-card" id="card-${h.hospitalId}" onclick="selectHospital(${h.hospitalId})">
-            <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${h.name}">
+          <div class="hosp-card ${h.lat == null ? 'preparing' : ''}" id="card-${h.hospitalId}" onclick="selectHospital(${h.hospitalId})">
+            <c:choose>
+              <c:when test="${h.lat != null && h.thumbPath != null}">
+                <img class="hosp-thumb" src="${contextPath}/upload/${h.thumbPath}" alt="${h.name}">
+              </c:when>
+              <c:otherwise>
+                <div class="hosp-thumb-placeholder">
+                  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="22" width="36" height="28" rx="3" stroke="#CBD5E1" stroke-width="2"/>
+                    <rect x="26" y="36" width="12" height="14" rx="1.5" stroke="#CBD5E1" stroke-width="2"/>
+                    <path d="M32 8L14 22h36L32 8z" stroke="#CBD5E1" stroke-width="2" stroke-linejoin="round"/>
+                    <line x1="32" y1="27" x2="32" y2="33" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="29" y1="30" x2="35" y2="30" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span>이미지 <br>등록중입니다.</span>
+                </div>
+              </c:otherwise>
+            </c:choose>
             <div class="hosp-body">
               <div class="hosp-tags">
                 <span class="hosp-tag type">동물병원</span>
+                <c:if test="${h.lat == null}">
+                  <span class="hosp-tag prep">이용준비중</span>
+                </c:if>
               </div>
               <div class="hosp-name">${h.name}</div>
               <div class="hosp-meta">
@@ -143,9 +166,27 @@
                   <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   ${h.addr}
                 </div>
-                <div class="hosp-meta-row">
+                <%-- <div class="hosp-meta-row">
                   <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   ${h.tagList}
+                </div> --%>
+                <div class="hosp-meta-row">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <c:choose>
+                    <c:when test="${not empty h.tagList}">
+                      <c:forEach var="tag" items="${fn:split(h.tagList, ',')}" varStatus="st">
+                        <c:set var="t" value="${fn:trim(tag)}" />
+                        <c:if test="${t == '24H'}">24시간 진료</c:if>
+                        <c:if test="${t == 'EXOTIC'}">특수동물 진료</c:if>
+                        <c:if test="${t == 'HOSPITEL'}">호스피텔 가능</c:if>
+                        <c:if test="${t == 'INPATIENT'}">입원 진료</c:if>
+                        <c:if test="${t == 'EMERGENCY'}">응급 진료</c:if>
+                        <c:if test="${t == 'PARKING'}">주차 가능</c:if>
+                        <c:if test="${!st.last}"> · </c:if>
+                      </c:forEach>
+                    </c:when>
+                    <c:otherwise>-</c:otherwise>
+                  </c:choose>
                 </div>
               </div>
             </div>
@@ -164,10 +205,22 @@
                 예약하기
               </button>
               --%>
-              <button class="btn-reserve"
+              <%-- HYJ 26.07.09 사업자가 아직 사업정보 등록 안했을 경우 이용중비중 --%>
+              <%-- <button class="btn-reserve"
                       onclick="event.stopPropagation();location.href='${contextPath}/hospital/detail?id=${h.hospitalId}'">
                 상세보기
-              </button>
+              </button> --%>
+              <c:choose>
+                <c:when test="${h.lat != null}">
+                  <button class="btn-reserve"
+                          onclick="event.stopPropagation();location.href='${contextPath}/hospital/detail?id=${h.hospitalId}'">
+                    상세보기
+                  </button>
+                </c:when>
+                <c:otherwise>
+                  <button class="btn-reserve">이용준비중</button>
+                </c:otherwise>
+              </c:choose>              
             </div>
           </div>
         </c:forEach>

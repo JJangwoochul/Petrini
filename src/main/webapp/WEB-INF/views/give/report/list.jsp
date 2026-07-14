@@ -3,11 +3,13 @@
   - 박유정 / 2026-07-06~07
 
   [목록 화면 흐름]
-  1. GET /give/report/list → giveReportService.getReportList()
-  2. TB_POST 목록 + thumbUrl(첫 사진) 표시
+  1. GET /give/report/list?status= → giveReportService.getReportList()
+  2. status: 전체 / FINDING(찾는중) / OWNER_FOUND(주인찾음) / RESCUED(구조완료)
+  3. TB_POST 목록 + thumbUrl(첫 사진) 표시
 --%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId"      value="give" />
 <c:set var="giveTab"     value="report" />
@@ -17,7 +19,7 @@
 <style>
   .report-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
   .report-filters{display:flex;gap:8px;flex-wrap:wrap}
-  .report-chip{padding:7px 16px;border:1px solid var(--border);border-radius:50px;font-size:13px;color:var(--text-sub);background:#fff;cursor:pointer;transition:var(--transition)}
+  .report-chip{display:inline-block;padding:7px 16px;border:1px solid var(--border);border-radius:50px;font-size:13px;color:var(--text-sub);background:#fff;text-decoration:none;transition:var(--transition)}
   .report-chip:hover,.report-chip.on{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark);font-weight:600}
   .btn-report-write{padding:9px 20px;border:none;border-radius:50px;background:var(--primary);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
   .btn-report-write svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
@@ -47,12 +49,14 @@
 <div class="give-content">
   <div class="report-toolbar">
     <div class="report-filters">
-      <span class="report-chip on" onclick="selChip(this)">전체</span>
-      <span class="report-chip" onclick="selChip(this)">분실</span>
-      <span class="report-chip" onclick="selChip(this)">임시보호중</span>
-      <span class="report-chip" onclick="selChip(this)">발견</span>
-      <%-- <span class="report-chip" onclick="selChip(this)">강아지</span>
-      <span class="report-chip" onclick="selChip(this)">고양이</span> --%>
+      <c:url var="urlAll" value="/give/report/list"/>
+      <c:url var="urlFinding" value="/give/report/list"><c:param name="status" value="FINDING"/></c:url>
+      <c:url var="urlOwner" value="/give/report/list"><c:param name="status" value="OWNER_FOUND"/></c:url>
+      <c:url var="urlRescued" value="/give/report/list"><c:param name="status" value="RESCUED"/></c:url>
+      <a href="${contextPath}${urlAll}" class="report-chip ${empty status ? 'on' : ''}">전체</a>
+      <a href="${contextPath}${urlFinding}" class="report-chip ${status eq 'FINDING' ? 'on' : ''}">찾는 중</a>
+      <a href="${contextPath}${urlOwner}" class="report-chip ${status eq 'OWNER_FOUND' ? 'on' : ''}">주인 찾음</a>
+      <a href="${contextPath}${urlRescued}" class="report-chip ${status eq 'RESCUED' ? 'on' : ''}">구조 완료</a>
     </div>
     <button class="btn-report-write" onclick="location.href='${contextPath}/give/report/write'">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -77,7 +81,17 @@
               <img class="report-thumb"
                    src="${not empty item.thumbUrl ? contextPath.concat(item.thumbUrl) : 'https://placehold.co/400x200/EAF7F2/2BAB82?text=발견사진'}"
                    alt="발견사진">
-              <span class="report-status rs-finding">찾는 중</span>
+              <c:choose>
+                <c:when test="${fn:contains(item.tags, 'OWNER_FOUND')}">
+                  <span class="report-status rs-returned">주인 찾음</span>
+                </c:when>
+                <c:when test="${fn:contains(item.tags, 'RESCUED')}">
+                  <span class="report-status rs-rescued">구조 완료</span>
+                </c:when>
+                <c:otherwise>
+                  <span class="report-status rs-finding">찾는 중</span>
+                </c:otherwise>
+              </c:choose>
               <span class="report-map-pin">
                 <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 ${item.region}
@@ -113,10 +127,3 @@
 </div>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
-
-<script>
-function selChip(el) {
-  document.querySelectorAll('.report-chip').forEach(c => c.classList.remove('on'));
-  el.classList.add('on');
-}
-</script>

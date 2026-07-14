@@ -31,4 +31,51 @@
 
 package com.petcare.petcare.biz.hospital.service;
 
-public interface BizHospitalService {}
+import java.util.List;
+
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
+import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.MedicalRecordVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
+
+public interface BizHospitalService {
+
+    HospitalVO getHospitalByBizId(String bizId);
+
+    // 2026-07-10 장우철 — 승인됐는데 TB_HOSPITAL 없으면 껍데기 생성 후 반환
+    HospitalVO resolveHospitalByBizId(String bizId);
+
+    void updateHospitalInfo(HospitalVO vo);
+
+    // 2026-07-10 장우철 — 병원 예약 1차 (F4~F7) 사업자 Service
+    List<ReservationVO> getReservationList(Long hospitalId, String tab) throws Exception;
+
+    ReservationVO getReservationDetail(Long hospitalId, Long resvId) throws Exception;
+
+    // 2026/07/11 장우철 — cancelReason: CANCEL 일 때 필수
+    void updateReservationStatus(Long hospitalId, Long resvId, String statusCd, String cancelReason) throws Exception;
+
+    List<ReservationVO> getCalendarReservations(Long hospitalId, String fromDate, String toDate) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 배지용 PENDING 건수
+    int countPendingReservations(Long hospitalId) throws Exception;
+
+    // 2026/07/11 장우철 — 사이드바 캘린더 배지: 오늘 CONFIRMED
+    int countTodayConfirmedReservations(Long hospitalId) throws Exception;
+
+    // 2026/07/13 장우철 — 진료완료 + 진료기록 동시 저장
+    void completeReservationWithRecord(Long hospitalId, MedicalRecordVO record) throws Exception;
+
+    // 2026/07/13 장우철 — 진료기록 목록
+    List<MedicalRecordVO> getMedicalRecords(Long hospitalId, String keyword, Integer periodMonths) throws Exception;
+
+    MedicalRecordVO getMedicalRecordDetail(Long hospitalId, Long recordId) throws Exception;
+
+    // 2026/07/13 장우철 — 작성 모달용 확정·미기록 예약
+    List<ReservationVO> getConfirmedWithoutRecord(Long hospitalId) throws Exception;
+
+    // 2026/07/14 장우철 — 사업자 리뷰관리
+    List<HospitalReviewVO> getBizHospitalReviews(Long hospitalId) throws Exception;
+
+    void saveReviewBizReply(Long hospitalId, Long reviewId, String bizReply) throws Exception;
+}

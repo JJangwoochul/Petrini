@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId"      value="mypage" />
 <c:set var="sec"         value="health" />
@@ -39,7 +41,6 @@
 .health-pet-tab .tab-name  { font-size: 14px; font-weight: 700; }
 .health-pet-tab .tab-breed { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 
-/* 반려동물 프로필 카드 */
 .health-pet-profile {
     display: flex;
     align-items: center;
@@ -72,7 +73,6 @@
 .hps-val   { font-size: 18px; font-weight: 800; color: var(--primary-dark); }
 .hps-unit  { font-size: 11px; color: var(--text-sub); }
 
-/* 진료 타임라인 */
 .health-timeline { position: relative; }
 .health-timeline::before {
     content: '';
@@ -167,7 +167,6 @@
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
 
-/* 빈 상태 */
 .health-empty {
     display: flex; flex-direction: column;
     align-items: center; gap: 14px;
@@ -183,6 +182,13 @@
     stroke: var(--primary); fill: none;
     stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
 }
+.health-empty p { font-size: 14px; color: var(--text-muted); margin: 0; }
+.health-empty a { color: var(--primary); font-weight: 700; text-decoration: none; }
+@media (max-width: 720px) {
+    .health-pet-profile { flex-wrap: wrap; }
+    .health-pet-stats { margin-left: 0; width: 100%; justify-content: space-around; }
+    .health-record-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 <div class="mypage-wrap">
@@ -190,198 +196,213 @@
 
 <div class="mypage-content">
 <div class="mp-section active">
+    <%-- 2026/07/14 장우철 — 건강수첩: TB_MEDICAL_RECORD 연동 --%>
     <h2 class="mp-title">건강수첩</h2>
-    <p class="mp-desc">반려동물의 진료 기록을 확인하세요.</p>
+    <p class="mp-desc">병원에서 작성한 진료 기록을 확인하세요.</p>
 
-    <%-- 반려동물 탭 --%>
-    <div class="health-pet-tabs">
-        <a href="#" class="health-pet-tab active">
-            <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=64&q=70&auto=format&fit=crop"
-                 alt="몽이"
-                 onerror="this.src='https://placehold.co/32x32/EAF7F2/2BAB82?text=🐶'">
-            <div>
-                <div class="tab-name">몽이</div>
-                <div class="tab-breed">골든 리트리버</div>
+    <c:choose>
+        <c:when test="${empty petList}">
+            <div class="health-empty">
+                <div class="health-empty-icon">
+                    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <p>등록된 반려동물이 없습니다.</p>
+                <p><a href="${contextPath}/mypage/pets">반려동물 등록하기</a></p>
             </div>
-        </a>
-        <a href="#" class="health-pet-tab">
-            <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=64&q=70&auto=format&fit=crop"
-                 alt="나비"
-                 onerror="this.src='https://placehold.co/32x32/EAF7F2/2BAB82?text=🐱'">
-            <div>
-                <div class="tab-name">나비</div>
-                <div class="tab-breed">페르시안</div>
+        </c:when>
+        <c:otherwise>
+            <%-- 반려동물 탭 --%>
+            <div class="health-pet-tabs">
+                <c:forEach var="p" items="${petList}">
+                    <a href="${contextPath}/mypage/health?petId=${p.petId}"
+                       class="health-pet-tab${selectedPet != null && selectedPet.petId == p.petId ? ' active' : ''}">
+                        <c:choose>
+                            <c:when test="${not empty p.photoUrl}">
+                                <img src="${p.photoUrl}" alt="<c:out value='${p.petName}'/>"
+                                     onerror="this.src='https://placehold.co/32x32/EAF7F2/2BAB82?text=PET'">
+                            </c:when>
+                            <c:otherwise>
+                                <img src="https://placehold.co/32x32/EAF7F2/2BAB82?text=${fn:escapeXml(p.petName)}"
+                                     alt="<c:out value='${p.petName}'/>">
+                            </c:otherwise>
+                        </c:choose>
+                        <div>
+                            <div class="tab-name"><c:out value="${p.petName}"/></div>
+                            <div class="tab-breed"><c:out value="${empty p.breed ? '-' : p.breed}"/></div>
+                        </div>
+                    </a>
+                </c:forEach>
             </div>
-        </a>
-    </div>
 
-    <%-- 선택된 반려동물 프로필 --%>
-    <div class="health-pet-profile">
-        <img class="health-pet-avatar"
-             src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=160&q=80&auto=format&fit=crop"
-             alt="몽이"
-             onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=DOG'">
-        <div class="health-pet-info">
-            <div class="health-pet-name">몽이</div>
-            <div class="health-pet-meta">골든 리트리버 · 수컷 · 중성화 O · 2021.03.15생 (4살)</div>
-        </div>
-        <div class="health-pet-stats">
-            <div class="hps-item">
-                <div class="hps-label">최근 체중</div>
-                <div class="hps-val">28.2<span class="hps-unit"> kg</span></div>
-            </div>
-            <div class="hps-item">
-                <div class="hps-label">최근 체온</div>
-                <div class="hps-val">38.5<span class="hps-unit"> ℃</span></div>
-            </div>
-            <div class="hps-item">
-                <div class="hps-label">총 방문</div>
-                <div class="hps-val">5<span class="hps-unit"> 회</span></div>
-            </div>
-        </div>
-    </div>
+            <c:if test="${selectedPet != null}">
+                <%-- 선택된 반려동물 프로필 --%>
+                <div class="health-pet-profile">
+                    <c:choose>
+                        <c:when test="${not empty selectedPet.photoUrl}">
+                            <img class="health-pet-avatar" src="${selectedPet.photoUrl}"
+                                 alt="<c:out value='${selectedPet.petName}'/>"
+                                 onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=PET'">
+                        </c:when>
+                        <c:otherwise>
+                            <img class="health-pet-avatar"
+                                 src="https://placehold.co/80x80/EAF7F2/2BAB82?text=${fn:escapeXml(selectedPet.petName)}"
+                                 alt="<c:out value='${selectedPet.petName}'/>">
+                        </c:otherwise>
+                    </c:choose>
+                    <div class="health-pet-info">
+                        <div class="health-pet-name"><c:out value="${selectedPet.petName}"/></div>
+                        <div class="health-pet-meta">
+                            <c:out value="${empty selectedPet.breed ? '-' : selectedPet.breed}"/>
+                            ·
+                            <c:choose>
+                                <c:when test="${selectedPet.gender eq 'M'}">수컷</c:when>
+                                <c:when test="${selectedPet.gender eq 'F'}">암컷</c:when>
+                                <c:otherwise>-</c:otherwise>
+                            </c:choose>
+                            <c:if test="${not empty selectedPet.birthDate}">
+                                · <c:out value="${selectedPet.birthDate}"/>생
+                            </c:if>
+                            <c:if test="${not empty selectedPet.age}">
+                                (<c:out value="${selectedPet.age}"/>살)
+                            </c:if>
+                        </div>
+                    </div>
+                    <div class="health-pet-stats">
+                        <div class="hps-item">
+                            <div class="hps-label">최근 체중</div>
+                            <div class="hps-val">
+                                <c:choose>
+                                    <c:when test="${not empty latestWeight}">
+                                        <c:out value="${latestWeight}"/><span class="hps-unit"> kg</span>
+                                    </c:when>
+                                    <c:otherwise>-<span class="hps-unit"> kg</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="hps-item">
+                            <div class="hps-label">최근 체온</div>
+                            <div class="hps-val">
+                                <c:choose>
+                                    <c:when test="${not empty latestTemp}">
+                                        <c:out value="${latestTemp}"/><span class="hps-unit"> ℃</span>
+                                    </c:when>
+                                    <c:otherwise>-<span class="hps-unit"> ℃</span></c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                        <div class="hps-item">
+                            <div class="hps-label">총 방문</div>
+                            <div class="hps-val"><c:out value="${visitCount}"/><span class="hps-unit"> 회</span></div>
+                        </div>
+                    </div>
+                </div>
 
-    <%-- 진료 타임라인 --%>
-    <div class="health-timeline">
-
-        <%-- 기록 1 --%>
-        <div class="health-record">
-            <div class="health-record-dot">
-                <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            </div>
-            <div class="health-record-card">
-                <div class="health-record-head">
-                    <div>
-                        <span class="health-record-date">2025.06.20</span>
-                        <span class="health-record-hospital">행복동물병원</span>
-                    </div>
-                    <span class="health-record-type type-treat">진료</span>
-                </div>
-                <div class="health-record-body">
-                    <div class="health-record-grid">
-                        <div class="hrg-item">
-                            <label>주증상</label>
-                            <span>피부 트러블, 긁음 반복</span>
+                <%-- 진료 타임라인 --%>
+                <c:choose>
+                    <c:when test="${empty recordList}">
+                        <div class="health-empty">
+                            <div class="health-empty-icon">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </div>
+                            <p>아직 병원 진료 기록이 없습니다.</p>
+                            <p>예약·방문 후 병원에서 진료를 완료하면 여기에 표시됩니다.</p>
                         </div>
-                        <div class="hrg-item">
-                            <label>진단명</label>
-                            <span>알레르기성 피부염</span>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="health-timeline">
+                            <c:forEach var="r" items="${recordList}">
+                                <c:set var="typeLabel" value="${empty r.treatType ? '진료' : r.treatType}"/>
+                                <c:set var="typeCss" value="type-treat"/>
+                                <c:choose>
+                                    <c:when test="${typeLabel eq '정기검진'}"><c:set var="typeCss" value="type-check"/></c:when>
+                                    <c:when test="${typeLabel eq '예방접종'}"><c:set var="typeCss" value="type-vaccine"/></c:when>
+                                    <c:when test="${typeLabel eq '수술'}"><c:set var="typeCss" value="type-surgery"/></c:when>
+                                    <c:otherwise><c:set var="typeCss" value="type-treat"/></c:otherwise>
+                                </c:choose>
+                                <div class="health-record">
+                                    <div class="health-record-dot">
+                                        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                    </div>
+                                    <div class="health-record-card">
+                                        <div class="health-record-head">
+                                            <div>
+                                                <span class="health-record-date">
+                                                    <c:choose>
+                                                        <c:when test="${not empty r.visitDate}">
+                                                            <fmt:formatDate value="${r.visitDate}" pattern="yyyy.MM.dd"/>
+                                                        </c:when>
+                                                        <c:otherwise>-</c:otherwise>
+                                                    </c:choose>
+                                                </span>
+                                                <span class="health-record-hospital"><c:out value="${r.hospitalName}"/></span>
+                                            </div>
+                                            <span class="health-record-type ${typeCss}"><c:out value="${typeLabel}"/></span>
+                                        </div>
+                                        <div class="health-record-body">
+                                            <div class="health-record-grid">
+                                                <div class="hrg-item">
+                                                    <label>주증상</label>
+                                                    <span><c:out value="${empty r.symptoms ? '-' : r.symptoms}"/></span>
+                                                </div>
+                                                <div class="hrg-item">
+                                                    <label>진단명</label>
+                                                    <span><c:out value="${empty r.diagnosis ? '-' : r.diagnosis}"/></span>
+                                                </div>
+                                                <div class="hrg-item">
+                                                    <label>처방</label>
+                                                    <span><c:out value="${empty r.prescription ? '-' : r.prescription}"/></span>
+                                                </div>
+                                                <div class="hrg-item">
+                                                    <label>체중 / 체온</label>
+                                                    <span>
+                                                        <c:choose>
+                                                            <c:when test="${not empty r.weight or not empty r.temperature}">
+                                                                <c:out value="${empty r.weight ? '-' : r.weight}"/> kg
+                                                                /
+                                                                <c:out value="${empty r.temperature ? '-' : r.temperature}"/> ℃
+                                                            </c:when>
+                                                            <c:otherwise>-</c:otherwise>
+                                                        </c:choose>
+                                                    </span>
+                                                </div>
+                                                <c:if test="${not empty r.examItems}">
+                                                    <div class="hrg-item">
+                                                        <label>검사 항목</label>
+                                                        <span><c:out value="${r.examItems}"/></span>
+                                                    </div>
+                                                </c:if>
+                                            </div>
+                                            <c:if test="${not empty r.memo}">
+                                                <div class="health-record-memo">
+                                                    <label>수의사 메모</label>
+                                                    <c:out value="${r.memo}"/>
+                                                </div>
+                                            </c:if>
+                                        </div>
+                                        <div class="health-record-foot">
+                                            <span>
+                                                담당:
+                                                <c:choose>
+                                                    <c:when test="${not empty r.vetName}"><c:out value="${r.vetName}"/> 수의사</c:when>
+                                                    <c:otherwise>-</c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                            <c:if test="${not empty r.nextVisit}">
+                                                <span class="health-next-visit">
+                                                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+                                                    다음 방문 권장: <c:out value="${r.nextVisit}"/>
+                                                </span>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:forEach>
                         </div>
-                        <div class="hrg-item">
-                            <label>처방</label>
-                            <span>덱사메타손 5일치, 항히스타민제</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>체중 / 체온</label>
-                            <span>28.2 kg / 38.5 ℃</span>
-                        </div>
-                    </div>
-                    <div class="health-record-memo">
-                        <label>수의사 메모</label>
-                        알레르기 원인 파악을 위해 식이 일지 작성 권장. 2주 후 재방문 시 호전 여부 확인 필요.
-                    </div>
-                </div>
-                <div class="health-record-foot">
-                    <span>담당: 김철수 수의사</span>
-                    <span class="health-next-visit">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
-                        다음 방문 권장: 2025.07.05
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <%-- 기록 2 --%>
-        <div class="health-record">
-            <div class="health-record-dot">
-                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <div class="health-record-card">
-                <div class="health-record-head">
-                    <div>
-                        <span class="health-record-date">2025.04.15</span>
-                        <span class="health-record-hospital">행복동물병원</span>
-                    </div>
-                    <span class="health-record-type type-vaccine">예방접종</span>
-                </div>
-                <div class="health-record-body">
-                    <div class="health-record-grid">
-                        <div class="hrg-item">
-                            <label>접종 항목</label>
-                            <span>종합백신 (DHPPL) 5차</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>다음 접종 예정</label>
-                            <span>2026.04.15 (1년 후)</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>이상반응</label>
-                            <span>없음</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>체중 / 체온</label>
-                            <span>27.8 kg / 38.3 ℃</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="health-record-foot">
-                    <span>담당: 김철수 수의사</span>
-                    <span class="health-next-visit">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
-                        다음 방문 권장: 2026.04.15
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <%-- 기록 3 --%>
-        <div class="health-record">
-            <div class="health-record-dot">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <div class="health-record-card">
-                <div class="health-record-head">
-                    <div>
-                        <span class="health-record-date">2025.01.08</span>
-                        <span class="health-record-hospital">행복동물병원</span>
-                    </div>
-                    <span class="health-record-type type-check">정기검진</span>
-                </div>
-                <div class="health-record-body">
-                    <div class="health-record-grid">
-                        <div class="hrg-item">
-                            <label>주증상</label>
-                            <span>정기 건강검진</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>진단명</label>
-                            <span>이상 없음 (건강)</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>검사 항목</label>
-                            <span>혈액검사, 심장사상충, 구강검진</span>
-                        </div>
-                        <div class="hrg-item">
-                            <label>체중 / 체온</label>
-                            <span>27.5 kg / 38.4 ℃</span>
-                        </div>
-                    </div>
-                    <div class="health-record-memo">
-                        <label>수의사 메모</label>
-                        전반적으로 건강 양호. 치석이 약간 있어 6개월 후 스케일링 검토 권장.
-                    </div>
-                </div>
-                <div class="health-record-foot">
-                    <span>담당: 이영희 수의사</span>
-                    <span class="health-next-visit">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
-                        다음 방문 권장: 2025.07.08
-                    </span>
-                </div>
-            </div>
-        </div>
-
-    </div><%-- /health-timeline --%>
+                    </c:otherwise>
+                </c:choose>
+            </c:if>
+        </c:otherwise>
+    </c:choose>
 </div>
 </div><%-- /mypage-content --%>
 </div><%-- /mypage-wrap --%>

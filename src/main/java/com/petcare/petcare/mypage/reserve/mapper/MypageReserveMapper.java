@@ -2,24 +2,42 @@
  * 역할: 마이페이지 예약 DB 접근 (MyBatis interface)
  *
  * XML: resources/mybatis/mapper/mypage/reserve/MypageReserveMapper.xml
- * namespace: com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper
- *
- * 쿼리 예시
- * - selectReservationList
- * - selectReservationDetail
- * - cancelReservation
- *
- * 참고 테이블
- * - TB_RESERVATION
- *
- * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
- * 메서드명은 Service에서 호출하는 이름과 동일하게
  */
 
 package com.petcare.petcare.mypage.reserve.mapper;
 
-import org.apache.ibatis.annotations.Mapper;
+import java.util.List;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.hospital.vo.HospitalReviewVO;
+import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
 
 @Mapper
-public interface MypageReserveMapper {}
+public interface MypageReserveMapper {
+
+    // 2026/07/11 장우철 — 회원 예약 목록 (병원 중심, 2차)
+    List<MypageReserveVO> selectMyReservationList(@Param("memberNo") Long memberNo,
+                                                    @Param("statusFilter") String statusFilter);
+
+    // 2026/07/11 장우철 — 회원 예약 상세 (본인 건만)
+    MypageReserveVO selectMyReservationDetail(@Param("memberNo") Long memberNo,
+                                              @Param("resvId") Long resvId);
+
+    // 2026/07/13 장우철 — 예약당 병원 리뷰 1건 여부
+    int countHospitalReviewByResvId(@Param("resvId") Long resvId,
+                                    @Param("memberNo") Long memberNo);
+
+    // 2026/07/13 장우철 — 병원 리뷰 INSERT (REVIEW_TYPE=HOSPITAL)
+    int insertHospitalReview(HospitalReviewVO review);
+
+    // 2026/07/13 장우철 — 병원 소유 회원번호 (리뷰 알림)
+    Long selectHospitalMemberNo(@Param("hospitalId") Long hospitalId);
+
+    // 2026/07/13 장우철 — 리뷰 알림용 닉네임
+    String selectMemberNickname(@Param("memberNo") Long memberNo);
+
+    // 2026/07/13 장우철 — TB_HOSPITAL 평균별점·리뷰수 갱신
+    int updateHospitalRatingSummary(@Param("hospitalId") Long hospitalId);
+}

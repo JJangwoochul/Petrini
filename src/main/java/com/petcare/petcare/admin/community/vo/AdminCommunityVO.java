@@ -6,7 +6,7 @@
  *
  * 참고 테이블
  * - TB_COMMUNITY_POST
- * - TB_COMMUNITY_REPORT
+ * - TB_POST_REPORT
  *
  * DB 컬럼명은 팀 VO 규칙(camelCase)에 맞게 작성
  */

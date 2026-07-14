@@ -12,12 +12,12 @@ package com.petcare.petcare.mypage.biz.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petcare.petcare.biz.vo.BusinessVO;
 import com.petcare.petcare.common.config.controller.CommonConfigController;
-import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.member.auth.service.MemberAuthService;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.mypage.biz.service.MypageBizService;
-import com.petcare.petcare.mypage.biz.vo.MypageBizVO;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -29,7 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,18 +43,32 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/mypage/biz")
 public class MypageBizController extends CommonConfigController {
-
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+    
     @Autowired
     private MypageBizService mypageBizService;
 
+    // 2026-07-09 장우철 — 승인 완료 사업자 세션(role=BIZ) 동기화
+    // 이유: 관리자 승인 후 재로그인 없이 /mypage/biz ↔ /apply 무한 리다이렉트 방지
     @Autowired
-    private FileMapper fileMapper;   
+    private MemberAuthService memberAuthService;
     
     @GetMapping({"", "/"})
     public String biz(HttpSession session) {
         MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
         if (memberInfo == null)
             return "redirect:/login";
+
+        // 2026-07-09 장우철 — [변경 후] DB 승인 상태를 세션에 반영 후 업종별 사업자 화면으로 이동
+        memberAuthService.enrichSessionWithApprovedBiz(memberInfo);
+        session.setAttribute("memberInfo", memberInfo);
+
+        /* [변경 전] 2026-07-09 장우철 — 세션 role 만 확인, APPROVED 인데 USER 이면 /apply 로 루프
+        if (!"BIZ".equals(memberInfo.getRole())) {
+            return "redirect:/mypage/biz/apply";
+        }
+        */
 
         if (!"BIZ".equals(memberInfo.getRole())) {
             return "redirect:/mypage/biz/apply";
@@ -72,6 +88,8 @@ public class MypageBizController extends CommonConfigController {
     /* 사업자 등록 신청 — 폼 페이지 */
     @GetMapping("/apply")
     public String bizApply(HttpSession session,
+                            @RequestParam(required = false) String reapply,
+                            Model model,
                             RedirectAttributes redirectAttr) throws Exception {
 
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
@@ -79,20 +97,52 @@ public class MypageBizController extends CommonConfigController {
             return "redirect:/login";
 
         // 기존 신청 이력 확인
-        MypageBizVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
+        BusinessVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
         if (apply != null) {
         if ("APPROVED".equals(apply.getStatusCd())) {
-            // 승인 완료
+            // 2026-07-09 장우철 — [변경 후] 승인 완료 시 세션에 BIZ 권한 반영 후 이동
+            memberAuthService.enrichSessionWithApprovedBiz(member);
+            session.setAttribute("memberInfo", member);
             return "redirect:/mypage/biz";
         }
-        // PENDING
+        // 2026-07-09 장우철 — [변경 후] 반려 → 반려 안내 화면, reapply=Y 일 때만 신청 폼
+        // 이유: PENDING 과 동일하게 complete 로내면 「심사중」으로만 보이는 문제 해결
+        if ("REJECTED".equals(apply.getStatusCd())) {
+            if ("Y".equalsIgnoreCase(reapply)) {
+                model.addAttribute("reapply", true);
+                model.addAttribute("rejectReason", apply.getRejectReason());
+                return "mypage/biz/apply";
+            }
+            return "redirect:/mypage/biz/rejected";
+        }
+        // PENDING — 심사중
         redirectAttr.addFlashAttribute("bizName", apply.getBizName());
         redirectAttr.addFlashAttribute("bizType", apply.getBizType());
         redirectAttr.addFlashAttribute("bizRegNo", apply.getBizRegNo());
         return "redirect:/mypage/biz/complete";
+
+        /* [변경 전] 2026-07-09 장우철 — REJECTED 도 PENDING 과 같이 complete(심사중) 로 이동
+        redirectAttr.addFlashAttribute("bizName", apply.getBizName());
+        return "redirect:/mypage/biz/complete";
+        */
     }
 
         return "mypage/biz/apply";
+    }
+
+    // 2026-07-09 장우철 — 반려 안내 화면 (재신청 버튼 → /apply?reapply=Y)
+    @GetMapping("/rejected")
+    public String bizRejected(HttpSession session, Model model) throws Exception {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null)
+            return "redirect:/login";
+
+            BusinessVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
+        if (apply == null || !"REJECTED".equals(apply.getStatusCd())) {
+            return "redirect:/mypage/biz/apply";
+        }
+        model.addAttribute("apply", apply);
+        return "mypage/biz/rejected";
     }
 
     /* 사업자등록번호 확인 — 폼 제출 처리 */
@@ -145,7 +195,7 @@ public class MypageBizController extends CommonConfigController {
     @PostMapping("/apply")
     public String bizApplySubmit(@RequestParam(required = true) MultipartFile docFile,
                                  @RequestParam(required = false) MultipartFile licenseFile,
-                                 MypageBizVO vo,
+                                 BusinessVO vo,
                                  RedirectAttributes redirectAttr,
                                  HttpSession session) throws Exception {
 
@@ -158,9 +208,8 @@ public class MypageBizController extends CommonConfigController {
 
         try {
             // 1) 파일을 디스크에 저장 + FileVO 목록 준비
-            //System.currentTimeMillis()
             String subDir = "biz/" + vo.getBizId();
-            File dir = new File(webConfig.uploadDir + subDir);
+            File dir = new File(uploadDir + subDir);
             if (!dir.exists()) 
                 dir.mkdirs();
 
@@ -188,12 +237,30 @@ public class MypageBizController extends CommonConfigController {
 
             // 2) DB 작업은 Service에서 한 트랜잭션으로 처리
             mypageBizService.applyBusiness(vo, fileList);
-
+           
             redirectAttr.addFlashAttribute("bizName", vo.getBizName());
             redirectAttr.addFlashAttribute("bizType", vo.getBizType());
             redirectAttr.addFlashAttribute("bizRegNo", vo.getBizRegNo());
             return "redirect:/mypage/biz/complete";
-        } 
+        } catch (IllegalStateException e) {
+            String code = e.getMessage();
+            String msg = "신청 처리 중 오류가 발생했습니다.";
+            if ("BIZ_REG_NO_DUPLICATE".equals(code)) {
+                msg = "이미 다른 사업자가 사용 중인 사업자등록번호입니다.";
+            } else if ("BIZ_ALREADY_PENDING".equals(code)) {
+                msg = "이미 심사 중인 신청이 있습니다.";
+            } else if ("BIZ_ALREADY_APPROVED".equals(code)) {
+                msg = "이미 승인된 사업자 계정입니다.";
+            } else if ("BIZ_REAPPLY_FAILED".equals(code)) {
+                msg = "재신청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+            }
+            redirectAttr.addFlashAttribute("errorMsg", msg);
+            BusinessVO cur = mypageBizService.getBizAuthStatus(member.getMemberId());
+            if (cur != null && "REJECTED".equals(cur.getStatusCd())) {
+                return "redirect:/mypage/biz/apply?reapply=Y";
+            }
+            return "redirect:/mypage/biz/apply";
+        }
         catch (Exception e) {
             e.printStackTrace();
             redirectAttr.addFlashAttribute("errorMsg", "신청 처리 중 오류가 발생했습니다: " + e.getMessage());
@@ -201,12 +268,32 @@ public class MypageBizController extends CommonConfigController {
         }
     }
 
-    /* 신청 완료 페이지 */
+    /* 신청 완료 페이지 — PENDING(심사중) 전용 */
     @GetMapping("/complete")
-    public String bizComplete(HttpSession session) throws Exception {
-        if (session.getAttribute("memberInfo") == null)
+    public String bizComplete(HttpSession session, Model model) throws Exception {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null)
             return "redirect:/login";
 
+        // 2026-07-09 장우철 — [변경 후] DB 상태로 분기 (flash 만 믿지 않음)
+        // 이유: 반려 후에도 complete 북마크 시 심사중으로 보이던 문제 방지
+        BusinessVO apply = mypageBizService.getBizAuthStatus(member.getMemberId());
+        if (apply == null) {
+            return "redirect:/mypage/biz/apply";
+        }
+        if ("REJECTED".equals(apply.getStatusCd())) {
+            return "redirect:/mypage/biz/rejected";
+        }
+        if ("APPROVED".equals(apply.getStatusCd())) {
+            memberAuthService.enrichSessionWithApprovedBiz(member);
+            session.setAttribute("memberInfo", member);
+            return "redirect:/mypage/biz";
+        }
+        model.addAttribute("biz", apply);
         return "mypage/biz/complete";
-    }    
+
+        /* [변경 전] 2026-07-09 장우철 — 상태 확인 없이 complete.jsp 만 반환
+        return "mypage/biz/complete";
+        */
+    }
 }

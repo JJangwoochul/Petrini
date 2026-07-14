@@ -2,21 +2,22 @@
  * 역할: 마이페이지 예약 내역 비즈니스 로직 (interface)
  *
  * 담당 화면
- * - mypage/reserve.jsp        예약 내역
- *
- * 구현할 기능 예시
- * - 예약 목록·상세 조회
- * - 예약 취소
- *
- * 연결
- * - 구현: MypageReserveServiceImpl
- * - 호출: MypageReserveController
- * - DB: MypageReserveMapper
- *
- * 참고 테이블
- * - TB_RESERVATION
+ * - mypage/reserve.jsp         예약 내역
+ * - mypage/reserve-detail.jsp  예약 상세
  */
 
 package com.petcare.petcare.mypage.reserve.service;
 
-public interface MypageReserveService {}
+import java.util.List;
+
+import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
+
+public interface MypageReserveService {
+
+    List<MypageReserveVO> getMyReservationList(Long memberNo, String statusFilter);
+
+    MypageReserveVO getMyReservationDetail(Long memberNo, Long resvId);
+
+    // 2026/07/13 장우철 — DONE 예약에 한해 병원 리뷰·별점 등록
+    void addHospitalReview(Long memberNo, Long resvId, Double rating, String content);
+}

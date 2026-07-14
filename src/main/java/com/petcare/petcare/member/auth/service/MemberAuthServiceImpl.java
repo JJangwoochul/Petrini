@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
 import com.petcare.petcare.member.auth.vo.AdminAuthVO;
 import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
+import com.petcare.petcare.member.auth.vo.MemberAuthBizVO;
 import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
 import com.petcare.petcare.member.vo.MemberVO;
@@ -77,6 +78,17 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             sessionMember.setZipcode(found.getZipcode());
             sessionMember.setAddr1(found.getAddr1());
             sessionMember.setAddr2(found.getAddr2());
+
+            // 2026-07-09 장우철 — [변경 후] 승인된 사업자면 role=BIZ + bizType 세팅
+            // 이유: TB_BUSINESS.STATUS_CD=APPROVED 일 때 신청 시 저장한 BIZ_TYPE 으로
+            //       /biz/hospital, /biz/stay, /biz/store 등 업종별 화면 진입 (test* URL 과 동일 분기)
+            enrichSessionWithApprovedBiz(sessionMember);
+
+            /* [변경 전] 2026-07-09 장우철 — role=USER 고정만 하고 사업자 조회 없음
+            sessionMember.setRole("USER");
+            return sessionMember;
+            */
+
             return sessionMember;
         }
 
@@ -106,6 +118,21 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         // 2026/07/08 장우철 — 관리자는 TB_MEMBER 포인트 없음 → 0 표시
         sessionAdmin.setPointBalance(0L);
         return sessionAdmin;
+    }
+
+    // 2026-07-09 장우철 — TB_BUSINESS 승인 완료 시 세션에 사업자 권한 반영
+    // 이유: 로그인·/mypage/biz 진입 공통 처리 — BIZ_ID=회원 이메일, BIZ_TYPE 은 신청(apply) 시 저장값 그대로 사용
+    @Override
+    public void enrichSessionWithApprovedBiz(MemberVO sessionMember) {
+        if (sessionMember == null || sessionMember.getMemberId() == null) {
+            return;
+        }
+        MemberAuthBizVO approved = memberAuthMapper.selectApprovedBusinessByBizId(
+                sessionMember.getMemberId());
+        if (approved != null && "APPROVED".equals(approved.getStatusCd())) {
+            sessionMember.setRole("BIZ");
+            sessionMember.setBizType(approved.getBizType());
+        }
     }
 
     /* ── [변경 전] login (2026/07/06) — TB_MEMBER 단독 조회, role=USER 고정 ──

@@ -1,15 +1,40 @@
 /**
  * 역할: 마이페이지 예약 데이터 객체
  *
- * 필드 예시
- * - reservationId, bizType, reserveDate, status
- *
- * 참고 테이블
- * - TB_RESERVATION
- *
- * DB 컬럼명은 팀 VO 규칙(camelCase)에 맞게 작성
+ * 참고 테이블: TB_RESERVATION, TB_HOSPITAL, TB_PET
  */
 
 package com.petcare.petcare.mypage.reserve.vo;
 
-public class MypageReserveVO {}
+import java.util.Date;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class MypageReserveVO {
+
+    private Long resvId;
+    private String resvNo;
+    private String resvType;      // HOSPITAL / STAY ...
+    private Long memberNo;
+    private Long petId;
+    private String targetId;
+    private Date resvDate;
+    private String resvTime;
+    private String symptoms;
+    private String requestMemo;
+    private String statusCd;
+    private String rejectReason;  // 취소 사유 (TB_RESERVATION.REJECT_REASON)
+    private Date regDate;
+
+    private String petName;
+    private String petSpecies;
+    private String petBreed;
+    private String hospitalName;
+    private String hospitalAddr;
+
+    // 2026/07/13 장우철 — DONE 예약 리뷰 작성 여부 (Y/N)
+    private String reviewedYn;
+}

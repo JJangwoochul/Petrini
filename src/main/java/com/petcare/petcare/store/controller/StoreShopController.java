@@ -345,7 +345,7 @@ model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() !=
     }
     // 기존 쿠폰 조회는 그대로 유지
     model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));
- return "store/order";
+    return "store/order";
 }
 
 //지윤 26.07.10 상품 Q&A 문의 등록 (AJAX)

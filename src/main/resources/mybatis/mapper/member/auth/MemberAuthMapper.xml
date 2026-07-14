@@ -84,6 +84,21 @@
         WHERE MEMBER_NO = #{memberNo}
     </update>
 
+    <!-- 2026-07-09 장우철 — 승인 완료 사업자 조회 (로그인 세션용)
+         이유: 신청(apply) 시 TB_BUSINESS.BIZ_TYPE 에 저장된 업종으로
+               /testHospital→HOSPITAL, /testStay→STAY, /testStore→STORE 와 동일하게 분기 -->
+    <select id="selectApprovedBusinessByBizId"
+            resultType="com.petcare.petcare.member.auth.vo.MemberAuthBizVO">
+        SELECT
+            BIZ_NO     AS bizNo,
+            BIZ_TYPE   AS bizType,
+            STATUS_CD  AS statusCd
+        FROM TB_BUSINESS
+        WHERE BIZ_ID = #{bizId}
+          AND STATUS_CD = 'APPROVED'
+        FETCH FIRST 1 ROW ONLY
+    </select>
+
     <!-- 2026/07/07 장우철 — join(회원가입) -->
 
     <!--
@@ -160,6 +175,7 @@
     </insert>
 
     <!-- 반려동물 INSERT (join — register 3단계, petName 있을 때만) -->
+    <!-- 2026/07/11 장우철 — DEL_YN='N' 명시 (DATABASE_TABLE TB_PET.DEL_YN 소프트삭제 컬럼) -->
     <insert id="insertPet" parameterType="com.petcare.petcare.member.auth.vo.MemberRegisterVO">
         <selectKey keyProperty="petId" resultType="long" order="BEFORE">
             SELECT SEQ_PET.NEXTVAL FROM DUAL
@@ -173,6 +189,7 @@
             AGE,
             WEIGHT,
             IS_REPRESENT,
+            DEL_YN,
             REG_DATE
         ) VALUES (
             #{petId},
@@ -183,6 +200,7 @@
             #{petAge, jdbcType=NUMERIC},
             #{petWeight, jdbcType=NUMERIC},
             'Y',
+            'N',
             SYSDATE
         )
     </insert>

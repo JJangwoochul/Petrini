@@ -378,6 +378,7 @@ SELECT
 </select>
 
 <!-- 지윤 26.07.13 주문 저장 (반품/취소 관련 컬럼은 NULL 허용으로 DDL 변경해둠 -> INSERT 시 생략 가능) -->
+<!-- 2026/07/14 장우철 — REQUESTED_AT 등 취소·반품 컬럼은 NULL 허용(주문 생성 시 미삽입) -->
 <insert id="insertOrder">
     INSERT INTO TB_ORDER (
         ORDER_ID, ORDER_NO, MEMBER_NO, ORDER_STATUS, TOTAL_AMOUNT, DELIVERY_FEE,

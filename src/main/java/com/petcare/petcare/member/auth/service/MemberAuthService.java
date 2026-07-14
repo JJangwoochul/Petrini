@@ -27,6 +27,10 @@ public interface MemberAuthService {
      */
     MemberVO login(String loginId, String rawPassword);
 
+    // 2026-07-09 장우철 — 이미 로그인된 세션에 승인 사업자 권한 반영
+    // 이유: 관리자 승인 직후 재로그인 없이 /mypage/biz 리다이렉트 루프 방지
+    void enrichSessionWithApprovedBiz(MemberVO sessionMember);
+
     // 2026/07/07 장우철 — join(회원가입)
 
     /**

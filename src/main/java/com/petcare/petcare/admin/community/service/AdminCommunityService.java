@@ -18,7 +18,7 @@
  *
  * 참고 테이블
  * - TB_COMMUNITY_POST
- * - TB_COMMUNITY_REPORT
+ * - TB_POST_REPORT
  */
 
 package com.petcare.petcare.admin.community.service;
