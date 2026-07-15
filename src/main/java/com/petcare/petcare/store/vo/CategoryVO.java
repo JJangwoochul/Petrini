@@ -14,4 +14,5 @@ public class CategoryVO {
     private Long parentId;
     private String categoryName;
     private Integer depth;
+    private String categoryPath;   //지윤 26.07.15 추가: "강아지 > 사료 > 퍼피" 형태 전체 경로
 }

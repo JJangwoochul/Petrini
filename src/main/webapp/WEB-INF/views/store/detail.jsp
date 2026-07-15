@@ -137,10 +137,12 @@
     <c:forEach var="opt" items="${product.optionList}">
 
       <%-- 지윤 26.07.08 수정: data-option-id 추가 (장바구니 담을 때 어느 옵션인지 알아야 해서) --%>
-  <option value="${opt.addPrice}" data-stock="${opt.stockQty}" data-option-id="${opt.optionId}">
-  <c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
-  <c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
-  </option>
+<%-- 지윤 26.07.15 추가: 재고 0인 옵션은 선택 자체를 막음(disabled) + "품절" 표시 --%>
+<option value="${opt.addPrice}" data-stock="${opt.stockQty}" data-option-id="${opt.optionId}" ${opt.stockQty <= 0 ? 'disabled' : ''}>
+<c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}
+<c:if test="${opt.addPrice > 0}"> (+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>원)</c:if>
+<c:if test="${opt.stockQty <= 0}"> - 품절</c:if>
+</option>
 
     </c:forEach>
     <%-- 지윤 26.07.08 추가: 옵션 없는 상품은 빈 박스로 보이던 것 -> cart.jsp와 동일하게 "단일 옵션" 표시. data-option-id 빈 값 -> 장바구니 담을 때 null 처리됨 --%>
