@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="stay" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -24,18 +25,27 @@
 <div class="complete-wrap">
   <div class="complete-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
   <div class="complete-title">예약이 완료되었습니다!</div>
-  <div class="complete-desc">예약번호 <strong>#RSV-2025-0281</strong><br>예약 내역은 마이페이지에서 확인하세요.</div>
-  <div class="complete-card">
-    <h3>예약 정보</h3>
-    <div class="complete-row"><span>예약번호</span><span>#RSV-2025-0281</span></div>
-    <div class="complete-row"><span>숙소</span><span>강아지숲 펫 빌라 — 독채 풀빌라</span></div>
-    <div class="complete-row"><span>이용 기간</span><span>2025.07.05(토) ~ 07.06(일) · 1박</span></div>
-    <div class="complete-row"><span>인원 / 반려동물</span><span>3명 · 몽이 (골든 리트리버)</span></div>
-    <div class="complete-row"><span>결제 금액</span><span style="color:#4F6BC4;font-size:16px;font-weight:800">188,000원</span></div>
-  </div>
-  <div class="complete-notice">
-    체크인은 오후 <strong>3시</strong>부터, 체크아웃은 오전 <strong>11시</strong>까지입니다. 예약 변경·취소는 마이페이지 &gt; 예약내역에서 가능합니다.
-  </div>
+  <c:choose>
+    <c:when test="${not empty reservation}">
+      <div class="complete-desc">예약번호 <strong>${reservation.resvNo}</strong></div>
+      <div class="complete-card">
+        <h3>예약 정보</h3>
+        <div class="complete-row"><span>예약번호</span><span>${reservation.resvNo}</span></div>
+        <div class="complete-row"><span>숙소</span><span>${reservation.stayName}</span></div>
+        <div class="complete-row"><span>객실</span><span>${reservation.serviceName}</span></div>
+        <div class="complete-row"><span>이용 기간</span>
+          <span><fmt:formatDate value="${reservation.checkinDate}" pattern="yyyy.MM.dd"/> ~ <fmt:formatDate value="${reservation.checkoutDate}" pattern="MM.dd"/> · ${reservation.nightCnt}박</span>
+        </div>
+        <div class="complete-row"><span>반려동물</span><span>${reservation.petName} (${reservation.petBreed})</span></div>
+        <div class="complete-row"><span>결제 금액</span>
+          <span style="color:#4F6BC4;font-size:16px;font-weight:800"><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
+        </div>
+      </div>
+    </c:when>
+    <c:otherwise>
+      <div class="complete-desc">예약 내역은 마이페이지에서 확인하세요.</div>
+    </c:otherwise>
+  </c:choose>
   <div class="complete-btns">
     <button class="btn-complete-my" onclick="location.href='${contextPath}/mypage/reserve'">예약 내역 보기</button>
     <button class="btn-complete-store" onclick="location.href='${contextPath}/stay'">둘러보기 계속하기</button>

@@ -37,4 +37,14 @@ public class MypageReserveVO {
 
     // 2026/07/13 장우철 — DONE 예약 리뷰 작성 여부 (Y/N)
     private String reviewedYn;
+
+    // 숙소 예약용
+    private Date   checkinDate;
+    private Date   checkoutDate;
+    private Integer nightCnt;
+    private Long   totalAmount;
+    private String stayName;
+    private String stayAddr;
+    private Long   roomId;
+    private String roomName;
 }

@@ -77,45 +77,52 @@
   </div>
 </div>
 
+<%-- 검색 폼 (hidden) --%>
+<form id="searchForm" method="get" action="${contextPath}/hospital">
+  <input type="hidden" name="keyword"    id="hKeyword"    value="${search.keyword}" />
+  <input type="hidden" name="tagFilter"  id="hTagFilter"  value="${search.tagFilter}" />
+  <input type="hidden" name="target"     id="hTarget"     value="${search.target}" />
+  <input type="hidden" name="sort"       id="hSort"       value="${search.sort}" />
+</form>
+
 <div class="hosp-wrap">
   <aside>
     <div class="hosp-filter-card">
       <div class="hosp-filter-title">지역 검색</div>
-      <input type="text" class="hosp-filter-input" placeholder="지역명, 병원명 검색...">
+      <input type="text" class="hosp-filter-input" id="keywordInput"
+             placeholder="지역명, 병원명 검색..." value="${search.keyword}"
+             onkeydown="if(event.key==='Enter') searchByKeyword()">
     </div>
     <div class="hosp-filter-card">
       <div class="hosp-filter-title">진료과목</div>
-      <div class="hosp-filter-chips">
-        <span class="chip on">전체</span>
-        <span class="chip">24시간 진료</span>
-        <span class="chip">특수동물 진료</span>
-        <span class="chip">입원진료 가능</span>
-        <span class="chip">호스피텔 가능</span>
+      <c:set var="deptVal" value="${empty search.tagFilter ? 'ALL' : search.tagFilter}" />
+      <div class="hosp-filter-chips" data-target="hTagFilter">
+        <span class="chip ${deptVal == 'ALL' ? 'on' : ''}" onclick="selChipSearch(this, 'ALL')">전체</span>
+        <span class="chip ${deptVal == '24H' ? 'on' : ''}" onclick="selChipSearch(this, '24H')">24시간 진료</span>
+        <span class="chip ${deptVal == 'HOSPITEL' ? 'on' : ''}" onclick="selChipSearch(this, 'HOSPITEL')">호스피텔 가능</span>
+        <span class="chip ${deptVal == 'INPATIENT' ? 'on' : ''}" onclick="selChipSearch(this, 'INPATIENT')">입원진료 가능</span>
+        <span class="chip ${deptVal == 'EMERGENCY' ? 'on' : ''}" onclick="selChipSearch(this, 'EMERGENCY')">응급진료 가능</span>
+        <span class="chip ${deptVal == 'PARKING' ? 'on' : ''}" onclick="selChipSearch(this, 'PARKING')">주차장 가능</span>
       </div>
     </div>
     <div class="hosp-filter-card">
       <div class="hosp-filter-title">진료 대상</div>
-      <div class="hosp-filter-chips">
-        <span class="chip on">전체</span>
-        <span class="chip">강아지</span>
-        <span class="chip">고양이</span>
-        <span class="chip">특수동물</span>
-      </div>
-    </div>
-    <div class="hosp-filter-card">
-      <div class="hosp-toggle-row">
-        <span>현재 운영중만 보기</span>
-        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+      <c:set var="targetVal" value="${empty search.target ? 'ALL' : search.target}" />
+      <div class="hosp-filter-chips" data-target="hTarget">
+        <span class="chip ${targetVal == 'ALL' ? 'on' : ''}" onclick="selChipSearch(this, 'ALL')">전체</span>
+        <span class="chip ${targetVal == 'DOG' ? 'on' : ''}" onclick="selChipSearch(this, 'DOG')">강아지</span>
+        <span class="chip ${targetVal == 'CAT' ? 'on' : ''}" onclick="selChipSearch(this, 'CAT')">고양이</span>
+        <span class="chip ${targetVal == 'EXOTIC' ? 'on' : ''}" onclick="selChipSearch(this, 'EXOTIC')">특수동물</span>
       </div>
     </div>
   </aside>
 
   <div>
     <%-- 검색바 --%>
-    <div class="hosp-map-search">
+    <%-- <div class="hosp-map-search">
       <input type="text" id="mapSearchInput" placeholder="장소명, 지역명 검색...">
       <button onclick="searchPlace()">검색</button>
-    </div>
+    </div> --%>
 
     <div class="hosp-map-area" id="kakao-map"></div>
     <c:set var="mapLevel" value="3"/>
@@ -124,10 +131,11 @@
     
     <div class="hosp-list-head">
       <span>검색 결과 <strong>${hospitalList.size()}개</strong> 병원</span>
+      <c:set var="sortVal" value="${empty search.sort ? '' : search.sort}" />
       <div style="display:flex;gap:8px">
-        <span class="chip on" style="font-size:12px">거리순</span>
-        <span class="chip" style="font-size:12px">별점순</span>
-        <span class="chip" style="font-size:12px">리뷰순</span>
+        <span class="chip ${empty sortVal ? 'on' : ''}" style="font-size:12px" onclick="selSortSearch('')">기본순</span>
+        <span class="chip ${sortVal == 'rating' ? 'on' : ''}" style="font-size:12px" onclick="selSortSearch('rating')">별점순</span>
+        <span class="chip ${sortVal == 'review' ? 'on' : ''}" style="font-size:12px" onclick="selSortSearch('review')">리뷰순</span>
       </div>
     </div>
 
@@ -176,13 +184,12 @@
                     <c:when test="${not empty h.tagList}">
                       <c:forEach var="tag" items="${fn:split(h.tagList, ',')}" varStatus="st">
                         <c:set var="t" value="${fn:trim(tag)}" />
-                        <c:if test="${t == '24H'}">24시간 진료</c:if>
-                        <c:if test="${t == 'EXOTIC'}">특수동물 진료</c:if>
-                        <c:if test="${t == 'HOSPITEL'}">호스피텔 가능</c:if>
-                        <c:if test="${t == 'INPATIENT'}">입원 진료</c:if>
-                        <c:if test="${t == 'EMERGENCY'}">응급 진료</c:if>
-                        <c:if test="${t == 'PARKING'}">주차 가능</c:if>
-                        <c:if test="${!st.last}"> · </c:if>
+                        <c:if test="${t == '24H'}"><span class="hosp-tag">24시간 진료</span></c:if>
+                        <c:if test="${t == 'EXOTIC'}"><span class="hosp-tag">특수동물 진료</span></c:if>
+                        <c:if test="${t == 'HOSPITEL'}"><span class="hosp-tag">호스피텔 가능</span></c:if>
+                        <c:if test="${t == 'INPATIENT'}"><span class="hosp-tag">입원 진료</span></c:if>
+                        <c:if test="${t == 'EMERGENCY'}"><span class="hosp-tag">응급 진료</span></c:if>
+                        <c:if test="${t == 'PARKING'}"><span class="hosp-tag">주차 가능</span></c:if>
                       </c:forEach>
                     </c:when>
                     <c:otherwise>-</c:otherwise>
@@ -364,17 +371,34 @@
       });
   }
   
-  /* ── 8) 필터 chip 토글 ── */
-  var chips = document.querySelectorAll('.chip');
-  for (var i = 0; i < chips.length; i++) {
-      chips[i].addEventListener('click', function () {
-          var group = this.closest('.hosp-filter-chips, .hosp-list-head div');
-          var siblings = group.querySelectorAll('.chip');
-          for (var j = 0; j < siblings.length; j++) {
-              siblings[j].classList.remove('on');
-          }
-          this.classList.add('on');
-      });
+  /* ── 8) 검색 폼 제출 ── */
+  function submitSearch() {
+      document.getElementById('searchForm').submit();
+  }
+
+  /* ── 9) 칩 클릭 (진료과목 / 진료 대상) ── */
+  function selChipSearch(el, value) {
+      var parent   = el.closest('.hosp-filter-chips');
+      var targetId = parent.getAttribute('data-target');
+
+      var chips = parent.querySelectorAll('.chip');
+      for (var i = 0; i < chips.length; i++) { chips[i].classList.remove('on'); }
+      el.classList.add('on');
+
+      document.getElementById(targetId).value = value;
+      submitSearch();
+  }
+
+  /* ── 10) 정렬 클릭 ── */
+  function selSortSearch(sortValue) {
+      document.getElementById('hSort').value = sortValue;
+      submitSearch();
+  }
+
+  /* ── 11) 키워드 검색 (Enter 또는 버튼) ── */
+  function searchByKeyword() {
+      document.getElementById('hKeyword').value = document.getElementById('keywordInput').value.trim();
+      submitSearch();
   }
 </script>
 

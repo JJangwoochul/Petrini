@@ -1,8 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="pageId"      value="stay" />
+<c:set var="pageId" value="stay" />
+
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <style>
@@ -109,6 +112,9 @@
   .empty-box{display:flex;flex-direction:column;align-items:center;gap:14px;padding:80px 0;text-align:center;grid-column:1/-1}
   .empty-icon{width:64px;height:64px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center}
   .empty-icon svg{width:30px;height:30px;stroke:#4F6BC4;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  /* 이용준비중 */
+  .stay-card.preparing{opacity:.7;pointer-events:none}
+  .stay-card-badge.prep{background:#FEF3C7;color:#D97706}
 </style>
 
 <%-- 히어로 --%>
@@ -120,47 +126,61 @@
   </div>
 </div>
 
+<%-- 검색 폼 (hidden) --%>
+<form id="searchForm" method="get" action="${contextPath}/stay">
+  <input type="hidden" name="region"   id="hRegion"   value="${search.region}" />
+  <input type="hidden" name="maxPrice" id="hMaxPrice" value="${search.maxPrice > 0 ? search.maxPrice : 300000}" />
+  <input type="hidden" name="sort"     id="hSort"     value="${search.sort}" />
+  <%-- facilityFilter는 JS에서 동적으로 추가 --%>
+</form>
+
 <%-- 본문 --%>
 <div class="stay-wrap">
-  <%-- 필터 사이드바 (기존 그대로) --%>
+  <%-- 필터 사이드바 --%>
   <aside>
     <div class="stay-filter-card">
       <div class="sfc-title">지역</div>
-      <div class="sfc-chips">
-        <span class="sfc-chip on" onclick="selChip(this)">전체</span>
-        <span class="sfc-chip" onclick="selChip(this)">서울</span>
-        <span class="sfc-chip" onclick="selChip(this)">경기</span>
-        <span class="sfc-chip" onclick="selChip(this)">강원</span>
-        <span class="sfc-chip" onclick="selChip(this)">제주</span>
-        <span class="sfc-chip" onclick="selChip(this)">부산</span>
-        <span class="sfc-chip" onclick="selChip(this)">경상</span>
-        <span class="sfc-chip" onclick="selChip(this)">전라</span>
-      </div>
-    </div>
-    <div class="stay-filter-card">
-      <div class="sfc-title">반려동물 크기</div>
-      <div class="sfc-chips">
-        <span class="sfc-chip on" onclick="selChip(this)">전체</span>
-        <span class="sfc-chip" onclick="selChip(this)">소형</span>
-        <span class="sfc-chip" onclick="selChip(this)">중형</span>
-        <span class="sfc-chip" onclick="selChip(this)">대형</span>
+      <div class="sfc-chips" data-target="hRegion">
+        <c:set var="regionVal" value="${empty search.region ? '전체' : search.region}" />
+        <span class="sfc-chip ${regionVal == '전체' ? 'on' : ''}" onclick="selChipSearch(this, '전체')">전체</span>
+        <span class="sfc-chip ${regionVal == '서울' ? 'on' : ''}" onclick="selChipSearch(this, '서울')">서울</span>
+        <span class="sfc-chip ${regionVal == '대전' ? 'on' : ''}" onclick="selChipSearch(this, '대전')">대전</span>
+        <span class="sfc-chip ${regionVal == '대구' ? 'on' : ''}" onclick="selChipSearch(this, '대구')">대구</span>
+        <span class="sfc-chip ${regionVal == '부산' ? 'on' : ''}" onclick="selChipSearch(this, '부산')">부산</span>
+        <span class="sfc-chip ${regionVal == '경기' ? 'on' : ''}" onclick="selChipSearch(this, '경기')">경기</span>
+        <span class="sfc-chip ${regionVal == '강원' ? 'on' : ''}" onclick="selChipSearch(this, '강원')">강원</span>
+        <span class="sfc-chip ${regionVal == '제주' ? 'on' : ''}" onclick="selChipSearch(this, '제주')">제주</span>
+        <span class="sfc-chip ${regionVal == '경상' ? 'on' : ''}" onclick="selChipSearch(this, '경상')">경상</span>
+        <span class="sfc-chip ${regionVal == '전라' ? 'on' : ''}" onclick="selChipSearch(this, '전라')">전라</span>
+        <span class="sfc-chip ${regionVal == '충청' ? 'on' : ''}" onclick="selChipSearch(this, '충청')">충청</span>
+        <span class="sfc-chip ${regionVal == '기타' ? 'on' : ''}" onclick="selChipSearch(this, '기타')">기타</span>
       </div>
     </div>
     <div class="stay-filter-card">
       <div class="sfc-title">반려동물 특화 조건</div>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div class="sfc-toggle-row"><span>대형견 가능</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-        <div class="sfc-toggle-row"><span>안내견 가능</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-        <div class="sfc-toggle-row"><span>애견 놀이터</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-        <div class="sfc-toggle-row"><span>야외 수영장</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-        <div class="sfc-toggle-row"><span>펫 어메니티 제공</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
-        <div class="sfc-toggle-row"><span>독채 운영</span><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      <c:set var="facStr" value="${fn:join(search.facilityFilter, ',')}" />
+      <div style="display:flex;flex-direction:column;gap:12px" id="facilityToggles">
+        <div class="sfc-toggle-row"><span>대형견 가능</span><label class="toggle"><input type="checkbox" data-code="LARGEPET" ${fn:contains(facStr,'LARGEPET') ? 'checked' : ''} onchange="submitSearch()"><span class="toggle-slider"></span></label></div>
+        <div class="sfc-toggle-row"><span>안내견 가능</span><label class="toggle"><input type="checkbox" data-code="GUIDEDOG" ${fn:contains(facStr,'GUIDEDOG') ? 'checked' : ''} onchange="submitSearch()"><span class="toggle-slider"></span></label></div>
+        <div class="sfc-toggle-row"><span>애견 놀이터</span><label class="toggle"><input type="checkbox" data-code="PETYARD" ${fn:contains(facStr,'PETYARD') ? 'checked' : ''} onchange="submitSearch()"><span class="toggle-slider"></span></label></div>
+        <div class="sfc-toggle-row"><span>야외 수영장</span><label class="toggle"><input type="checkbox" data-code="PETPOOL" ${fn:contains(facStr,'PETPOOL') ? 'checked' : ''} onchange="submitSearch()"><span class="toggle-slider"></span></label></div>
+        <div class="sfc-toggle-row"><span>펫 어메니티 제공</span><label class="toggle"><input type="checkbox" data-code="PETAMENITY" ${fn:contains(facStr,'PETAMENITY') ? 'checked' : ''} onchange="submitSearch()"><span class="toggle-slider"></span></label></div>
       </div>
     </div>
     <div class="stay-filter-card">
       <div class="sfc-title">1박 요금</div>
-      <input type="range" class="sfc-range" min="0" max="300000" step="10000" value="300000">
-      <div class="sfc-range-vals"><span>0원</span><span>30만원 이하</span></div>
+      <c:set var="priceVal" value="${search.maxPrice > 0 ? search.maxPrice : 300000}" />
+      <input type="range" class="sfc-range" id="priceRange"
+             min="0" max="300000" step="10000" value="${priceVal}">
+      <div class="sfc-range-vals">
+        <span>0원</span>
+        <span id="priceLabel">
+          <c:choose>
+            <c:when test="${priceVal >= 300000}">전체</c:when>
+            <c:otherwise><fmt:formatNumber value="${priceVal}" type="number"/>원 이하</c:otherwise>
+          </c:choose>
+        </span>
+      </div>
     </div>
   </aside>
 
@@ -169,8 +189,9 @@
     <div class="stay-toolbar">
       <span style="font-size:14px;color:var(--text-sub)">총 <strong style="color:var(--text-main)">${stayList.size()}</strong>개 숙소</span>
       <div class="stay-sort">
-        <span class="sort-chip on" onclick="selSort(this)">추천순</span>
-        <span class="sort-chip" onclick="selSort(this)">낮은 가격순</span>
+        <c:set var="sortVal" value="${empty search.sort ? 'recommend' : search.sort}" />
+        <span class="sort-chip ${sortVal == 'recommend' ? 'on' : ''}" onclick="selSortSearch('recommend')">추천순</span>
+        <span class="sort-chip ${sortVal == 'priceLow' ? 'on' : ''}" onclick="selSortSearch('priceLow')">낮은 가격순</span>
       </div>
     </div>
 
@@ -179,11 +200,25 @@
       <c:choose>
         <c:when test="${not empty stayList}">
           <c:forEach var="s" items="${stayList}">
-            <div class="stay-card" onclick="location.href='${contextPath}/stay/detail?id=${s.stayId}'">
+            <div class="stay-card ${s.roomCount == 0 ? 'preparing' : ''}"
+                 <c:if test="${s.roomCount != 0}">onclick="location.href='${contextPath}/stay/detail?id=${s.stayId}'"</c:if>>
               <div class="stay-card-thumb">
-                <img src="${contextPath}/upload/${s.thumbPath}"
-                     alt="${s.name}">
-                <span class="stay-card-badge">반려동물 동반 숙소</span>
+                <c:choose>
+                  <c:when test="${s.lat != null && s.thumbPath != null}">
+                    <img src="${contextPath}/upload/${s.thumbPath}" alt="${s.name}">
+                  </c:when>
+                  <c:otherwise>
+                    <img src="${contextPath}/resources/images/noimage.png">
+                  </c:otherwise>
+                </c:choose>
+                <c:choose>
+                  <c:when test="${s.roomCount == 0}">
+                    <span class="stay-card-badge prep">이용준비중</span>
+                  </c:when>
+                  <c:otherwise>
+                    <span class="stay-card-badge">반려동물 동반 숙소</span>
+                  </c:otherwise>
+                </c:choose>
                 <button class="stay-wish-btn" onclick="event.stopPropagation()">
                   <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
                 </button>
@@ -196,9 +231,19 @@
                 </div>
                 <c:if test="${not empty s.facilities}">
                   <div class="sc-tags">
-                    <c:forTokens items="${s.facilities}" delims="," var="tag">
+                    <%-- <c:forTokens items="${s.facilities}" delims="," var="tag">
                       <span class="sc-tag">${tag}</span>
-                    </c:forTokens>
+                    </c:forTokens> --%>
+                    <c:forEach var="facility" items="${fn:split(s.facilities, ',')}" varStatus="st">
+                      <c:set var="f" value="${fn:trim(facility)}" />
+                      <c:if test="${f == 'PETYARD'}"><span class="sc-tag">애견 놀이터</span></c:if>
+                      <c:if test="${f == 'PETPOOL'}"><span class="sc-tag">애견 수영장</span></c:if>
+                      <c:if test="${f == 'PETAMENITY'}"><span class="sc-tag">펫 어메니티 제공</span></c:if>
+                      <c:if test="${f == 'AGILITY'}"><span class="sc-tag">어질리티체험</span></c:if>
+                      <c:if test="${f == 'CCTV'}"><span class="sc-tag">CCTV</span></c:if>
+                      <c:if test="${f == 'LARGEPET'}"><span class="sc-tag">대형견 가능</span></c:if>
+                      <c:if test="${!st.last}"> · </c:if>
+                    </c:forEach>
                   </div>
                 </c:if>
                 <div class="sc-foot">
@@ -230,17 +275,69 @@
 </div>
 
 <script>
-function selChip(el) {
-    var parent = el.closest('.sfc-chips');
+/* ── 검색 폼 제출 ── */
+function submitSearch() {
+    var form = document.getElementById('searchForm');
+
+    /* 기존 facilityFilter hidden 제거 */
+    var oldFacs = form.querySelectorAll('input[name="facilityFilter"]');
+    for (var i = 0; i < oldFacs.length; i++) { oldFacs[i].remove(); }
+
+    /* 체크된 특화 조건을 hidden input으로 추가 */
+    var checks = document.querySelectorAll('#facilityToggles input[type="checkbox"]:checked');
+    for (var j = 0; j < checks.length; j++) {
+        var inp = document.createElement('input');
+        inp.type  = 'hidden';
+        inp.name  = 'facilityFilter';
+        inp.value = checks[j].getAttribute('data-code');
+        form.appendChild(inp);
+    }
+
+    form.submit();
+}
+
+/* ── 칩 클릭 (지역 / 반려동물 크기) ── */
+function selChipSearch(el, value) {
+    var parent   = el.closest('.sfc-chips');
+    var targetId = parent.getAttribute('data-target');
+
+    /* 칩 UI 토글 */
     var chips = parent.querySelectorAll('.sfc-chip');
     for (var i = 0; i < chips.length; i++) { chips[i].classList.remove('on'); }
     el.classList.add('on');
+
+    /* hidden input 값 세팅 후 폼 제출 */
+    document.getElementById(targetId).value = value;
+    submitSearch();
 }
-function selSort(el) {
-    var chips = document.querySelectorAll('.sort-chip');
-    for (var i = 0; i < chips.length; i++) { chips[i].classList.remove('on'); }
-    el.classList.add('on');
+
+/* ── 정렬 클릭 ── */
+function selSortSearch(sortValue) {
+    document.getElementById('hSort').value = sortValue;
+    submitSearch();
 }
+
+/* ── 가격 슬라이더 ── */
+(function() {
+    var slider = document.getElementById('priceRange');
+    var label  = document.getElementById('priceLabel');
+    var timer  = null;
+
+    slider.addEventListener('input', function() {
+        var val = parseInt(this.value);
+        if (val >= 300000) {
+            label.textContent = '전체';
+        } else {
+            label.textContent = val.toLocaleString() + '원 이하';
+        }
+    });
+
+    /* 슬라이더에서 손을 뗐을 때 검색 실행 */
+    slider.addEventListener('change', function() {
+        document.getElementById('hMaxPrice').value = this.value;
+        submitSearch();
+    });
+})();
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

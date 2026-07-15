@@ -38,7 +38,7 @@
         WHERE   B.BIZ_ID = #{bizId}
     </select> 
     
-    <!-- 2026-07-10 장우철 — 승인 시 병원 생성: 상호/전화/주소 복사 (LAT는 병원정보 저장 시 지오코딩) -->
+    <!-- 병원 최초 등록 (빈 껍데기) -->
     <insert id="insertHospital" parameterType="string">
         INSERT INTO TB_HOSPITAL (
                                     HOSPITAL_ID,

@@ -1,260 +1,284 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="contextPath"  value="${pageContext.request.contextPath}" />
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="반려동물 숙소" />
 <c:set var="bizPage"      value="reserve" />
+
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
 
-<%-- 7/2, 사업자(숙박) 예약 관리 UI 구성 — 스토리보드(Biz_Lodge_Reservation) 기준: 검색 + 목록표 + 상세정보 + 상태변경 --%>
 <style>
-  .rsv-search{display:flex;flex-wrap:wrap;align-items:end;gap:14px;padding:18px 20px}
-  .rsv-search .field{display:flex;flex-direction:column;gap:5px}
-  .rsv-search label{font-size:12px;font-weight:700;color:#666}
-  .rsv-search input,.rsv-search select{border:1px solid var(--biz-border);border-radius:8px;padding:8px 10px;font-size:13px;color:#333}
-  .rsv-search .date-range{display:flex;align-items:center;gap:6px}
-  .rsv-search .date-range input{width:135px}
-  .rsv-search .btn-search{background:var(--biz-primary);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer}
-  .rsv-search .btn-reset{background:#fff;border:1px solid var(--biz-border);border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;color:#555;cursor:pointer}
-  .rsv-table-head{display:flex;align-items:center;justify-content:space-between;padding:0 20px}
-  .rsv-row{cursor:pointer}
-  .rsv-row.selected{background:#F1F6FF}
-  .rsv-row td{vertical-align:middle}
-  .rsv-pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 0 8px}
-  .rsv-pagination button{width:28px;height:28px;border:1px solid var(--biz-border);background:#fff;border-radius:6px;cursor:pointer;font-size:12px;color:#555}
-  .rsv-pagination button.active{background:var(--biz-primary);border-color:var(--biz-primary);color:#fff;font-weight:700}
-  .rsv-pagination button:disabled{opacity:.4;cursor:default}
-  .rsv-hint{text-align:center;font-size:12px;color:#aaa;margin-top:4px}
-  .rsv-detail{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;padding:20px}
-  .rsv-detail-row{display:flex;padding:8px 0;border-bottom:1px solid #F5F6F4;font-size:13px}
-  .rsv-detail-row span:first-child{width:88px;flex-shrink:0;color:#888}
-  .rsv-detail-row span:last-child{color:#1A1A2E;font-weight:600}
-  .rsv-detail-empty{padding:40px 20px;text-align:center;color:#aaa;font-size:13px}
-  .rsv-status-change{display:flex;align-items:center;gap:16px;padding:0 20px 20px}
-  .rsv-status-change .cur{display:flex;align-items:center;gap:8px;font-size:13px;color:#666}
-  .rsv-status-change .actions{display:flex;gap:8px;margin-left:auto}
-  .rsv-status-change button{padding:9px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none}
-  .rsv-status-change .btn-approve{background:#4F6BC4;color:#fff}
-  .rsv-status-change .btn-cancel{background:#E24B4A;color:#fff}
-  .rsv-status-change .btn-approve:disabled,.rsv-status-change .btn-cancel:disabled{opacity:.4;cursor:not-allowed}
+  .rv-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
+  .rv-modal-bg.open{display:flex}
+  .rv-modal{background:#fff;border-radius:14px;width:100%;max-width:520px;max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.15)}
+  .rv-modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #E2E8E4}
+  .rv-modal-head h3{margin:0;font-size:17px;font-weight:800;color:#1A1A2E}
+  .rv-modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:#888;line-height:1}
+  .rv-modal-body{padding:20px;display:flex;flex-direction:column;gap:12px}
+  .rv-row{display:flex;justify-content:space-between;font-size:14px;gap:12px}
+  .rv-row span:first-child{color:#888;flex-shrink:0}
+  .rv-row span:last-child{color:#1A1A2E;font-weight:600;text-align:right}
 </style>
 
+<%-- 2026-07-14 — 사업자(숙소) 예약 관리 DB 연동 --%>
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">예약 관리</h1>
-    <p class="biz-page-desc">숙박 예약을 검색하고 상세정보를 확인해 승인·취소 처리하세요.</p>
+    <p class="biz-page-desc">숙박 예약을 확인하고 상태를 관리하세요.</p>
   </div>
 
-  <div class="biz-card" style="margin-bottom:16px">
-    <div class="rsv-search">
-      <div class="field">
-        <label>숙박기간</label>
-        <div class="date-range">
-          <input type="date" id="fFrom" value="2026-06-01">
-          <span>~</span>
-          <input type="date" id="fTo" value="2026-06-30">
-        </div>
-      </div>
-      <div class="field">
-        <label>고객명</label>
-        <input type="text" id="fName" placeholder="고객명 입력">
-      </div>
-      <div class="field">
-        <label>예약상태</label>
-        <select id="fStatus">
-          <option value="all">전체</option>
-          <option value="ready">예약확정</option>
-          <option value="wait">예약대기</option>
-          <option value="cancel">예약취소</option>
-        </select>
-      </div>
-      <button class="btn-search" onclick="applyFilter()">검색</button>
-      <button class="btn-reset" onclick="resetFilter()">초기화</button>
-    </div>
-  </div>
-
-  <div class="biz-card" style="margin-bottom:16px">
-    <div class="rsv-table-head">
-      <div class="biz-card-head" style="padding:20px 0 12px"><span>예약 목록</span><small>총 <span id="totalCount">0</span>건</small></div>
-    </div>
-    <table class="biz-table">
-      <thead><tr><th>예약번호</th><th>고객명</th><th>객실명</th><th>숙박기간</th><th>인원</th><th>예약상태</th><th>관리</th></tr></thead>
-      <tbody id="rsvBody"></tbody>
-    </table>
-    <div class="rsv-pagination" id="pagination"></div>
-    <p class="rsv-hint">※ 목록의 행을 클릭하면 해당 예약의 상세정보가 아래에 표시됩니다.</p>
-  </div>
+  <c:if test="${not empty msg}">
+    <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px">${msg}</div>
+  </c:if>
+  <c:if test="${not empty errorMsg}">
+    <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px">${errorMsg}</div>
+  </c:if>
 
   <div class="biz-card">
-    <div class="biz-card-head"><span>선택한 예약 상세정보</span></div>
-    <div id="detailBox"></div>
+    <div style="padding:20px 20px 0">
+      <div class="biz-tabs">
+        <button type="button" class="biz-tab active" data-tab="all" onclick="switchTab('all')">전체<span class="biz-tab-count" id="cntAll"></span></button>
+        <button type="button" class="biz-tab" data-tab="pending" onclick="switchTab('pending')">예약신청<span class="biz-tab-count" id="cntPending"></span></button>
+        <button type="button" class="biz-tab" data-tab="confirmed" onclick="switchTab('confirmed')">예약확정<span class="biz-tab-count" id="cntConfirmed"></span></button>
+        <button type="button" class="biz-tab" data-tab="done" onclick="switchTab('done')">숙박완료<span class="biz-tab-count" id="cntDone"></span></button>
+        <button type="button" class="biz-tab" data-tab="cancel" onclick="switchTab('cancel')">취소<span class="biz-tab-count" id="cntCancel"></span></button>
+      </div>
+    </div>
+
+    <table class="biz-table">
+      <thead>
+        <tr>
+          <th style="width:11%">예약번호</th>
+          <th style="width:10%">예약자</th>
+          <th style="width:14%">반려동물</th>
+          <th style="width:12%">객실</th>
+          <th style="width:18%">숙박기간</th>
+          <th style="width:10%">결제금액</th>
+          <th style="width:8%">상태</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody id="reserveBody"></tbody>
+    </table>
   </div>
 </main>
 
 <div class="biz-toast" id="saveToast">
   <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-  <span id="saveToastMsg">처리되었습니다.</span>
+  <span id="toastMsg">처리되었습니다.</span>
+</div>
+
+<%-- 예약 상세 모달 --%>
+<div class="rv-modal-bg" id="reserveModalBg" onclick="if(event.target===this) closeReserveModal()">
+  <div class="rv-modal">
+    <div class="rv-modal-head">
+      <h3>예약 상세</h3>
+      <button type="button" class="rv-modal-close" onclick="closeReserveModal()">×</button>
+    </div>
+    <div class="rv-modal-body">
+      <div class="rv-row"><span>예약자</span><span id="mdMember">-</span></div>
+      <div class="rv-row"><span>반려동물</span><span id="mdPet">-</span></div>
+      <div class="rv-row"><span>객실</span><span id="mdRoom">-</span></div>
+      <div class="rv-row"><span>체크인</span><span id="mdCheckin">-</span></div>
+      <div class="rv-row"><span>체크아웃</span><span id="mdCheckout">-</span></div>
+      <div class="rv-row"><span>숙박일수</span><span id="mdNights">-</span></div>
+      <div class="rv-row"><span>결제금액</span><span id="mdAmount">-</span></div>
+      <div class="rv-row"><span>요청사항</span><span id="mdMemo">-</span></div>
+    </div>
+  </div>
+</div>
+
+<%-- 예약취소 사유 모달 --%>
+<div class="rv-modal-bg" id="cancelModalBg" onclick="if(event.target===this) closeCancelModal()">
+  <div class="rv-modal">
+    <div class="rv-modal-head">
+      <h3>예약 취소</h3>
+      <button type="button" class="rv-modal-close" onclick="closeCancelModal()">×</button>
+    </div>
+    <div class="rv-modal-body">
+      <p style="margin:0 0 8px;font-size:13px;color:#666">취소 사유를 입력해 주세요. (필수)</p>
+      <textarea id="cancelReasonInput" maxlength="500" rows="4"
+        style="width:100%;box-sizing:border-box;border:1px solid #E2E8E4;border-radius:8px;padding:12px;font-size:14px;font-family:inherit;resize:vertical"
+        placeholder="예: 시설 점검으로 해당 일자 운영이 어렵습니다."></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button type="button" class="biz-btn ghost" onclick="closeCancelModal()">닫기</button>
+        <button type="button" class="biz-btn danger" onclick="submitCancel()">예약취소</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
+  // 서버 데이터 → JS 배열
   var reservations = [
-    { no:'R202607100712', name:'홍길동', room:'디럭스룸(101호)', pIn:'2026.07.10', pOut:'2026.07.12', nights:2, guest:'2명', status:'ready', amount:180000, method:'신용카드', bookedAt:'2026.07.01 14:30', phone:'010-1234-5678', email:'hong@example.com', request:'늦은 체크인 예정입니다.', note:'-' },
-    { no:'R202606280629', name:'이성민', room:'스탠다드(A-01호)', pIn:'2026.06.28', pOut:'2026.06.29', nights:1, guest:'1명', status:'ready', amount:45000, method:'카카오페이', bookedAt:'2026.06.20 09:12', phone:'010-2222-3333', email:'lee@example.com', request:'-', note:'-' },
-    { no:'R202606250628', name:'박소현', room:'디럭스(B-01호)', pIn:'2026.06.25', pOut:'2026.06.28', nights:3, guest:'2명', status:'wait', amount:204000, method:'신용카드', bookedAt:'2026.06.18 21:40', phone:'010-3333-4444', email:'park@example.com', request:'대형견 동반, 마당 이용 문의', note:'-' },
-    { no:'R202606200622', name:'최민준', room:'스위트(C-01호)', pIn:'2026.06.20', pOut:'2026.06.22', nights:2, guest:'2명', status:'cancel', amount:196000, method:'신용카드', bookedAt:'2026.06.10 11:05', phone:'010-4444-5555', email:'choi@example.com', request:'-', note:'개인 사정으로 취소 요청' },
-    { no:'R202606150617', name:'한지우', room:'디럭스(B-02호)', pIn:'2026.06.15', pOut:'2026.06.17', nights:2, guest:'1명', status:'ready', amount:136000, method:'네이버페이', bookedAt:'2026.06.05 16:22', phone:'010-5555-6666', email:'han@example.com', request:'조용한 객실 요청', note:'-' }
+    <c:forEach var="r" items="${reservationList}" varStatus="st">
+    {
+      resvId: ${r.resvId},
+      resvNo: '<c:out value="${r.resvNo}"/>',
+      name: '<c:out value="${r.memberName}"/>',
+      pet: '<c:out value="${r.petName}"/> (<c:out value="${r.petSpecies}"/>)',
+      roomName: '<c:out value="${r.roomName}"/>',
+      checkinStr: '<fmt:formatDate value="${r.checkinDate}" pattern="yyyy-MM-dd"/>',
+      checkinLabel: '<fmt:formatDate value="${r.checkinDate}" pattern="M/d"/>',
+      checkoutStr: '<fmt:formatDate value="${r.checkoutDate}" pattern="yyyy-MM-dd"/>',
+      checkoutLabel: '<fmt:formatDate value="${r.checkoutDate}" pattern="M/d"/>',
+      nightCnt: ${r.nightCnt != null ? r.nightCnt : 0},
+      totalAmount: ${r.totalAmount != null ? r.totalAmount : 0},
+      requestMemo: '<c:out value="${r.requestMemo}"/>',
+      statusCd: '<c:out value="${r.statusCd}"/>',
+      status: (function(cd){
+        if (cd === 'PENDING') return 'pending';
+        if (cd === 'CONFIRMED') return 'confirmed';
+        if (cd === 'DONE') return 'done';
+        if (cd === 'CANCEL' || cd === 'REJECTED') return 'cancel';
+        return 'pending';
+      })('<c:out value="${r.statusCd}"/>')
+    }<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
   ];
 
-  var statusLabel = { ready:'예약확정', wait:'예약대기', cancel:'예약취소' };
-  var statusBadgeClass = { ready:'bs-ready', wait:'bs-wait', cancel:'bs-cancel' };
+  var currentTab = 'all';
+  var contextPath = '${contextPath}';
 
-  var filtered = reservations.slice();
-  var page = 1;
-  var pageSize = 3;
-  var selectedNo = null;
+  var badgeMap = {
+    pending:   { cls: 'bs-wait',   label: '예약신청' },
+    confirmed: { cls: 'bs-ready',  label: '예약확정' },
+    done:      { cls: 'bs-done',   label: '숙박완료' },
+    cancel:    { cls: 'bs-cancel', label: '취소' }
+  };
 
-  function fmtWon(n){ return n.toLocaleString('ko-KR') + '원'; }
+  function fmtWon(n) { return n ? n.toLocaleString('ko-KR') + '원' : '-'; }
 
-  function applyFilter() {
-    var from = document.getElementById('fFrom').value;
-    var to = document.getElementById('fTo').value;
-    var name = document.getElementById('fName').value.trim();
-    var status = document.getElementById('fStatus').value;
-
-    filtered = reservations.filter(function (r) {
-      var checkIn = r.pIn.replace(/\./g, '-');
-      var matchDate = (!from || checkIn >= from) && (!to || checkIn <= to);
-      var matchName = !name || r.name.indexOf(name) !== -1;
-      var matchStatus = status === 'all' || r.status === status;
-      return matchDate && matchName && matchStatus;
-    });
-    page = 1;
-    selectedNo = null;
-    render();
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.biz-tab').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === tab); });
+    renderTable();
   }
 
-  function resetFilter() {
-    document.getElementById('fFrom').value = '2026-06-01';
-    document.getElementById('fTo').value = '2026-06-30';
-    document.getElementById('fName').value = '';
-    document.getElementById('fStatus').value = 'all';
-    filtered = reservations.slice();
-    page = 1;
-    selectedNo = null;
-    render();
-  }
+  function renderTable() {
+    var list = reservations.filter(function(r) { return currentTab === 'all' || r.status === currentTab; });
 
-  function selectRow(no) {
-    selectedNo = no;
-    render();
-  }
+    document.getElementById('cntAll').textContent = reservations.length;
+    document.getElementById('cntPending').textContent = reservations.filter(function(r) { return r.status === 'pending'; }).length;
+    document.getElementById('cntConfirmed').textContent = reservations.filter(function(r) { return r.status === 'confirmed'; }).length;
+    document.getElementById('cntDone').textContent = reservations.filter(function(r) { return r.status === 'done'; }).length;
+    document.getElementById('cntCancel').textContent = reservations.filter(function(r) { return r.status === 'cancel'; }).length;
 
-  function changeStatus(no, newStatus) {
-    var r = reservations.find(function (x) { return x.no === no; });
-    r.status = newStatus;
-    render();
-    showToast(newStatus === 'ready' ? '예약이 승인(확정)되었습니다.' : '예약이 취소되었습니다.');
-  }
-
-  function showToast(msg) {
-    document.getElementById('saveToastMsg').textContent = msg;
-    var toast = document.getElementById('saveToast');
-    toast.classList.add('on');
-    setTimeout(function () { toast.classList.remove('on'); }, 2000);
-  }
-
-  function render() {
-    document.getElementById('totalCount').textContent = filtered.length;
-
-    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    if (page > totalPages) page = totalPages;
-    var pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-    var body = document.getElementById('rsvBody');
+    var body = document.getElementById('reserveBody');
     body.innerHTML = '';
-    if (pageItems.length === 0) {
-      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px 0">검색 결과가 없습니다.</td></tr>';
-    } else {
-      pageItems.forEach(function (r) {
-        var tr = document.createElement('tr');
-        tr.className = 'rsv-row' + (r.no === selectedNo ? ' selected' : '');
-        tr.onclick = function () { selectRow(r.no); };
-        tr.innerHTML =
-          '<td>' + r.no + '</td>' +
-          '<td>' + r.name + '</td>' +
-          '<td>' + r.room + '</td>' +
-          '<td>' + r.pIn + '~' + r.pOut + '<br><small style="color:#999">(' + r.nights + '박' + (r.nights+1) + '일)</small></td>' +
-          '<td>' + r.guest + '</td>' +
-          '<td><span class="bs-badge ' + statusBadgeClass[r.status] + '">' + statusLabel[r.status] + '</span></td>' +
-          '<td><button class="biz-btn" onclick="event.stopPropagation();selectRow(\'' + r.no + '\')">상세보기</button></td>';
-        body.appendChild(tr);
-      });
-    }
 
-    var pg = document.getElementById('pagination');
-    pg.innerHTML = '';
-    var prev = document.createElement('button');
-    prev.textContent = '<';
-    prev.disabled = page <= 1;
-    prev.onclick = function () { page--; render(); };
-    pg.appendChild(prev);
-    for (var i = 1; i <= totalPages; i++) {
-      var b = document.createElement('button');
-      b.textContent = i;
-      if (i === page) b.className = 'active';
-      (function (n) { b.onclick = function () { page = n; render(); }; })(i);
-      pg.appendChild(b);
-    }
-    var next = document.createElement('button');
-    next.textContent = '>';
-    next.disabled = page >= totalPages;
-    next.onclick = function () { page++; render(); };
-    pg.appendChild(next);
-
-    renderDetail();
-  }
-
-  function renderDetail() {
-    var box = document.getElementById('detailBox');
-    var r = reservations.find(function (x) { return x.no === selectedNo; });
-
-    if (!r) {
-      box.innerHTML = '<div class="rsv-detail-empty">목록에서 예약을 선택하면 상세정보가 표시됩니다.</div>';
+    if (list.length === 0) {
+      body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:60px 0">해당 예약이 없습니다.</td></tr>';
       return;
     }
 
-    box.innerHTML =
-      '<div class="rsv-detail">' +
-        '<div>' +
-          '<div class="rsv-detail-row"><span>예약번호</span><span>' + r.no + '</span></div>' +
-          '<div class="rsv-detail-row"><span>예약자명</span><span>' + r.name + '</span></div>' +
-          '<div class="rsv-detail-row"><span>연락처</span><span>' + r.phone + '</span></div>' +
-          '<div class="rsv-detail-row"><span>이메일</span><span>' + r.email + '</span></div>' +
-          '<div class="rsv-detail-row"><span>객실명</span><span>' + r.room + '</span></div>' +
-        '</div>' +
-        '<div>' +
-          '<div class="rsv-detail-row"><span>결제금액</span><span>' + fmtWon(r.amount) + '</span></div>' +
-          '<div class="rsv-detail-row"><span>결제수단</span><span>' + r.method + '</span></div>' +
-          '<div class="rsv-detail-row"><span>예약일</span><span>' + r.bookedAt + '</span></div>' +
-          '<div class="rsv-detail-row"><span>숙박기간</span><span>' + r.pIn + ' ~ ' + r.pOut + ' (' + r.nights + '박' + (r.nights+1) + '일)</span></div>' +
-          '<div class="rsv-detail-row"><span>인원</span><span>' + r.guest + '</span></div>' +
-        '</div>' +
-        '<div style="grid-column:1/-1">' +
-          '<div class="rsv-detail-row"><span>요청사항</span><span>' + r.request + '</span></div>' +
-          '<div class="rsv-detail-row"><span>특이사항</span><span>' + r.note + '</span></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="rsv-status-change">' +
-        '<div class="cur">현재 상태 <span class="bs-badge ' + statusBadgeClass[r.status] + '">' + statusLabel[r.status] + '</span></div>' +
-        '<div class="actions">' +
-          '<button class="btn-approve" ' + (r.status === 'ready' ? 'disabled' : '') + ' onclick="changeStatus(\'' + r.no + '\',\'ready\')">승인</button>' +
-          '<button class="btn-cancel" ' + (r.status === 'cancel' ? 'disabled' : '') + ' onclick="changeStatus(\'' + r.no + '\',\'cancel\')">취소</button>' +
-        '</div>' +
-      '</div>' +
-      '<p style="padding:0 20px 18px;font-size:12px;color:#aaa">※ 승인 시 예약이 \'예약확정\' 상태로 변경되며, 취소 시 \'예약취소\' 상태로 변경됩니다.</p>';
+    list.forEach(function(r) {
+      var badge = badgeMap[r.status] || badgeMap.pending;
+      var tr = document.createElement('tr');
+
+      var actionHtml = '<button type="button" class="biz-btn ghost" onclick="openReserveModal(' + r.resvId + ')">상세</button> ';
+      if (r.status === 'pending') {
+        actionHtml +=
+          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'CONFIRMED\')">예약확정</button> ' +
+          '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
+      } else if (r.status === 'confirmed') {
+        actionHtml +=
+          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'DONE\')">숙박완료</button> ' +
+          '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
+      }
+
+      var periodHtml = r.checkinLabel + '~' + r.checkoutLabel;
+      if (r.nightCnt > 0) periodHtml += '<br><small style="color:#999">(' + r.nightCnt + '박' + (r.nightCnt+1) + '일)</small>';
+
+      tr.innerHTML =
+        '<td>' + r.resvNo + '</td>' +
+        '<td>' + r.name + '</td>' +
+        '<td>' + r.pet + '</td>' +
+        '<td>' + (r.roomName || '-') + '</td>' +
+        '<td>' + periodHtml + '</td>' +
+        '<td>' + fmtWon(r.totalAmount) + '</td>' +
+        '<td><span class="bs-badge ' + badge.cls + '">' + badge.label + '</span></td>' +
+        '<td>' + actionHtml + '</td>';
+      body.appendChild(tr);
+    });
   }
 
-  render();
+  function postStatus(resvId, statusCd) {
+    if (statusCd === 'CONFIRMED' && !confirm('예약을 확정하시겠습니까?')) return;
+    if (statusCd === 'DONE' && !confirm('숙박완료로 처리하시겠습니까?')) return;
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = contextPath + '/biz/stay/reserve/status';
+    form.innerHTML =
+      '<input type="hidden" name="resvId" value="' + resvId + '">' +
+      '<input type="hidden" name="statusCd" value="' + statusCd + '">';
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // 취소 사유 모달
+  var cancelTargetResvId = null;
+
+  function openCancelModal(resvId) {
+    cancelTargetResvId = resvId;
+    document.getElementById('cancelReasonInput').value = '';
+    document.getElementById('cancelModalBg').classList.add('open');
+  }
+
+  function closeCancelModal() {
+    cancelTargetResvId = null;
+    document.getElementById('cancelModalBg').classList.remove('open');
+  }
+
+  function submitCancel() {
+    var reason = document.getElementById('cancelReasonInput').value.trim();
+    if (!reason) {
+      alert('취소 사유를 입력해 주세요.');
+      document.getElementById('cancelReasonInput').focus();
+      return;
+    }
+    if (!cancelTargetResvId) return;
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = contextPath + '/biz/stay/reserve/status';
+    form.innerHTML =
+      '<input type="hidden" name="resvId" value="' + cancelTargetResvId + '">' +
+      '<input type="hidden" name="statusCd" value="CANCEL">' +
+      '<input type="hidden" name="cancelReason" value="">';
+    form.querySelector('input[name="cancelReason"]').value = reason;
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  // 상세 모달
+  function openReserveModal(resvId) {
+    fetch(contextPath + '/biz/stay/reserve/detail?resvId=' + resvId)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data) { alert('예약 정보를 불러올 수 없습니다.'); return; }
+        document.getElementById('mdMember').textContent = data.memberName || '-';
+        var petLabel = data.petName || '-';
+        if (data.petBreed) petLabel += ' (' + data.petBreed + ')';
+        document.getElementById('mdPet').textContent = petLabel;
+        document.getElementById('mdRoom').textContent = data.roomName || '-';
+        document.getElementById('mdCheckin').textContent = data.checkinDate ? String(data.checkinDate).substring(0, 10) : '-';
+        document.getElementById('mdCheckout').textContent = data.checkoutDate ? String(data.checkoutDate).substring(0, 10) : '-';
+        document.getElementById('mdNights').textContent = data.nightCnt ? data.nightCnt + '박' + (data.nightCnt+1) + '일' : '-';
+        document.getElementById('mdAmount').textContent = data.totalAmount ? data.totalAmount.toLocaleString('ko-KR') + '원' : '-';
+        document.getElementById('mdMemo').textContent = data.requestMemo || '-';
+        document.getElementById('reserveModalBg').classList.add('open');
+      })
+      .catch(function() { alert('예약 정보를 불러올 수 없습니다.'); });
+  }
+
+  function closeReserveModal() {
+    document.getElementById('reserveModalBg').classList.remove('open');
+  }
+
+  renderTable();
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

@@ -11,5 +11,6 @@ public class StayRoomVO {
     private int    pricePerNight;
     private int    capacity;
     private int    petLimit;
-    private String statusCd;    
+    private String statusCd;
+    private String rejectReason;    
 }

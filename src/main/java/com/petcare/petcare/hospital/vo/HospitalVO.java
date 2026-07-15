@@ -39,7 +39,13 @@ public class HospitalVO implements Mapperable{
     private String hoursJson;      // HOURS_JSON
     private String tagList;       // DEPT_LIST    
     private String thumbPath;    
-    
+
+    // ── 검색 조건 (list 화면용) ──
+    private String keyword;        // 지역명·병원명 텍스트 검색
+    private String tagFilter;     // 진료과목 (24시간 진료, 특수동물 진료, 입원진료 가능, 호스피텔 가능)
+    private String target;         // 진료 대상 (강아지, 고양이, 특수동물)
+    private String sort;           // 정렬 (rating, review)
+
     @Override
     public String getMarkerId()   { return String.valueOf(hospitalId); }
     @Override

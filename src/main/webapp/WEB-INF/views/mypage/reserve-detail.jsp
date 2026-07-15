@@ -47,7 +47,10 @@
       </span>
     </div>
     <div class="rd-row">
-      <span>병원</span>
+      <span>
+        <c:if test="${reservation.resvType eq 'STAY'}">숙소</c:if>
+        <c:if test="${reservation.resvType eq 'HOSPITAL'}">병원</c:if>
+      </span>
       <span><c:out value="${not empty reservation.hospitalName ? reservation.hospitalName : '-'}"/></span>
     </div>
     <div class="rd-row">
@@ -70,8 +73,10 @@
       </span>
     </div>
     <div class="rd-row">
-      <span>증상</span>
-      <span><c:out value="${not empty reservation.symptoms ? reservation.symptoms : '-'}"/></span>
+      <c:if test="${reservation.resvType eq 'HOSPITAL'}">
+        <span>증상</span>
+        <span><c:out value="${not empty reservation.symptoms ? reservation.symptoms : '-'}"/></span>
+      </c:if>
     </div>
     <div class="rd-row">
       <span>요청사항</span>

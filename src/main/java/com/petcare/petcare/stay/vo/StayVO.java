@@ -25,11 +25,15 @@ import lombok.Setter;
 public class StayVO implements Mapperable {
     // ── TB_STAY ──
     private Long   stayId;
+    private Long   memberNo;
     private Long   bizNo;
     private String name;
+    private String zipcode;
     private String addr;
-    private String lat;
-    private String lng;
+    private String addrDetail;
+    private Double lat;
+    private Double lng;
+    private String phone;
     private String petPolicy;
     private String refundPolicy;
     private String statusCd;
@@ -47,12 +51,18 @@ public class StayVO implements Mapperable {
     private int    minPrice;      // MIN(PRICE_PER_NIGHT)
     private int    roomCount;     // 객실 수
 
+    // ── 검색 조건 (list 화면용) ──
+    private String region;              // 지역 필터 (서울, 경기, 강원, 제주, 부산, 경상, 전라)
+    private int    maxPrice;            // 1박 최대 요금 (0이면 제한 없음)
+    private String sort;                // 정렬 (recommend, priceLow)
+    private String[] facilityFilter;    // 특화 조건 코드 배열 (LARGEPET, PETYARD 등)
+
     // ── 상세용 (객실 목록) ──
     private List<StayRoomVO> rooms;
 
     // ── Mapperble 구현 (카카오맵 마커용) ──
     public String getMarkerId()   { return stayId != null ? String.valueOf(stayId) : "0"; }
     public String getMarkerName() { return name; }
-    public Double getMarkerLat()  { return lat != null ? Double.parseDouble(lat) : null; }
-    public Double getMarkerLng()  { return lng != null ? Double.parseDouble(lng) : null; }
+    public Double getMarkerLat()  { return lat; }
+    public Double getMarkerLng()  { return lng; }
 }

@@ -24,12 +24,20 @@
             R.STATUS_CD     AS statusCd,
             R.REJECT_REASON AS rejectReason,
             R.REG_DATE      AS regDate,
+            R.CHECKIN_DATE  AS checkinDate,
+            R.CHECKOUT_DATE AS checkoutDate,
+            R.NIGHT_CNT     AS nightCnt,
+            R.TOTAL_AMOUNT  AS totalAmount,
+            R.ROOM_ID       AS roomId,
             P.PET_NAME      AS petName,
             P.SPECIES       AS petSpecies,
             P.BREED         AS petBreed,
             H.NAME          AS hospitalName,
             H.ADDR          AS hospitalAddr,
-            CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn
+            CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn,
+            S.NAME          AS stayName,
+            S.ADDR          AS stayAddr,
+            SR.NAME         AS roomName
       FROM  TB_RESERVATION R
       JOIN  TB_PET P ON P.PET_ID = R.PET_ID
       LEFT JOIN TB_HOSPITAL H
@@ -38,8 +46,12 @@
       LEFT JOIN TB_REVIEW RV
              ON RV.RESV_ID = R.RESV_ID
             AND RV.REVIEW_TYPE = 'HOSPITAL'
+      LEFT JOIN TB_STAY S
+             ON R.RESV_TYPE = 'STAY'
+            AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_STAY_ROOM SR
+             ON SR.ROOM_ID = R.ROOM_ID
      WHERE  R.MEMBER_NO = #{memberNo}
-       AND  R.RESV_TYPE = 'HOSPITAL'
     <choose>
       <when test="statusFilter == 'pending'">
        AND  R.STATUS_CD = 'PENDING'
@@ -72,12 +84,18 @@
             R.STATUS_CD     AS statusCd,
             R.REJECT_REASON AS rejectReason,
             R.REG_DATE      AS regDate,
+            R.CHECKIN_DATE  AS checkinDate,
+            R.CHECKOUT_DATE AS checkoutDate,
+            R.NIGHT_CNT     AS nightCnt,
+            R.TOTAL_AMOUNT  AS totalAmount,
+            R.ROOM_ID       AS roomId,
             P.PET_NAME      AS petName,
             P.SPECIES       AS petSpecies,
             P.BREED         AS petBreed,
-            H.NAME          AS hospitalName,
-            H.ADDR          AS hospitalAddr,
-            CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn
+            COALESCE(H.NAME, S.NAME)  AS hospitalName,
+            COALESCE(H.ADDR, S.ADDR)  AS hospitalAddr,
+            CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn,
+            SR.NAME         AS roomName
       FROM  TB_RESERVATION R
       JOIN  TB_PET P ON P.PET_ID = R.PET_ID
       LEFT JOIN TB_HOSPITAL H
@@ -86,9 +104,13 @@
       LEFT JOIN TB_REVIEW RV
              ON RV.RESV_ID = R.RESV_ID
             AND RV.REVIEW_TYPE = 'HOSPITAL'
+      LEFT JOIN TB_STAY S
+             ON R.RESV_TYPE = 'STAY'
+            AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_STAY_ROOM SR
+             ON SR.ROOM_ID = R.ROOM_ID
      WHERE  R.MEMBER_NO = #{memberNo}
        AND  R.RESV_ID   = #{resvId}
-       AND  R.RESV_TYPE = 'HOSPITAL'
   </select>
 
   <!-- 2026/07/13 장우철 — 동일 예약 리뷰 중복 방지 -->

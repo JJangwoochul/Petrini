@@ -41,6 +41,11 @@ public class HospitalServiceImpl implements HospitalService {
     }
 
     @Override
+    public List<HospitalVO> getHospitalListBySearch(HospitalVO searchVO) throws Exception {
+        return hospitalMapper.selectHospitalListBySearch(searchVO);
+    }
+    
+    @Override
     public HospitalVO getHospitalById(Long hospitalId) throws Exception {
         return hospitalMapper.selectHospitalById(hospitalId);
     }

@@ -58,15 +58,7 @@
   .reserve-card h3 { font-size:16px; font-weight:800; color:var(--text-main); margin:0 0 16px; }
   .rc-price { font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:16px; }
   .rc-price span { font-size:13px; font-weight:400; color:var(--text-muted); }
-  .rc-form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
-  .rc-form-group label { font-size:12px; font-weight:700; color:var(--text-muted); }
-  .rc-form-group input, .rc-form-group select { border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:14px; color:var(--text-main); outline:none; font-family:inherit; width:100%; box-sizing:border-box; }
-  .rc-form-group input:focus, .rc-form-group select:focus { border-color:var(--primary); }
-  .rc-date-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .rc-divider { height:1px; background:var(--border); margin:14px 0; }
-  .rc-price-row { display:flex; justify-content:space-between; font-size:14px; color:var(--text-sub); margin-bottom:8px; }
-  .rc-price-row.total { font-size:16px; font-weight:800; color:var(--text-main); padding-top:12px; border-top:1px solid var(--border); margin-top:4px; }
-  .rc-price-row.total span:last-child { color:var(--primary-dark); }
   .btn-reserve-big { width:100%; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--primary); color:#fff; font-size:16px; font-weight:800; cursor:pointer; margin-top:12px; transition:var(--transition); }
   .btn-reserve-big:hover { background:var(--primary-dark); }
   .rc-notice { font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; }
@@ -118,7 +110,12 @@
     <c:if test="${not empty stay.facilities}">
       <div class="sd-tags">
         <c:forEach var="fac" items="${fn:split(stay.facilities, ',')}">
-          <span class="sd-tag">${fn:trim(fac)}</span>
+          <c:if test="${fac == 'PETYARD'}"><span class="sd-tag">애견 놀이터</span></c:if>
+          <c:if test="${fac == 'PETPOOL'}"><span class="sd-tag">애견 수영장</span></c:if>
+          <c:if test="${fac == 'PETAMENITY'}"><span class="sd-tag">펫 어메니티 제공</span></c:if>
+          <c:if test="${fac == 'AGILITY'}"><span class="sd-tag">어질리티 체험</span></c:if>
+          <c:if test="${fac == 'CCTV'}"><span class="sd-tag">CCTV</span></c:if>
+          <c:if test="${fac == 'LARGEPET'}"><span class="sd-tag">대형견 가능</span></c:if>
         </c:forEach>
       </div>
     </c:if>
@@ -217,43 +214,36 @@
     </div>
   </div>
 
-  <%-- 예약 카드 --%>
+  <%-- 예약 카드 (우측 사이드바) --%>
   <div class="reserve-card">
-    <h3>예약하기</h3>
-    <div class="rc-price">
-      <c:choose>
-        <c:when test="${not empty stay.rooms}">
-          <fmt:formatNumber value="${stay.rooms[0].pricePerNight}" pattern="#,###"/>원
-          <span>/ 1박~</span>
-        </c:when>
-        <c:otherwise>가격 미정</c:otherwise>
-      </c:choose>
-    </div>
-    <div class="rc-form-group">
-      <label>날짜 선택</label>
-      <div class="rc-date-row">
-        <input type="date">
-        <input type="date">
-      </div>
-    </div>
-    <div class="rc-form-group">
-      <label>인원</label>
-      <select><option>1명</option><option>2명</option><option selected>3명</option><option>4명</option><option>5명</option><option>6명</option></select>
-    </div>
+    <h3>객실 정보</h3>
+    <c:choose>
+      <c:when test="${not empty stay.rooms}">
+        <c:forEach var="room" items="${stay.rooms}">
+          <div class="room-card" style="margin-bottom:10px">
+            <div>
+              <div class="room-name">${room.name}</div>
+              <div class="room-meta">수용 ${room.capacity}인 · 반려동물 ${room.petLimit}마리</div>
+            </div>
+            <div style="text-align:right">
+              <div class="room-price"><fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원</div>
+              <div class="room-price-label">1박 기준</div>
+            </div>
+          </div>
+        </c:forEach>
+      </c:when>
+      <c:otherwise>
+        <p style="font-size:14px;color:var(--text-muted);margin:0 0 12px">등록된 객실이 없습니다.</p>
+      </c:otherwise>
+    </c:choose>
+    <div class="rc-divider"></div>
     <c:if test="${not empty stay.rooms}">
-      <div class="rc-form-group">
-        <label>객실 선택</label>
-        <select>
-          <c:forEach var="room" items="${stay.rooms}">
-            <option value="${room.roomId}">
-              ${room.roomName} — <fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원
-            </option>
-          </c:forEach>
-        </select>
+      <div class="rc-price">
+        <fmt:formatNumber value="${stay.rooms[0].pricePerNight}" pattern="#,###"/>원~
+        <span>/ 1박</span>
       </div>
     </c:if>
-    <div class="rc-divider"></div>
-    <button class="btn-reserve-big" onclick="location.href='${contextPath}/stay/reserve?id=${stay.stayId}'">예약 신청하기</button>
+    <button class="btn-reserve-big" onclick="location.href='${contextPath}/stay/reserve?id=${stay.stayId}'">예약하기</button>
     <c:choose>
       <c:when test="${not empty stay.refundPolicy}">
         <div class="rc-notice">${stay.refundPolicy}</div>

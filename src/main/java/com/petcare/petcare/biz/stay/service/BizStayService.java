@@ -29,4 +29,41 @@
 
 package com.petcare.petcare.biz.stay.service;
 
-public interface BizStayService {}
+import java.util.List;
+
+import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayRoomVO;
+import com.petcare.petcare.stay.vo.StayVO;
+
+public interface BizStayService {
+    StayVO getStayByBizId(String bizId);
+
+    // 2026-07-10 장우철 — 승인됐는데 TB_HOSPITAL 없으면 껍데기 생성 후 반환
+    StayVO resolveStayByBizId(String bizId);
+
+    void updateStayInfo(StayVO vo);
+
+    void updateStayProfile(StayVO vo);
+
+    // ── 객실 관리 ──
+    List<StayRoomVO> getRoomList(Long stayId);
+
+    void insertRoom(StayRoomVO vo);
+
+    void updateRoom(StayRoomVO vo);
+
+    void deleteRoom(Long roomId, Long stayId);
+
+    // ── 2026-07-14 예약 관리 ──
+    List<ReservationVO> getReservationList(Long stayId, String tab) throws Exception;
+
+    ReservationVO getReservationDetail(Long stayId, Long resvId) throws Exception;
+
+    void updateReservationStatus(Long stayId, Long resvId, String statusCd, String cancelReason) throws Exception;
+
+    List<ReservationVO> getCalendarReservations(Long stayId, String fromDate, String toDate) throws Exception;
+
+    int countPendingReservations(Long stayId) throws Exception;
+
+    int countTodayConfirmedReservations(Long stayId) throws Exception;
+}

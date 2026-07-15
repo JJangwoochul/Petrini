@@ -33,7 +33,9 @@ public class ReservationVO {
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date    resvDate;
     private String  resvTime;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date    checkinDate;
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date    checkoutDate;
     private Integer nightCnt;
     private String  symptoms;
@@ -49,5 +51,9 @@ public class ReservationVO {
     private String  petSpecies;
     private String  petBreed;
     private Integer petAge;
-    private String  hospitalName;
+
+    //HYJ 26.07.15 숙소용
+    private String  stayName;
+    private String  stayAddr;
+    private String  roomName;
 }

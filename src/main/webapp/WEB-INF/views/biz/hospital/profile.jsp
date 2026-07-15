@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="동물병원" />
-<c:set var="bizPage" value="profile" />
+<c:set var="bizPage" value="info" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
@@ -198,7 +198,7 @@
 
       <!-- 2026-07-10 장우철 — 기본 정보(이름/전화/주소)
            이유: 유저 목록은 LAT 있을 때만 '상세보기' 노출. 주소 저장 시 지오코딩으로 LAT 세팅 -->
-      <div class="info-section">
+      <%-- <div class="info-section">
         <div class="info-stitle">
           <svg viewBox="0 0 24 24">
             <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -223,7 +223,7 @@
             <input type="text" name="addrDetail" value="${hospital.addrDetail}" style="margin-top:8px" placeholder="상세 주소 (동/호수 등)">
           </div>
         </div>
-      </div>
+      </div> --%>
 
       <div class="info-section">
         <div class="info-grid">
@@ -479,16 +479,6 @@
               24시간 진료
             </label>
             <label class="tag-check">
-              <input type="checkbox" name="tagList" value="EXOTIC" ${fn:contains(hospital.tagList, 'EXOTIC') ? 'checked' : ''}>
-              <svg viewBox="0 0 24 24">
-						  	<circle cx="4.5" cy="9.5" r="2"/>
-						  	<circle cx="9" cy="5.5" r="2"/>
-						  	<circle cx="15" cy="5.5" r="2"/>
-						  	<circle cx="19.5" cy="9.5" r="2"/>
-						  </svg>
-              특수동물 진료
-            </label>
-            <label class="tag-check">
               <input type="checkbox" name="tagList" value="HOSPITEL" ${fn:contains(hospital.tagList, 'HOSPITEL') ? 'checked' : ''}>
                 <svg viewBox="0 0 24 24">
 							    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -522,11 +512,52 @@
           </div>
       </div>
 
-      <!-- ─────────── 4. 병원 이미지 ───────────
-            - 기존 이미지: DB에서 imgList로 받아서 표시 + 삭제 버튼
-            - 빈 슬롯:    4 - 기존이미지수 만큼 업로드 박스 표시
-            - 삭제 시:    hidden input에 fileId를 넣어서 Controller로 전달
+      <!-- ─────────── 3-2. 진료 대상 ───────────
+            - 병원 특성과 동일하게 name="tagList" → 같은 TAG_LIST 컬럼에 저장
+            - hospital/list 검색 필터(진료 대상)에서 사용
             ─────────────────────────────────── -->
+      <div class="info-section">
+          <div class="info-stitle">
+            <svg viewBox="0 0 24 24">
+              <circle cx="4.5" cy="9.5" r="2"/>
+              <circle cx="9" cy="5.5" r="2"/>
+              <circle cx="15" cy="5.5" r="2"/>
+              <circle cx="19.5" cy="9.5" r="2"/>
+            </svg>
+            진료 대상
+          </div>
+          <p style="font-size:13px;color:#999;margin:0 0 14px">진료 가능한 동물을 선택하세요. 고객 검색 필터에 반영됩니다.</p>
+          <div class="tag-checks">
+            <label class="tag-check">
+              <input type="checkbox" name="tagList" value="DOG" ${fn:contains(hospital.tagList, 'DOG') ? 'checked' : ''}>
+              <svg viewBox="0 0 24 24">
+                <path d="M10 5.172C10 3.782 8.884 2.5 7.5 2.5c-1.5 0-2.5 1.282-2.5 2.672C5 7.5 8 10 12 13c4-3 7-5.5 7-7.828C19 3.782 17.884 2.5 16.5 2.5c-1.384 0-2.5 1.282-2.5 2.672"/>
+                <path d="M4 15v5a2 2 0 002 2h12a2 2 0 002-2v-5"/>
+              </svg>
+              강아지
+            </label>
+            <label class="tag-check">
+              <input type="checkbox" name="tagList" value="CAT" ${fn:contains(hospital.tagList, 'CAT') ? 'checked' : ''}>
+              <svg viewBox="0 0 24 24">
+                <path d="M12 5c-1.5-2-4-3-6-3l1 7"/>
+                <path d="M12 5c1.5-2 4-3 6-3l-1 7"/>
+                <circle cx="12" cy="14" r="7"/>
+              </svg>
+              고양이
+            </label>
+            <label class="tag-check">
+              <input type="checkbox" name="tagList" value="EXOTIC" ${fn:contains(hospital.tagList, 'EXOTIC') ? 'checked' : ''}>
+              <svg viewBox="0 0 24 24">
+                <circle cx="4.5" cy="9.5" r="2"/>
+                <circle cx="9" cy="5.5" r="2"/>
+                <circle cx="15" cy="5.5" r="2"/>
+                <circle cx="19.5" cy="9.5" r="2"/>
+              </svg>
+              특수동물
+            </label>
+          </div>
+      </div>
+
       <div class="info-section">
           <div class="info-stitle">
             <svg viewBox="0 0 24 24">

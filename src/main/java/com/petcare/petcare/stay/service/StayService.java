@@ -25,9 +25,17 @@ package com.petcare.petcare.stay.service;
 
 import java.util.List;
 
+import com.petcare.petcare.hospital.vo.HospitalPetVO;
+import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
 public interface StayService {
     public List<StayVO> getStayList();
-    public StayVO getStayDetail(Long stayId);
+    public List<StayVO> getStayListBySearch(StayVO searchVO);
+    public StayVO getStayById(Long stayId);
+    
+    // 예약
+    public List<HospitalPetVO> getPetList(Long memberNo);
+    public Long createStayReservation(ReservationVO vo);
+    public ReservationVO getReservationById(Long resvId);
 }

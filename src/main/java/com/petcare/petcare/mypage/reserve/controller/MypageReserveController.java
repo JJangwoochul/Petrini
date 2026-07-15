@@ -6,6 +6,8 @@
 
 package com.petcare.petcare.mypage.reserve.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -36,10 +38,9 @@ public class MypageReserveController {
         if (member == null || member.getMemberNo() == null) {
             return "redirect:/login?redirect=/mypage/reserve";
         }
-
+        List<MypageReserveVO> reservationList = mypageReserveService.getMyReservationList(member.getMemberNo(), status);
         model.addAttribute("statusFilter", status);
-        model.addAttribute("reservationList",
-                mypageReserveService.getMyReservationList(member.getMemberNo(), status));
+        model.addAttribute("reservationList", reservationList);
         return "mypage/reserve";
     }
 
