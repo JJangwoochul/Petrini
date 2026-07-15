@@ -40,6 +40,11 @@ public class StayServiceImpl implements StayService {
     }
 
     @Override
+    public List<StayVO> getStayListBySearch(StayVO searchVO) {
+        return stayMapper.selectStayListBySearch(searchVO);
+    }
+    
+    @Override
     public StayVO getStayById(Long stayId) {
         StayVO stay = stayMapper.selectStayById(stayId);
         if (stay != null) {
@@ -59,12 +64,12 @@ public class StayServiceImpl implements StayService {
         vo.setResvType("STAY");
         vo.setStatusCd("PENDING");
         vo.setResvNo("S" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
-        stayMapper.insertStayReservation(vo);
+        stayMapper.insertReservation(vo);
         return vo.getResvId();
     }
 
     @Override
-    public ReservationVO getStayReservationById(Long resvId) {
-        return stayMapper.selectStayReservationById(resvId);
+    public ReservationVO getReservationById(Long resvId) {
+        return stayMapper.selectReservationById(resvId);
     }
 }

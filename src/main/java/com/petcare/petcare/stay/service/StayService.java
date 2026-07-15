@@ -31,10 +31,11 @@ import com.petcare.petcare.stay.vo.StayVO;
 
 public interface StayService {
     public List<StayVO> getStayList();
+    public List<StayVO> getStayListBySearch(StayVO searchVO);
     public StayVO getStayById(Long stayId);
     
     // 예약
     public List<HospitalPetVO> getPetList(Long memberNo);
     public Long createStayReservation(ReservationVO vo);
-    public ReservationVO getStayReservationById(Long resvId);
+    public ReservationVO getReservationById(Long resvId);
 }

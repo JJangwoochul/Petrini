@@ -45,8 +45,9 @@ public class StayController {
     private FileService fileService;
 
     @GetMapping({"", "/"})
-    public String list(Model model) {
-        List<StayVO> stayList = stayService.getStayList();
+    public String list(@ModelAttribute("search") StayVO searchVO, Model model) {
+        //List<StayVO> stayList = stayService.getStayList();
+        List<StayVO> stayList = stayService.getStayListBySearch(searchVO);
         kakaoMapService.addMapAttributes(model, stayList);
         
         model.addAttribute("stayList", stayList);
@@ -111,7 +112,7 @@ public class StayController {
     public String complete(@RequestParam(value = "resvId", required = false) Long resvId,
                            Model model)  {
         if (resvId != null) {
-            ReservationVO reservation = stayService.getStayReservationById(resvId);
+            ReservationVO reservation = stayService.getReservationById(resvId);
             model.addAttribute("reservation", reservation);
         }
         return "stay/complete";

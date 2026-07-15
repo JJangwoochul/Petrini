@@ -147,8 +147,7 @@
         <label class="tag-check"><input type="checkbox" name="facilities" value="PETPOOL"   ${fn:contains(stay.facilities,'PETPOOL') ? 'checked':''}>애견 수영장</label>
         <label class="tag-check"><input type="checkbox" name="facilities" value="PETAMENITY"    ${fn:contains(stay.facilities,'PETAMENITY') ? 'checked':''}>펫 어메니티 제공</label>
         <label class="tag-check"><input type="checkbox" name="facilities" value="AGILITY"      ${fn:contains(stay.facilities,'AGILITY') ? 'checked':''}>어질리티체험</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="CCTV"      ${fn:contains(stay.facilities,'CCTV') ? 'checked':''}>CCTV</label>
-        <label class="tag-check"><input type="checkbox" name="facilities" value="LARGEPET" ${fn:contains(stay.facilities,'LARGEPET') ? 'checked':''}>대형견 가능</label>
+        <label class="tag-check"><input type="checkbox" name="facilities" value="LARGEPET"      ${fn:contains(stay.facilities,'LARGEPET') ? 'checked':''}>대형견 가능</label>
       </div>
     </div>
 

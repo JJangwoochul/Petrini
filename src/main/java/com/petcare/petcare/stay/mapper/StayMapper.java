@@ -34,6 +34,9 @@ public interface StayMapper {
     // 숙소 목록 (최저가 포함)
     List<StayVO> selectStayList();
 
+    // 숙소 검색 목록 (필터 조건 적용)
+    List<StayVO> selectStayListBySearch(StayVO searchVO);
+    
     // 숙소 상세
     StayVO selectStayById(Long stayId);
 
@@ -42,6 +45,6 @@ public interface StayMapper {
     
     // 예약
     List<HospitalPetVO> selectPetListByMemberNo(Long memberNo);
-    void insertStayReservation(ReservationVO vo);
-    ReservationVO selectStayReservationById(Long resvId);
+    void insertReservation(ReservationVO vo);
+    ReservationVO selectReservationById(Long resvId);
 }

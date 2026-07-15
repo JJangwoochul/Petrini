@@ -31,7 +31,7 @@
       <div class="complete-card">
         <h3>예약 정보</h3>
         <div class="complete-row"><span>예약번호</span><span>${reservation.resvNo}</span></div>
-        <div class="complete-row"><span>숙소</span><span>${reservation.hospitalName}</span></div>
+        <div class="complete-row"><span>숙소</span><span>${reservation.stayName}</span></div>
         <div class="complete-row"><span>객실</span><span>${reservation.serviceName}</span></div>
         <div class="complete-row"><span>이용 기간</span>
           <span><fmt:formatDate value="${reservation.checkinDate}" pattern="yyyy.MM.dd"/> ~ <fmt:formatDate value="${reservation.checkoutDate}" pattern="MM.dd"/> · ${reservation.nightCnt}박</span>

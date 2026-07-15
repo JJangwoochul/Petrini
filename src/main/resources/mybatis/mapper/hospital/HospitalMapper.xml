@@ -37,6 +37,53 @@
         ORDER  BY   H.HOSPITAL_ID DESC
     </select>
 
+    <!-- 병원 검색 목록 (필터 조건 적용) -->
+    <select id="selectHospitalListBySearch" parameterType="com.petcare.petcare.hospital.vo.HospitalVO"
+            resultType="com.petcare.petcare.hospital.vo.HospitalVO">
+        SELECT      H.HOSPITAL_ID,
+                    H.NAME,
+                    H.PHONE,
+                    H.ADDR,
+                    H.LAT,
+                    H.LNG,
+                    H.AVG_RATING,
+                    H.REVIEW_CNT,
+                    H.TAG_LIST,
+                    (SELECT F.FILE_URL
+                       FROM TB_FILE F
+                      WHERE F.REF_TYPE = 'HOSPITAL'
+                        AND F.REF_ID   = H.HOSPITAL_ID
+                        AND ROWNUM     = 1
+                    ) AS THUMB_PATH
+        FROM        TB_HOSPITAL H
+        WHERE       H.STATUS_CD IN ('ACTIVE', 'NORMAL')
+        <!-- 키워드 검색 (병원명 또는 주소) -->
+        <if test="keyword != null and keyword != ''">
+           AND (H.NAME LIKE '%' || #{keyword} || '%'
+                OR H.ADDR LIKE '%' || #{keyword} || '%')
+        </if>
+        <!-- 진료과목 필터 -->
+        <if test="tagFilter != null and tagFilter != '' and tagFilter != 'ALL'">
+           AND H.TAG_LIST LIKE '%' || #{tagFilter} || '%'
+        </if>
+        <!-- 진료 대상 필터 -->
+        <if test="target != null and target != '' and target != 'ALL'">
+           AND H.TAG_LIST LIKE '%' || #{target} || '%'
+        </if>
+        <!-- 정렬 -->
+        <choose>
+            <when test="sort == 'rating'">
+        ORDER BY NVL(H.AVG_RATING, 0) DESC, H.HOSPITAL_ID DESC
+            </when>
+            <when test="sort == 'review'">
+        ORDER BY NVL(H.REVIEW_CNT, 0) DESC, H.HOSPITAL_ID DESC
+            </when>
+            <otherwise>
+        ORDER BY H.HOSPITAL_ID DESC
+            </otherwise>
+        </choose>
+    </select>
+
     <!-- 병원 단건 조회 -->
     <select id="selectHospitalById" parameterType="long" resultType="com.petcare.petcare.hospital.vo.HospitalVO">
         SELECT  HOSPITAL_ID,

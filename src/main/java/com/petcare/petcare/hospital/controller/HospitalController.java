@@ -46,8 +46,8 @@ public class HospitalController extends CommonConfigController {
     private FileService fileService;
 
     @GetMapping({"", "/"})
-    public String hospital(Model model) throws Exception {
-        List<HospitalVO> hospitalList = hospitalService.getHospitalList();
+    public String hospital(@ModelAttribute("search") HospitalVO searchVO, Model model) throws Exception {
+        List<HospitalVO> hospitalList = hospitalService.getHospitalListBySearch(searchVO);
         kakaoMapService.addMapAttributes(model, hospitalList);
         
         model.addAttribute("hospitalList", hospitalList);

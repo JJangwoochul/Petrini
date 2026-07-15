@@ -32,6 +32,7 @@ import com.petcare.petcare.hospital.vo.ReservationVO;
 public interface HospitalMapper {
     //MyBatis가 @Mapper가 붙은 인터페이스를 보고 자동으로 구현체(XML)를 만들어줌
     List<HospitalVO> selectHospitalList() throws Exception;
+    List<HospitalVO> selectHospitalListBySearch(HospitalVO searchVO) throws Exception;
     HospitalVO selectHospitalById(Long hospitalId) throws Exception;
 
     // 2026-07-10 장우철 — 병원 예약 1차 (F0~F3) 유저 측 Mapper

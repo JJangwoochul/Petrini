@@ -32,6 +32,7 @@ import com.petcare.petcare.hospital.vo.ReservationVO;
 
 public interface HospitalService {
     List<HospitalVO> getHospitalList() throws Exception;
+    List<HospitalVO> getHospitalListBySearch(HospitalVO searchVO) throws Exception;
     HospitalVO getHospitalById(Long hospitalId) throws Exception;
 
     // 2026-07-10 장우철 — 병원 예약 1차 (F2~F3)

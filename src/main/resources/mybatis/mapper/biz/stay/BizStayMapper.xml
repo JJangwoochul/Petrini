@@ -51,6 +51,7 @@
                                     ZIPCODE,
                                     ADDR,
                                     ADDR_DETAIL,
+                                    REGION,
                                     APPROVE_DATE,
                                     STATUS_CD
                                 )
@@ -66,6 +67,23 @@
                 B.ZIP_CODE,
                 B.ADDR,
                 B.ADDR_DETAIL,
+                CASE
+                    WHEN B.ADDR LIKE '%서울%' THEN '서울'
+                    WHEN B.ADDR LIKE '%경기%' THEN '경기'
+                    WHEN B.ADDR LIKE '%인천%' THEN '인천'
+                    WHEN B.ADDR LIKE '%강원%' THEN '강원'
+                    WHEN B.ADDR LIKE '%제주%' THEN '제주'
+                    WHEN B.ADDR LIKE '%부산%' THEN '부산'
+                    WHEN B.ADDR LIKE '%대구%' THEN '대구'
+                    WHEN B.ADDR LIKE '%울산%' THEN '울산'
+                    WHEN B.ADDR LIKE '%광주%' THEN '광주'
+                    WHEN B.ADDR LIKE '%대전%' THEN '대전'
+                    WHEN B.ADDR LIKE '%세종%' THEN '세종'
+                    WHEN B.ADDR LIKE '%경상%' OR B.ADDR LIKE '%경북%' OR B.ADDR LIKE '%경남%' THEN '경상'
+                    WHEN B.ADDR LIKE '%전라%' OR B.ADDR LIKE '%전북%' OR B.ADDR LIKE '%전남%' THEN '전라'
+                    WHEN B.ADDR LIKE '%충청%' OR B.ADDR LIKE '%충북%' OR B.ADDR LIKE '%충남%' THEN '충청'
+                    ELSE '기타'
+                END,
                 SYSDATE,
                 'ACTIVE'
         FROM    TB_BUSINESS B
@@ -82,7 +100,7 @@
         SET    NAME         = #{name, jdbcType=VARCHAR},
                PHONE        = #{phone, jdbcType=VARCHAR},
                ADDR         = #{addr, jdbcType=VARCHAR},
-               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR}
+               ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
         WHERE  STAY_ID      = #{stayId}
     </update>
 

@@ -10,6 +10,8 @@ import com.petcare.petcare.mypage.notify.vo.MypageNotifyVO;
 
 import jakarta.servlet.http.HttpSession;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -34,7 +36,8 @@ public class MypageNotifyController {
         if (member == null)
             return "redirect:/login";
 
-        model.addAttribute("list", mypageNotifyService.getNotificationList(member.getMemberNo()));
+        List<MypageNotifyVO> list = mypageNotifyService.getNotificationList(member.getMemberNo());
+        model.addAttribute("list", list);
         return "mypage/notifications";
 
         /* [변경 전] 2026-07-09 장우철 — 더미 JSP 만 반환
