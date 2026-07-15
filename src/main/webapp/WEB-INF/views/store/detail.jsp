@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- 지윤 26.07.07 추가: 가격 콤마 표시용 fmt 태그 --%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%-- 지윤 26.07.15 추가: 이미지 URL이 http로 시작하는지 검사용 (외부 URL vs 로컬 업로드 구분) --%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%-- 지윤 26.07.07 수정: URL param.id 그대로 쓰던 것 -> Controller가 넘겨준 product 객체의 productId로 변경 (실데이터 연동) --%>
@@ -89,15 +91,17 @@
     <div class="detail-gallery">
 
       <%-- 지윤 26.07.07 수정: 메인 상품 고정 이미지 URL -> DB에서 가져온 product.thumbnailUrl로 변경 --%>
+     <%-- 지윤 26.07.15 수정: 로컬 업로드 이미지는 /upload/ 접두사 필요, 외부(목업) URL은 그대로 --%>
      <img class="detail-main-img" id="mainImg"
-     src="${product.thumbnailUrl}"
+     src="${fn:startsWith(product.thumbnailUrl,'http') ? product.thumbnailUrl : contextPath.concat('/upload/').concat(product.thumbnailUrl)}"
      alt="${product.productName}" onerror="this.src='https://placehold.co/600x600/EAF7F2/2BAB82?text=상품'">
 
       <%-- 지윤 26.07.07 수정: 썸네일 3개 하드코딩 -> TB_FILE 실데이터로 개수 상관없이 자동 반복
      이미지 없는 상품은 imageList가 빈 리스트라 자동으로 썸네일 줄 자체가 안 보임 --%>
-    <div class="detail-thumbs">
+   <div class="detail-thumbs">
     <c:forEach var="img" items="${product.imageList}" varStatus="loop">
-    <img class="detail-thumb ${loop.first ? 'active' : ''}" src="${img}" alt="${product.productName} ${loop.index+1}" onclick="switchImg(this,'${img}')">
+    <c:set var="thumbSrc" value="${fn:startsWith(img,'http') ? img : contextPath.concat('/upload/').concat(img)}"/>
+    <img class="detail-thumb ${loop.first ? 'active' : ''}" src="${thumbSrc}" alt="${product.productName} ${loop.index+1}" onclick="switchImg(this,'${thumbSrc}')">
     </c:forEach>
     </div>
     </div>
@@ -134,6 +138,8 @@
 <div class="detail-option">
   <label>옵션 선택</label>
   <select id="optionSelect" onchange="onOptionChange()">
+    <%-- 지윤 26.07.15 수정: 옵션 있든 없든(단일옵션 포함) 무조건 안내문구부터 먼저 보여주기 --%>
+    <option value="" data-stock="0" data-option-id="" disabled selected>옵션을 선택해 주세요</option>
     <c:forEach var="opt" items="${product.optionList}">
 
       <%-- 지윤 26.07.08 수정: data-option-id 추가 (장바구니 담을 때 어느 옵션인지 알아야 해서) --%>
@@ -313,6 +319,12 @@ function getSelectedStock() {
   if (!sel || sel.options.length === 0) return 99;
   return parseInt(sel.options[sel.selectedIndex].dataset.stock) || 0;
 }
+//지윤 26.07.15 추가: 옵션 안 고른 상태에서 장바구니/바로구매 누르면 막기
+function isOptionSelected() {
+  const sel = document.getElementById('optionSelect');
+  if (!sel || sel.options.length === 0) return true;
+  return sel.options[sel.selectedIndex].value !== '';
+}
 //지윤 26.07.14 추가: 경고문구 초기화 헬퍼
 function hideQtyMessages() {
   document.getElementById('stockWarning').style.display = 'none';
@@ -364,7 +376,13 @@ document.getElementById('qty').addEventListener('input', function () {
 });
 function updateTotal() {
   const sel = document.getElementById('optionSelect');
-  const addPrice = sel && sel.options.length > 0 ? parseInt(sel.value) || 0 : 0;
+  const selected = sel && sel.options.length > 0 ? sel.options[sel.selectedIndex] : null;
+  //지윤 26.07.15 추가: 옵션 안 고른 상태(안내문구가 선택된 상태)면 0원으로 표시
+  if (selected && selected.value === '') {
+    document.getElementById('totalPrice').textContent = '0원';
+    return;
+  }
+  const addPrice = selected ? (parseInt(selected.value) || 0) : 0;
   const qty = parseInt(document.getElementById('qty').value);
   const total = (${product.salePrice} + addPrice) * qty;
   document.getElementById('totalPrice').textContent = total.toLocaleString() + '원';
@@ -387,6 +405,12 @@ document.getElementById('btnAddCart').addEventListener('click', function () {
     }
     return;
   }
+   //지윤 26.07.15 추가: 옵션 안 고르면 담기 막음
+  if (!isOptionSelected()) {
+    alert('옵션을 선택해주세요.');
+    return;
+  }
+  
   var sel = document.getElementById('optionSelect');
   var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
   var addPrice = (sel && sel.options.length > 0) ? (parseInt(sel.value) || 0) : 0;
@@ -411,6 +435,12 @@ document.getElementById('btnAddCart').addEventListener('click', function () {
 
 //지윤 26.07.08 추가: 바로구매 -> 주문서 페이지로 바로 이동 (장바구니 거치지 않음)
 document.getElementById('btnBuyNow').addEventListener('click', function () {
+ //지윤 26.07.15 추가: 옵션 안 고르면 이동 막음
+  if (!isOptionSelected()) {
+    alert('옵션을 선택해주세요.');
+    return;
+  }
+
   var sel = document.getElementById('optionSelect');
   var optionId = (sel && sel.options.length > 0) ? sel.options[sel.selectedIndex].dataset.optionId : '';
   var qty = parseInt(document.getElementById('qty').value);

@@ -88,12 +88,18 @@
 </insert>
 
 <!-- 지윤 26.07.14 상품 상세 1건 조회 (수정 모달 초기값 채우기용, bizNo까지 확인해서 본인 상품인지 검증) -->
+<!-- 지윤 26.07.15 수정: 수정 모달에서 기존 이미지 미리보기 되도록 썸네일(TB_FILE) 조인 추가 -->
 <select id="selectProductDetail" resultType="com.petcare.petcare.biz.store.vo.BizProductVO">
     SELECT
         p.PRODUCT_ID, p.PRODUCT_CD, p.PRODUCT_NAME, p.BIZ_NO, p.CATEGORY_ID,
         TO_NUMBER(p.PRICE) AS PRICE, TO_NUMBER(p.SALE_PRICE) AS SALE_PRICE,
-        TO_NUMBER(p.STOCK_QTY) AS STOCK_QTY, p.DESCRIPTION, p.BRAND_NAME, p.STATUS_CD
+        TO_NUMBER(p.STOCK_QTY) AS STOCK_QTY, p.DESCRIPTION, p.BRAND_NAME, p.STATUS_CD,
+        f.FILE_URL AS THUMBNAIL_URL
     FROM TB_PRODUCT p
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL, ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+        FROM TB_FILE WHERE REF_TYPE = 'PRODUCT'
+    ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
     WHERE p.PRODUCT_ID = #{productId} AND p.BIZ_NO = #{bizNo}
 </select>
 

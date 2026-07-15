@@ -186,14 +186,16 @@ public class BizStoreController extends BizBaseController {
     }
 
     //지윤 26.07.15 폼 배열(옵션당 1줄씩)을 OptionVO 리스트로 변환
+    //지윤 26.07.15 수정: 배열 길이가 서로 안 맞아도(브라우저 재전송 등) 에러 안 나게 방어 코드 추가
     private List<OptionVO> buildOptions(String[] optionColor, String[] optionSize, Integer[] addPrice, Integer[] stockQty) {
         List<OptionVO> options = new ArrayList<>();
+        if (optionSize == null) return options;
         for (int i = 0; i < optionSize.length; i++) {
             OptionVO opt = new OptionVO();
             opt.setOptionColor(optionColor != null && optionColor.length > i ? optionColor[i] : null);
             opt.setOptionSize(optionSize[i]);
-            opt.setAddPrice(addPrice[i]);
-            opt.setStockQty(stockQty[i]);
+            opt.setAddPrice(addPrice != null && addPrice.length > i ? addPrice[i] : 0);
+            opt.setStockQty(stockQty != null && stockQty.length > i ? stockQty[i] : 0);
             options.add(opt);
         }
         return options;

@@ -158,4 +158,7 @@ public interface StoreShopMapper {
 
     //지윤 26.07.13 주문 완료 시 재고 차감 - 옵션 있는 상품용 (TB_PRODUCT_OPTION.STOCK_QTY)
     void updateOptionStock(@Param("optionId") Long optionId, @Param("qty") Integer qty);
+
+    //지윤 26.07.15 추가: 재고 0 되면 자동 품절 처리
+    void checkAndSetSoldout(@Param("productId") Long productId);
 }

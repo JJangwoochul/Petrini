@@ -108,19 +108,24 @@
                   </td>
                   <td><span class="prod-cat">${p.categoryName}</span><br>${p.productName}</td>
                   <td><c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}</td>
+                  
+                  <%-- 지윤 26.07.15 수정: 옵션별 최종가 = 판매가 + 해당 옵션 추가금액 --%>
+                  <c:set var="finalPrice" value="${p.salePrice + opt.addPrice}"/>
                   <td>
                     <div class="prod-price">
                       <c:choose>
                         <c:when test="${p.discountRate > 0}">
-                          <span class="orig"><fmt:formatNumber value="${p.price}" pattern="#,###"/>원</span>
-                          <span class="discount">${p.discountRate}%</span><span class="sale"><fmt:formatNumber value="${p.salePrice}" pattern="#,###"/>원</span>
+                          <span class="orig"><fmt:formatNumber value="${p.price + opt.addPrice}" pattern="#,###"/>원</span>
+                          <span class="discount">${p.discountRate}%</span><span class="sale"><fmt:formatNumber value="${finalPrice}" pattern="#,###"/>원</span>
                         </c:when>
                         <c:otherwise>
-                          <span class="sale"><fmt:formatNumber value="${p.salePrice}" pattern="#,###"/>원</span>
+                          <span class="sale"><fmt:formatNumber value="${finalPrice}" pattern="#,###"/>원</span>
                         </c:otherwise>
                       </c:choose>
+                      <c:if test="${opt.addPrice > 0}"><small style="color:#888">(+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>)</small></c:if>
                     </div>
                   </td>
+
                   <td>${opt.stockQty}개<c:if test="${opt.stockQty == 0}"> (품절)</c:if></td>
                   <td>${p.regDate}</td>
                   <td>
@@ -327,7 +332,7 @@
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">사이즈/용량<span class="req">*</span></label>' +
           '<input type="text" name="optionSize" placeholder="예: M, 4kg" style="width:100%" required value="' + (size || '') + '"></div>' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">추가금액</label>' +
-          '<input type="number" name="addPrice" placeholder="0" style="width:100%" value="' + (addPrice != null ? addPrice : '') + '"></div>' +
+          '<input type="number" name="addPrice" placeholder="0" min="0" style="width:100%" value="' + (addPrice != null ? addPrice : '') + '"></div>' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">재고<span class="req">*</span></label>' +
           '<input type="number" name="stockQty" placeholder="수량" style="width:100%" required value="' + (stockQty != null ? stockQty : '') + '" oninput="onStockChange()"></div>' +
       '</div>' +

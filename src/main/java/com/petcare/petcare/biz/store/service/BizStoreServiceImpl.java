@@ -117,7 +117,9 @@ public class BizStoreServiceImpl implements BizStoreService {
         bizStoreMapper.deleteProductOptions(product.getProductId());
         saveOptions(product.getProductId(), options);
 
+       //지윤 26.07.15 수정: 새 이미지 올릴 때 기존 이미지 먼저 삭제 (안 그러면 옛날 이미지가 계속 썸네일로 뜸)
         if (image != null && !image.isEmpty()) {
+            fileService.deleteFilesByRef("PRODUCT", product.getProductId());
             fileService.uploadFile(image, "PRODUCT", product.getProductId());
         }
         return true;

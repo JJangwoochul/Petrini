@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- 지윤 26.07.06 추가: 가격에 콤마(#,###) 찍으려고 fmt 태그 사용 필요해서 taglib 추가 --%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%-- 지윤 26.07.15 추가: 이미지 URL이 http로 시작하는지 검사용 (외부 URL vs 로컬 업로드 구분) --%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -224,9 +226,12 @@
 <div class="product-grid">
   <c:forEach var="p" items="${productList}">
     <div class="product-card" onclick="location.href='${contextPath}/store/detail?id=${p.productId}'">
+    
       <div class="product-thumb-wrap">
-        <%-- 지윤 26.07.06: TB_PRODUCT.DESCRIPTION에 임시로 이미지 URL이 들어있어서 그대로 사용 (더미데이터 한정, TB_FILE 연동 전까지) --%>
-        <img class="product-thumb" src="${p.thumbnailUrl}" alt="${p.productName}" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
+        <%-- 지윤 26.07.15 수정: 로컬 업로드 이미지는 /upload/ 접두사 필요, 외부(목업) URL은 그대로 --%>
+        <c:set var="thumbSrc" value="${fn:startsWith(p.thumbnailUrl,'http') ? p.thumbnailUrl : contextPath.concat('/upload/').concat(p.thumbnailUrl)}"/>
+        <img class="product-thumb" src="${thumbSrc}" alt="${p.productName}" onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
+        
         <%-- 지윤 26.07.06: 원래 있던 BEST/NEW/SALE 뱃지는 DB에 근거 데이터가 없어서, 할인율 있을 때만 SALE 뱃지 표시하도록 단순화 --%>
         <c:if test="${p.discountRate > 0}"><span class="product-badge">SALE</span></c:if>
         <button type="button" class="product-wish wish-btn" aria-label="찜하기"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg></button>

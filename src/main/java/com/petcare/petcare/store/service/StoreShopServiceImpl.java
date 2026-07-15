@@ -218,11 +218,14 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
                 item.getQty(), item.getPrice(), item.getPrice() * item.getQty());
 
         //지윤 26.07.13 추가: 주문 확정된 만큼 재고 차감 (옵션 있으면 옵션 재고, 없으면 상품 재고)
+        //지윤 26.07.15 수정: 옵션 재고 깎을 때도 상품 전체 재고를 같이 깎아야 목록/상태 표시가 맞음
         if (item.getOptionId() != null) {
             storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
-        } else {
-            storeShopMapper.updateProductStock(item.getProductId(), item.getQty());
         }
+        storeShopMapper.updateProductStock(item.getProductId(), item.getQty());
+
+        //지윤 26.07.15 추가: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
+        storeShopMapper.checkAndSetSoldout(item.getProductId());
     }
 
     storeShopMapper.insertPayment(orderId, "TOSS", p.getFinalTotal(), tossPaymentKey, tossOrderId);
