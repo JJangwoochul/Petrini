@@ -10,14 +10,18 @@
 
 package com.petcare.petcare.member.auth.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.petcare.petcare.member.auth.service.EmailService;
+import com.petcare.petcare.member.auth.service.KakaoOAuthService;
 import com.petcare.petcare.member.auth.service.MemberAuthService;
 import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
+import com.petcare.petcare.member.auth.vo.KakaoUserVO;
 import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
@@ -26,10 +30,21 @@ import jakarta.servlet.http.HttpSession;
 @Controller("memberController")
 public class MemberAuthController {
 
+    //HYJ 26.07.15 카카오로그인
+    @Autowired
+    KakaoOAuthService kakaoOAuthService;
+
+    //HYJ 26.07.15 이메일 인증
+    @Autowired
+    EmailService emailService;    
+
     private final MemberAuthService memberAuthService;
 
-    public MemberAuthController(MemberAuthService memberAuthService) {
+	//HYJ 26.07.15 카카오 로그인 추가
+    public MemberAuthController(MemberAuthService memberAuthService,
+                                KakaoOAuthService kakaoOAuthService) {
         this.memberAuthService = memberAuthService;
+        this.kakaoOAuthService = kakaoOAuthService;
     }
 
     // 2026/07/06 장우철 — login(로그인)
@@ -103,15 +118,62 @@ public class MemberAuthController {
     }
      */
 
+   // HYJ 26.07.15 — 카카오 로그인
+
+    /**
+     * 카카오 로그인 — 카카오 인가 페이지로 리다이렉트
+     * login.jsp "카카오로 시작하기" 버튼 → 이 URL 호출
+     */
+    @GetMapping("/oauth/kakao")
+    public String kakaoLogin() {
+        return "redirect:" + kakaoOAuthService.buildAuthorizeUrl();
+    }
+
+    /**
+     * 카카오 콜백 — 인가 코드 수신 → 토큰 교환 → 사용자 정보 → 로그인/연동
+     * 카카오 디벨로퍼 > Redirect URI 에 등록한 주소
+     */
+    @GetMapping("/oauth/kakao/callback")
+    public String kakaoCallback(
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String error,
+            HttpSession session) {
+
+        // [1] 사용자가 카카오 로그인을 취소한 경우
+        if (error != null || code == null || code.isBlank()) {
+            return "redirect:/login?error=kakao_cancel";
+        }
+
+        // [2] 인가 코드 → 액세스 토큰 교환
+        String accessToken = kakaoOAuthService.getAccessToken(code);
+        if (accessToken == null) {
+            return "redirect:/login?error=kakao_token";
+        }
+
+        // [3] 액세스 토큰 → 카카오 사용자 정보 조회
+        KakaoUserVO kakaoUser = kakaoOAuthService.getUserInfo(accessToken);
+        if (kakaoUser == null) {
+            return "redirect:/login?error=kakao_user";
+        }
+
+        // [4] 기존 회원 조회 + 연동
+        MemberVO member = memberAuthService.kakaoLogin(kakaoUser);
+
+        // [5] 가입된 회원이 아니면 → 카카오 정보를 세션에 담고 회원가입 페이지로 이동
+        if (member == null) {
+            session.setAttribute("kakaoUserInfo", kakaoUser);
+            return "redirect:/join";
+        }
+
+        session.setAttribute("memberInfo", member);
+
+        return "redirect:/";
+    }
+    
     /** join — 화면 (GET /join) */
     @GetMapping("/join")
     public String join() {
         return "member/join";
-    }
-
-    @GetMapping("/member/join")
-    public String joinAlias() {
-        return "redirect:/join";
     }
 
     // 2026/07/07 장우철 — join(회원가입)
@@ -128,17 +190,115 @@ public class MemberAuthController {
     }
 
     /**
+     * join — 아이디 중복 확인 (GET /join/check-id)
+     */
+    @GetMapping("/join/check-id")
+    @ResponseBody
+    public EmailCheckResultVO checkMemberId(@RequestParam String memberId) {
+        return memberAuthService.checkMemberId(memberId);
+    }
+
+       // 2026/07/15 — 이메일 인증
+
+    /**
+     * join — 인증번호 발송 (POST /join/send-code)
+     * 이메일 중복 확인 통과 후 인증번호 메일 발송
+     * 인증번호와 만료시간을 세션에 저장
+     */
+    @PostMapping("/join/send-code")
+    @ResponseBody
+    public EmailCheckResultVO sendCode(@RequestParam String email, HttpSession session) {
+
+        // 이메일 형식 검증
+        if (email == null || !email.trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            return new EmailCheckResultVO(false, "올바른 이메일 형식이 아닙니다.");
+        }
+
+        try {
+            String code = emailService.generateCode();
+            emailService.sendVerificationEmail(email.trim(), code);
+
+            // 세션에 인증번호 + 만료시간(5분) 저장
+            session.setAttribute("emailVerifyCode", code);
+            session.setAttribute("emailVerifyEmail", email.trim());
+            session.setAttribute("emailVerifyExpire", System.currentTimeMillis() + (5 * 60 * 1000));
+
+            return new EmailCheckResultVO(true, "인증번호가 발송되었습니다.");
+        } catch (Exception e) {
+            System.out.println("오류" + e);
+            return new EmailCheckResultVO(false, "메일 발송 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * join — 인증번호 확인 (POST /join/verify-code)
+     * 사용자가 입력한 인증번호와 세션 값 비교
+     */
+    @PostMapping("/join/verify-code")
+    @ResponseBody
+    public EmailCheckResultVO verifyCode(@RequestParam String email,
+                                         @RequestParam String code,
+                                         HttpSession session) {
+
+        String savedCode  = (String) session.getAttribute("emailVerifyCode");
+        String savedEmail = (String) session.getAttribute("emailVerifyEmail");
+        Long   expireTime = (Long)   session.getAttribute("emailVerifyExpire");
+
+        // 세션에 인증 정보가 없음
+        if (savedCode == null || savedEmail == null || expireTime == null) {
+            return new EmailCheckResultVO(false, "인증번호를 먼저 발송해 주세요.");
+        }
+
+        // 만료 확인
+        if (System.currentTimeMillis() > expireTime) {
+            session.removeAttribute("emailVerifyCode");
+            session.removeAttribute("emailVerifyEmail");
+            session.removeAttribute("emailVerifyExpire");
+            return new EmailCheckResultVO(false, "인증번호가 만료되었습니다. 다시 발송해 주세요.");
+        }
+
+        // 이메일 일치 확인
+        if (!savedEmail.equals(email.trim())) {
+            return new EmailCheckResultVO(false, "인증 요청한 이메일과 다릅니다.");
+        }
+
+        // 인증번호 비교
+        if (!savedCode.equals(code.trim())) {
+            return new EmailCheckResultVO(false, "인증번호가 일치하지 않습니다.");
+        }
+
+        // 인증 성공 → 세션에 인증 완료 표시
+        session.setAttribute("emailVerified", true);
+        session.setAttribute("emailVerifiedAddr", email.trim());
+        return new EmailCheckResultVO(true, "이메일 인증이 완료되었습니다.");
+    }
+
+    /**
      * join — 가입 처리 (POST /join)
      * join.jsp [가입 완료] FormData → MemberRegisterVO 자동 매핑
      * 성공: "OK" / 실패: "ERROR:코드" (join.jsp 에서 분기 — JSP 수정은 직접 적용)
+     * HYJ 26.07.15 — 카카오 → 회원가입 흐름: 가입 성공 후 세션의 kakaoUserInfo 로 SOCIAL_ID 연동
      */
     @PostMapping("/join")
     @ResponseBody
-    public String joinPost(MemberRegisterVO vo) {
+    public String joinPost(MemberRegisterVO vo, HttpSession session) {
+
+        // 카카오 → 회원가입 흐름이면 socialId 를 VO 에 담아서 register() 에서 함께 처리
+        KakaoUserVO kakaoUser = (KakaoUserVO) session.getAttribute("kakaoUserInfo");
+        if (kakaoUser != null) {
+            vo.setSocialId(kakaoUser.getKakaoId());
+        }
+
         String error = memberAuthService.register(vo);
         if (error != null) {
             return "ERROR:" + error;
         }
+
+        // 세션 정리
+        if (kakaoUser != null) {
+            session.removeAttribute("kakaoUserInfo");
+        }
+
         return "OK";
     }
 

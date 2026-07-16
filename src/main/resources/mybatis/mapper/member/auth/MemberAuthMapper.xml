@@ -103,13 +103,22 @@
 
     <!--
         이메일 중복 확인 (join — checkEmail)
-        - 가입 시 이메일 = MEMBER_ID 이므로 MEMBER_ID / EMAIL 둘 다 검사
+        - EMAIL 컬럼만 검사 (MEMBER_ID 는 아이디이므로 별도)
     -->
     <select id="countMemberByEmail" resultType="int">
         SELECT COUNT(*)
           FROM TB_MEMBER
-         WHERE MEMBER_ID = #{email}
-            OR EMAIL     = #{email}
+         WHERE EMAIL = #{email}
+    </select>
+
+    <!--
+        아이디 중복 확인 (join — checkMemberId)
+        - MEMBER_ID 컬럼 검사
+    -->
+    <select id="countMemberById" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_MEMBER
+         WHERE MEMBER_ID = #{memberId}
     </select>
 
     <!-- 회원 INSERT (join — register 1단계) -->
@@ -135,7 +144,7 @@
             JOIN_DATE
         ) VALUES (
             #{memberNo},
-            #{email},
+            #{memberId},
             #{password},
             #{memberName},
             #{memberName},
@@ -205,4 +214,53 @@
         )
     </insert>
 
+
+    <!--
+        HYJ 26.07.15 카카오 SOCIAL_ID 로 TB_MEMBER 조회
+        - 카카오 로그인 시 기존 가입 여부 확인용
+        - resultType: MemberAuthVO (기존 로그인과 동일 VO 재사용)
+    -->
+    <select id="selectMemberBySocialId"
+            resultType="com.petcare.petcare.member.auth.vo.MemberAuthVO">
+        SELECT
+            M.MEMBER_NO      AS memberNo,
+            M.MEMBER_ID      AS memberId,
+            M.MEMBER_PWD     AS memberPwd,
+            M.MEMBER_NAME    AS memberName,
+            M.NICKNAME       AS nickname,
+            M.EMAIL          AS email,
+            M.PHONE          AS phone,
+            M.ZIP_CODE       AS zipcode,
+            M.ADDR1          AS addr1,
+            M.ADDR2          AS addr2,
+            M.STATUS_CD      AS statusCd,
+            M.GRADE_CD       AS gradeCd,
+            M.POINT_BALANCE  AS pointBalance
+        FROM TB_MEMBER M
+        INNER JOIN TB_MEMBER_SOCIAL S
+            ON M.MEMBER_NO = S.MEMBER_NO
+        WHERE S.PROVIDER_UID = #{socialId}
+          AND S.PROVIDER     = 'KAKAO'
+    </select>
+
+    <!--
+        기존 회원에 카카오 소셜 연동 INSERT
+        - 회원가입 후 또는 기존 회원이 처음 카카오 로그인할 때 호출
+        - TB_MEMBER_SOCIAL 에 1행 INSERT
+    -->
+    <insert id="insertSocialLink">
+        INSERT INTO TB_MEMBER_SOCIAL (
+            SOCIAL_ID,
+            MEMBER_NO,
+            PROVIDER,
+            PROVIDER_UID,
+            REG_DATE
+        ) VALUES (
+            SEQ_MEMBER_SOCIAL.NEXTVAL,
+            #{memberNo},
+            'KAKAO',
+            #{providerUid},
+            SYSDATE
+        )
+    </insert>
 </mapper>

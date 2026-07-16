@@ -108,16 +108,11 @@
           <p class="join-card-sub">회원 정보를 입력해 주세요.</p>
 
           <form id="joinForm" novalidate>
-
-            <!-- 이름 -->
             <div class="form-field">
-              <label class="form-label" for="memberName">이름 <span class="req">*</span></label>
-              <input type="text" id="memberName" name="memberName"
-                     class="form-input no-icon" placeholder="이름을 입력해 주세요">
-              <p class="field-error" id="errName">이름을 입력해 주세요.</p>
+              <label class="form-label" for="id">아이디 <span class="req">*</span></label>
+                <input type="text" id="id" name="id" class="form-input no-icon">
             </div>
-
-            <!-- 이메일 + 중복 확인 -->
+            <!-- 이메일 + 중복 확인 + 인증 -->
             <div class="form-field">
               <label class="form-label" for="email">이메일 <span class="req">*</span></label>
               <div class="field-btn-wrap">
@@ -125,9 +120,23 @@
                        class="form-input no-icon" placeholder="example@email.com">
                 <button type="button" class="btn-check" id="btnCheckEmail">중복 확인</button>
               </div>
-              <p class="field-hint">로그인 아이디로 사용됩니다.</p>
               <p class="field-ok"   id="okEmail">사용 가능한 이메일입니다.</p>
               <p class="field-error" id="errEmail">올바른 이메일 형식을 입력해 주세요.</p>
+
+              <!-- 인증번호 입력 영역 (중복 확인 통과 후 표시) -->
+              <div id="emailVerifyArea" style="display:none; margin-top:10px;">
+                <div class="field-btn-wrap">
+                  <input type="text" id="emailCode" class="form-input no-icon"
+                         placeholder="인증번호 6자리" maxlength="6"
+                         style="letter-spacing:4px; font-weight:600;">
+                  <button type="button" class="btn-check" id="btnVerifyCode">확인</button>
+                </div>
+                <p class="field-hint" id="emailTimer" style="color:#FD8B00;"></p>
+                <p class="field-ok"    id="okVerify">이메일 인증이 완료되었습니다.</p>
+                <p class="field-error" id="errVerify"></p>
+                <button type="button" class="btn-check" id="btnResendCode"
+                        style="margin-top:6px; font-size:13px;">인증번호 재발송</button>
+              </div>
             </div>
 
             <!-- 비밀번호 -->
@@ -171,6 +180,15 @@
               <p class="field-ok"    id="okPwConfirm">비밀번호가 일치합니다.</p>
               <p class="field-error" id="errPwConfirm">비밀번호가 일치하지 않습니다.</p>
             </div>
+
+            <!-- 이름 -->
+            <div class="form-field">
+              <label class="form-label" for="memberName">이름 <span class="req">*</span></label>
+              <input type="text" id="memberName" name="memberName"
+                     class="form-input no-icon" placeholder="이름을 입력해 주세요">
+              <p class="field-error" id="errName">이름을 입력해 주세요.</p>
+            </div>
+
 
             <!-- 전화번호 -->
             <div class="form-field">
@@ -444,12 +462,28 @@
 <!-- ══════════════════════════════════════
      회원가입 스크립트
 ══════════════════════════════════════ -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
 (function () {
 
   /* ── 현재 스텝 상태 ── */
   var cur = 1;
   var emailChecked = false;
+  var emailVerified = false;
+  var timerInterval = null;
+
+  /* ── 카카오 → 회원가입 흐름: 세션에 카카오 정보가 있으면 자동 입력 ── */
+  var kakaoNickname = '${sessionScope.kakaoUserInfo.nickname}';
+  var kakaoEmail = '${sessionScope.kakaoUserInfo.email}';
+  var kakaoId = '${sessionScope.kakaoUserInfo.kakaoId}';
+
+  if (kakaoNickname) {
+    document.getElementById('memberName').value = kakaoNickname;
+  }
+  if (kakaoId) {
+    document.getElementById('id').value = kakaoId;
+    document.querySelector("input[name='id']").readOnly = true;
+  }
 
   /* ── 유틸 ── */
   function show(id) { document.getElementById(id).style.display = ''; }
@@ -593,10 +627,12 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data.available) {
-          document.getElementById('okEmail').textContent = data.message;
+          document.getElementById('okEmail').textContent = '사용 가능한 이메일입니다. 인증번호를 발송합니다...';
           ok('errEmail', 'okEmail');
           emailChecked = true;
           emailEl.classList.add('is-valid');
+          // 중복 확인 통과 → 인증번호 자동 발송
+          sendVerificationCode(v);
         } else {
           document.getElementById('errEmail').textContent = data.message;
           err('errEmail', 'okEmail');
@@ -608,6 +644,100 @@
         document.getElementById('errEmail').textContent = '중복 확인 중 오류가 발생했습니다.';
         err('errEmail', 'okEmail');
       });
+  });
+
+  /* ── 2026/07/15 — 이메일 인증번호 발송 ── */
+  function sendVerificationCode(email) {
+    var ctx = '${contextPath}';
+    var fd = new FormData();
+    fd.append('email', email);
+
+    fetch(ctx + '/join/send-code', { method: 'POST', body: fd })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.available) {
+          document.getElementById('okEmail').textContent = '인증번호가 발송되었습니다. 메일을 확인해 주세요.';
+          ok('errEmail', 'okEmail');
+          document.getElementById('emailVerifyArea').style.display = '';
+          startTimer();
+        } else {
+          document.getElementById('errEmail').textContent = data.message;
+          err('errEmail', 'okEmail');
+        }
+      })
+      .catch(function () {
+        document.getElementById('errEmail').textContent = '인증번호 발송 중 오류가 발생했습니다.';
+        err('errEmail', 'okEmail');
+      });
+  }
+
+  /* ── 타이머 (5분) ── */
+  function startTimer() {
+    var remaining = 300; // 5분 = 300초
+    var timerEl = document.getElementById('emailTimer');
+
+    if (timerInterval) clearInterval(timerInterval);
+
+    timerInterval = setInterval(function () {
+      var min = Math.floor(remaining / 60);
+      var sec = remaining % 60;
+      timerEl.textContent = '남은 시간: ' + min + ':' + (sec < 10 ? '0' : '') + sec;
+      remaining--;
+
+      if (remaining < 0) {
+        clearInterval(timerInterval);
+        timerEl.textContent = '인증시간이 만료되었습니다.';
+        timerEl.style.color = '#e74c3c';
+      }
+    }, 1000);
+  }
+
+  /* ── 인증번호 확인 ── */
+  document.getElementById('btnVerifyCode').addEventListener('click', function () {
+    var email = document.getElementById('email').value.trim();
+    var code  = document.getElementById('emailCode').value.trim();
+
+    if (!code || code.length !== 6) {
+      document.getElementById('errVerify').textContent = '6자리 인증번호를 입력해 주세요.';
+      err('errVerify', 'okVerify');
+      return;
+    }
+
+    var ctx = '${contextPath}';
+    var fd = new FormData();
+    fd.append('email', email);
+    fd.append('code', code);
+
+    fetch(ctx + '/join/verify-code', { method: 'POST', body: fd })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.available) {
+          document.getElementById('okVerify').textContent = data.message;
+          ok('errVerify', 'okVerify');
+          emailVerified = true;
+          if (timerInterval) clearInterval(timerInterval);
+          document.getElementById('emailTimer').textContent = '';
+          // 인증 완료 후 입력 비활성화
+          document.getElementById('email').readOnly = true;
+          document.getElementById('emailCode').readOnly = true;
+          document.getElementById('btnCheckEmail').disabled = true;
+          document.getElementById('btnVerifyCode').disabled = true;
+          document.getElementById('btnResendCode').style.display = 'none';
+        } else {
+          document.getElementById('errVerify').textContent = data.message;
+          err('errVerify', 'okVerify');
+        }
+      })
+      .catch(function () {
+        document.getElementById('errVerify').textContent = '인증 확인 중 오류가 발생했습니다.';
+        err('errVerify', 'okVerify');
+      });
+  });
+
+  /* ── 인증번호 재발송 ── */
+  document.getElementById('btnResendCode').addEventListener('click', function () {
+    var email = document.getElementById('email').value.trim();
+    sendVerificationCode(email);
   });
 
   /* ── [변경 전] 이메일 중복 확인 (시뮬레이션) ──
@@ -628,29 +758,47 @@
   });
    */
 
-  /* 이메일 변경 시 중복 확인 초기화 */
+  /* 이메일 변경 시 중복 확인 + 인증 초기화 */
   document.getElementById('email').addEventListener('input', function () {
     emailChecked = false;
+    emailVerified = false;
     this.classList.remove('is-valid');
     clearMsg('errEmail', 'okEmail');
+    document.getElementById('emailVerifyArea').style.display = 'none';
+    document.getElementById('emailCode').value = '';
+    clearMsg('errVerify', 'okVerify');
+    if (timerInterval) clearInterval(timerInterval);
   });
 
-  /* 주소 찾기 (카카오 주소 API 연동 예시) */
-  document.getElementById('btnSearchAddr').addEventListener('click', function () {
-    /* 카카오 주소 API가 로드된 경우 */
-    if (typeof daum !== 'undefined' && daum.Postcode) {
+  /* HYJ 26.07.16 주소 찾기 (카카오 주소 API 연동) */
+  $("#btnSearchAddr").click(function(){
       new daum.Postcode({
-        oncomplete: function (data) {
-          document.getElementById('zipcode').value = data.zonecode;
-          document.getElementById('addr1').value   = data.roadAddress || data.jibunAddress;
-          document.getElementById('addr2').focus();
-        }
-      }).open();
-    } else {
-      alert('주소 검색 API를 불러오지 못했습니다.\n실제 프로젝트에서 카카오 주소 API를 연동해 주세요.');
-    }
-  });
+          oncomplete:function(data){
+              let addr = "";
+              let extraAddr = "";
+              if(data.userSelectedType === 'R'){
+                  addr = data.roadAddress;
+                  if(data.bname !== ''){
+                      extraAddr += data.bname;
+                  }
+                  if(data.buildingName !== ''){
+                      extraAddr += (extraAddr ? ", " : "") + data.buildingName;
+                  }
+                  if(extraAddr !== ''){
+                      extraAddr = " (" + extraAddr + ")";
+                  }
 
+              }
+              else{
+                  addr = data.jibunAddress;
+              }
+
+              $("input[name='zipcode']").val(data.zonecode);
+              $("input[name='addr1']").val(addr + extraAddr);
+              $("input[name='addr2']").focus();
+          }
+      }).open();
+  });
   /* Step 2 유효성 검사 */
   function validateStep2() {
     var valid = true;
@@ -666,6 +814,9 @@
     } else if (!emailChecked) {
       document.getElementById('errEmail').textContent = '이메일 중복 확인을 해주세요.';
       err('errEmail', 'okEmail'); valid = false;
+    } else if (!emailVerified) {
+      document.getElementById('errVerify').textContent = '이메일 인증을 완료해 주세요.';
+      err('errVerify', 'okVerify'); valid = false;
     } else {
       clearMsg('errEmail', 'okEmail');
     }
@@ -743,6 +894,7 @@
     fd.append('agreeMarketing', yn('agreeMarketing'));
 
     /* Step 2 회원 정보 → TB_MEMBER */
+    fd.append('memberId', document.getElementById('id').value.trim());
     fd.append('memberName', document.getElementById('memberName').value.trim());
     fd.append('email', document.getElementById('email').value.trim());
     fd.append('password', document.getElementById('password').value);
@@ -772,6 +924,8 @@
         if (text.indexOf('ERROR:') === 0) {
           var code = text.replace('ERROR:', '');
           var msg = {
+            id: '아이디를 입력해 주세요.',
+            id_duplicate: '이미 사용 중인 아이디입니다.',
             duplicate: '이미 가입된 이메일입니다.',
             password: '비밀번호 규칙을 확인해 주세요.',
             password_mismatch: '비밀번호가 일치하지 않습니다.',

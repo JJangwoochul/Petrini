@@ -45,6 +45,9 @@ public interface MemberAuthMapper {
     /* 이메일 중복 확인 */
     int countMemberByEmail(@Param("email") String email);
 
+    /* 아이디 중복 확인 */
+    int countMemberById(@Param("memberId") String memberId);
+
     /* 회원 1건 INSERT */
     int insertMember(MemberRegisterVO vo);
 
@@ -57,4 +60,15 @@ public interface MemberAuthMapper {
 
     /* 반려동물 1건 INSERT */
     int insertPet(MemberRegisterVO vo);
+
+    // 2026/07/15 — 카카오 로그인
+
+    /** 카카오 PROVIDER_UID 로 TB_MEMBER_SOCIAL → TB_MEMBER 조인 조회 — 없으면 null */
+    MemberAuthVO selectMemberBySocialId(
+            @Param("socialId") String socialId);
+
+    /** TB_MEMBER_SOCIAL 에 카카오 연동 INSERT */
+    int insertSocialLink(
+            @Param("memberNo") Long memberNo,
+            @Param("providerUid") String providerUid);
 }
