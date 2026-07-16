@@ -1,0 +1,22 @@
+sequenceDiagram
+    actor User as 방문자
+    participant JSP as store list/detail.jsp
+    participant C as StoreShopController
+    participant S as StoreShopServiceImpl
+    participant M as StoreShopMapper
+    participant DB as Oracle
+
+    User->>JSP: 카테고리 클릭
+    JSP->>C: GET /store?category sort
+    C->>C: effectiveCategoryId 계산
+    C->>S: getCategoryTree getProductList
+    S->>M: SELECT TB_PRODUCT
+    M->>DB: 조회
+    C-->>JSP: productList categoryTree
+
+    User->>JSP: 상품 클릭
+    JSP->>C: GET /store/detail?id=
+    C->>S: getProductDetail
+    S->>M: SELECT PRODUCT OPTION
+    M->>DB: 조회
+    C-->>JSP: product 옵션

@@ -1,8 +1,11 @@
 /**
  * 역할: 사업자·재능나눔 승인 URL 처리 → Service 호출 → JSP 반환
  *
+ * - 박유정 / 2026-07-13~14 (재능나눔 승인)
+ * - 장우철 / 2026-07-09 (사업자 승인)
+ *
  * 연결
- * - Service: AdminBizService
+ * - Service: AdminBizService, GiveTalentService
  * - 상속: AdminBaseController (관리자 로그인 체크)
  *
  * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
@@ -24,6 +27,10 @@ import com.petcare.petcare.admin.controller.AdminBaseController;
 
 import jakarta.servlet.http.HttpSession;
 
+import com.petcare.petcare.give.talent.service.GiveTalentService;
+
+import com.petcare.petcare.member.vo.MemberVO;
+
 @Controller("adminBizController")
 @RequestMapping("/admin/biz")
 public class AdminBizController extends AdminBaseController {
@@ -32,6 +39,10 @@ public class AdminBizController extends AdminBaseController {
     // 이유: 목록/상세/승인·반려는 Controller 가 아닌 Service·Mapper 에서 처리
     @Autowired
     private AdminBizService adminBizService;
+
+    // 2026-07-13 박유정 — 재능나눔 승인 Service (admin/biz/talent.jsp)
+    @Autowired
+    private GiveTalentService giveTalentService;
 
     // ── ADMIN-03 사업자 승인 ───────────────────────────────
     @GetMapping("/list")
@@ -52,13 +63,18 @@ public class AdminBizController extends AdminBaseController {
         return "admin/biz/list";
     }
 
-    // ── 재능나눔 승인 ───────────────────────────────
+    // ── 재능나눔 승인 (2026-07-13 박유정) ─────────────────────────────
+    // 이유: biz/hospital/talent.jsp 신청(PENDING) → 관리자 검토 → APPROVED 시 /give/talent/list 노출
     @GetMapping("/talent")
-    public String cmsTalent(HttpSession session) {
-        if (getAdmin(session) == null)
-            return redirectToLogin();
+    public String cmsTalent(HttpSession session,
+                            @RequestParam(defaultValue = "PENDING") String status,
+                            Model model) {
+    if (getAdmin(session) == null) return redirectToLogin();
 
-        return "admin/biz/talent";
+    model.addAttribute("list", giveTalentService.getTalentListByStatus(status));
+    model.addAttribute("status", status);
+    model.addAttribute("statusCounts", giveTalentService.getTalentStatusCounts());
+    return "admin/biz/talent";
     }
 
     @GetMapping("/detail")
@@ -141,4 +157,47 @@ public class AdminBizController extends AdminBaseController {
         }
         return "redirect:/admin/biz/detail?bizNo=" + bizNo;
     }
+
+    // 2026-07-14 박유정 — 재능나눔 승인 POST
+    // 이유: admin.getAdminNo() 사용 (TB_ADMIN 로그인 세션 — memberNo 아님)
+    @PostMapping("/talent/approve") 
+    public String approveTalent(HttpSession session,
+                            @RequestParam Long talentId,
+                            RedirectAttributes redirectAttr) {
+    MemberVO admin = getAdmin(session);
+    if (admin == null) return redirectToLogin();
+
+    try {
+        giveTalentService.approveTalent(talentId, admin.getAdminNo());
+        redirectAttr.addFlashAttribute("successMsg", "재능나눔이 승인되었습니다.");
+        return "redirect:/admin/biz/talent?status=APPROVED";
+    } catch (Exception e) {
+        redirectAttr.addFlashAttribute("errorMsg", "승인 처리 중 오류가 발생했습니다.");
+        return "redirect:/admin/biz/talent?status=PENDING";
+    }
+}
+
+    // 2026-07-14 박유정 — 재능나눔 반려 POST
+    @PostMapping("/talent/reject")
+    public String rejectTalent(HttpSession session,
+                           @RequestParam Long talentId,
+                           @RequestParam String rejectReason,
+                           RedirectAttributes redirectAttr) {
+    MemberVO admin = getAdmin(session);
+    if (admin == null) return redirectToLogin();
+
+    if (rejectReason == null || rejectReason.isBlank()) {
+        redirectAttr.addFlashAttribute("errorMsg", "반려 사유를 입력해 주세요.");
+        return "redirect:/admin/biz/talent?status=PENDING";
+    }
+
+    try {
+        giveTalentService.rejectTalent(talentId, rejectReason.trim(), admin.getAdminNo());
+        redirectAttr.addFlashAttribute("successMsg", "재능나눔이 반려되었습니다.");
+        return "redirect:/admin/biz/talent?status=REJECTED";
+    } catch (Exception e) {
+        redirectAttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
+        return "redirect:/admin/biz/talent?status=PENDING";
+    }
+}
 }

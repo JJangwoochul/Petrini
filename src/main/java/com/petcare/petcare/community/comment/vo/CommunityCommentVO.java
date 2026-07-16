@@ -24,17 +24,17 @@ import lombok.Setter;
 @Setter
 public class CommunityCommentVO {
 
-    private Long commentId;        // COMMENT_ID
-    private Long postId;           // POST_ID
-    private Long parentId;         // PARENT_ID (일반댓글 null)
-    private Long memberNo;         // MEMBER_NO
-    private String body;           // BODY
-    private String isDeleted;      // IS_DELETED
-    private LocalDateTime regDate; // REG_DATE
+    private Long commentId;        // COMMENT_ID — 댓글 ID
+    private Long postId;           // POST_ID — 게시글 ID
+    private Long parentId;         // PARENT_ID — 부모 댓글 ID (일반댓글 null)
+    private Long memberNo;         // MEMBER_NO — 작성자 회원번호
+    private String body;           // BODY — 댓글 본문
+    private String isDeleted;      // IS_DELETED — 삭제 여부 (Y/N)
+    private LocalDateTime regDate; // REG_DATE — 등록일
 
     // JOIN TB_MEMBER — 화면 표시용
-    private String nickname;
+    private String nickname;       // NICKNAME — 작성자 닉네임
 
     // 대댓글 목록 — getCommentList() 에서 parentId 기준으로 묶음
-    private List<CommunityCommentVO> replies = new ArrayList<>();
+    private List<CommunityCommentVO> replies = new ArrayList<>();  // (VO) — 대댓글 목록
 }

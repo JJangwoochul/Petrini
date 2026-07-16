@@ -1,7 +1,10 @@
 /**
  * 역할: 커뮤니티 게시글 비즈니스 로직 (interface)
  *
- * - 박유정 / 2026-07-08~09
+ * - 박유정 / 2026-07-08~10
+ *
+ * [markLifeAnswered — LIFE 답변완료] 2026-07-10 STEP 4
+ * - 일반 댓글 등록 시 TAGS = ANSWERED (Controller 에서 호출)
  *
  * 담당 화면
  * - community/list.jsp        게시글 목록 (탭·검색·페이징)
@@ -41,6 +44,6 @@ public interface CommunityPostService {
     // 게시글 등록 (TB_POST + 사진 TB_FILE)
     void insertPost(CommunityPostVO vo, MemberVO loginMember, MultipartFile[] photos);
 
-    // LIFE 상담 — 답변 완료 (TAGS = ANSWERED)
+    // LIFE 상담 — 답변 완료 (TAGS = ANSWERED) / 2026-07-10 STEP 4
     void markLifeAnswered(long postId);
 }

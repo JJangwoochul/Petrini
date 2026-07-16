@@ -5,7 +5,7 @@
 
 <!--
   역할: CommunityPostMapper SQL 정의
-  - 박유정 / 2026-07-08~09
+  - 박유정 / 2026-07-08~10
   - give/report 의 GiveReportMapper.xml 패턴 참고
 
   테이블: TB_POST (BOARD_TYPE = TOWN/SHARE/LIFE), TB_FILE (사진)
@@ -15,6 +15,7 @@
   [상세] selectPostDetail / increaseViewCount — 조회수 +1
   [등록] insertPost / insertFile — 글·사진 저장
   [좋아요] increaseLikeCnt / decreaseLikeCnt — LIKE_CNT 증감
+  [LIFE] updatePostTags — 답변완료 TAGS 변경 (2026-07-10 STEP 4)
 -->
 <insert id="insertPost" parameterType="com.petcare.petcare.community.post.vo.CommunityPostVO">
     <!-- 글 등록 (SEQ_TB_POST) -->
@@ -203,7 +204,7 @@
       AND BOARD_TYPE IN ('TOWN', 'LIFE', 'SHARE')
   </update>
 
-  <!-- TAGS 변경 — LIFE 답변완료(WAITING → ANSWERED) 등 -->
+  <!-- 2026-07-10 박유정 STEP 4 — LIFE 답변완료(WAITING → ANSWERED) -->
   <update id="updatePostTags">
     UPDATE TB_POST
     SET TAGS = #{tags}

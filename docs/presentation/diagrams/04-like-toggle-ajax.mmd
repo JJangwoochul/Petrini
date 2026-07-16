@@ -1,0 +1,22 @@
+sequenceDiagram
+    actor User as 로그인 회원
+    participant JS as detail.jsp fetch
+    participant RC as CommunityReactionController
+    participant RS as CommunityReactionServiceImpl
+    participant RM as CommunityReactionMapper
+    participant PM as CommunityPostMapper
+    participant DB as Oracle
+
+    User->>JS: 좋아요 클릭
+    JS->>RC: POST /community/like/toggle
+    RC->>RS: toggleLike(postId, member)
+    RS->>RM: countLikeByPostAndMember
+    RM->>DB: SELECT TB_POST_LIKE
+    alt 이미 좋아요
+        RS->>RM: deleteLike decreaseLikeCnt
+    else 미좋아요
+        RS->>RM: insertLike increaseLikeCnt
+    end
+    RS->>PM: selectPostDetail likeCnt
+    RC-->>JS: JSON liked likeCnt
+    JS->>JS: 버튼 숫자 갱신

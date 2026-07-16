@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor User as 로그인 회원
+    participant JSP as mypage/reserve.jsp
+    participant C as MypageReserveController
+    participant S as MypageReserveServiceImpl
+    participant M as MypageReserveMapper
+    participant DB as Oracle
+
+    User->>JSP: 예약 내역 메뉴
+    JSP->>C: GET /mypage/reserve?status=
+    C->>C: session memberNo 확인
+    C->>S: getMyReservationList(memberNo, status)
+    S->>M: selectMyReservations
+    M->>DB: SELECT TB_RESERVATION JOIN
+    C-->>JSP: reservationList 렌더링

@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor User as 로그인 회원
+    participant JS as pets.jsp Ajax
+    participant C as PetProfileController
+    participant S as PetProfileService
+    participant M as PetProfileMapper
+    participant DB as Oracle
+
+    User->>JS: 등록/수정 저장
+    JS->>C: POST /mypage/pets/save
+    C->>C: session memberNo 확인
+    C->>S: savePet(vo, memberNo)
+    alt petId null 신규
+        S->>M: insertPet
+        M->>DB: INSERT TB_PET
+    else 수정
+        S->>S: 본인 소유 검증
+        S->>M: updatePet
+        M->>DB: UPDATE TB_PET
+    end
+    C-->>JS: JSON success message

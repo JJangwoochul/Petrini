@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>펫케어 시퀀스 다이어그램 다운로드</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    .sub { color: #6b7280; margin-bottom: 24px; }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .card h2 { margin: 0 0 12px; font-size: 18px; }
+    .actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      background: #2563eb;
+      color: #fff;
+    }
+    button.secondary { background: #6b7280; }
+    button:hover { opacity: .92; }
+    .diagram {
+      overflow: auto;
+      background: #fafafa;
+      border: 1px dashed #d1d5db;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .mermaid { min-height: 120px; }
+    .top-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>펫케어 핵심 기능 시퀀스 다이어그램</h1>
+  <p class="sub">각 카드의 <strong>PNG 다운로드</strong> 버튼을 누르거나, 아래 <strong>전체 PNG ZIP</strong>으로 한번에 받으세요.</p>
+
+  <div class="top-bar">
+    <button type="button" onclick="downloadAllPng()">전체 PNG 순차 다운로드</button>
+    <button type="button" class="secondary" onclick="window.print()">인쇄/PDF 저장</button>
+  </div>
+
+  <div id="diagrams"></div>
+
+  <script>
+    const diagrams = [
+      {
+        id: "00-architecture",
+        title: "00. 공통 3계층 아키텍처",
+        code: `flowchart LR
+    A[브라우저 JSP] --> B[Controller]
+    B --> C[Service 비즈니스로직]
+    C --> D[Mapper MyBatis]
+    D --> E[(Oracle DB)]
+    F[HttpSession memberInfo] -.-> B`
+      },
+      {
+        id: "01-life-vet-comment",
+        title: "01. 수의사 상담 - 수의사 답변 등록",
+        code: `sequenceDiagram
+    actor User as 병원사업자(BIZ/HOSPITAL)
+    participant JSP as detail.jsp
+    participant C as CommunityPostController
+    participant CS as CommunityCommentServiceImpl
+    participant PM as CommunityPostMapper
+    participant CM as CommunityCommentMapper
+    participant PS as CommunityPostServiceImpl
+    participant DB as Oracle
+    User->>JSP: 답변 입력 후 등록
+    JSP->>C: POST /community/comment
+    C->>C: HttpSession memberInfo 확인
+    C->>CS: insertComment(postId, body, member, parentId)
+    CS->>CS: lookupMemberNo(member)
+    CS->>PM: selectPostDetail(postId)
+    PM->>DB: SELECT TB_POST
+    DB-->>PM: BOARD_TYPE=LIFE
+    CS->>CS: validateLifeCommentPermission
+    CS->>CM: insertComment(vo)
+    CM->>DB: INSERT TB_POST_COMMENT
+    C->>PS: markLifeAnswered(postId)
+    PS->>PM: updatePostTags ANSWERED
+    PM->>DB: UPDATE TB_POST.TAGS
+    C-->>JSP: redirect detail`
+      },
+      {
+        id: "02-community-list-filter",
+        title: "02. 커뮤니티 - 게시글 필터 목록",
+        code: `sequenceDiagram
+    actor User as 회원/비회원
+    participant JSP as list.jsp
+    participant C as CommunityPostController
+    participant S as CommunityPostServiceImpl
+    participant M as CommunityPostMapper
+    participant DB as Oracle
+    User->>JSP: 탭 클릭 TOWN/SHARE/LIFE
+    JSP->>C: GET /community?boardType=TOWN
+    C->>S: getTotalPages(boardType, keyword)
+    S->>M: selectPostCount
+    M->>DB: SELECT COUNT TB_POST
+    C->>S: getPostList(boardType, page)
+    S->>S: offset = (page-1) x 5
+    S->>M: selectPostList
+    M->>DB: SELECT TB_POST 페이징
+    loop 각 게시글
+        S->>M: selectFileUrlsByPostId
+        S->>S: attachLifeAnswerPreview
+    end
+    C-->>JSP: Model list → list.jsp`
+      },
+      {
+        id: "03-comment-reply",
+        title: "03. 커뮤니티 - 댓글 + 대댓글",
+        code: `sequenceDiagram
+    actor User as 로그인 회원
+    participant JSP as detail.jsp
+    participant C as CommunityPostController
+    participant CS as CommunityCommentServiceImpl
+    participant CM as CommunityCommentMapper
+    participant DB as Oracle
+    Note over User,DB: 조회 - 상세 페이지
+    User->>JSP: GET /community/detail?id=
+    JSP->>C: detail(id)
+    C->>CS: getCommentList(postId)
+    CS->>CM: selectCommentList PARENT_ID IS NULL
+    CM->>DB: SELECT 최상위 댓글
+    CS->>CM: selectRepliesByPostId
+    CM->>DB: SELECT 대댓글
+    CS->>CS: parentMap에 replies 묶기
+    C-->>JSP: comments 트리 구조
+    Note over User,DB: 등록 - 답글
+    User->>JSP: 답글 입력
+    JSP->>C: POST /community/comment parentId
+    C->>CS: insertComment
+    CS->>CS: validateParentComment
+    CS->>CM: INSERT PARENT_ID
+    CM->>DB: INSERT TB_POST_COMMENT`
+      },
+      {
+        id: "04-like-toggle-ajax",
+        title: "04. 커뮤니티 - 좋아요 Ajax",
+        code: `sequenceDiagram
+    actor User as 로그인 회원
+    participant JS as detail.jsp fetch
+    participant RC as CommunityReactionController
+    participant RS as CommunityReactionServiceImpl
+    participant RM as CommunityReactionMapper
+    participant PM as CommunityPostMapper
+    participant DB as Oracle
+    User->>JS: 좋아요 클릭
+    JS->>RC: POST /community/like/toggle
+    RC->>RS: toggleLike(postId, member)
+    RS->>RM: countLikeByPostAndMember
+    RM->>DB: SELECT TB_POST_LIKE
+    alt 이미 좋아요
+        RS->>RM: deleteLike decreaseLikeCnt
+    else 미좋아요
+        RS->>RM: insertLike increaseLikeCnt
+    end
+    RS->>PM: selectPostDetail likeCnt
+    RC-->>JS: JSON liked likeCnt
+    JS->>JS: 버튼 숫자 갱신`
+      },
+      {
+        id: "05-hospital-reserve",
+        title: "05. 병원 예약",
+        code: `sequenceDiagram
+    actor User as 로그인 회원
+    participant JSP as reserve.jsp
+    participant C as HospitalController
+    participant S as HospitalServiceImpl
+    participant M as HospitalMapper
+    participant DB as Oracle
+    User->>JSP: 예약하기 클릭
+    JSP->>C: GET /hospital/reserve
+    C->>C: session memberInfo 확인
+    C->>S: getHospitalById getPetListForReserve
+    S->>M: SELECT TB_HOSPITAL TB_PET
+    M->>DB: 조회
+    C-->>JSP: hospital petList
+    User->>JSP: 예약 정보 입력
+    JSP->>C: POST /hospital/reserve
+    C->>C: vo.memberNo targetId 설정
+    C->>S: createHospitalReservation(vo)
+    S->>S: PENDING resvNo 생성
+    S->>M: insertReservation
+    M->>DB: INSERT TB_RESERVATION
+    C-->>JSP: redirect complete`
+      },
+      {
+        id: "06-mypage-reserve",
+        title: "06. 마이페이지 - 예약 내역",
+        code: `sequenceDiagram
+    actor User as 로그인 회원
+    participant JSP as mypage/reserve.jsp
+    participant C as MypageReserveController
+    participant S as MypageReserveServiceImpl
+    participant M as MypageReserveMapper
+    participant DB as Oracle
+    User->>JSP: 예약 내역 메뉴
+    JSP->>C: GET /mypage/reserve?status=
+    C->>C: session memberNo 확인
+    C->>S: getMyReservationList(memberNo, status)
+    S->>M: selectMyReservations
+    M->>DB: SELECT TB_RESERVATION JOIN
+    C-->>JSP: reservationList 렌더링`
+      },
+      {
+        id: "07-mypage-pets-ajax",
+        title: "07. 마이페이지 - 반려동물 Ajax",
+        code: `sequenceDiagram
+    actor User as 로그인 회원
+    participant JS as pets.jsp Ajax
+    participant C as PetProfileController
+    participant S as PetProfileService
+    participant M as PetProfileMapper
+    participant DB as Oracle
+    User->>JS: 등록/수정 저장
+    JS->>C: POST /mypage/pets/save
+    C->>C: session memberNo 확인
+    C->>S: savePet(vo, memberNo)
+    alt petId null 신규
+        S->>M: insertPet
+        M->>DB: INSERT TB_PET
+    else 수정
+        S->>S: 본인 소유 검증
+        S->>M: updatePet
+        M->>DB: UPDATE TB_PET
+    end
+    C-->>JS: JSON success message`
+      },
+      {
+        id: "08-store-list-detail",
+        title: "08. 쇼핑 - 목록/상세",
+        code: `sequenceDiagram
+    actor User as 방문자
+    participant JSP as store list/detail.jsp
+    participant C as StoreShopController
+    participant S as StoreShopServiceImpl
+    participant M as StoreShopMapper
+    participant DB as Oracle
+    User->>JSP: 카테고리 클릭
+    JSP->>C: GET /store?category sort
+    C->>C: effectiveCategoryId 계산
+    C->>S: getCategoryTree getProductList
+    S->>M: SELECT TB_PRODUCT
+    M->>DB: 조회
+    C-->>JSP: productList categoryTree
+    User->>JSP: 상품 클릭
+    JSP->>C: GET /store/detail?id=
+    C->>S: getProductDetail
+    S->>M: SELECT PRODUCT OPTION
+    M->>DB: 조회
+    C-->>JSP: product 옵션`
+      }
+    ];
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "default",
+      securityLevel: "loose",
+      sequence: { useMaxWidth: true, mirrorActors: false }
+    });
+
+    const container = document.getElementById("diagrams");
+
+    diagrams.forEach((d, index) => {
+      const card = document.createElement("section");
+      card.className = "card";
+      card.innerHTML = `
+        <h2>${d.title}</h2>
+        <div class="actions">
+          <button type="button" onclick="downloadPng('${d.id}')">PNG 다운로드</button>
+          <button type="button" class="secondary" onclick="downloadSvg('${d.id}')">SVG 다운로드</button>
+        </div>
+        <div class="diagram" id="wrap-${d.id}">
+          <pre class="mermaid" id="${d.id}"></pre>
+        </div>
+      `;
+      container.appendChild(card);
+      document.getElementById(d.id).textContent = d.code;
+    });
+
+    mermaid.run({ querySelector: ".mermaid" });
+
+    function triggerDownload(filename, blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function getSvgElement(id) {
+      const wrap = document.getElementById("wrap-" + id);
+      return wrap ? wrap.querySelector("svg") : null;
+    }
+
+    function svgToPngBlob(svg, scale = 2) {
+      return new Promise((resolve, reject) => {
+        const clone = svg.cloneNode(true);
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        const bbox = svg.getBBox();
+        const width = Math.max(bbox.width + bbox.x + 40, 800);
+        const height = Math.max(bbox.height + bbox.y + 40, 300);
+        clone.setAttribute("width", width);
+        clone.setAttribute("height", height);
+        clone.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+        const svgData = new XMLSerializer().serializeToString(clone);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = width * scale;
+          canvas.height = height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.scale(scale, scale);
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("PNG 변환 실패"));
+          }, "image/png");
+        };
+        img.onerror = () => reject(new Error("SVG 이미지 로드 실패"));
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
+      });
+    }
+
+    async function downloadPng(id) {
+      const svg = getSvgElement(id);
+      if (!svg) {
+        alert("다이어그램 렌더링이 아직 안 됐습니다. 잠시 후 다시 시도하세요.");
+        return;
+      }
+      const blob = await svgToPngBlob(svg);
+      triggerDownload(id + ".png", blob);
+    }
+
+    function downloadSvg(id) {
+      const svg = getSvgElement(id);
+      if (!svg) {
+        alert("다이어그램 렌더링이 아직 안 됐습니다.");
+        return;
+      }
+      const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml;charset=utf-8" });
+      triggerDownload(id + ".svg", blob);
+    }
+
+    async function downloadAllPng() {
+      for (const d of diagrams) {
+        await new Promise((r) => setTimeout(r, 400));
+        try {
+          await downloadPng(d.id);
+        } catch (e) {
+          console.error(d.id, e);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

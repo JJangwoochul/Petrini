@@ -16,5 +16,86 @@
   - TB_COMMUNITY_POST
   - TB_POST_REPORT
 -->
+  <!-- 2026-07-15 박유정 — 관리자 게시글 목록 (전체 상태 + 신고 건수) -->
+  <select id="selectAdminPostList"
+          resultType="com.petcare.petcare.community.post.vo.CommunityPostVO">
+    SELECT *
+    FROM (
+      SELECT
+        P.POST_ID      AS postId,
+        P.BOARD_TYPE   AS boardType,
+        P.TITLE        AS title,
+        P.VIEW_COUNT   AS viewCount,
+        P.STATUS_CD    AS statusCd,
+        P.REG_DATE     AS regDate,
+        M.NICKNAME     AS authorName,
+        (SELECT COUNT(*) FROM TB_POST_REPORT R WHERE R.POST_ID = P.POST_ID) AS reportCount,
+        (SELECT COUNT(*) FROM TB_POST_REPORT R
+         WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'PENDING') AS pendingReportCount,
+        ROW_NUMBER() OVER (ORDER BY P.REG_DATE DESC) AS rn
+      FROM TB_POST P
+      JOIN TB_MEMBER M ON M.MEMBER_NO = P.MEMBER_NO
+      WHERE P.BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
+      <if test="keyword != null and keyword != ''">
+        AND (P.TITLE LIKE '%' || #{keyword} || '%'
+          OR M.NICKNAME LIKE '%' || #{keyword} || '%')
+      </if>
+      <if test="boardType != null and boardType != ''">
+        AND P.BOARD_TYPE = #{boardType}
+      </if>
+      <if test="statusCd != null and statusCd != ''">
+        AND P.STATUS_CD = #{statusCd}
+      </if>
+    )
+    WHERE rn BETWEEN #{offset} + 1 AND #{offset} + #{limit}
+  </select>
+
+  <!-- 2026-07-15 박유정 — 목록 총 건수 -->
+  <select id="selectAdminPostCount" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_POST P
+    JOIN TB_MEMBER M ON M.MEMBER_NO = P.MEMBER_NO
+    WHERE P.BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
+    <if test="keyword != null and keyword != ''">
+      AND (P.TITLE LIKE '%' || #{keyword} || '%'
+        OR M.NICKNAME LIKE '%' || #{keyword} || '%')
+    </if>
+    <if test="boardType != null and boardType != ''">
+      AND P.BOARD_TYPE = #{boardType}
+    </if>
+    <if test="statusCd != null and statusCd != ''">
+      AND P.STATUS_CD = #{statusCd}
+    </if>
+  </select>
+
+    <!-- 2026-07-15 박유정 — 관리자 상세 (신고 제외) -->
+  <select id="selectAdminPostDetail"
+          resultType="com.petcare.petcare.community.post.vo.CommunityPostVO">
+    SELECT
+      P.POST_ID      AS postId,
+      P.MEMBER_NO    AS memberNo,
+      P.BOARD_TYPE   AS boardType,
+      P.TITLE        AS title,
+      DBMS_LOB.SUBSTR(P.BODY, 32000, 1) AS body,
+      P.VIEW_COUNT   AS viewCount,
+      P.STATUS_CD    AS statusCd,
+      P.REG_DATE     AS regDate,
+      M.NICKNAME     AS authorName,
+      M.MEMBER_NAME  AS authorMemberName,
+      M.EMAIL        AS authorEmail
+    FROM TB_POST P
+    JOIN TB_MEMBER M ON M.MEMBER_NO = P.MEMBER_NO
+    WHERE P.POST_ID = #{postId}
+      AND P.BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
+  </select>
+
+    <!-- 2026-07-15 박유정 STEP 7 — 게시글 상태 변경 (HIDDEN / DELETED / ACTIVE) -->
+  <update id="updatePostStatus">
+    UPDATE TB_POST
+    SET STATUS_CD = #{statusCd}
+    WHERE POST_ID = #{postId}
+      AND BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
+  </update>
+
 
 </mapper>

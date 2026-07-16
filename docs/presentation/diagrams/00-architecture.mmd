@@ -1,0 +1,6 @@
+flowchart LR
+    A[브라우저 JSP] --> B[Controller]
+    B --> C[Service 비즈니스로직]
+    C --> D[Mapper MyBatis]
+    D --> E[(Oracle DB)]
+    F[HttpSession memberInfo] -.-> B

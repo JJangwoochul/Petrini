@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor User as 로그인 회원
+    participant JSP as detail.jsp
+    participant C as CommunityPostController
+    participant CS as CommunityCommentServiceImpl
+    participant CM as CommunityCommentMapper
+    participant DB as Oracle
+
+    Note over User,DB: 조회 - 상세 페이지
+    User->>JSP: GET /community/detail?id=
+    JSP->>C: detail(id)
+    C->>CS: getCommentList(postId)
+    CS->>CM: selectCommentList PARENT_ID IS NULL
+    CM->>DB: SELECT 최상위 댓글
+    CS->>CM: selectRepliesByPostId
+    CM->>DB: SELECT 대댓글
+    CS->>CS: parentMap에 replies 묶기
+    C-->>JSP: comments 트리 구조
+
+    Note over User,DB: 등록 - 답글
+    User->>JSP: 답글 입력
+    JSP->>C: POST /community/comment parentId
+    C->>CS: insertComment
+    CS->>CS: validateParentComment
+    CS->>CM: INSERT PARENT_ID
+    CM->>DB: INSERT TB_POST_COMMENT

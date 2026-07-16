@@ -1,7 +1,8 @@
 <%-- community/list.jsp — 커뮤니티 게시판 목록 --%>
 <%--
-  - 박유정 / 2026-07-08
+  - 박유정 / 2026-07-08~10
   - STEP 3: 목록 DB 연동 (작성자·페이징·검색·총 개수)
+  - STEP 4: LIFE ANSWERED 시 vet-answer 답변 미리보기 (2026-07-10)
 
   [목록 화면 흐름]
   1. GET /community?boardType=... → CommunityPostController.list()
@@ -20,7 +21,6 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="community" />
-<c:set var="commTab" value="all" />
 <%@ include file="/WEB-INF/views/community/index.jsp" %>
   <%-- ── 일반 게시판 영역 ─────────────────────────────── --%>
   <div id="normalBoard" style="${boardType eq 'LIFE' ? 'display:none' : ''}">
@@ -261,6 +261,7 @@
         </div>
         <div class="vet-card-title"><c:out value="${item.title}"/></div>
         <div class="vet-card-preview"><c:out value="${item.body}"/></div>
+        <%-- 2026-07-10 박유정 STEP 4 — 답변완료 카드 답변 미리보기 --%>
         <c:if test="${fn:contains(item.tags, 'ANSWERED') && not empty item.answerBody}">
           <div class="vet-answer" onclick="event.stopPropagation()">
             <div class="vet-answer-head">

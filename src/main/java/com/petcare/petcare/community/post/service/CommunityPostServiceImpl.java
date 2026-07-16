@@ -1,11 +1,12 @@
 /**
  * 역할: CommunityPostService 구현체 (@Service)
  *
- * - 박유정 / 2026-07-08~09
+ * - 박유정 / 2026-07-08~10
  *
  * [getPostList — 목록]
  * 1. boardType·keyword·page 로 TB_POST 조회 (5건/페이지)
  * 2. 각 글의 첫 사진 URL → thumbUrl
+ * 3. LIFE + ANSWERED → 첫 일반댓글 답변 미리보기 (2026-07-10 STEP 4)
  *
  * [getPostDetail — 상세]
  * 1. increaseViewCount() → VIEW_COUNT +1
@@ -15,6 +16,11 @@
  * 1. 로그인 회원 → MEMBER_NO
  * 2. TB_POST INSERT (SEQ_TB_POST)
  * 3. 사진 로컬 저장(C:/upload/) + TB_FILE INSERT (최대 5장)
+ * 4. LIFE 등록 시 TAGS = WAITING (2026-07-10)
+ *
+ * [markLifeAnswered — LIFE 답변완료] 2026-07-10 STEP 4
+ * 1. BOARD_TYPE = LIFE 인지 확인
+ * 2. updatePostTags(postId, "ANSWERED")
  *
  * 참고 테이블
  * - TB_POST, TB_FILE (REF_TYPE = 'POST')
@@ -124,6 +130,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
 
     private void attachLifeAnswerPreview(CommunityPostVO item) {
+        // LIFE 목록 — ANSWERED 글에 vet-answer 미리보기 데이터 첨부 / 2026-07-10 STEP 4
         if (item == null || item.getPostId() == null) {
             return;
         }
@@ -175,7 +182,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         if ("LIFE".equalsIgnoreCase(vo.getBoardType())) {
             vo.setLostSpecies(normalizePetType(vo.getPetType()));
             vo.setLostFeature(buildPetFeature(vo.getBreed(), vo.getPetAge()));
-            vo.setTags("WAITING");
+            vo.setTags("WAITING");  // LIFE 상담 등록 시 답변대기 / 2026-07-10
         }
 
         communityPostMapper.insertPost(vo);
@@ -284,6 +291,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     @Override
     public void markLifeAnswered(long postId) {
+        // LIFE + 일반댓글 등록 후 TAGS → ANSWERED / 2026-07-10 STEP 4
         CommunityPostVO post = communityPostMapper.selectPostDetail(postId);
         if (post == null || !"LIFE".equalsIgnoreCase(post.getBoardType())) {
             return;

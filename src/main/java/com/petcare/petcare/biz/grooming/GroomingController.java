@@ -15,7 +15,7 @@ public class GroomingController extends BizBaseController {
     // ── 사업자 공통 (GROOMING) ─────────────────────────────────────
     @GetMapping({"", "/"})
     public String groomingDashboard(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/dashboard";
@@ -23,15 +23,15 @@ public class GroomingController extends BizBaseController {
 
     @GetMapping("/info")
     public String groomingInfo(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/info";
-    } 
+    }
 
     @GetMapping("/reserve")
     public String groomingReserve(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/reserve";
@@ -39,7 +39,7 @@ public class GroomingController extends BizBaseController {
 
     @GetMapping("/reviews")
     public String groomingReviews(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/reviews";
@@ -47,7 +47,7 @@ public class GroomingController extends BizBaseController {
 
     @GetMapping("/talent")
     public String groomingTalent(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/talent";
@@ -55,7 +55,7 @@ public class GroomingController extends BizBaseController {
 
     @GetMapping("/settlement")
     public String groomingSettlement(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/settlement";
@@ -64,7 +64,7 @@ public class GroomingController extends BizBaseController {
     // ── 미용실 개별(GROOMING) ─────────────────────────────────────
     @GetMapping("/services")
     public String groomingServices(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/services";
@@ -72,11 +72,9 @@ public class GroomingController extends BizBaseController {
 
     @GetMapping("/stylists")
     public String groomingStylists(HttpSession session) {
-        if (getBizMember(session) == null) 
+        if (getBizMember(session) == null)
             return "redirect:/login";
 
         return "biz/grooming/stylists";
     }
-
-
 }

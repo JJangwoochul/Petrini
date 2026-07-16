@@ -129,6 +129,7 @@
       AND NVL(IS_DELETED, 'N') = 'N'
   </update>
 
+  <!-- 2026-07-14 박유정 — 댓글 본문 수정 (작성자 본인만 Service에서 검증) -->
   <update id="updateCommentBody">
     UPDATE TB_POST_COMMENT
     SET BODY = #{body}

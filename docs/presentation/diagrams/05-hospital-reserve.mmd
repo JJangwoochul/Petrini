@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor User as 로그인 회원
+    participant JSP as reserve.jsp
+    participant C as HospitalController
+    participant S as HospitalServiceImpl
+    participant M as HospitalMapper
+    participant DB as Oracle
+
+    User->>JSP: 예약하기 클릭
+    JSP->>C: GET /hospital/reserve
+    C->>C: session memberInfo 확인
+    C->>S: getHospitalById getPetListForReserve
+    S->>M: SELECT TB_HOSPITAL TB_PET
+    M->>DB: 조회
+    C-->>JSP: hospital petList
+
+    User->>JSP: 예약 정보 입력
+    JSP->>C: POST /hospital/reserve
+    C->>C: vo.memberNo targetId 설정
+    C->>S: createHospitalReservation(vo)
+    S->>S: PENDING resvNo 생성
+    S->>M: insertReservation
+    M->>DB: INSERT TB_RESERVATION
+    C-->>JSP: redirect complete

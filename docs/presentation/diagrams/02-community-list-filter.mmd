@@ -1,0 +1,22 @@
+sequenceDiagram
+    actor User as 회원/비회원
+    participant JSP as list.jsp
+    participant C as CommunityPostController
+    participant S as CommunityPostServiceImpl
+    participant M as CommunityPostMapper
+    participant DB as Oracle
+
+    User->>JSP: 탭 클릭 TOWN/SHARE/LIFE
+    JSP->>C: GET /community?boardType=TOWN
+    C->>S: getTotalPages(boardType, keyword)
+    S->>M: selectPostCount
+    M->>DB: SELECT COUNT TB_POST
+    C->>S: getPostList(boardType, page)
+    S->>S: offset = (page-1) x 5
+    S->>M: selectPostList
+    M->>DB: SELECT TB_POST 페이징
+    loop 각 게시글
+        S->>M: selectFileUrlsByPostId
+        S->>S: attachLifeAnswerPreview
+    end
+    C-->>JSP: Model list → list.jsp

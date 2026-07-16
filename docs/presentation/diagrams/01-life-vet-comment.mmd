@@ -1,0 +1,25 @@
+sequenceDiagram
+    actor User as 병원사업자(BIZ/HOSPITAL)
+    participant JSP as detail.jsp
+    participant C as CommunityPostController
+    participant CS as CommunityCommentServiceImpl
+    participant PM as CommunityPostMapper
+    participant CM as CommunityCommentMapper
+    participant PS as CommunityPostServiceImpl
+    participant DB as Oracle
+
+    User->>JSP: 답변 입력 후 등록
+    JSP->>C: POST /community/comment
+    C->>C: HttpSession memberInfo 확인
+    C->>CS: insertComment(postId, body, member, parentId)
+    CS->>CS: lookupMemberNo(member)
+    CS->>PM: selectPostDetail(postId)
+    PM->>DB: SELECT TB_POST
+    DB-->>PM: BOARD_TYPE=LIFE
+    CS->>CS: validateLifeCommentPermission
+    CS->>CM: insertComment(vo)
+    CM->>DB: INSERT TB_POST_COMMENT
+    C->>PS: markLifeAnswered(postId)
+    PS->>PM: updatePostTags ANSWERED
+    PM->>DB: UPDATE TB_POST.TAGS
+    C-->>JSP: redirect detail
