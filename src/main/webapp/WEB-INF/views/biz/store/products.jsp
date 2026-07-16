@@ -427,9 +427,11 @@
     reader.readAsDataURL(file);
   });
 
-  function submitProduct() {
+ function submitProduct() {
     var form = document.getElementById('prodForm');
     if (!form.checkValidity()) { form.reportValidity(); return; }
+    //지윤 26.07.16 추가: disabled된 상태 드롭다운은 폼에 안 실려서 제출 직전 잠깐 풀어줌
+    document.getElementById('pStatus').disabled = false;
     var formData = new FormData(form);
     var url = contextPath + '/biz/store/products' + (editingId ? '/' + editingId : '');
     fetch(url, { method: 'POST', body: formData })

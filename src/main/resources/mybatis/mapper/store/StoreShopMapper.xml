@@ -48,7 +48,7 @@
     </if>
 </sql>
 
-<!-- 지윤 26.07.09 수정: 썸네일을 DESCRIPTION(임시)에서 TB_FILE(정식)로 변경 -->
+<!-- 지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제 -> 옵션 재고 합계로 대체 -->
 <select id="selectProductList" resultType="com.petcare.petcare.store.vo.StoreShopVO">
     SELECT
         p.PRODUCT_ID,
@@ -59,12 +59,16 @@
         c.CATEGORY_NAME,
         TO_NUMBER(p.PRICE)        AS PRICE,
         TO_NUMBER(p.SALE_PRICE)   AS SALE_PRICE,
-        TO_NUMBER(p.STOCK_QTY)    AS STOCK_QTY,
+        NVL(os.STOCK_QTY, 0)      AS STOCK_QTY,
         f.FILE_URL                AS THUMBNAIL_URL,
         NVL(rv.AVG_RATING, 0)     AS AVG_RATING,
         NVL(rv.REVIEW_COUNT, 0)   AS REVIEW_COUNT
     FROM TB_PRODUCT p
     JOIN TB_PRODUCT_CATEGORY c ON c.CATEGORY_ID = p.CATEGORY_ID
+    LEFT JOIN (
+        SELECT PRODUCT_ID, SUM(STOCK_QTY) AS STOCK_QTY
+        FROM TB_PRODUCT_OPTION GROUP BY PRODUCT_ID
+    ) os ON os.PRODUCT_ID = p.PRODUCT_ID
     LEFT JOIN (
         SELECT TARGET_ID,
                ROUND(AVG(RATING), 1) AS AVG_RATING,
@@ -116,7 +120,7 @@
     ORDER BY CATEGORY_ID
 </select>
 
-<!-- 지윤 26.07.09 수정: 썸네일 TB_FILE로 변경, 진짜 설명 텍스트(DESCRIPTION) 컬럼도 추가 -->
+<!-- 지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제 -> 옵션 재고 합계로 대체 -->
 <select id="selectProductDetail" resultType="com.petcare.petcare.store.vo.StoreShopVO">
     SELECT
         p.PRODUCT_ID,
@@ -127,13 +131,17 @@
         c.CATEGORY_NAME,
         TO_NUMBER(p.PRICE)        AS PRICE,
         TO_NUMBER(p.SALE_PRICE)   AS SALE_PRICE,
-        TO_NUMBER(p.STOCK_QTY)    AS STOCK_QTY,
+        NVL(os.STOCK_QTY, 0)      AS STOCK_QTY,
         f.FILE_URL                AS THUMBNAIL_URL,
         p.DESCRIPTION             AS DESCRIPTION,
         NVL(rv.AVG_RATING, 0)     AS AVG_RATING,
         NVL(rv.REVIEW_COUNT, 0)   AS REVIEW_COUNT
     FROM TB_PRODUCT p
     JOIN TB_PRODUCT_CATEGORY c ON c.CATEGORY_ID = p.CATEGORY_ID
+    LEFT JOIN (
+        SELECT PRODUCT_ID, SUM(STOCK_QTY) AS STOCK_QTY
+        FROM TB_PRODUCT_OPTION GROUP BY PRODUCT_ID
+    ) os ON os.PRODUCT_ID = p.PRODUCT_ID
     LEFT JOIN (
         SELECT TARGET_ID,
                ROUND(AVG(RATING), 1) AS AVG_RATING,
@@ -260,7 +268,7 @@ SELECT
         o.OPTION_COLOR,
         o.OPTION_SIZE,
         TO_NUMBER(p.SALE_PRICE) + NVL(o.ADD_PRICE, 0) AS PRICE,
-        NVL(o.STOCK_QTY, TO_NUMBER(p.STOCK_QTY)) AS STOCK_QTY
+        NVL(o.STOCK_QTY, (SELECT NVL(SUM(STOCK_QTY),0) FROM TB_PRODUCT_OPTION WHERE PRODUCT_ID = p.PRODUCT_ID)) AS STOCK_QTY
     FROM TB_PRODUCT p
 
     LEFT JOIN TB_PRODUCT_OPTION o
@@ -434,12 +442,6 @@ SELECT
     )
 </insert>
 
-<!-- 지윤 26.07.13 주문 완료 시 재고 차감 (옵션 없는 상품, STOCK_QTY가 VARCHAR2라 TO_NUMBER/TO_CHAR 변환. 0 밑으로는 안 내려가게 GREATEST 처리) -->
-<update id="updateProductStock">
-    UPDATE TB_PRODUCT
-    SET STOCK_QTY = TO_CHAR(GREATEST(0, TO_NUMBER(STOCK_QTY) - #{qty}))
-    WHERE PRODUCT_ID = #{productId}
-</update>
 
 <!-- 지윤 26.07.13 주문 완료 시 재고 차감 (옵션 있는 상품, STOCK_QTY는 NUMBER라 그대로 차감) -->
 <update id="updateOptionStock">
@@ -448,13 +450,21 @@ SELECT
     WHERE OPTION_ID = #{optionId}
 </update>
 
-<!-- 지윤 26.07.15 추가: 재고 차감 후 상품 전체 재고가 0이 되면 자동으로 품절 처리 (사업자가 강제로 판매중지/입고대기로 바꾼 상태는 건드리지 않음) -->
+<!-- 지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제 -> 옵션 재고 합계가 0인지로 판단 -->
 <update id="checkAndSetSoldout">
     UPDATE TB_PRODUCT
     SET STATUS_CD = 'SOLDOUT'
     WHERE PRODUCT_ID = #{productId}
-      AND TO_NUMBER(STOCK_QTY) &lt;= 0
       AND STATUS_CD = 'NORMAL'
+      AND (SELECT NVL(SUM(STOCK_QTY),0) FROM TB_PRODUCT_OPTION WHERE PRODUCT_ID = #{productId}) &lt;= 0
 </update>
+
+<!-- 지윤 26.07.16 추가: 품절 알림 보낼 대상(사업자 회원번호) 조회. TB_BUSINESS.BIZ_ID(로그인ID) = TB_MEMBER.MEMBER_ID로 연결 -->
+<select id="selectBizMemberNoByBizNo" resultType="Long">
+    SELECT M.MEMBER_NO
+    FROM TB_BUSINESS B
+    JOIN TB_MEMBER M ON M.MEMBER_ID = B.BIZ_ID
+    WHERE B.BIZ_NO = #{bizNo}
+</select>
 
 </mapper>

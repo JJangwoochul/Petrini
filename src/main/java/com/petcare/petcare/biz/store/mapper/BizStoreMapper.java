@@ -55,10 +55,11 @@ public interface BizStoreMapper {
     Long selectNextProductId();
 
     //지윤 26.07.14 상품 등록 (실제 TB_PRODUCT에 새 상품 저장)
+    //지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제 -> 재고는 이제 TB_PRODUCT_OPTION에서만 관리
     void insertProduct(@Param("productId") Long productId, @Param("productCd") String productCd,
                         @Param("productName") String productName, @Param("bizNo") Long bizNo,
                         @Param("categoryId") Long categoryId, @Param("price") Integer price,
-                        @Param("salePrice") Integer salePrice, @Param("stockQty") Integer stockQty,
+                        @Param("salePrice") Integer salePrice,
                         @Param("description") String description, @Param("brandName") String brandName,
                         @Param("statusCd") String statusCd);
 
@@ -73,11 +74,12 @@ public interface BizStoreMapper {
     //지윤 26.07.14 상품 수정
     //WHERE절에 bizNo도 같이 걸어서 본인이 등록한 상품만 수정되게 함 (다른 사업자 상품 ID로 요청 보내도 0건 수정되고 조용히 끝남)
     //statusCd도 같이 받아서 판매중/품절/입고대기/판매중지 상태를 강제로 바꿀 수 있게 함
-    int updateProduct(@Param("productId") Long productId, @Param("bizNo") Long bizNo,
-                       @Param("productName") String productName, @Param("categoryId") Long categoryId,
-                       @Param("price") Integer price, @Param("salePrice") Integer salePrice,
-                       @Param("stockQty") Integer stockQty, @Param("description") String description,
-                       @Param("brandName") String brandName, @Param("statusCd") String statusCd);
+    //지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제
+        int updateProduct(@Param("productId") Long productId, @Param("bizNo") Long bizNo,
+        @Param("productName") String productName, @Param("categoryId") Long categoryId,
+        @Param("price") Integer price, @Param("salePrice") Integer salePrice,
+        @Param("description") String description,
+        @Param("brandName") String brandName, @Param("statusCd") String statusCd);
 
     //지윤 26.07.14 상품 등록/수정 폼의 카테고리 드롭다운용
     //최하위(4단계) 카테고리만 조회 (TB_PRODUCT.CATEGORY_ID가 실제로 참조하는 단계라서 그것만 골라옴)

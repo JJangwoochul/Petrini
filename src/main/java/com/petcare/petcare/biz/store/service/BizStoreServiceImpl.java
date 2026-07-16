@@ -82,7 +82,7 @@ public class BizStoreServiceImpl implements BizStoreService {
         String productCd = "P-" + String.format("%04d", newId);
 
         bizStoreMapper.insertProduct(newId, productCd, product.getProductName(), product.getBizNo(),
-                product.getCategoryId(), product.getPrice(), product.getSalePrice(), totalStock,
+                product.getCategoryId(), product.getPrice(), product.getSalePrice(),
                 product.getDescription(), product.getBrandName(), statusCd);
 
         saveOptions(newId, options);
@@ -111,7 +111,7 @@ public class BizStoreServiceImpl implements BizStoreService {
 
         int updated = bizStoreMapper.updateProduct(product.getProductId(), product.getBizNo(),
                 product.getProductName(), product.getCategoryId(), product.getPrice(), product.getSalePrice(),
-                totalStock, product.getDescription(), product.getBrandName(), statusCd);
+                product.getDescription(), product.getBrandName(), statusCd);
         if (updated == 0) return false;
 
         bizStoreMapper.deleteProductOptions(product.getProductId());

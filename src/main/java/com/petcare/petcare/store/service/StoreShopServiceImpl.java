@@ -32,12 +32,16 @@ import com.petcare.petcare.store.vo.BrandVO;
 import com.petcare.petcare.store.vo.OrderTempVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import org.springframework.transaction.annotation.Transactional;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
 
     @Autowired
     private StoreShopMapper storeShopMapper;
+
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     //지윤 26.07.06 페이지당 상품 개수 (요구사항 고정값)
     private static final int PAGE_SIZE = 12;
@@ -222,10 +226,14 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
         if (item.getOptionId() != null) {
             storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
         }
-        storeShopMapper.updateProductStock(item.getProductId(), item.getQty());
 
-        //지윤 26.07.15 추가: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
-        storeShopMapper.checkAndSetSoldout(item.getProductId());
+        //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
+        //지윤 26.07.16 수정: 방금 품절로 "새로 바뀐" 경우에만(반환값>0) 사업자에게 알림 전송
+        int soldoutJustNow = storeShopMapper.checkAndSetSoldout(item.getProductId());
+        if (soldoutJustNow > 0) {
+            Long bizMemberNo = storeShopMapper.selectBizMemberNoByBizNo(item.getBizNo());
+            mypageNotifyService.sendProductSoldoutNotification(bizMemberNo, item.getProductName(), item.getProductId());
+        }
     }
 
     storeShopMapper.insertPayment(orderId, "TOSS", p.getFinalTotal(), tossPaymentKey, tossOrderId);
