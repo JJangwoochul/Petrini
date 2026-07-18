@@ -153,9 +153,12 @@ public interface StoreShopMapper {
     //지윤 26.07.12 방금 등록한 문의의 QNA_ID 조회 (등록 직후 화면에 삭제버튼 바로 붙이기 위함)
     Long selectLatestQnaId(@Param("productId") Long productId, @Param("memberNo") Long memberNo);
 
-    //지윤 26.07.13 주문 완료 시 재고 차감 - 옵션 없는 상품용 (TB_PRODUCT.STOCK_QTY)
-    void updateProductStock(@Param("productId") Long productId, @Param("qty") Integer qty);
-
     //지윤 26.07.13 주문 완료 시 재고 차감 - 옵션 있는 상품용 (TB_PRODUCT_OPTION.STOCK_QTY)
     void updateOptionStock(@Param("optionId") Long optionId, @Param("qty") Integer qty);
+
+    //지윤 26.07.15 추가: 재고 0 되면 자동 품절 처리
+    int checkAndSetSoldout(@Param("productId") Long productId);
+
+    //지윤 26.07.16 추가: 품절 알림 보낼 사업자 회원번호 조회
+    Long selectBizMemberNoByBizNo(@Param("bizNo") Long bizNo);
 }

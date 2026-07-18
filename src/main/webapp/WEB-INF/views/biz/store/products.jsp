@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="반려동물 쇼핑몰" />
 <c:set var="bizPage"      value="products" />
@@ -7,8 +8,20 @@
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
 
-<%-- 7/3, 사업자(쇼핑몰) 상품 관리 UI 구성 v2 — 카테고리/정가·할인가/상품설명/정렬 추가 --%>
+<%-- 지윤 26.07.15 수정: 하드코딩(JS mock 배열) -> 실데이터 연동. 등록/수정은 모달로 처리, 옵션별 재고 지원 --%>
 <style>
+  .biz-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center}
+  .biz-modal-overlay.on{display:flex}
+  .biz-modal{background:#fff;border-radius:12px;padding:24px 24px 16px;max-height:88vh;overflow-y:auto}
+  
+  #prodForm .biz-form-fields > .biz-form-row{margin-bottom:18px}
+  #prodForm .biz-form-row label{display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#333}
+  #prodForm .biz-form-row input,
+  #prodForm .biz-form-row select,
+  #prodForm .biz-form-row textarea{width:100%;box-sizing:border-box}
+  .opt-row{background:#FAFBFA}
+  .opt-row > div{row-gap:14px}
+
   .prod-filter{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:18px 20px}
   .prod-filter select,.prod-filter input{border:1px solid var(--biz-border);border-radius:8px;padding:8px 10px;font-size:13px;color:#333}
   .prod-filter input[type="text"]{width:220px}
@@ -28,375 +41,402 @@
   .prod-pagination button:disabled{opacity:.4;cursor:default}
   .prod-form-actions{display:flex;justify-content:center;gap:10px;margin-top:22px}
   .prod-form-actions .biz-btn-primary{min-width:180px}
-  .prod-price-row{display:grid;grid-template-columns:250px 250px;column-gap:24px;}
+  .prod-price-row{display:flex;gap:16px}
+  .prod-price-row .biz-form-row{flex:1}
 </style>
 
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">상품 관리</h1>
-    <p class="biz-page-desc">판매할 상품을 등록·수정·삭제하세요.</p>
+    <p class="biz-page-desc">판매할 상품을 등록·수정하세요.</p>
   </div>
 
   <div class="biz-card" style="margin-bottom:16px">
-    <div class="prod-filter">
-      <select id="fField">
+    <form class="prod-filter" method="get" action="${contextPath}/biz/store/products">
+      <select name="fField" disabled>
         <option value="name">상품명</option>
       </select>
-      <input type="text" id="fKeyword" placeholder="상품명을 입력하세요.">
+      <input type="text" name="keyword" value="${selectedKeyword}" placeholder="상품명을 입력하세요.">
       <span style="font-size:13px;color:#666;margin-left:6px">카테고리</span>
-      <select id="fCategory">
-        <option value="all">전체</option>
-        <option value="food">사료</option>
-        <option value="snack">간식</option>
-        <option value="toy">장난감</option>
-        <option value="hygiene">위생용품</option>
+      <select name="categoryId">
+        <option value="">전체</option>
+        <c:forEach var="cat" items="${categoryList}">
+          <option value="${cat.categoryId}" ${selectedCategoryId == cat.categoryId ? 'selected' : ''}>${cat.categoryName}</option>
+        </c:forEach>
       </select>
       <span style="font-size:13px;color:#666;margin-left:6px">상태</span>
-      <select id="fStatus">
-        <option value="all">전체</option>
-        <option value="sale">판매중</option>
-        <option value="soldout">품절</option>
+      <select name="statusCd">
+        <option value="">전체</option>
+        <option value="NORMAL"  ${selectedStatusCd == 'NORMAL'  ? 'selected' : ''}>판매중</option>
+        <option value="SOLDOUT" ${selectedStatusCd == 'SOLDOUT' ? 'selected' : ''}>품절</option>
+        <option value="WAITING" ${selectedStatusCd == 'WAITING' ? 'selected' : ''}>입고대기</option>
+        <option value="STOPPED" ${selectedStatusCd == 'STOPPED' ? 'selected' : ''}>판매중지</option>
       </select>
-      <button class="btn-search" onclick="applyFilter()">검색</button>
-      <button class="btn-reset" onclick="resetFilter()">초기화</button>
-    </div>
+      <button type="submit" class="btn-search">검색</button>
+      <button type="button" class="btn-reset" onclick="location.href='${contextPath}/biz/store/products'">초기화</button>
+    </form>
   </div>
 
   <div class="biz-card" style="margin-bottom:16px">
     <div class="prod-table-head">
-      <div class="biz-card-head" style="padding:20px 0 12px"><span>상품목록</span><small>총 <span id="totalCount">0</span>개</small></div>
+      <div class="biz-card-head" style="padding:20px 0 12px"><span>상품목록</span><small>총 <c:out value="${totalCount}"/>개</small></div>
       <div class="right">
-        <select class="prod-sort" id="fSort" onchange="applySort()">
-          <option value="latest">최신순</option>
-          <option value="lowstock">재고 적은순</option>
-          <option value="priceAsc">가격 낮은순</option>
-          <option value="priceDesc">가격 높은순</option>
-        </select>
-        <button type="button" class="biz-btn-primary" onclick="openForm('add')">+ 상품등록</button>
+        <button type="button" class="biz-btn-primary" onclick="openRegisterModal()">+ 상품등록</button>
       </div>
     </div>
     <table class="biz-table">
-      <thead><tr><th>상품이미지</th><th>상품명 / 카테고리</th><th>판매가</th><th>재고</th><th>등록일</th><th>상태</th><th>관리</th></tr></thead>
-      <tbody id="prodBody"></tbody>
-    </table>
-    <div class="prod-pagination" id="pagination"></div>
-  </div>
+      <thead><tr><th>상품이미지</th><th>상품명 / 카테고리</th><th>옵션</th><th>판매가</th><th>재고</th><th>등록일</th><th>상태</th><th>관리</th></tr></thead>
+      <tbody>
+        <c:choose>
+          <c:when test="${empty productList}">
+            <tr><td colspan="8" style="text-align:center;color:#999;padding:24px 0">등록된 상품이 없습니다.</td></tr>
+          </c:when>
+          <c:otherwise>
+            <c:forEach var="p" items="${productList}">
+              <c:set var="rows" value="${empty p.optionList ? null : p.optionList}"/>
+              <c:forEach var="opt" items="${rows}" varStatus="os">
+                <tr>
+                  <td>
+                    <c:choose>
+                      <c:when test="${not empty p.thumbnailUrl}">
+                        <img class="prod-thumb" src="${contextPath}/upload/${p.thumbnailUrl}" alt="${p.productName}">
+                      </c:when>
+                      <c:otherwise>
+                        <img class="prod-thumb" src="https://placehold.co/100x100/EAF7F2/2BAB82?text=No+Image" alt="${p.productName}">
+                      </c:otherwise>
+                    </c:choose>
+                  </td>
+                  <td><span class="prod-cat">${p.categoryName}</span><br>${p.productName}</td>
+                  <td><c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}</td>
+                  
+                  <%-- 지윤 26.07.15 수정: 옵션별 최종가 = 판매가 + 해당 옵션 추가금액 --%>
+                  <c:set var="finalPrice" value="${p.salePrice + opt.addPrice}"/>
+                  <td>
+                    <div class="prod-price">
+                      <c:choose>
+                        <c:when test="${p.discountRate > 0}">
+                          <span class="orig"><fmt:formatNumber value="${p.price + opt.addPrice}" pattern="#,###"/>원</span>
+                          <span class="discount">${p.discountRate}%</span><span class="sale"><fmt:formatNumber value="${finalPrice}" pattern="#,###"/>원</span>
+                        </c:when>
+                        <c:otherwise>
+                          <span class="sale"><fmt:formatNumber value="${finalPrice}" pattern="#,###"/>원</span>
+                        </c:otherwise>
+                      </c:choose>
+                      <c:if test="${opt.addPrice > 0}"><small style="color:#888">(+<fmt:formatNumber value="${opt.addPrice}" pattern="#,###"/>)</small></c:if>
+                    </div>
+                  </td>
 
-  <div class="biz-card" id="formCard" style="display:none">
-    <div class="biz-card-head"><span id="formTitle">상품등록</span></div>
-    <form id="prodForm" style="padding:20px;max-width:640px">
+                  <td>${opt.stockQty}개<c:if test="${opt.stockQty == 0}"> (품절)</c:if></td>
+                  <td>${p.regDate}</td>
+                  <td>
+                    <c:choose>
+                      <c:when test="${p.statusCd == 'NORMAL'}"><span class="bs-badge bs-done">판매중</span></c:when>
+                      <c:when test="${p.statusCd == 'SOLDOUT'}"><span class="bs-badge bs-cancel">품절</span></c:when>
+                      <c:when test="${p.statusCd == 'WAITING'}"><span class="bs-badge bs-wait">입고대기</span></c:when>
+                      <c:when test="${p.statusCd == 'STOPPED'}"><span class="bs-badge bs-empty">판매중지</span></c:when>
+                      <c:otherwise><span class="bs-badge bs-empty">${p.statusCd}</span></c:otherwise>
+                    </c:choose>
+                  </td>
+                  <td><button class="biz-btn" onclick="openEditModal(${p.productId})">수정</button></td>
+                </tr>
+              </c:forEach>
+            </c:forEach>
+          </c:otherwise>
+        </c:choose>
+      </tbody>
+    </table>
+
+    <c:url var="pageBaseUrl" value="/biz/store/products">
+      <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
+      <c:if test="${not empty selectedCategoryId}"><c:param name="categoryId" value="${selectedCategoryId}"/></c:if>
+      <c:if test="${not empty selectedStatusCd}"><c:param name="statusCd" value="${selectedStatusCd}"/></c:if>
+    </c:url>
+    <div class="prod-pagination">
+      <c:if test="${currentPage > 1}">
+        <a href="${pageBaseUrl}&page=${currentPage - 1}"><button>&lt;</button></a>
+      </c:if>
+      <c:forEach begin="1" end="${totalPages}" var="i">
+        <a href="${pageBaseUrl}&page=${i}"><button class="${i == currentPage ? 'active' : ''}">${i}</button></a>
+      </c:forEach>
+      <c:if test="${currentPage < totalPages}">
+        <a href="${pageBaseUrl}&page=${currentPage + 1}"><button>&gt;</button></a>
+      </c:if>
+    </div>
+  </div>
+</main>
+
+<div class="biz-modal-overlay" id="prodModalOverlay">
+  <div class="biz-modal" style="max-width:640px;width:92%">
+    <div class="biz-card-head"><span id="modalTitle">상품등록</span></div>
+    <form id="prodForm" enctype="multipart/form-data" style="padding:20px 0;max-height:70vh;overflow-y:auto">
       <div class="biz-form-fields">
         <div class="biz-form-row">
           <label>상품명<span class="req">*</span></label>
-          <input type="text" id="pName" placeholder="상품명을 입력하세요">
+          <input type="text" name="productName" id="pName" required>
         </div>
+
         <div class="biz-form-row">
           <label>카테고리<span class="req">*</span></label>
-          <select id="pCategory">
-            <option value="food">사료</option>
-            <option value="snack">간식</option>
-            <option value="toy">장난감</option>
-            <option value="hygiene">위생용품</option>
+          <div style="display:flex;gap:8px">
+            <select id="pSpecies" style="flex:1"><option value="">동물 선택</option></select>
+            <select id="pType" style="flex:1"><option value="">타입 선택</option></select>
+            <select name="categoryId" id="pCategory" required style="flex:1"><option value="">나이대 선택</option></select>
+          </div>
+        </div>
+
+        <div class="biz-form-row">
+          <label>브랜드명</label>
+          <input type="text" name="brandName" id="pBrand" placeholder="선택 입력">
+        </div>
+        <div class="prod-price-row">
+          <div class="biz-form-row">
+            <label>정가<span class="req">*</span></label>
+            <input type="number" name="price" id="pPrice" required>
+          </div>
+          <div class="biz-form-row">
+            <label>판매가(할인가)<span class="req">*</span></label>
+            <input type="number" name="salePrice" id="pSalePrice" required>
+          </div>
+        </div>
+        <div class="biz-form-row">
+          <label>상태<span class="req">*</span></label>
+          <select name="statusCd" id="pStatus" required>
+            <option value="NORMAL">판매중</option>
+            <option value="SOLDOUT">품절</option>
+            <option value="WAITING">입고대기</option>
+            <option value="STOPPED">판매중지</option>
           </select>
+          <small id="soldoutHint" style="display:none;color:#E24B4A">옵션 재고 합계가 0이라 품절로 고정됩니다.</small>
         </div>
-
         <div class="biz-form-row">
-        <label>정가<span class="req">*</span></label>
-        <input type="number" id="pOrigPrice" placeholder="예: 35000">
-        </div>
-
-        <div class="biz-form-row">
-        <label>판매가(할인가)<span class="req">*</span></label>
-        <input type="number" id="pPrice" placeholder="예: 29900">
-        </div>
-
-        <div class="biz-form-row">
-          <label>수량(재고)<span class="req">*</span></label>
-          <input type="number" id="pStock" placeholder="재고 수량을 입력하세요">
-        </div>
-        
-        <div class="biz-form-row">
-          <label>용량/중량/사이즈</label>
-          <input type="text" id="pSize" placeholder="예) 4kg, 200g, M 사이즈 등">
-        </div>
-        
-        <div class="biz-form-row">
-          <label>유통기한</label>
-          <input type="text" id="pExpire" placeholder="예) 2027-06-30 (해당 없으면 비워두세요)">
+          <label>옵션(색상/사이즈)<span class="req">*</span></label>
+          <div id="optionRows"></div>
+          <button type="button" class="biz-btn-ghost" onclick="addOptionRow()">+ 옵션추가</button>
         </div>
         <div class="biz-form-row">
           <label>상품설명</label>
-          <textarea id="pDesc" placeholder="상품에 대한 설명을 입력하세요"></textarea>
+          <textarea name="description" id="pDesc"></textarea>
         </div>
-
         <div class="biz-form-row">
           <label>상품이미지</label>
           <div style="display:flex;gap:10px;align-items:center">
             <input type="text" id="pImgName" placeholder="선택된 파일이 없습니다" readonly style="flex:1;background:#FAFBFA">
             <button type="button" class="biz-btn-ghost" style="white-space:nowrap" onclick="document.getElementById('pImgFile').click()">이미지 찾기</button>
-            <input type="file" id="pImgFile" accept="image/*" style="display:none">
+            <input type="file" name="image" id="pImgFile" accept="image/*" style="display:none">
           </div>
           <div class="biz-form-image-box" id="imgPreviewBox" style="width:160px;height:160px;margin-top:10px;display:none">
             <img id="imgPreview" src="" alt="상품 이미지 미리보기">
           </div>
         </div>
       </div>
-
       <div class="prod-form-actions">
-        <button type="button" class="biz-btn-ghost" onclick="closeForm()">취소</button>
+        <button type="button" class="biz-btn-ghost" onclick="closeModal()">취소</button>
         <button type="button" class="biz-btn-primary" id="submitBtn" onclick="submitProduct()">상품등록신청</button>
       </div>
     </form>
   </div>
-</main>
-
-<div class="biz-toast" id="saveToast">
-  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-  <span id="saveToastMsg">처리되었습니다.</span>
 </div>
 
 <script>
-  var categoryLabel = { food:'사료', snack:'간식', toy:'장난감', hygiene:'위생용품' };
-  var statusLabel = { sale:'판매중', soldout:'품절' };
-  var statusBadgeClass = { sale:'bs-done', soldout:'bs-cancel' };
+  var contextPath = '${contextPath}';
+  var editingId = null;
 
-  var products = [
-    { id:1, name:'로얄캐닌 인도어 사료', category:'food', origPrice:35000, price:29900, stock:32, status:'sale', size:'4kg', expire:'2027-03-31', desc:'실내 생활 반려묘를 위한 저칼로리 사료입니다.', regDate:'2026-06-20', img:'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=200&q=80' },
-    { id:2, name:'수제 닭가슴살 져키', category:'snack', origPrice:8500, price:8500, stock:0, status:'soldout', size:'200g', expire:'2026-12-31', desc:'국내산 닭가슴살로 만든 무첨가 수제 간식입니다.', regDate:'2026-06-15', img:'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=200&q=80' },
-    { id:3, name:'노즈워크 매트 오렌지', category:'toy', origPrice:22000, price:18500, stock:14, status:'sale', size:'L 사이즈', expire:'', desc:'후각 발달과 스트레스 해소에 좋은 노즈워크 매트입니다.', regDate:'2026-06-10', img:'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=200&q=80' },
-    { id:4, name:'H형 하네스 블루', category:'hygiene', origPrice:25000, price:22000, stock:9, status:'sale', size:'M 사이즈', expire:'', desc:'가슴 압박이 적은 편안한 착용감의 하네스입니다.', regDate:'2026-06-05', img:'https://images.unsplash.com/photo-1601758125946-6ac8acf9758f?w=200&q=80' }
+  //지윤 26.07.15 추가: 동물→타입→나이대 연동 드롭다운용 카테고리 전체 데이터 (2~4단계)
+  var categoryTree = [
+    <c:forEach var="cat" items="${categoryList}" varStatus="vs">
+    {categoryId:${cat.categoryId}, parentId:${cat.parentId}, categoryName:'${cat.categoryName}', depth:${cat.depth}}<c:if test="${!vs.last}">,</c:if>
+    </c:forEach>
   ];
 
-  var filtered = products.slice();
-  var page = 1;
-  var pageSize = 3;
-  var editingId = null;
-  var previewSrc = '';
-
-  function fmtWon(n){ return n.toLocaleString('ko-KR') + '원'; }
-
-  function applyFilter() {
-    var keyword = document.getElementById('fKeyword').value.trim();
-    var category = document.getElementById('fCategory').value;
-    var status = document.getElementById('fStatus').value;
-
-    filtered = products.filter(function (p) {
-      var matchName = !keyword || p.name.indexOf(keyword) !== -1;
-      var matchCategory = category === 'all' || p.category === category;
-      var matchStatus = status === 'all' || p.status === status;
-      return matchName && matchCategory && matchStatus;
-    });
-    page = 1;
-    applySort();
+  //지윤 26.07.15 추가: categoryId로 카테고리 트리에서 노드 하나 찾기
+  function getCatNode(id) {
+    return categoryTree.find(function(c){ return c.categoryId == id; });
   }
 
-  function resetFilter() {
-    document.getElementById('fKeyword').value = '';
-    document.getElementById('fCategory').value = 'all';
-    document.getElementById('fStatus').value = 'all';
-    document.getElementById('fSort').value = 'latest';
-    filtered = products.slice();
-    page = 1;
-    render();
+  //지윤 26.07.15 추가: select 박스에 옵션 리스트 채우는 공통 함수
+  function fillSelect(sel, list, placeholder) {
+    sel.innerHTML = '<option value="">' + placeholder + '</option>' +
+      list.map(function(c){ return '<option value="' + c.categoryId + '">' + c.categoryName + '</option>'; }).join('');
   }
 
-  function applySort() {
-    var sort = document.getElementById('fSort').value;
-    if (sort === 'latest') filtered.sort(function (a, b) { return b.regDate.localeCompare(a.regDate); });
-    else if (sort === 'lowstock') filtered.sort(function (a, b) { return a.stock - b.stock; });
-    else if (sort === 'priceAsc') filtered.sort(function (a, b) { return a.price - b.price; });
-    else if (sort === 'priceDesc') filtered.sort(function (a, b) { return b.price - a.price; });
-    render();
-  }
-
-  function deleteProduct(id) {
-    if (!confirm('선택한 상품을 삭제하시겠습니까?')) return;
-    products = products.filter(function (p) { return p.id !== id; });
-    filtered = filtered.filter(function (p) { return p.id !== id; });
-    render();
-    showToast('상품이 삭제되었습니다.');
-  }
-
-  function openForm(mode, id) {
-    editingId = null;
-    previewSrc = '';
-    document.getElementById('prodForm').reset();
-    document.getElementById('imgPreviewBox').style.display = 'none';
-
-    if (mode === 'edit') {
-      var p = products.find(function (x) { return x.id === id; });
-      if (!p) return;
-      editingId = id;
-      document.getElementById('formTitle').textContent = '상품수정';
-      document.getElementById('submitBtn').textContent = '수정완료';
-      document.getElementById('pName').value      = p.name;
-      document.getElementById('pCategory').value  = p.category;
-      document.getElementById('pOrigPrice').value = p.origPrice;
-      document.getElementById('pPrice').value     = p.price;
-      document.getElementById('pStock').value     = p.stock;
-      document.getElementById('pSize').value      = p.size;
-      document.getElementById('pExpire').value    = p.expire;
-      document.getElementById('pDesc').value      = p.desc;
-      previewSrc = p.img;
-      document.getElementById('pImgName').value = '기존 이미지 사용중';
-      document.getElementById('imgPreview').src = previewSrc;
-      document.getElementById('imgPreviewBox').style.display = 'block';
+  //지윤 26.07.15 추가: 타입(사료/간식/용품) 선택 시 나이대 채우기.
+  //나이대(4단계)가 없는 타입(용품 등)은 나이대 없이 타입 자체를 최종 카테고리로 확정 + 드롭다운 잠금
+  function onTypeChange(typeId, presetAgeId) {
+    var pCategory = document.getElementById('pCategory');
+    var ageOptions = categoryTree.filter(function(c){ return c.depth == 4 && c.parentId == typeId; });
+    if (ageOptions.length > 0) {
+      fillSelect(pCategory, ageOptions, '나이대 선택');
+      pCategory.disabled = false;
+      if (presetAgeId) pCategory.value = presetAgeId;
+    } else if (typeId) {
+      var typeNode = getCatNode(typeId);
+      pCategory.innerHTML = '<option value="' + typeId + '">해당없음(' + typeNode.categoryName + ')</option>';
+      pCategory.value = typeId;
+      pCategory.disabled = true;
     } else {
-      document.getElementById('formTitle').textContent = '상품등록';
-      document.getElementById('submitBtn').textContent = '상품등록신청';
+      fillSelect(pCategory, [], '나이대 선택');
+    }
+  }
+
+  //지윤 26.07.15 추가: 상품등록 모달 열 때 카테고리 3단 드롭다운 초기화(전부 빈 값)
+  function initCategorySelects() {
+    fillSelect(document.getElementById('pSpecies'), categoryTree.filter(function(c){ return c.depth == 2; }), '동물 선택');
+    fillSelect(document.getElementById('pType'), [], '타입 선택');
+    fillSelect(document.getElementById('pCategory'), [], '나이대 선택');
+    document.getElementById('pCategory').disabled = false;
+  }
+
+  //지윤 26.07.15 추가: 상품수정 모달 열 때 저장된 categoryId 하나로 동물/타입/나이대 3단을 역으로 채움
+  //categoryId가 4단계(나이대)든 3단계(용품처럼 나이대 없는 타입)든 둘 다 처리
+  function setCategorySelection(categoryId) {
+    var leaf = getCatNode(categoryId);
+    if (!leaf) { initCategorySelects(); return; }
+
+    var typeId, speciesId, presetAgeId;
+    if (leaf.depth == 4) {
+      typeId = leaf.parentId;
+      speciesId = getCatNode(typeId).parentId;
+      presetAgeId = leaf.categoryId;
+    } else {
+      typeId = leaf.categoryId;
+      speciesId = leaf.parentId;
+      presetAgeId = null;
     }
 
-    document.getElementById('formCard').style.display = 'block';
-    document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    fillSelect(document.getElementById('pSpecies'), categoryTree.filter(function(c){ return c.depth == 2; }), '동물 선택');
+    document.getElementById('pSpecies').value = speciesId;
+    fillSelect(document.getElementById('pType'), categoryTree.filter(function(c){ return c.depth == 3 && c.parentId == speciesId; }), '타입 선택');
+    document.getElementById('pType').value = typeId;
+    onTypeChange(typeId, presetAgeId);
   }
 
-  function closeForm() {
-    document.getElementById('formCard').style.display = 'none';
+  //지윤 26.07.15 추가: 동물 바뀌면 타입 목록 다시 채우고, 나이대는 초기화
+  document.getElementById('pSpecies').addEventListener('change', function() {
+    var speciesId = Number(this.value);
+    fillSelect(document.getElementById('pType'), categoryTree.filter(function(c){ return c.depth == 3 && c.parentId == speciesId; }), '타입 선택');
+    fillSelect(document.getElementById('pCategory'), [], '나이대 선택');
+    document.getElementById('pCategory').disabled = false;
+  });
+  //지윤 26.07.15 추가: 타입 바뀌면 나이대 목록 다시 채움 (또는 용품처럼 나이대 없으면 잠금 처리)
+  document.getElementById('pType').addEventListener('change', function() {
+    onTypeChange(Number(this.value), null);
+  });
+
+
+  //지윤 26.07.15 수정: 한 줄 나열 -> 라벨 붙은 4칸 그리드로 변경, 삭제 버튼 제거
+  function optRowHtml(color, size, addPrice, stockQty) {
+    return '<div class="opt-row" style="border:1px solid var(--biz-border);border-radius:8px;padding:14px;margin-bottom:10px">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">' +
+        '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">색상(선택)</label>' +
+          '<input type="text" name="optionColor" placeholder="예: 블랙" style="width:100%" value="' + (color || '') + '"></div>' +
+        '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">사이즈/용량<span class="req">*</span></label>' +
+          '<input type="text" name="optionSize" placeholder="예: M, 4kg" style="width:100%" required value="' + (size || '') + '"></div>' +
+        '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">추가금액</label>' +
+          '<input type="number" name="addPrice" placeholder="0" min="0" style="width:100%" value="' + (addPrice != null ? addPrice : '') + '"></div>' +
+        '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">재고<span class="req">*</span></label>' +
+          '<input type="number" name="stockQty" placeholder="수량" style="width:100%" required value="' + (stockQty != null ? stockQty : '') + '" oninput="onStockChange()"></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function addOptionRow(color, size, addPrice, stockQty) {
+    var wrap = document.createElement('div');
+    wrap.innerHTML = optRowHtml(color, size, addPrice, stockQty);
+    document.getElementById('optionRows').appendChild(wrap.firstChild);
+  }
+
+  function onStockChange() {
+    var stocks = document.querySelectorAll('input[name="stockQty"]');
+    var total = 0;
+    stocks.forEach(function (s) { total += Number(s.value) || 0; });
+    var statusSel = document.getElementById('pStatus');
+    var hint = document.getElementById('soldoutHint');
+    if (total === 0) {
+      statusSel.value = 'SOLDOUT';
+      statusSel.disabled = true;
+      hint.style.display = 'inline';
+    } else {
+      statusSel.disabled = false;
+      hint.style.display = 'none';
+      if (statusSel.value === 'SOLDOUT') statusSel.value = 'NORMAL';
+    }
+  }
+
+  function openRegisterModal() {
+    editingId = null;
+    document.getElementById('prodForm').reset();
+    document.getElementById('optionRows').innerHTML = '';
+    //지윤 26.07.15 추가: 등록 모달 열 때 카테고리 3단 드롭다운 초기화
+    initCategorySelects();
+    addOptionRow();
+    document.getElementById('imgPreviewBox').style.display = 'none';
+    document.getElementById('pImgName').value = '';
+    document.getElementById('pStatus').disabled = false;
+    document.getElementById('modalTitle').textContent = '상품등록';
+    document.getElementById('submitBtn').textContent = '상품등록신청';
+    document.getElementById('prodModalOverlay').classList.add('on');
+  }
+
+  function openEditModal(id) {
+    fetch(contextPath + '/biz/store/products/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (p) {
+        editingId = id;
+        document.getElementById('prodForm').reset();
+        document.getElementById('pName').value = p.productName;
+        setCategorySelection(p.categoryId);
+        document.getElementById('pBrand').value = p.brandName || '';
+        document.getElementById('pPrice').value = p.price;
+        document.getElementById('pSalePrice').value = p.salePrice;
+        document.getElementById('pDesc').value = p.description || '';
+        document.getElementById('pStatus').value = p.statusCd;
+
+        document.getElementById('optionRows').innerHTML = '';
+        if (p.optionList && p.optionList.length > 0) {
+          p.optionList.forEach(function (opt) {
+            addOptionRow(opt.optionColor === '기본' ? '' : opt.optionColor, opt.optionSize, opt.addPrice, opt.stockQty);
+          });
+        } else {
+          addOptionRow();
+        }
+        onStockChange();
+
+        document.getElementById('imgPreviewBox').style.display = p.thumbnailUrl ? 'block' : 'none';
+        if (p.thumbnailUrl) document.getElementById('imgPreview').src = contextPath + '/upload/' + p.thumbnailUrl;
+        document.getElementById('pImgName').value = p.thumbnailUrl ? '기존 이미지 사용중' : '';
+
+        document.getElementById('modalTitle').textContent = '상품수정';
+        document.getElementById('submitBtn').textContent = '수정완료';
+        document.getElementById('prodModalOverlay').classList.add('on');
+      });
+  }
+
+  function closeModal() {
+    document.getElementById('prodModalOverlay').classList.remove('on');
   }
 
   document.getElementById('pImgFile').addEventListener('change', function (e) {
     var file = e.target.files[0];
     if (!file) return;
     document.getElementById('pImgName').value = file.name;
-    previewSrc = URL.createObjectURL(file);
-    document.getElementById('imgPreview').src = previewSrc;
-    document.getElementById('imgPreviewBox').style.display = 'block';
-  });
-
-/*사업자(상점) 숫자 마이너스 제한*/
-  ['pStock', 'pOrigPrice', 'pPrice'].forEach(function (id) {
-    var el = document.getElementById(id);
-    el.addEventListener('input', function () {
-      if (this.value.indexOf('-') !== -1) {
-        this.value = this.value.replace(/-/g, '');
-      }
-    });
-    el.addEventListener('keydown', function (e) {
-      if (e.key === '-' || e.key === 'Subtract') {
-        e.preventDefault();
-      }
-    });
-  });
-
-  function todayStr() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
-
-  function submitProduct() {
-    var required = [
-      { id: 'pName',      label: '상품명' },
-      { id: 'pOrigPrice', label: '정가' },
-      { id: 'pPrice',     label: '판매가(할인가)' },
-      { id: 'pStock',     label: '수량(재고)' }
-    ];
-    for (var i = 0; i < required.length; i++) {
-      var el = document.getElementById(required[i].id);
-      if (!el.value.trim()) {
-        alert(required[i].label + '을(를) 입력해주세요.');
-        el.focus();
-        return;
-      }
-    }
-
-    var stockVal = Number(document.getElementById('pStock').value);
-    var data = {
-      name: document.getElementById('pName').value.trim(),
-      category: document.getElementById('pCategory').value,
-      origPrice: Number(document.getElementById('pOrigPrice').value),
-      price: Number(document.getElementById('pPrice').value),
-      stock: stockVal,
-      status: stockVal > 0 ? 'sale' : 'soldout',
-      size: document.getElementById('pSize').value.trim(),
-      expire: document.getElementById('pExpire').value.trim(),
-      desc: document.getElementById('pDesc').value.trim(),
-      img: previewSrc || 'https://images.unsplash.com/photo-1601758124096-1f7e1b3b0c6e?w=200&q=80'
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      document.getElementById('imgPreview').src = ev.target.result;
+      document.getElementById('imgPreviewBox').style.display = 'block';
     };
+    reader.readAsDataURL(file);
+  });
 
-    if (editingId) {
-      var p = products.find(function (x) { return x.id === editingId; });
-      Object.assign(p, data);
-      showToast('상품 정보가 수정되었습니다.');
-    } else {
-      data.id = products.length ? Math.max.apply(null, products.map(function (x) { return x.id; })) + 1 : 1;
-      data.regDate = todayStr();
-      products.push(data);
-      showToast('상품 등록 신청이 완료되었습니다.');
-    }
-
-    filtered = products.slice();
-    closeForm();
-    applySort();
+ function submitProduct() {
+    var form = document.getElementById('prodForm');
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    //지윤 26.07.16 추가: disabled된 상태 드롭다운은 폼에 안 실려서 제출 직전 잠깐 풀어줌
+    document.getElementById('pStatus').disabled = false;
+    var formData = new FormData(form);
+    var url = contextPath + '/biz/store/products' + (editingId ? '/' + editingId : '');
+    fetch(url, { method: 'POST', body: formData })
+      .then(function () { location.href = contextPath + '/biz/store/products'; });
   }
-
-  function showToast(msg) {
-    document.getElementById('saveToastMsg').textContent = msg;
-    var toast = document.getElementById('saveToast');
-    toast.classList.add('on');
-    setTimeout(function () { toast.classList.remove('on'); }, 2000);
-  }
-
-  function render() {
-    document.getElementById('totalCount').textContent = filtered.length;
-
-    var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    if (page > totalPages) page = totalPages;
-    var pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-    var body = document.getElementById('prodBody');
-    body.innerHTML = '';
-    if (pageItems.length === 0) {
-      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px 0">등록된 상품이 없습니다.</td></tr>';
-    } else {
-      pageItems.forEach(function (p) {
-        var discountRate = p.origPrice > p.price ? Math.round((1 - p.price / p.origPrice) * 100) : 0;
-        var priceHtml = '<div class="prod-price">';
-        if (discountRate > 0) {
-          priceHtml += '<span class="orig">' + fmtWon(p.origPrice) + '</span>';
-          priceHtml += '<span class="discount">' + discountRate + '%</span><span class="sale">' + fmtWon(p.price) + '</span>';
-        } else {
-          priceHtml += '<span class="sale">' + fmtWon(p.price) + '</span>';
-        }
-        priceHtml += '</div>';
-
-        var tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td><img class="prod-thumb" src="' + p.img + '" alt="' + p.name + '"></td>' +
-          '<td><span class="prod-cat">' + categoryLabel[p.category] + '</span><br>' + p.name + '</td>' +
-          '<td>' + priceHtml + '</td>' +
-          '<td>' + p.stock + '개</td>' +
-          '<td>' + p.regDate + '</td>' +
-          '<td><span class="bs-badge ' + statusBadgeClass[p.status] + '">' + statusLabel[p.status] + '</span></td>' +
-          '<td>' +
-            '<button class="biz-btn" onclick="openForm(\'edit\',' + p.id + ')">수정</button> ' +
-            '<button class="biz-btn danger" onclick="deleteProduct(' + p.id + ')">삭제</button>' +
-          '</td>';
-        body.appendChild(tr);
-      });
-    }
-
-    var pg = document.getElementById('pagination');
-    pg.innerHTML = '';
-    var prev = document.createElement('button');
-    prev.textContent = '<';
-    prev.disabled = page <= 1;
-    prev.onclick = function () { page--; render(); };
-    pg.appendChild(prev);
-    for (var i = 1; i <= totalPages; i++) {
-      var b = document.createElement('button');
-      b.textContent = i;
-      if (i === page) b.className = 'active';
-      (function (n) { b.onclick = function () { page = n; render(); }; })(i);
-      pg.appendChild(b);
-    }
-    var next = document.createElement('button');
-    next.textContent = '>';
-    next.disabled = page >= totalPages;
-    next.onclick = function () { page++; render(); };
-    pg.appendChild(next);
-  }
-
-  applySort();
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

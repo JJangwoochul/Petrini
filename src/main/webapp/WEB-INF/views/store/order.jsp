@@ -205,7 +205,7 @@
   <span id="orderFinalTotal"><fmt:formatNumber value="${productTotal}" pattern="#,###"/>원</span>
 </div>
     </div>
-    <button class="btn-pay" onclick="goToPayment()">결제수단 선택하기</button>
+    <button type="button" class="btn-pay" onclick="goToPayment()">결제수단 선택하기</button> 
   </div>
 </form>
 </div>

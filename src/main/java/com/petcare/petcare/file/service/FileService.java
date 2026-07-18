@@ -73,11 +73,20 @@ public class FileService {
         fileMapper.deleteFile(fileId);
     }
 
-    public List<FileVO> getFileList(String refType, Long refId) throws Exception {
+public List<FileVO> getFileList(String refType, Long refId) throws Exception {
         FileVO param = new FileVO();
         param.setRefType(refType);
         param.setRefId(refId);
         param.setDriveFileId(refType.toLowerCase() + "_" + System.currentTimeMillis());
         return fileMapper.selectFileList(param);
-    }    
+    }
+
+    //지윤 26.07.15 추가: 상품 이미지 교체 시 기존 파일들(디스크+DB) 전부 삭제 - 새 이미지 올리기 전에 호출
+    @Transactional
+    public void deleteFilesByRef(String refType, Long refId) throws Exception {
+        List<FileVO> files = getFileList(refType, refId);
+        for (FileVO f : files) {
+            deleteFile(f.getFileId());
+        }
+    }
 }

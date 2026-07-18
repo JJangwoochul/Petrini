@@ -33,6 +33,7 @@
         <button type="button" class="mp-tab on" data-filter="ALL">전체</button>
         <button type="button" class="mp-tab" data-filter="ORDER">주문</button>
         <button type="button" class="mp-tab" data-filter="RESERVE">예약</button>
+        <button type="button" class="mp-tab" data-filter="STOCK">재고</button>
         <button type="button" class="mp-tab" data-filter="NOTICE">공지</button>
     </div>
     <div class="noti-list" id="notiList">
@@ -49,14 +50,22 @@
                         <c:set var="iconClass" value="order" />
                         <c:set var="tabGroup" value="ORDER" />
                     </c:when>
+
                     <c:when test="${item.notiType eq 'RESERVE'}">
                         <c:set var="iconClass" value="resv" />
                         <c:set var="tabGroup" value="RESERVE" />
                     </c:when>
+
+                    <c:when test="${item.notiType eq 'STOCK'}">
+                        <c:set var="iconClass" value="stock" />
+                        <c:set var="tabGroup" value="STOCK" />
+                    </c:when>
+
                     <c:when test="${item.notiType eq 'COMMUNITY'}">
                         <c:set var="iconClass" value="chat" />
                         <c:set var="tabGroup" value="NOTICE" />
                     </c:when>
+
                     <c:otherwise>
                         <c:set var="iconClass" value="notice" />
                         <c:set var="tabGroup" value="NOTICE" />
@@ -75,12 +84,19 @@
                         <c:when test="${iconClass eq 'resv'}">
                             <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
                         </c:when>
+
                         <c:when test="${iconClass eq 'chat'}">
                             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                         </c:when>
+
+                        <c:when test="${iconClass eq 'stock'}">
+                            <svg viewBox="0 0 24 24"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+                        </c:when>
+                        
                         <c:otherwise>
                             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         </c:otherwise>
+
                         </c:choose>
                     </div>
                     <div class="noti-body">

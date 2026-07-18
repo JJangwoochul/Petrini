@@ -32,12 +32,16 @@ import com.petcare.petcare.store.vo.BrandVO;
 import com.petcare.petcare.store.vo.OrderTempVO;
 import com.petcare.petcare.store.vo.CartItemVO;
 import org.springframework.transaction.annotation.Transactional;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
 
     @Autowired
     private StoreShopMapper storeShopMapper;
+
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     //지윤 26.07.06 페이지당 상품 개수 (요구사항 고정값)
     private static final int PAGE_SIZE = 12;
@@ -218,10 +222,17 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
                 item.getQty(), item.getPrice(), item.getPrice() * item.getQty());
 
         //지윤 26.07.13 추가: 주문 확정된 만큼 재고 차감 (옵션 있으면 옵션 재고, 없으면 상품 재고)
+        //지윤 26.07.15 수정: 옵션 재고 깎을 때도 상품 전체 재고를 같이 깎아야 목록/상태 표시가 맞음
         if (item.getOptionId() != null) {
             storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
-        } else {
-            storeShopMapper.updateProductStock(item.getProductId(), item.getQty());
+        }
+
+        //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
+        //지윤 26.07.16 수정: 방금 품절로 "새로 바뀐" 경우에만(반환값>0) 사업자에게 알림 전송
+        int soldoutJustNow = storeShopMapper.checkAndSetSoldout(item.getProductId());
+        if (soldoutJustNow > 0) {
+            Long bizMemberNo = storeShopMapper.selectBizMemberNoByBizNo(item.getBizNo());
+            mypageNotifyService.sendProductSoldoutNotification(bizMemberNo, item.getProductName(), item.getProductId());
         }
     }
 

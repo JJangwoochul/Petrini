@@ -79,6 +79,27 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026-07-16 지윤 — 상품 품절 시 사업자에게 알림 (NOTI_TYPE=STOCK)
+    @Override
+    @Transactional
+    public void sendProductSoldoutNotification(Long bizMemberNo, String productName, Long productId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = productName != null ? productName : "상품";
+        String content = "[" + safeName + "] 상품의 재고가 모두 소진되어 품절 처리되었습니다.\n\n상품 관리에서 재고를 추가하거나 상태를 변경해 주세요.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("STOCK");
+        vo.setTitle("상품이 품절되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/store/products");
+        vo.setIsRead("N");
+
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     // 2026/07/11 장우철 — 병원 예약 확정 알림
     @Override
     @Transactional
