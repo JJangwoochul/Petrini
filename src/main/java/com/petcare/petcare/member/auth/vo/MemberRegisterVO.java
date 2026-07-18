@@ -22,8 +22,10 @@ public class MemberRegisterVO {
     // ── 2026/07/07 장우철 — TB_MEMBER ──
 
     private Long memberNo;           // 회원번호 — SEQ_MEMBER, 가입할 때마다 1씩 증가 (TB_MEMBER.MEMBER_NO)
+    private String memberId;         // 회원 아이디 — 카카오:카카오ID / 일반:직접입력 (TB_MEMBER.MEMBER_ID)
+    private String socialId;         // 카카오 소셜 ID — 카카오 연동 시 사용 (TB_MEMBER_SOCIAL.PROVIDER_UID)
     private String memberName;       // 회원 실명 — join.jsp Step2 (TB_MEMBER.MEMBER_NAME)
-    private String email;            // 이메일 — 로그인 ID 와 동일 저장 (TB_MEMBER.MEMBER_ID, EMAIL)
+    private String email;            // 이메일 — 별도 저장 (TB_MEMBER.EMAIL)
     private String password;         // 비밀번호 평문 — Service 에서 BCrypt 후 TB_MEMBER.MEMBER_PWD 저장
     private String passwordConfirm;  // 비밀번호 확인 — DB 저장 안 함, 일치 검증만
     private String phone;            // 휴대폰 — 010-0000-0000 (TB_MEMBER.PHONE)

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
 import com.petcare.petcare.member.auth.vo.AdminAuthVO;
 import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
+import com.petcare.petcare.member.auth.vo.KakaoUserVO;
 import com.petcare.petcare.member.auth.vo.MemberAuthBizVO;
 import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
@@ -173,6 +174,49 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     }
      */
 
+    /**
+     * HYJ 26.07.15 카카오 로그인 처리
+     * MEMBER_ID = 카카오 고유 ID 이므로 selectMemberByLoginId 로 바로 조회
+     * [1] MEMBER_ID 로 기존 회원 조회 → 있으면 로그인
+     * [2] 없으면 null 반환 → Controller 에서 회원가입 페이지로 안내
+     */
+    @Override
+    @Transactional
+    public MemberVO kakaoLogin(KakaoUserVO kakaoUser) {
+
+        String kakaoId = kakaoUser.getKakaoId();
+
+        // [1] MEMBER_ID = 카카오ID 인 회원 조회
+        MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(kakaoId);
+
+        // [2] 가입된 회원이 아님 → null 반환 (회원가입 필요)
+        if (found == null) {
+            return null;
+        }
+
+        // [3] 로그인 성공 → 최종 로그인 일시 갱신
+        memberAuthMapper.updateLastLoginDate(found.getMemberNo());
+
+        // [4] 세션용 MemberVO 변환
+        MemberVO sessionMember = new MemberVO();
+        sessionMember.setMemberNo(found.getMemberNo());
+        sessionMember.setMemberId(found.getMemberId());
+        sessionMember.setEmail(found.getEmail());
+        sessionMember.setMemberName(found.getMemberName());
+        sessionMember.setNickname(found.getNickname());
+        sessionMember.setRole("USER");
+        sessionMember.setPointBalance(found.getPointBalance() != null ? found.getPointBalance() : 0L);
+        sessionMember.setPhone(found.getPhone());
+        sessionMember.setZipcode(found.getZipcode());
+        sessionMember.setAddr1(found.getAddr1());
+        sessionMember.setAddr2(found.getAddr2());
+
+        // 사업자 승인 여부 확인
+        enrichSessionWithApprovedBiz(sessionMember);
+
+        return sessionMember;
+    }
+
     // 2026/07/07 장우철 — join(회원가입)
 
     /** join.jsp 와 동일한 비밀번호 규칙: 8자 이상 + 영문 + 숫자 + 특수문자 */
@@ -206,6 +250,26 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     }
 
     /**
+     * join — checkMemberId
+     * 아이디 중복 확인 (Controller 는 JSON 그대로 전달)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public EmailCheckResultVO checkMemberId(String memberId) {
+        if (memberId == null || memberId.isBlank()) {
+            return new EmailCheckResultVO(false, "아이디를 입력해 주세요.");
+        }
+        String trimmed = memberId.trim();
+        if (trimmed.length() < 4) {
+            return new EmailCheckResultVO(false, "아이디는 4자 이상이어야 합니다.");
+        }
+        if (memberAuthMapper.countMemberById(trimmed) > 0) {
+            return new EmailCheckResultVO(false, "이미 사용 중인 아이디입니다.");
+        }
+        return new EmailCheckResultVO(true, "사용 가능한 아이디입니다.");
+    }
+
+    /**
      * join — register
      * 흐름: 검증 → 중복재확인 → BCrypt → TB_MEMBER → TB_MEMBER_AGREEMENT → (선택) TB_PET
      * @Transactional : 중간 실패 시 INSERT 전부 롤백
@@ -225,7 +289,16 @@ public class MemberAuthServiceImpl implements MemberAuthService {
 
         String email = vo.getEmail().trim();
 
-        // [2] 이메일 중복 재확인 (Ajax 없이 POST 만 보내는 경우 차단)
+        // [2] 아이디 중복 재확인
+        String memberId = vo.getMemberId() != null ? vo.getMemberId().trim() : null;
+        if (memberId == null || memberId.isBlank()) {
+            return "id";
+        }
+        if (memberAuthMapper.countMemberById(memberId) > 0) {
+            return "id_duplicate";
+        }
+
+        // [2-1] 이메일 중복 재확인 (Ajax 없이 POST 만 보내는 경우 차단)
         if (memberAuthMapper.countMemberByEmail(email) > 0) {
             return "duplicate";
         }
@@ -250,6 +323,13 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         if (hasPetInfo(vo)) {
             vo.setPetType(mapPetSpecies(vo.getPetType()));
             memberAuthMapper.insertPet(vo);
+        }
+
+        // HYJ 26.07.15 [8] 카카오 로그인 → 회원가입 흐름이면 SOCIAL_ID 연동
+        //     같은 트랜잭션 안에서 처리 → 실패 시 TB_MEMBER INSERT 도 함께 롤백
+        vo.setMemberNo(memberNo);
+        if (vo.getSocialId() != null && !vo.getSocialId().isBlank()) {
+            memberAuthMapper.insertSocialLink(memberNo, vo.getSocialId());
         }
 
         return null;

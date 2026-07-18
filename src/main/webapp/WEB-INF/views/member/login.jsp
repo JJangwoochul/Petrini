@@ -29,10 +29,19 @@
         <c:if test="${param.error eq 'invalid'}">
             <p class="login-error-msg">아이디 또는 비밀번호가 올바르지 않습니다.</p>
         </c:if>
+        <c:if test="${param.error eq 'kakao_cancel'}">
+            <p class="login-error-msg">카카오 로그인이 취소되었습니다.</p>
+        </c:if>
+        <c:if test="${param.error eq 'kakao_token' or param.error eq 'kakao_user'}">
+            <p class="login-error-msg">카카오 로그인 중 오류가 발생했습니다. 다시 시도해 주세요.</p>
+        </c:if>
+        <c:if test="${param.error eq 'kakao_not_member'}">
+            <p class="login-error-msg">가입된 회원이 아닙니다. 먼저 회원가입을 진행해 주세요.</p>
+        </c:if>
 
         <%-- 소셜 로그인 --%>
         <div class="social-login-group">
-            <a href="${contextPath}/oauth2/authorization/kakao" class="social-btn-full kakao">
+            <a href="${contextPath}/oauth/kakao" class="social-btn-full kakao">
                 <%-- 카카오 아이콘 --%>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.73 5.32 4.35 6.85L5.5 21l4.03-2.12C10.3 19.27 11.14 19.4 12 19.4c5.52 0 10-3.58 10-8.4S17.52 3 12 3z" fill="#3A1D1D"/>
