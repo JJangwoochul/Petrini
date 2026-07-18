@@ -47,6 +47,7 @@ public class ReservationVO {
 
     // 2026-07-10 장우철 — 목록·상세·완료 화면 JOIN 표시용
     private String  memberName;
+    private String  hospitalName;   // 2026/07/18 장우철 — 예약 완료 화면용 (TB_HOSPITAL.NAME)
     private String  petName;
     private String  petSpecies;
     private String  petBreed;
