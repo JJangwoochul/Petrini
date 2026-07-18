@@ -1,3 +1,9 @@
+<%--
+  - 박유정 / 2026-07-16
+  - GET /admin/member/detail?id= → ${member}
+  - 오늘: 프로필·기본정보만 DB 연동 (활동현황 등은 내일)
+--%>
+
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -100,13 +106,43 @@
              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=176&q=80&auto=format&fit=crop"
              alt="프로필"
              onerror="this.src='https://placehold.co/88x88/EEF2FF/3B5BDB?text=U'">
-        <div class="mem-profile-info">
-            <div class="mem-name">김민준</div>
-            <div class="mem-email">minjun@email.com</div>
+                <div class="mem-profile-info">
+            <div class="mem-name">${member.memberName}</div>
+            <div class="mem-email">${member.email}</div>
             <div class="mem-badges">
-                <span class="mem-badge mb-role-user">일반회원</span>
-                <span class="mem-badge mb-active">활성</span>
-                <span class="mem-badge" style="background:#FFF8E1;color:#F59E0B">골드 등급</span>
+                <c:choose>
+                    <c:when test="${member.roleType eq 'BIZ'}">
+                        <span class="mem-badge mb-role-biz">사업자</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="mem-badge mb-role-user">일반회원</span>
+                    </c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${member.statusCd eq 'NORMAL'}">
+                        <span class="mem-badge mb-active">활성</span>
+                    </c:when>
+                    <c:when test="${member.statusCd eq 'SUSPENDED'}">
+                        <span class="mem-badge mb-banned">정지</span>
+                    </c:when>
+                    <c:when test="${member.statusCd eq 'WITHDRAWN'}">
+                        <span class="mem-badge" style="background:#F3F4F6;color:#666">탈퇴</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="mem-badge">${member.statusCd}</span>
+                    </c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${member.gradeCd eq 'GOLD'}">
+                        <span class="mem-badge" style="background:#FFF8E1;color:#F59E0B">골드 등급</span>
+                    </c:when>
+                    <c:when test="${member.gradeCd eq 'SILVER'}">
+                        <span class="mem-badge" style="background:#F3F4F6;color:#666">실버 등급</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="mem-badge" style="background:#FFF7ED;color:#C2410C">브론즈 등급</span>
+                    </c:otherwise>
+                </c:choose>
             </div>
         </div>
         <div class="mem-profile-actions">
@@ -119,25 +155,45 @@
 
     <div class="mem-detail-grid">
 
-        <%-- 기본 정보 --%>
+        <%-- 기본 정보 — 2026-07-16 박유정 DB 연동 --%>
         <div class="mem-info-section">
             <div class="mis-title">
                 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 기본 정보
             </div>
-            <div class="mis-row"><label>회원 ID</label><span>#12847</span></div>
-            <div class="mis-row"><label>이름</label><span>김민준</span></div>
-            <div class="mis-row"><label>이메일</label><span>minjun@email.com</span></div>
-            <div class="mis-row"><label>전화번호</label><span>010-1234-5678</span></div>
-            <div class="mis-row"><label>생년월일</label><span>1995.03.15</span></div>
-            <div class="mis-row"><label>성별</label><span>남성</span></div>
-            <div class="mis-row"><label>주소</label><span>서울 마포구 합정동 123-4</span></div>
-            <div class="mis-row"><label>가입일</label><span>2025.06.25</span></div>
-            <div class="mis-row"><label>최근 로그인</label><span>2025.06.26 14:32</span></div>
-            <div class="mis-row"><label>가입 경로</label><span>일반 회원가입</span></div>
+            <div class="mis-row"><label>회원 ID</label><span>#${member.memberNo}</span></div>
+            <div class="mis-row"><label>이름</label><span>${member.memberName}</span></div>
+            <div class="mis-row"><label>이메일</label><span>${member.email}</span></div>
+            <div class="mis-row"><label>전화번호</label><span>${member.phone}</span></div>
+            <div class="mis-row"><label>생년월일</label><span>—</span></div>
+            <div class="mis-row"><label>성별</label><span>—</span></div>
+            <div class="mis-row"><label>주소</label>
+                <span>
+                    <c:if test="${not empty member.zipCode}">(${member.zipCode}) </c:if>
+                    ${member.addr1} ${member.addr2}
+                </span>
+            </div>
+            <div class="mis-row"><label>가입일</label>
+                <span>
+                    <c:if test="${not empty member.joinDate}">
+                        ${member.joinDate.year}.${member.joinDate.monthValue}.${member.joinDate.dayOfMonth}
+                    </c:if>
+                </span>
+            </div>
+            <div class="mis-row"><label>최근 로그인</label>
+                <span>
+                    <c:if test="${not empty member.lastLoginDate}">
+                        ${member.lastLoginDate.year}.${member.lastLoginDate.monthValue}.${member.lastLoginDate.dayOfMonth}
+                        ${member.lastLoginDate.hour}:
+                        <c:if test="${member.lastLoginDate.minute < 10}">0</c:if>${member.lastLoginDate.minute}
+                    </c:if>
+                    <c:if test="${empty member.lastLoginDate}">—</c:if>
+                </span>
+            </div>
+            <div class="mis-row"><label>가입 경로</label><span>—</span></div>
         </div>
 
-        <%-- 활동 현황 --%>
+        <%-- 활동 현황 (내일 DB 연동) --%>
         <div class="mem-info-section">
             <div class="mis-title">
                 <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -149,7 +205,7 @@
             <div class="mis-row"><label>병원 예약</label><span>3건</span></div>
             <div class="mis-row"><label>커뮤니티 게시글</label><span>8건</span></div>
             <div class="mis-row"><label>신고 횟수</label><span>0건</span></div>
-            <div class="mis-row"><label>보유 포인트</label><span style="color:#3B5BDB;font-weight:800">1,200 P</span></div>
+            <div class="mis-row"><label>보유 포인트</label><span style="color:#3B5BDB;font-weight:800">${member.pointBalance} P</span></div>
             <div class="mis-row"><label>사용 쿠폰</label><span>2장</span></div>
             <div class="mis-row"><label>관심 상품</label><span>5개</span></div>
             <div class="mis-row"><label>등록 반려동물</label><span>2마리 (몽이, 나비)</span></div>

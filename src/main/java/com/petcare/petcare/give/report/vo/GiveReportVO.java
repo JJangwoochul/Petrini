@@ -47,18 +47,18 @@ public class GiveReportVO {
 
     // ── write.jsp 폼 전용 (DB 컬럼 없음 → Service에서 조합) ──
 
-    private String reportKind;     // 신고 유형 — 분실(LOST) / 발견(FOUND)
-    private String animalSize;     // 추정 크기 — 소형/중형/대형
-    private String furColor;       // 털 색상
-    private String gender;         // 성별 추정 — M(수컷) / F(암컷) / UNKNOWN(모름)
-    private String featureTags;    // 외형 특징 태그 (쉼표 구분)
-    private String foundAt;        // 발견·분실 일시 (datetime-local 입력값)
-    private String address;        // 발견·분실 주소
-    private String description;    // 상황 설명
-    private String tempCare;       // 임시보호 여부 — Y/N
+    private String reportKind;     // (폼) — 신고 유형, TAGS 조합용 (LOST/FOUND)
+    private String animalSize;     // (폼) — 추정 크기, LOST_FEATURE 조합용
+    private String furColor;       // (폼) — 털 색상, LOST_FEATURE 조합용
+    private String gender;         // (폼) — 성별 추정 (M/F/UNKNOWN)
+    private String featureTags;    // (폼) — 외형 특징 태그, LOST_FEATURE 조합용
+    private String foundAt;        // (폼) — 발견·분실 일시 (datetime-local)
+    private String address;        // (폼) — 발견·분실 주소, LOST_LAT/LNG 변환용
+    private String description;    // (폼) — 상황 설명, BODY 보조
+    private String tempCare;       // (폼) — 임시보호 여부 (Y/N), TAGS 조합용
 
     // ── 조회 전용 (TB_FILE) ──
 
-    private String thumbUrl;           // 목록 썸네일
-    private java.util.List<String> photoUrls; // 상세 사진 URL 목록
+    private String thumbUrl;           // FILE_URL — 목록 썸네일 (TB_FILE 첫 사진)
+    private java.util.List<String> photoUrls; // FILE_URL — 상세 사진 URL 목록 (TB_FILE)
 }

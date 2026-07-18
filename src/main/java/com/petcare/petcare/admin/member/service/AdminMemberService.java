@@ -21,4 +21,16 @@
 
 package com.petcare.petcare.admin.member.service;
 
-public interface AdminMemberService {}
+import java.util.List;
+import com.petcare.petcare.admin.member.vo.AdminMemberVO;
+
+public interface AdminMemberService {
+    
+    // 2026-07-16 박유정 — 관리자 회원 목록 (검색·필터·페이징)
+    List<AdminMemberVO> getAdminMemberList(String keyword, String statusCd, String roleType, int page);
+    // 2026-07-16 박유정 — 목록 총 건수
+    int getAdminMemberCount(String keyword, String statusCd, String roleType);
+    // 2026-07-16 박유정 — 관리자 회원 상세 (기본정보)
+    AdminMemberVO getAdminMemberDetail(long memberNo);
+    
+}

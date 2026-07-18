@@ -1,4 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  역할: 관리자 재능나눔 승인 관리 (admin/biz/talent)
+
+  - 박유정 / 2026-07-13~14
+
+  [화면 흐름]
+  1. GET /admin/biz/talent?status=PENDING|APPROVED|REJECTED
+  2. ${list} + ${statusCounts} — TB_TALENT 상태별 목록
+  3. PENDING 카드 → POST /admin/biz/talent/approve | /reject
+  4. APPROVED 승인 시 /give/talent/list 자동 노출
+
+  [model]
+  - list, status, statusCounts, successMsg, errorMsg
+--%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="adminPage"   value="biz-talent" />
@@ -7,13 +21,22 @@
 
 <style>
 /* ── 탭 ── */
-.talent-tab-bar { display:flex; gap:0; border-bottom:2px solid #E4E6ED; margin-bottom:20px; }
+.talent-tab-bar {
+    display:flex; gap:0; align-items:flex-end;
+    border-bottom:2px solid #E4E6ED; margin-bottom:20px;
+}
 .talent-tab {
     padding:10px 22px; font-size:14px; font-weight:600;
-    color:#999; border:none; background:none; cursor:pointer;
-    border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s;
+    color:#999; background:none; cursor:pointer;
+    border:none; border-bottom:2px solid transparent;
+    margin-bottom:-2px; transition:all .15s;
+    text-decoration:none; display:inline-flex; align-items:center;
+    box-sizing:border-box;
 }
-.talent-tab.on { color:#3B5BDB; border-bottom-color:#3B5BDB; }
+.talent-tab:link,
+.talent-tab:visited { color:#999; text-decoration:none; }
+.talent-tab:hover { color:#3B5BDB; }
+.talent-tab.on { color:#3B5BDB; border-bottom-color:#3B5BDB; font-weight:700; }
 
 /* ── 신청 카드 ── */
 .ta-card {
@@ -61,7 +84,7 @@
 .ta-reject-input {
     border:1px solid #E4E6ED; border-radius:6px;
     padding:7px 12px; font-size:13px; color:#333;
-    outline:none; width:260px; display:none; font-family:inherit;
+    outline:none; width:260px; display:block; font-family:inherit;
 }
 .ta-reject-input:focus { border-color:#3B5BDB; }
 .ta-action-btns { display:flex; gap:8px; }
@@ -96,187 +119,214 @@
         </div>
     </div>
 
+    <c:if test="${not empty successMsg}">
+        <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">
+            ${successMsg}
+        </div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+        <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">
+            ${errorMsg}
+        </div>
+    </c:if>
+
     <%-- 탭 --%>
+    <%-- 재능나눔 상태 탭 — DB 건수 연동 (admin/biz/list.jsp 패턴) --%>
     <div class="talent-tab-bar">
-        <button class="talent-tab on" onclick="selTab(this,'wait')">
-            승인 대기 <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">3</span>
-        </button>
-        <button class="talent-tab" onclick="selTab(this,'active')">게시 중 <span style="background:#DCFCE7;color:#16A34A;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">8</span></button>
-        <button class="talent-tab" onclick="selTab(this,'rejected')">반려 <span style="background:#F1F3F7;color:#999;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">2</span></button>
+        <a href="${contextPath}/admin/biz/talent?status=PENDING"
+           class="talent-tab ${status eq 'PENDING' ? 'on' : ''}">
+            승인 대기
+            <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
+                ${statusCounts.PENDING}
+            </span>
+        </a>
+        <a href="${contextPath}/admin/biz/talent?status=APPROVED"
+           class="talent-tab ${status eq 'APPROVED' ? 'on' : ''}">
+            게시 중
+            <span style="background:#DCFCE7;color:#16A34A;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
+                ${statusCounts.APPROVED}
+            </span>
+        </a>
+        <a href="${contextPath}/admin/biz/talent?status=REJECTED"
+           class="talent-tab ${status eq 'REJECTED' ? 'on' : ''}">
+            반려
+            <span style="background:#F1F3F7;color:#999;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
+                ${statusCounts.REJECTED}
+            </span>
+        </a>
     </div>
 
-    <%-- 승인 대기 목록 --%>
-    <div id="tab-wait">
-
-        <%-- 신청 1 — 애견미용 --%>
-        <div class="ta-card">
-            <div class="ta-head">
-                <div class="ta-biz-icon" style="background:#FDF2F8">
-                    <svg viewBox="0 0 24 24" stroke="#DB2777"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
-                </div>
-                <div>
-                    <div class="ta-biz-name">냥냥 그루밍샵</div>
-                    <div class="ta-biz-type">애견미용실 · 서울 강남구 청담동</div>
-                </div>
-                <span class="adm-badge wait" style="margin-left:12px">승인 대기</span>
-                <span class="ta-date">신청일: 2025.06.25</span>
-            </div>
-            <div class="ta-body">
-                <div class="ta-field"><label>나눔 유형</label><span>애견 미용</span></div>
-                <div class="ta-field"><label>제목</label><span>유기견 무료 미용 서비스</span></div>
-                <div class="ta-field"><label>진행 일정</label><span>매월 마지막 일요일</span></div>
-                <div class="ta-field"><label>모집 수량</label><span>월 10마리</span></div>
-            </div>
-            <div class="ta-desc">
-                보호소 유기견에게 무료 미용 서비스(컷, 드라이, 발톱 정리, 귀 청소)를 제공합니다. 예쁜 모습으로 입양 확률을 높이는 데 기여하고자 합니다. 매월 마지막 일요일, 선착순 10마리 진행 예정입니다.
-            </div>
-            <div class="ta-foot">
-                <div style="font-size:13px;color:#555">
-                    제공 장소: 냥냥 그루밍샵 (강남구 청담동) &nbsp;·&nbsp; 문의: 02-1234-5678
-                </div>
-                <div class="ta-reject-wrap">
-                    <input type="text" class="ta-reject-input" id="rej1" placeholder="반려 사유 입력">
-                    <div class="ta-action-btns">
-                        <button class="adm-btn gray" onclick="toggleReject('rej1')">반려</button>
-                        <button class="adm-btn green" onclick="approve('냥냥 그루밍샵')">승인 → 나눔 탭 게시</button>
+    <%-- 승인 대기 목록 (PENDING 탭에서만) --%>
+    <c:if test="${status eq 'PENDING'}">
+    <c:choose>
+        <c:when test="${empty list}">
+            <p style="text-align:center;color:#999;padding:48px 0">
+                승인 대기 중인 재능나눔이 없습니다.
+            </p>
+        </c:when>
+        <c:otherwise>
+            <c:forEach var="item" items="${list}">
+                <%-- 카드 1개 = DB 1건 --%>
+                <div class="ta-card">
+                    <div class="ta-head">
+                        <c:set var="iconBg" value="#FDF2F8"/>
+                        <c:set var="iconStroke" value="#DB2777"/>
+                        <c:if test="${item.talentType eq 'HOSPITAL'}">
+                            <c:set var="iconBg" value="#E0F2FE"/>
+                            <c:set var="iconStroke" value="#0284C7"/>
+                        </c:if>
+                        <c:if test="${item.talentType eq 'PHOTO'}">
+                            <c:set var="iconBg" value="#F3E8FF"/>
+                            <c:set var="iconStroke" value="#9333EA"/>
+                        </c:if>
+                        <c:if test="${item.talentType eq 'TRANSPORT'}">
+                            <c:set var="iconBg" value="#FFF7ED"/>
+                            <c:set var="iconStroke" value="#EA580C"/>
+                        </c:if>
+                        <div class="ta-biz-icon" style="background:${iconBg}">
+                            <svg viewBox="0 0 24 24" stroke="${iconStroke}">
+                                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="ta-biz-name">${item.bizName}</div>
+                            <div class="ta-biz-type">${item.bizType} · ${item.location}</div>
+                        </div>
+                        <span class="adm-badge wait" style="margin-left:12px">승인 대기</span>
+                        <span class="ta-date">신청일: ${item.regDate}</span>
+                    </div>
+                    <div class="ta-body">
+                        <div class="ta-field">
+                            <label>나눔 유형</label>
+                            <span>
+                                <c:choose>
+                                    <c:when test="${item.talentType eq 'GROOMING'}">애견미용</c:when>
+                                    <c:when test="${item.talentType eq 'HOSPITAL'}">병원/건강</c:when>
+                                    <c:when test="${item.talentType eq 'PHOTO'}">사진 촬영</c:when>
+                                    <c:when test="${item.talentType eq 'TRANSPORT'}">운송</c:when>
+                                    <c:otherwise>기타</c:otherwise>
+                                </c:choose>
+                            </span>
+                        </div>
+                        <div class="ta-field"><label>제목</label><span>${item.title}</span></div>
+                        <div class="ta-field"><label>진행 일정</label><span>${item.schedule}</span></div>
+                        <div class="ta-field"><label>모집 수량</label><span>${item.capacity}</span></div>
+                    </div>
+                    <div class="ta-desc">${item.body}</div>
+                    <div class="ta-foot">
+                        <div style="font-size:13px;color:#555">
+                            제공 장소: ${item.location} &nbsp;·&nbsp; 문의: ${item.contact}
+                        </div>
+                        <div class="ta-reject-wrap">
+                            <form method="post" action="${contextPath}/admin/biz/talent/reject"
+                                  style="display:flex;gap:8px;align-items:center"
+                                  onsubmit="return confirm('반려하시겠습니까?')">
+                                <%-- 2026-07-14 박유정 — AdminBizController.rejectTalent --%>
+                                <input type="hidden" name="talentId" value="${item.talentId}">
+                                <input type="text" name="rejectReason" class="ta-reject-input"
+                                       placeholder="반려 사유 입력" required
+                                       style="display:block;width:260px">
+                                <button type="submit" class="adm-btn gray">반려</button>
+                            </form>
+                            <form method="post" action="${contextPath}/admin/biz/talent/approve"
+                                  style="display:inline"
+                                  onsubmit="return confirm('승인하시겠습니까?\n나눔 탭에 게시됩니다.')">
+                                <%-- 2026-07-14 박유정 — AdminBizController.approveTalent → /give/talent/list 노출 --%>
+                                <input type="hidden" name="talentId" value="${item.talentId}">
+                                <button type="submit" class="adm-btn green">승인 → 나눔 탭 게시</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <%-- 신청 2 — 무료 진료 --%>
-        <div class="ta-card">
-            <div class="ta-head">
-                <div class="ta-biz-icon" style="background:#E0F2FE">
-                    <svg viewBox="0 0 24 24" stroke="#0284C7"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                </div>
-                <div>
-                    <div class="ta-biz-name">행복 동물병원</div>
-                    <div class="ta-biz-type">동물병원 · 서울 마포구 합정동</div>
-                </div>
-                <span class="adm-badge wait" style="margin-left:12px">승인 대기</span>
-                <span class="ta-date">신청일: 2025.06.24</span>
-            </div>
-            <div class="ta-body">
-                <div class="ta-field"><label>나눔 유형</label><span>무료 진료</span></div>
-                <div class="ta-field"><label>제목</label><span>유기견 무료 건강검진 캠페인</span></div>
-                <div class="ta-field"><label>진행 일정</label><span>2025.07.20 (일)</span></div>
-                <div class="ta-field"><label>모집 수량</label><span>20마리</span></div>
-            </div>
-            <div class="ta-desc">
-                유기견 기본 건강검진(청진, 혈액검사)과 예방접종(DHPPL, 광견병)을 무료로 제공합니다. 건강한 동물이 더 빠르게 새 가족을 만날 수 있도록 돕습니다.
-            </div>
-            <div class="ta-foot">
-                <div style="font-size:13px;color:#555">
-                    제공 장소: 행복 동물병원 (마포구 합정동) &nbsp;·&nbsp; 문의: 02-5678-1234
-                </div>
-                <div class="ta-reject-wrap">
-                    <input type="text" class="ta-reject-input" id="rej2" placeholder="반려 사유 입력">
-                    <div class="ta-action-btns">
-                        <button class="adm-btn gray" onclick="toggleReject('rej2')">반려</button>
-                        <button class="adm-btn green" onclick="approve('행복 동물병원')">승인 → 나눔 탭 게시</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <%-- 신청 3 — 사진 촬영 --%>
-        <div class="ta-card">
-            <div class="ta-head">
-                <div class="ta-biz-icon" style="background:#F3E8FF">
-                    <svg viewBox="0 0 24 24" stroke="#9333EA"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                </div>
-                <div>
-                    <div class="ta-biz-name">냥냥 사진관</div>
-                    <div class="ta-biz-type">애완동물 사진관 · 서울 서초구</div>
-                </div>
-                <span class="adm-badge wait" style="margin-left:12px">승인 대기</span>
-                <span class="ta-date">신청일: 2025.06.23</span>
-            </div>
-            <div class="ta-body">
-                <div class="ta-field"><label>나눔 유형</label><span>사진 촬영</span></div>
-                <div class="ta-field"><label>제목</label><span>입양 홍보 사진 무료 촬영</span></div>
-                <div class="ta-field"><label>진행 일정</label><span>매월 둘째 주 토요일</span></div>
-                <div class="ta-field"><label>모집 수량</label><span>월 5마리</span></div>
-            </div>
-            <div class="ta-desc">
-                보호소를 직접 방문해 유기동물 입양 홍보용 프로필 사진을 무료로 촬영합니다. 마리당 20~30분 소요되며, 디지털 파일로 제공합니다.
-            </div>
-            <div class="ta-foot">
-                <div style="font-size:13px;color:#555">
-                    제공 장소: 서울 전 지역 보호소 방문 &nbsp;·&nbsp; 문의: 010-1234-5678
-                </div>
-                <div class="ta-reject-wrap">
-                    <input type="text" class="ta-reject-input" id="rej3" placeholder="반려 사유 입력">
-                    <div class="ta-action-btns">
-                        <button class="adm-btn gray" onclick="toggleReject('rej3')">반려</button>
-                        <button class="adm-btn green" onclick="approve('냥냥 사진관')">승인 → 나눔 탭 게시</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+            </c:forEach>
+        </c:otherwise>
+    </c:choose>
+      
+    </c:if>
 
     <%-- 게시 중 --%>
-    <div id="tab-active" style="display:none">
-        <table class="adm-table">
-            <thead><tr><th>업체명</th><th>유형</th><th>제목</th><th>진행 수량</th><th>게시일</th><th>상태</th><th>처리</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td>냥냥 그루밍샵</td><td>애견 미용</td>
-                    <td>유기견 무료 미용 서비스</td>
-                    <td>7 / 10마리</td><td>2025.05.01</td>
-                    <td><span class="adm-badge active">게시 중</span></td>
-                    <td>
-                        <button class="adm-btn red" onclick="if(confirm('게시를 중단하시겠습니까?'))alert('게시 중단되었습니다.')">게시 중단</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>행복 동물병원</td><td>무료 진료</td>
-                    <td>유기견 무료 건강검진 캠페인</td>
-                    <td>12 / 20마리</td><td>2025.05.15</td>
-                    <td><span class="adm-badge active">게시 중</span></td>
-                    <td>
-                        <button class="adm-btn red" onclick="if(confirm('게시를 중단하시겠습니까?'))alert('게시 중단되었습니다.')">게시 중단</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <%-- 게시 중 (APPROVED) --%>
+    <c:if test="${status eq 'APPROVED'}">
+        <c:choose>
+            <c:when test="${empty list}">
+                <p style="text-align:center;color:#999;padding:48px 0">
+                    게시 중인 재능나눔이 없습니다.
+                </p>
+            </c:when>
+            <c:otherwise>
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>업체명</th><th>유형</th><th>제목</th>
+                            <th>진행 수량</th><th>게시일</th><th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="item" items="${list}">
+                            <tr>
+                                <td>${item.bizName}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${item.talentType eq 'GROOMING'}">애견미용</c:when>
+                                        <c:when test="${item.talentType eq 'HOSPITAL'}">병원/건강</c:when>
+                                        <c:when test="${item.talentType eq 'PHOTO'}">사진 촬영</c:when>
+                                        <c:when test="${item.talentType eq 'TRANSPORT'}">운송</c:when>
+                                        <c:otherwise>기타</c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>${item.title}</td>
+                                <td>${item.currentCnt} / ${item.capacity}</td>
+                                <td>${item.approveDate}</td>
+                                <td><span class="adm-badge active">게시 중</span></td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </c:otherwise>
+        </c:choose>
+    </c:if>
 
     <%-- 반려 --%>
-    <div id="tab-rejected" style="display:none">
-        <table class="adm-table">
-            <thead><tr><th>업체명</th><th>유형</th><th>제목</th><th>반려 사유</th><th>반려일</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td>펫케어 미용샵</td><td>애견 미용</td>
-                    <td>무료 미용 봉사</td>
-                    <td>서비스 내용이 구체적이지 않음</td>
-                    <td>2025.06.10</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <%-- 반려 (REJECTED) --%>
+    <c:if test="${status eq 'REJECTED'}">
+        <c:choose>
+            <c:when test="${empty list}">
+                <p style="text-align:center;color:#999;padding:48px 0">
+                    반려된 재능나눔이 없습니다.
+                </p>
+            </c:when>
+            <c:otherwise>
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>업체명</th><th>유형</th><th>제목</th>
+                            <th>반려 사유</th><th>신청일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="item" items="${list}">
+                            <tr>
+                                <td>${item.bizName}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${item.talentType eq 'GROOMING'}">애견미용</c:when>
+                                        <c:when test="${item.talentType eq 'HOSPITAL'}">병원/건강</c:when>
+                                        <c:when test="${item.talentType eq 'PHOTO'}">사진 촬영</c:when>
+                                        <c:when test="${item.talentType eq 'TRANSPORT'}">운송</c:when>
+                                        <c:otherwise>기타</c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>${item.title}</td>
+                                <td>${item.rejectReason}</td>
+                                <td>${item.regDate}</td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </c:otherwise>
+        </c:choose>
+    </c:if>
 </main>
 
-<script>
-function selTab(btn, id) {
-    document.querySelectorAll('.talent-tab').forEach(t => t.classList.remove('on'));
-    btn.classList.add('on');
-    ['wait','active','rejected'].forEach(t => {
-        document.getElementById('tab-' + t).style.display = t === id ? 'block' : 'none';
-    });
-}
-function toggleReject(id) {
-    var el = document.getElementById(id);
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-function approve(name) {
-    if(confirm(name + '의 재능나눔을 승인하시겠습니까?\n승인 즉시 /give?tab=talent 에 게시됩니다.')) {
-        alert('승인 완료!\n' + name + ' 재능나눔이 나눔 탭에 게시되었습니다.\n사업자에게 이메일 알림이 발송됩니다.');
-    }
-}
-</script>
 
 <%@ include file="/WEB-INF/views/admin/common/footer.jsp" %>

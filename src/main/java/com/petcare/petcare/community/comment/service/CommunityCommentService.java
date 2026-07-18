@@ -16,6 +16,9 @@
  * [updateComment]
  * - 작성자 본인 → BODY UPDATE
  *
+ * [getFirstTopComment] 2026-07-10 STEP 4
+ * - LIFE 목록 vet-answer 미리보기용 첫 일반댓글 1건
+ *
  * 담당 화면
  * - community/detail.jsp      커뮤니티 게시글 상세 댓글
  * - give/report/detail.jsp   분실·보호 신고 상세 댓글
@@ -48,6 +51,6 @@ public interface CommunityCommentService {
     // JSP 본인 댓글 버튼 표시용 — deleteComment 와 동일한 회원번호 조회
     Long resolveLoginMemberNo(MemberVO loginMember);
 
-    // LIFE 답변 미리보기 — 첫 번째 일반댓글 1건
+    // LIFE 목록 vet-answer — 첫 일반댓글 1건 / 2026-07-10 STEP 4
     CommunityCommentVO getFirstTopComment(long postId);
 }

@@ -21,16 +21,16 @@
  * [댓글]
  * 1. GET detail → communityCommentService.getCommentList()
  * 2. POST /community/comment → TB_POST_COMMENT INSERT
- * 3. POST /community/comment/delete → IS_DELETED='Y' (작성자 본인)
- * 4. POST /community/comment/update → BODY 수정 (작성자 본인)
- * 5. POST /community/report → TB_POST_REPORT INSERT
+ * 3. LIFE + 일반댓글 성공 시 markLifeAnswered() → TAGS=ANSWERED (2026-07-10 STEP 4)
+ * 4. POST /community/comment/delete → IS_DELETED='Y' (작성자 본인)
+ * 5. POST /community/comment/update → BODY 수정 (작성자 본인)
+ * 6. POST /community/report → TB_POST_REPORT INSERT
  *
  * [탭 ↔ boardType]
- * - 전체     → "" (빈값)
+ * - 전체     → "" (빈값, 기본 진입)
  * - 집사생활 → TOWN
  * - 무료나눔 → SHARE
  * - 수의사 상담 → LIFE
- * - 재능나눔 → /community/talent/list (별도 Controller)
  *
  * 연결
  * - Service: CommunityPostService, CommunityReactionService, CommunityCommentService
@@ -194,6 +194,7 @@ public class CommunityPostController {
         }
         try {
             communityCommentService.insertComment(postId, body, member, parentId);
+            // 2026-07-10 박유정 STEP 4 — LIFE 일반댓글 등록 시 답변완료 처리
             if (parentId == null) {
                 communityPostService.markLifeAnswered(postId);
             }
@@ -255,8 +256,8 @@ public class CommunityPostController {
     }
 
     /**
-     * [댓글 수정]
-     * POST /community/comment/update
+     * [댓글 수정] 2026-07-14 박유정
+     * POST /community/comment/update — 작성자 본인만 BODY 수정
      */
     @PostMapping("/comment/update")
     public String updateComment(
@@ -288,8 +289,8 @@ public class CommunityPostController {
     }
 
     /**
-     * [게시글 신고]
-     * POST /community/report
+     * [게시글 신고] 2026-07-14 박유정
+     * POST /community/report — TB_POST_REPORT INSERT (PENDING)
      */
     @PostMapping("/report")
     public String reportPost(

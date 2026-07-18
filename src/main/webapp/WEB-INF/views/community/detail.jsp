@@ -11,6 +11,7 @@
   5. POST /community/comment/delete — 본인 댓글 삭제
   6. POST /community/comment/update — 본인 댓글 수정
   7. POST /community/report — 게시글 신고
+  8. LIFE + ANSWERED → vet-answer 답변 박스 표시 (2026-07-10 STEP 4)
 
   [model]
   - post, comments, commentCount, liked, isLoggedIn, successMessage(flash)
@@ -137,6 +138,7 @@
 
   <div class="cdetail-content"><c:out value="${post.body}"/></div>
 
+  <%-- 2026-07-10 박유정 STEP 4 — LIFE 답변완료 시 수의사 답변 박스 --%>
   <c:if test="${post.boardType eq 'LIFE' && fn:contains(post.tags, 'ANSWERED') && not empty comments}">
     <div class="vet-answer">
       <div class="vet-answer-head">

@@ -20,11 +20,11 @@ import lombok.Setter;
 @Setter
 public class GiveReportFileVO {
 
-    private Long fileId;           // FILE_ID
-    private String refType;        // REF_TYPE — POST
-    private Long refId;            // REF_ID — POST_ID
-    private String driveFileId;    // LOCAL 또는 구글드라이브 ID
-    private String fileUrl;        // /upload/...
-    private String originName;     // 원본 파일명
-    private LocalDateTime regDate; // REG_DATE
+    private Long fileId;           // FILE_ID — 파일 ID
+    private String refType;        // REF_TYPE — 참조 유형 (POST)
+    private Long refId;            // REF_ID — 참조 ID (POST_ID)
+    private String driveFileId;    // DRIVE_FILE_ID — LOCAL 또는 구글드라이브 ID
+    private String fileUrl;        // FILE_URL — 저장 경로 (/upload/...)
+    private String originName;     // ORIGIN_NAME — 원본 파일명
+    private LocalDateTime regDate; // REG_DATE — 등록일
 }

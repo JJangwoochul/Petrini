@@ -1,8 +1,10 @@
 /**
  * 역할: 사업자 동물병원 URL 처리 → Service 호출 → JSP 반환
  *
+ * - 박유정 / 2026-07-14 (재능나눔 신청 — 병원만 DB 연동)
+ *
  * 연결
- * - Service: BizHospitalService
+ * - Service: BizHospitalService, GiveTalentService
  * - 상속: BizBaseController (사업자 로그인 체크)
  *
  * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
@@ -32,6 +34,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.hospital.service.BizHospitalService;
+import com.petcare.petcare.give.talent.service.GiveTalentService;
+import com.petcare.petcare.give.talent.vo.GiveTalentVO;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
@@ -48,6 +52,9 @@ public class BizHospitalController extends BizBaseController {
 
     @Autowired
     private BizHospitalService bizHospitalService;
+    // 2026-07-14 박유정 STEP 4 — 재능나눔 신청·이력 (biz/hospital/talent.jsp)
+    @Autowired
+    private GiveTalentService giveTalentService;
     @Autowired
     private FileService fileService;
     @Autowired
@@ -292,11 +299,59 @@ public class BizHospitalController extends BizBaseController {
         return "redirect:/biz/hospital/reserve";
     }
 
+    // 2026-07-14 박유정 STEP 4 — 재능나눔 신청 (병원만 실제 DB 연동)
+    // 이유: 팀 방향 — 미용 등 다른 사업자는 더미 화면 유지, 병원만 TB_TALENT INSERT
     @GetMapping("/talent")
-    public String hospitalTalent(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String hospitalTalent(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null)
             return "redirect:/login";
+
+        model.addAttribute("talentList",
+                giveTalentService.getTalentListByBizId(member.getMemberId()));
         return "biz/hospital/talent";
+    }
+
+    // 2026-07-14 박유정 STEP 4 — 재능나눔 신청서 POST → GiveTalentService.applyTalent (PENDING)
+    @PostMapping("/talent")
+    public String hospitalTalentSubmit(@RequestParam String title,
+                                       @RequestParam int capacity,
+                                       @RequestParam String schedule,
+                                       @RequestParam(required = false) String duration,
+                                       @RequestParam String location,
+                                       @RequestParam(required = false) String contact,
+                                       @RequestParam String body,
+                                       HttpSession session,
+                                       RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null)
+            return "redirect:/login";
+
+        GiveTalentVO vo = new GiveTalentVO();
+        vo.setTitle(title.trim());
+        vo.setTalentType("HOSPITAL");
+        vo.setCapacity(capacity);
+        vo.setSchedule(schedule.trim());
+        vo.setDuration(duration != null ? duration.trim() : null);
+        vo.setLocation(location.trim());
+        vo.setContact(contact != null ? contact.trim() : null);
+        vo.setBody(body.trim());
+
+        try {
+            giveTalentService.applyTalent(member.getMemberId(), vo);
+            rttr.addFlashAttribute("msg", "재능나눔 신청이 완료되었습니다.");
+        } catch (IllegalStateException e) {
+            String err = "신청할 수 없습니다.";
+            if ("BIZ_NOT_APPROVED".equals(e.getMessage())) {
+                err = "사업자 승인이 완료된 후 재능나눔을 신청할 수 있습니다.";
+            } else if ("BIZ_NOT_FOUND".equals(e.getMessage())) {
+                err = "등록된 사업자 정보를 찾을 수 없습니다.";
+            }
+            rttr.addFlashAttribute("errorMsg", err);
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/biz/hospital/talent";
     }
 
     // 2026/07/14 장우철 — 사업자 리뷰관리 (DB 목록)

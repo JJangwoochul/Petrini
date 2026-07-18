@@ -9,6 +9,7 @@
  * - selectCommentCountByPostId 댓글 총 개수
  * - insertComment             PARENT_ID 포함 INSERT
  * - softDeleteComment         IS_DELETED='Y'
+ * - updateCommentBody         BODY 수정 (작성자 본인) — 2026-07-14
  *
  * XML: resources/mybatis/mapper/community/comment/CommunityCommentMapper.xml
  *

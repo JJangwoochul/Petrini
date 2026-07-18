@@ -1,7 +1,7 @@
 /**
  * 역할: 커뮤니티 게시글 DB 접근 (MyBatis interface)
  *
- * - 박유정 / 2026-07-08~09
+ * - 박유정 / 2026-07-08~10
  * - give/report 의 GiveReportMapper 패턴 참고
  *
  * XML: resources/mybatis/mapper/community/post/CommunityPostMapper.xml
@@ -14,7 +14,7 @@
  * - increaseViewCount                  조회수 +1
  * - increaseLikeCnt / decreaseLikeCnt  좋아요 수 증감
  * - selectMemberNoByMemberId/Email     로그인 → MEMBER_NO
- * - updatePostTags                     TAGS 변경 (LIFE 답변완료 등)
+ * - updatePostTags                     TAGS 변경 (LIFE WAITING→ANSWERED, 2026-07-10)
  *
  * 참고 테이블
  * - TB_POST (BOARD_TYPE = TOWN / SHARE / LIFE)

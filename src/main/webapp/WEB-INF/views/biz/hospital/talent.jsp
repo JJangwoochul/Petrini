@@ -1,4 +1,17 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  역할: 사업자(병원) 재능나눔 신청 (biz/hospital/talent)
+
+  - 박유정 / 2026-07-14 STEP 4
+
+  [화면 흐름]
+  1. GET /biz/hospital/talent → ${talentList} 이력 + 신청 폼
+  2. POST /biz/hospital/talent → GiveTalentService.applyTalent (PENDING)
+  3. flash msg / errorMsg — 신청 결과 안내
+  4. 승인 후 admin/biz/talent → APPROVED → /give/talent/list 노출
+
+  참고: 미용 등 다른 사업자 talent.jsp 는 더미(alert) — 병원만 DB 연동
+--%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath"  value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="동물병원" />
@@ -36,10 +49,19 @@
 .bt-img-box svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <main class="biz-main">
+  <c:if test="${not empty msg}">
+    <%-- 2026-07-14 박유정 — 신청 성공 flash (BizHospitalController POST redirect) --%>
+    <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px;font-weight:600">${msg}</div>
+  </c:if>
+  <c:if test="${not empty errorMsg}">
+    <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px">${errorMsg}</div>
+  </c:if>
+
   <div class="biz-page-head">
     <h1 class="biz-page-title">재능나눔 신청</h1>
     <p class="biz-page-desc">전문 기술로 유기동물을 돕고, 파트너 브랜드 가치도 높여보세요.</p>
   </div>
+
   <div class="bt-wrap">
     <div class="bt-hero">
       <div class="bt-hero-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
@@ -55,29 +77,54 @@
     </div>
     <div class="bt-section">
       <div class="bt-stitle"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>재능나눔 신청서</div>
-      <div class="bt-grid">
-        <div class="bt-group full"><label>재능나눔 제목 <span class="req">*</span></label><input type="text" value="${memberInfo.memberName} 무료 진료 재능나눔"></div>
-        <div class="bt-group"><label>제공 유형 <span class="req">*</span></label><select><option selected>무료 진료</option></select></div>
-        <div class="bt-group"><label>모집 수량 <span class="req">*</span></label><input type="number" min="1" value="10"></div>
-        <div class="bt-group"><label>진행 일정 <span class="req">*</span></label><input type="text" value="매월 마지막 일요일"></div>
-        <div class="bt-group"><label>소요 시간</label><input type="text" placeholder="예) 1~2시간"></div>
-        <div class="bt-group"><label>장소 <span class="req">*</span></label><input type="text" value="${memberInfo.memberName}"></div>
-        <div class="bt-group"><label>문의 연락처</label><input type="tel" placeholder="02-0000-0000"></div>
-        <div class="bt-group full"><label>상세 설명 <span class="req">*</span></label><textarea placeholder="제공 서비스 내용, 신청 방법, 대상 동물, 주의사항 등을 작성해 주세요."></textarea></div>
-        <div class="bt-group full"><label>대표 이미지</label><div class="bt-img-box"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style="font-size:14px">클릭하여 업로드</span><small style="font-size:12px">JPG, PNG (최대 10MB)</small></div></div>
-      </div>
-      <div class="bt-btn-row">
-        <button class="btn-bt-cancel" onclick="history.back()">취소</button>
-        <button class="btn-bt-submit" onclick="alert('재능나눔 신청이 접수되었습니다.\nPetCare 나눔팀이 검토 후 3 영업일 내 안내드립니다.')">신청하기</button>
-      </div>
+      <%-- 2026-07-14 박유정 STEP 4 — POST /biz/hospital/talent (talentType=HOSPITAL 고정) --%>
+      <form method="post" action="${contextPath}/biz/hospital/talent">
+        <div class="bt-grid">
+          <div class="bt-group full"><label>재능나눔 제목 <span class="req">*</span></label><input type="text" name="title" required value="${memberInfo.memberName} 무료 진료 재능나눔"></div>
+          <div class="bt-group"><label>제공 유형 <span class="req">*</span></label><select disabled><option selected>병원/건강</option></select></div>
+          <div class="bt-group"><label>모집 수량 <span class="req">*</span></label><input type="number" name="capacity" min="1" value="10" required></div>
+          <div class="bt-group"><label>진행 일정 <span class="req">*</span></label><input type="text" name="schedule" required value="매월 마지막 일요일"></div>
+          <div class="bt-group"><label>소요 시간</label><input type="text" name="duration" placeholder="예) 1~2시간"></div>
+          <div class="bt-group"><label>장소 <span class="req">*</span></label><input type="text" name="location" required value="${memberInfo.memberName}"></div>
+          <div class="bt-group"><label>문의 연락처</label><input type="tel" name="contact" placeholder="02-0000-0000"></div>
+          <div class="bt-group full"><label>상세 설명 <span class="req">*</span></label><textarea name="body" required placeholder="제공 서비스 내용, 신청 방법, 대상 동물, 주의사항 등을 작성해 주세요."></textarea></div>
+          <div class="bt-group full"><label>대표 이미지</label><div class="bt-img-box"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style="font-size:14px">클릭하여 업로드</span><small style="font-size:12px">JPG, PNG (최대 10MB) — 추후 연동</small></div></div>
+        </div>
+        <div class="bt-btn-row">
+          <button type="button" class="btn-bt-cancel" onclick="history.back()">취소</button>
+          <button type="submit" class="btn-bt-submit">신청하기</button>
+        </div>
+      </form>
     </div>
     <div class="bt-section">
+      <%-- 2026-07-14 박유정 — 사업자 본인 재능나눔 이력 (getTalentListByBizId) --%>
       <div class="bt-stitle"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>내 재능나눔 이력</div>
       <table class="biz-table">
         <thead><tr><th>등록일</th><th>제목</th><th>유형</th><th>진행 수</th><th>상태</th></tr></thead>
         <tbody>
-          <tr><td>2025.05.25</td><td>${memberInfo.memberName} 무료 진료 재능나눔</td><td>무료 진료</td><td>10건</td><td><span class="bs-badge bs-done">승인완료</span></td></tr>
-          <tr><td>2025.04.27</td><td>${memberInfo.memberName} 무료 진료 재능나눔</td><td>무료 진료</td><td>8건</td><td><span class="bs-badge bs-done">완료</span></td></tr>
+          <c:choose>
+            <c:when test="${empty talentList}">
+              <tr><td colspan="5" style="text-align:center;color:#999;padding:24px 0">신청 이력이 없습니다.</td></tr>
+            </c:when>
+            <c:otherwise>
+              <c:forEach var="item" items="${talentList}">
+                <tr>
+                  <td>${item.regDate}</td>
+                  <td>${item.title}</td>
+                  <td>병원/건강</td>
+                  <td>${item.currentCnt} / ${item.capacity}</td>
+                  <td>
+                    <c:choose>
+                      <c:when test="${item.statusCd eq 'PENDING'}"><span class="bs-badge bs-wait">승인 대기</span></c:when>
+                      <c:when test="${item.statusCd eq 'APPROVED'}"><span class="bs-badge bs-done">게시 중</span></c:when>
+                      <c:when test="${item.statusCd eq 'REJECTED'}"><span class="bs-badge bs-cancel">반려</span></c:when>
+                      <c:when test="${item.statusCd eq 'DONE'}"><span class="bs-badge bs-done">완료</span></c:when>
+                    </c:choose>
+                  </td>
+                </tr>
+              </c:forEach>
+            </c:otherwise>
+          </c:choose>
         </tbody>
       </table>
     </div>

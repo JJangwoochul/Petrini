@@ -14,5 +14,121 @@
   테이블
   - TB_MEMBER
 -->
+  <!-- 2026-07-16 박유정 — 관리자 회원 목록 -->
+  <select id="selectAdminMemberList"
+          resultType="com.petcare.petcare.admin.member.vo.AdminMemberVO">
+    SELECT *
+    FROM (
+      SELECT
+        M.MEMBER_NO       AS memberNo,
+        M.MEMBER_NAME     AS memberName,
+        M.EMAIL           AS email,
+        M.PHONE           AS phone,
+        M.GRADE_CD        AS gradeCd,
+        M.POINT_BALANCE   AS pointBalance,
+        M.STATUS_CD       AS statusCd,
+        M.JOIN_DATE       AS joinDate,
+        M.LAST_LOGIN_DATE AS lastLoginDate,
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM TB_BUSINESS B
+            WHERE B.BIZ_ID = M.MEMBER_ID
+              AND B.STATUS_CD = 'APPROVED'
+          ) THEN 'BIZ'
+          ELSE 'GENERAL'
+        END AS roleType,
+        ROW_NUMBER() OVER (ORDER BY M.JOIN_DATE DESC) AS rn
+      FROM TB_MEMBER M
+      WHERE 1 = 1
+      <if test="keyword != null and keyword != ''">
+        AND (M.MEMBER_NAME LIKE '%' || #{keyword} || '%'
+          OR M.EMAIL LIKE '%' || #{keyword} || '%'
+          OR M.PHONE LIKE '%' || #{keyword} || '%')
+      </if>
+      <if test="statusCd != null and statusCd != ''">
+        AND M.STATUS_CD = #{statusCd}
+      </if>
+      <if test="roleType != null and roleType != ''">
+        <choose>
+          <when test="roleType == 'BIZ'">
+            AND EXISTS (
+              SELECT 1 FROM TB_BUSINESS B
+              WHERE B.BIZ_ID = M.MEMBER_ID
+                AND B.STATUS_CD = 'APPROVED'
+            )
+          </when>
+          <when test="roleType == 'GENERAL'">
+            AND NOT EXISTS (
+              SELECT 1 FROM TB_BUSINESS B
+              WHERE B.BIZ_ID = M.MEMBER_ID
+                AND B.STATUS_CD = 'APPROVED'
+            )
+          </when>
+        </choose>
+      </if>
+    )
+    WHERE rn BETWEEN #{offset} + 1 AND #{offset} + #{limit}
+  </select>
 
+  <!-- 2026-07-16 박유정 — 목록 총 건수 -->
+  <select id="selectAdminMemberCount" resultType="int">
+    SELECT COUNT(*)
+    FROM TB_MEMBER M
+    WHERE 1 = 1
+    <if test="keyword != null and keyword != ''">
+      AND (M.MEMBER_NAME LIKE '%' || #{keyword} || '%'
+        OR M.EMAIL LIKE '%' || #{keyword} || '%'
+        OR M.PHONE LIKE '%' || #{keyword} || '%')
+    </if>
+    <if test="statusCd != null and statusCd != ''">
+      AND M.STATUS_CD = #{statusCd}
+    </if>
+    <if test="roleType != null and roleType != ''">
+      <choose>
+        <when test="roleType == 'BIZ'">
+          AND EXISTS (
+            SELECT 1 FROM TB_BUSINESS B
+            WHERE B.BIZ_ID = M.MEMBER_ID
+              AND B.STATUS_CD = 'APPROVED'
+          )
+        </when>
+        <when test="roleType == 'GENERAL'">
+          AND NOT EXISTS (
+            SELECT 1 FROM TB_BUSINESS B
+            WHERE B.BIZ_ID = M.MEMBER_ID
+              AND B.STATUS_CD = 'APPROVED'
+          )
+        </when>
+      </choose>
+    </if>
+  </select>
+
+    <!-- 2026-07-16 박유정 — 관리자 회원 상세 (기본정보) -->
+  <select id="selectAdminMemberDetail"
+          resultType="com.petcare.petcare.admin.member.vo.AdminMemberVO">
+    SELECT
+      M.MEMBER_NO       AS memberNo,
+      M.MEMBER_ID       AS memberId,
+      M.MEMBER_NAME     AS memberName,
+      M.EMAIL           AS email,
+      M.PHONE           AS phone,
+      M.ZIP_CODE        AS zipCode,
+      M.ADDR1           AS addr1,
+      M.ADDR2           AS addr2,
+      M.GRADE_CD        AS gradeCd,
+      M.POINT_BALANCE   AS pointBalance,
+      M.STATUS_CD       AS statusCd,
+      M.JOIN_DATE       AS joinDate,
+      M.LAST_LOGIN_DATE AS lastLoginDate,
+      CASE
+        WHEN EXISTS (
+          SELECT 1 FROM TB_BUSINESS B
+          WHERE B.BIZ_ID = M.MEMBER_ID
+            AND B.STATUS_CD = 'APPROVED'
+        ) THEN 'BIZ'
+        ELSE 'GENERAL'
+      END AS roleType
+    FROM TB_MEMBER M
+    WHERE M.MEMBER_NO = #{memberNo}
+  </select>
 </mapper>

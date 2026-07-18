@@ -19,7 +19,27 @@
 package com.petcare.petcare.admin.member.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
-
+import java.util.List;
+import org.apache.ibatis.annotations.Param;
+import com.petcare.petcare.admin.member.vo.AdminMemberVO;
 
 @Mapper
-public interface AdminMemberMapper {}
+public interface AdminMemberMapper {
+
+    // 2026-07-16 박유정 — 관리자 회원 목록 (검색·필터·페이징)
+    List<AdminMemberVO> selectAdminMemberList(
+            @Param("keyword") String keyword,
+            @Param("statusCd") String statusCd,
+            @Param("roleType") String roleType,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+
+    // 2026-07-16 박유정 — 목록 총 건수
+    int selectAdminMemberCount(
+            @Param("keyword") String keyword,
+            @Param("statusCd") String statusCd,
+            @Param("roleType") String roleType);
+
+    // 2026-07-16 박유정 — 관리자 회원 상세
+    AdminMemberVO selectAdminMemberDetail(@Param("memberNo") long memberNo);
+}

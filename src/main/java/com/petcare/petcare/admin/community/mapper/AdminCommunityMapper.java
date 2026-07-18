@@ -11,7 +11,7 @@
  * - deletePost
  *
  * 참고 테이블
- * - TB_COMMUNITY_POST
+ * - TB_POST
  * - TB_POST_REPORT
  *
  * SQL은 XML에만 작성 (@Select 등 어노테이션 사용 X)
@@ -20,8 +20,33 @@
 
 package com.petcare.petcare.admin.community.mapper;
 
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import com.petcare.petcare.community.post.vo.CommunityPostVO;
 
 
 @Mapper
-public interface AdminCommunityMapper {}
+public interface AdminCommunityMapper {
+
+    // 2026-07-15 박유정 — 관리자 게시글 목록 (전체 상태 + 신고 건수)
+    List<CommunityPostVO> selectAdminPostList(
+            @Param("keyword") String keyword,
+            @Param("boardType") String boardType,
+            @Param("statusCd") String statusCd,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+
+    // 2026-07-15 박유정 — 목록 총 건수 (검색·필터 동일 조건)
+    int selectAdminPostCount(
+            @Param("keyword") String keyword,
+            @Param("boardType") String boardType,
+            @Param("statusCd") String statusCd);
+
+    // 2026-07-15 박유정 — 관리자 게시글 상세
+    CommunityPostVO selectAdminPostDetail(@Param("postId") long postId);
+
+    // 2026-07-15 박유정 STEP 7 — 상태 변경 (숨김/삭제/복구)
+    int updatePostStatus(@Param("postId") long postId,
+    @Param("statusCd") String statusCd);
+}

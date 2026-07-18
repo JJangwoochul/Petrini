@@ -16,6 +16,13 @@
  * [deleteComment — 댓글 삭제]
  * 1. 작성자 본인 확인 (memberNo)
  * 2. softDeleteComment → IS_DELETED='Y'
+ *
+ * [updateComment — 댓글 수정] 2026-07-14
+ * 1. 작성자 본인 확인 (memberNo)
+ * 2. updateCommentBody → BODY 갱신
+ *
+ * [getFirstTopComment — LIFE 답변 미리보기] 2026-07-10 STEP 4
+ * 1. selectCommentList → PARENT_ID IS NULL 첫 1건 반환
  */
 
 package com.petcare.petcare.community.comment.service;
@@ -202,6 +209,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         communityCommentMapper.softDeleteComment(commentId);
     }
 
+    // 2026-07-14 박유정 — 댓글 수정 (community/detail.jsp, give/report/detail.jsp)
     @Override
     public void updateComment(long commentId, long postId, String body, MemberVO loginMember) {
         if (loginMember == null) {
@@ -234,6 +242,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
 
     @Override
     public CommunityCommentVO getFirstTopComment(long postId) {
+        // LIFE + ANSWERED 목록 카드 vet-answer 용 / 2026-07-10 STEP 4
         List<CommunityCommentVO> parents = communityCommentMapper.selectCommentList(postId);
         if (parents == null || parents.isEmpty()) {
             return null;
