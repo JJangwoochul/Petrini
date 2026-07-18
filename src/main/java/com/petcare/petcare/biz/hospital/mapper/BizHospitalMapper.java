@@ -28,7 +28,10 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
+import com.petcare.petcare.hospital.vo.HospitalResvExceptionVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
+import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
@@ -42,7 +45,6 @@ public interface BizHospitalMapper {
 
     int updateHospitalInfo(HospitalVO vo);
 
-    // 2026-07-10 장우철 — 병원 예약 1차 (F4~F7) 사업자 측 Mapper
     List<ReservationVO> selectReservationList(@Param("hospitalId") Long hospitalId,
                                                @Param("tab") String tab) throws Exception;
 
@@ -58,44 +60,66 @@ public interface BizHospitalMapper {
                                                         @Param("fromDate") String fromDate,
                                                         @Param("toDate") String toDate) throws Exception;
 
-    // 2026/07/11 장우철 — 사이드바 배지: PENDING(예약신청) 건수
     int countPendingReservations(@Param("hospitalId") Long hospitalId) throws Exception;
 
-    // 2026/07/11 장우철 — 사이드바 캘린더 배지: 오늘 CONFIRMED 건수
     int countTodayConfirmedReservations(@Param("hospitalId") Long hospitalId) throws Exception;
 
-    // 2026/07/11 장우철 — 알림 문구용 병원명
     String selectHospitalNameById(@Param("hospitalId") Long hospitalId) throws Exception;
 
-    // 2026/07/13 장우철 — 리뷰 알림용 병원 소유 회원번호
     Long selectHospitalMemberNo(@Param("hospitalId") Long hospitalId) throws Exception;
 
-    // 2026/07/13 장우철 — 진료기록 작성용: 확정이면서 기록 없는 예약
     List<ReservationVO> selectConfirmedWithoutRecord(@Param("hospitalId") Long hospitalId) throws Exception;
 
-    // 2026/07/13 장우철 — 진료기록 INSERT
     int insertMedicalRecord(MedicalRecordVO record) throws Exception;
 
-    // 2026/07/13 장우철 — 예약당 진료기록 존재 여부
     int countMedicalRecordByResvId(@Param("resvId") Long resvId) throws Exception;
 
-    // 2026/07/13 장우철 — 진료기록 목록 (검색·기간 필터)
     List<MedicalRecordVO> selectMedicalRecords(@Param("hospitalId") Long hospitalId,
                                                @Param("keyword") String keyword,
                                                @Param("periodMonths") Integer periodMonths) throws Exception;
 
-    // 2026/07/13 장우철 — 진료기록 단건
     MedicalRecordVO selectMedicalRecordDetail(@Param("hospitalId") Long hospitalId,
                                               @Param("recordId") Long recordId) throws Exception;
 
-    // 2026/07/14 장우철 — 사업자 리뷰관리 목록
     List<HospitalReviewVO> selectBizHospitalReviews(@Param("hospitalId") Long hospitalId) throws Exception;
 
-    // 2026/07/14 장우철 — 답글 작성/수정 (해당 병원 리뷰만)
     HospitalReviewVO selectBizHospitalReview(@Param("hospitalId") Long hospitalId,
                                              @Param("reviewId") Long reviewId) throws Exception;
 
     int updateReviewBizReply(@Param("hospitalId") Long hospitalId,
                              @Param("reviewId") Long reviewId,
                              @Param("bizReply") String bizReply) throws Exception;
+
+    // 2026/07/16 장우철 고도화작업 — 병원 스케줄 (유형·의사·규칙·예외)
+    List<HospitalTreatTypeVO> selectTreatTypeList(@Param("hospitalId") Long hospitalId) throws Exception;
+    HospitalTreatTypeVO selectTreatType(@Param("hospitalId") Long hospitalId,
+                                        @Param("treatTypeId") Long treatTypeId) throws Exception;
+    int insertTreatType(HospitalTreatTypeVO vo) throws Exception;
+    int updateTreatType(HospitalTreatTypeVO vo) throws Exception;
+    int deleteTreatType(@Param("hospitalId") Long hospitalId,
+                        @Param("treatTypeId") Long treatTypeId) throws Exception;
+
+    List<HospitalDoctorVO> selectDoctorList(@Param("hospitalId") Long hospitalId) throws Exception;
+    HospitalDoctorVO selectDoctor(@Param("hospitalId") Long hospitalId,
+                                  @Param("doctorId") Long doctorId) throws Exception;
+    int insertDoctor(HospitalDoctorVO vo) throws Exception;
+    int updateDoctor(HospitalDoctorVO vo) throws Exception;
+    int deleteDoctor(@Param("hospitalId") Long hospitalId,
+                     @Param("doctorId") Long doctorId) throws Exception;
+
+    // 2026/07/16 장우철 고도화작업 — 병원 예약 시작 간격
+    Integer selectResvIntervalMin(@Param("hospitalId") Long hospitalId) throws Exception;
+    int updateResvIntervalMin(@Param("hospitalId") Long hospitalId,
+                              @Param("intervalMin") Integer intervalMin) throws Exception;
+
+    // 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 예외만 유지
+    List<HospitalResvExceptionVO> selectResvExceptionList(@Param("hospitalId") Long hospitalId,
+                                                          @Param("fromDate") String fromDate,
+                                                          @Param("toDate") String toDate) throws Exception;
+    HospitalResvExceptionVO selectResvException(@Param("hospitalId") Long hospitalId,
+                                                @Param("excId") Long excId) throws Exception;
+    int insertResvException(HospitalResvExceptionVO vo) throws Exception;
+    int updateResvException(HospitalResvExceptionVO vo) throws Exception;
+    int deleteResvException(@Param("hospitalId") Long hospitalId,
+                            @Param("excId") Long excId) throws Exception;
 }

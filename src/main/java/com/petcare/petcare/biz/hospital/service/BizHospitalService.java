@@ -33,7 +33,10 @@ package com.petcare.petcare.biz.hospital.service;
 
 import java.util.List;
 
+import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
+import com.petcare.petcare.hospital.vo.HospitalResvExceptionVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
+import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
@@ -78,4 +81,21 @@ public interface BizHospitalService {
     List<HospitalReviewVO> getBizHospitalReviews(Long hospitalId) throws Exception;
 
     void saveReviewBizReply(Long hospitalId, Long reviewId, String bizReply) throws Exception;
+
+    // 2026/07/16 장우철 고도화작업 — 병원 스케줄 CRUD
+    List<HospitalTreatTypeVO> getTreatTypeList(Long hospitalId) throws Exception;
+    void saveTreatType(Long hospitalId, HospitalTreatTypeVO vo) throws Exception;
+    void deleteTreatType(Long hospitalId, Long treatTypeId) throws Exception;
+
+    List<HospitalDoctorVO> getDoctorList(Long hospitalId) throws Exception;
+    void saveDoctor(Long hospitalId, HospitalDoctorVO vo) throws Exception;
+    void deleteDoctor(Long hospitalId, Long doctorId) throws Exception;
+
+    // 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 간격은 병원 컬럼
+    Integer getResvIntervalMin(Long hospitalId) throws Exception;
+    void saveResvIntervalMin(Long hospitalId, Integer intervalMin) throws Exception;
+
+    List<HospitalResvExceptionVO> getResvExceptionList(Long hospitalId, String fromDate, String toDate) throws Exception;
+    void saveResvException(Long hospitalId, HospitalResvExceptionVO vo) throws Exception;
+    void deleteResvException(Long hospitalId, Long excId) throws Exception;
 }

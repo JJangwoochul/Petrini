@@ -24,27 +24,38 @@
 </style>
 
 <%-- 2026-07-10 장우철 — 예약 완료 DB 연동 (F3) --%>
+<%-- 2026/07/16 장우철 — reservation null·resvDate null 시 JSP 500 방지 (숙소 complete.jsp 패턴) --%>
 <div class="complete-wrap">
   <div class="complete-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
   <div class="complete-title">예약이 완료되었습니다!</div>
-  <div class="complete-desc">
-    예약번호 <strong>#${reservation.resvNo}</strong><br>
-    예약 내역은 마이페이지에서 확인하세요.
-  </div>
-  <c:if test="${not empty reservation}">
-  <div class="complete-card">
-    <h3>예약 정보</h3>
-    <div class="complete-row"><span>예약번호</span><span>#${reservation.resvNo}</span></div>
-    <div class="complete-row"><span>병원</span><span>${reservation.hospitalName}</span></div>
-    <div class="complete-row"><span>반려동물</span><span>${reservation.petName}
-      <c:if test="${not empty reservation.petBreed}"> (${reservation.petBreed}<c:if test="${not empty reservation.petAge}"> · ${reservation.petAge}세</c:if>)</c:if>
-    </span></div>
-    <div class="complete-row"><span>예약 일시</span><span>
-      <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy.MM.dd"/> ${reservation.resvTime}
-    </span></div>
-    <div class="complete-row"><span>주증상</span><span>${empty reservation.symptoms ? '-' : reservation.symptoms}</span></div>
-  </div>
-  </c:if>
+  <c:choose>
+    <c:when test="${not empty reservation}">
+      <div class="complete-desc">
+        예약번호 <strong>#${reservation.resvNo}</strong><br>
+        예약 내역은 마이페이지에서 확인하세요.
+      </div>
+      <div class="complete-card">
+        <h3>예약 정보</h3>
+        <div class="complete-row"><span>예약번호</span><span>#${reservation.resvNo}</span></div>
+        <div class="complete-row"><span>병원</span><span>${empty reservation.hospitalName ? '-' : reservation.hospitalName}</span></div>
+        <div class="complete-row"><span>반려동물</span><span>${reservation.petName}
+          <c:if test="${not empty reservation.petBreed}"> (${reservation.petBreed}<c:if test="${not empty reservation.petAge}"> · ${reservation.petAge}세</c:if>)</c:if>
+        </span></div>
+        <div class="complete-row"><span>예약 일시</span><span>
+          <c:choose>
+            <c:when test="${not empty reservation.resvDate}">
+              <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy.MM.dd"/> ${reservation.resvTime}
+            </c:when>
+            <c:otherwise>${reservation.resvTime}</c:otherwise>
+          </c:choose>
+        </span></div>
+        <div class="complete-row"><span>주증상</span><span>${empty reservation.symptoms ? '-' : reservation.symptoms}</span></div>
+      </div>
+    </c:when>
+    <c:otherwise>
+      <div class="complete-desc">예약은 접수되었습니다. 내역은 마이페이지에서 확인하세요.</div>
+    </c:otherwise>
+  </c:choose>
   <div class="complete-notice">
     진료 시간 <strong>10분 전</strong>까지 내원해주세요. 예약 변경·취소는 마이페이지 &gt; 예약내역에서 가능합니다.
   </div>

@@ -23,6 +23,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -34,7 +35,10 @@ import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.hospital.service.BizHospitalService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
+import com.petcare.petcare.hospital.vo.HospitalResvExceptionVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
+import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
@@ -196,6 +200,221 @@ public class BizHospitalController extends BizBaseController {
         model.addAttribute("calendarReservations",
                 bizHospitalService.getCalendarReservations(hospital.getHospitalId(), fromDate, toDate));
         return "biz/hospital/calendar";
+    }
+
+    // 2026/07/16 장우철 고도화작업 — 병원 스케줄 화면
+    @GetMapping("/schedule")
+    public String hospitalSchedule(HttpSession session) {
+        if (getBizMember(session) == null)
+            return "redirect:/login";
+        return "biz/hospital/schedule";
+    }
+
+    // 2026/07/16 장우철 고도화작업 — 스케줄 API 공통: 로그인·병원 해석
+    private HospitalVO requireScheduleHospital(HttpSession session) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null || member.getMemberId() == null) {
+            return null;
+        }
+        return bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+    }
+
+    private Map<String, Object> scheduleFail(String msg) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ok", false);
+        m.put("message", msg);
+        return m;
+    }
+
+    private Map<String, Object> scheduleOk(Object data) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ok", true);
+        m.put("data", data);
+        return m;
+    }
+
+    @GetMapping("/schedule/treat-types")
+    @ResponseBody
+    public Map<String, Object> listTreatTypes(HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        return scheduleOk(bizHospitalService.getTreatTypeList(hospital.getHospitalId()));
+    }
+
+    @PostMapping("/schedule/treat-types/save")
+    @ResponseBody
+    public Map<String, Object> saveTreatType(@RequestBody HospitalTreatTypeVO vo,
+                                             HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            bizHospitalService.saveTreatType(hospital.getHospitalId(), vo);
+            return scheduleOk(bizHospitalService.getTreatTypeList(hospital.getHospitalId()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
+    }
+
+    @PostMapping("/schedule/treat-types/delete")
+    @ResponseBody
+    public Map<String, Object> deleteTreatType(@RequestParam("treatTypeId") Long treatTypeId,
+                                               HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            bizHospitalService.deleteTreatType(hospital.getHospitalId(), treatTypeId);
+            return scheduleOk(bizHospitalService.getTreatTypeList(hospital.getHospitalId()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
+    }
+
+    @GetMapping("/schedule/doctors")
+    @ResponseBody
+    public Map<String, Object> listDoctors(HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        return scheduleOk(bizHospitalService.getDoctorList(hospital.getHospitalId()));
+    }
+
+    @PostMapping("/schedule/doctors/save")
+    @ResponseBody
+    public Map<String, Object> saveDoctor(@RequestBody HospitalDoctorVO vo,
+                                          HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            bizHospitalService.saveDoctor(hospital.getHospitalId(), vo);
+            return scheduleOk(bizHospitalService.getDoctorList(hospital.getHospitalId()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
+    }
+
+    @PostMapping("/schedule/doctors/delete")
+    @ResponseBody
+    public Map<String, Object> deleteDoctor(@RequestParam("doctorId") Long doctorId,
+                                            HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            bizHospitalService.deleteDoctor(hospital.getHospitalId(), doctorId);
+            return scheduleOk(bizHospitalService.getDoctorList(hospital.getHospitalId()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
+    }
+
+    // 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 예약 시작 간격만 병원 컬럼으로
+    @GetMapping("/schedule/interval")
+    @ResponseBody
+    public Map<String, Object> getInterval(HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("resvIntervalMin", bizHospitalService.getResvIntervalMin(hospital.getHospitalId()));
+        return scheduleOk(data);
+    }
+
+    @PostMapping("/schedule/interval/save")
+    @ResponseBody
+    public Map<String, Object> saveInterval(@RequestBody Map<String, Object> body,
+                                            HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            Integer intervalMin = null;
+            if (body.get("resvIntervalMin") != null && !String.valueOf(body.get("resvIntervalMin")).isBlank()) {
+                intervalMin = Integer.valueOf(String.valueOf(body.get("resvIntervalMin")));
+            }
+            bizHospitalService.saveResvIntervalMin(hospital.getHospitalId(), intervalMin);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("resvIntervalMin", bizHospitalService.getResvIntervalMin(hospital.getHospitalId()));
+            return scheduleOk(data);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
+    }
+
+    @GetMapping("/schedule/exceptions")
+    @ResponseBody
+    public Map<String, Object> listExceptions(
+            @RequestParam(value = "fromDate", required = false) String fromDate,
+            @RequestParam(value = "toDate", required = false) String toDate,
+            HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        return scheduleOk(bizHospitalService.getResvExceptionList(hospital.getHospitalId(), fromDate, toDate));
+    }
+
+    @PostMapping("/schedule/exceptions/save")
+    @ResponseBody
+    public Map<String, Object> saveException(@RequestBody Map<String, Object> body,
+                                             HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            HospitalResvExceptionVO vo = new HospitalResvExceptionVO();
+            if (body.get("excId") != null && !String.valueOf(body.get("excId")).isBlank()) {
+                vo.setExcId(Long.valueOf(String.valueOf(body.get("excId"))));
+            }
+            Object doctorId = body.get("doctorId");
+            if (doctorId != null && !String.valueOf(doctorId).isBlank()
+                    && !"null".equalsIgnoreCase(String.valueOf(doctorId))
+                    && !"common".equalsIgnoreCase(String.valueOf(doctorId))) {
+                vo.setDoctorId(Long.valueOf(String.valueOf(doctorId)));
+            }
+            String dateStr = body.get("excDate") == null ? null : String.valueOf(body.get("excDate"));
+            if (dateStr != null && !dateStr.isBlank()) {
+                vo.setExcDate(new SimpleDateFormat("yyyy-MM-dd").parse(dateStr));
+            }
+            vo.setExcType(body.get("excType") == null ? null : String.valueOf(body.get("excType")));
+            vo.setStartTime(body.get("startTime") == null ? null : String.valueOf(body.get("startTime")));
+            vo.setEndTime(body.get("endTime") == null ? null : String.valueOf(body.get("endTime")));
+            vo.setMemo(body.get("memo") == null ? null : String.valueOf(body.get("memo")));
+            vo.setStatusCd(body.get("statusCd") == null ? "Y" : String.valueOf(body.get("statusCd")));
+
+            bizHospitalService.saveResvException(hospital.getHospitalId(), vo);
+            return scheduleOk(bizHospitalService.getResvExceptionList(hospital.getHospitalId(), null, null));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
+    }
+
+    @PostMapping("/schedule/exceptions/delete")
+    @ResponseBody
+    public Map<String, Object> deleteException(@RequestParam("excId") Long excId,
+                                               HttpSession session) throws Exception {
+        HospitalVO hospital = requireScheduleHospital(session);
+        if (hospital == null || hospital.getHospitalId() == null) {
+            return scheduleFail("로그인이 필요합니다.");
+        }
+        try {
+            bizHospitalService.deleteResvException(hospital.getHospitalId(), excId);
+            return scheduleOk(bizHospitalService.getResvExceptionList(hospital.getHospitalId(), null, null));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return scheduleFail(e.getMessage());
+        }
     }
 
     @GetMapping("/treatments")

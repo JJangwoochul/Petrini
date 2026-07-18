@@ -33,6 +33,12 @@ public class ReservationVO {
     @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
     private Date    resvDate;
     private String  resvTime;
+    // 2026/07/16 장우철 — 병원 예약 고도화 (TB_RESERVATION TREAT_TYPE_ID·DOCTOR_ID·DURATION_MIN·END_TIME)
+    private Long    treatTypeId;
+    private Long    doctorId;
+    private Integer durationMin;
+    private String  endTime;
+    private Long    holdId;       // 2026/07/16 장우철 — 선점 ID (폼 전용, TB 미저장)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date    checkinDate;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
@@ -51,6 +57,7 @@ public class ReservationVO {
     private String  petSpecies;
     private String  petBreed;
     private Integer petAge;
+    private String  hospitalName;  // 2026/07/16 장우철 — 완료 화면 병원명 (H.NAME)
 
     //HYJ 26.07.15 숙소용
     private String  stayName;
