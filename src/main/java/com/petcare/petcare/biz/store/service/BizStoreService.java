@@ -37,6 +37,9 @@ import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.store.vo.CategoryVO;
 import org.springframework.web.multipart.MultipartFile;
 import com.petcare.petcare.store.vo.OptionVO;
+import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.biz.store.vo.BizOrderVO;
+import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
 
 public interface BizStoreService {
 
@@ -63,4 +66,25 @@ public interface BizStoreService {
 
     //지윤 26.07.15 상품목록 "총 N개" 표시용 전체 개수 조회
     int getTotalCount(Long bizNo, String keyword, Long categoryId, String statusCd);
+
+    //지윤 26.07.20 추가: 사업자 주문 목록 조회 (상태 필터)
+    List<BizOrderVO> getOrderList(Long bizNo, String statusCd);
+
+    //지윤 26.07.20 추가: 상태별 주문 개수 (탭에 숫자 표시용, key=상태코드, value=개수)
+    java.util.Map<String, Integer> getOrderStatusCounts(Long bizNo);
+
+    //지윤 26.07.20 추가: 주문 상세 조회 (상품목록까지 같이 채워서 반환)
+    BizOrderVO getOrderDetail(Long orderId, Long bizNo);
+
+    //지윤 26.07.20 추가: 주문 상태 + 배송정보(택배사/송장번호) 한번에 저장. 본인 주문 아니면 false
+    boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo);
+
+    //지윤 26.07.20 추가: 배송관리 목록 조회 (필터 적용됨, 지연여부 계산 포함)
+    List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword);
+
+    //지윤 26.07.20 추가: 상단 요약카드용 - 전체(필터 미적용) 기준 상태별 개수 + 지연건수
+    java.util.Map<String, Integer> getDeliverySummary(Long bizNo);
+
+    //지윤 26.07.20 추가: 송장 일괄등록 (한 줄당 "주문번호,택배사코드,송장번호"). 성공건수/실패라인 반환
+    java.util.Map<String, Object> bulkRegisterDelivery(Long bizNo, String bulkText);
 }
