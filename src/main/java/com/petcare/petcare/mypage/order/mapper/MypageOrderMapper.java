@@ -18,8 +18,20 @@
 
 package com.petcare.petcare.mypage.order.mapper;
 
-import org.apache.ibatis.annotations.Mapper;
+import java.util.List;
 
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
+import com.petcare.petcare.mypage.order.vo.MypageOrderItemVO;
 
 @Mapper
-public interface MypageOrderMapper {}
+public interface MypageOrderMapper {
+
+    //지윤 26.07.20 추가: 회원 본인 주문 목록 (상태 필터)
+    List<MypageOrderVO> selectOrderList(@Param("memberNo") Long memberNo, @Param("statusCd") String statusCd);
+
+    //지윤 26.07.20 추가: 주문 하나의 상품 목록
+    List<MypageOrderItemVO> selectOrderItems(@Param("orderId") Long orderId);
+}

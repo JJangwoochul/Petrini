@@ -31,11 +31,10 @@ import org.apache.ibatis.annotations.Param;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
-import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
-import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
 import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
 import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.biz.store.vo.BizReviewVO;
 
 @Mapper
 public interface BizStoreMapper {
@@ -136,5 +135,35 @@ public interface BizStoreMapper {
                                             @Param("statusCd") String statusCd, @Param("keyword") String keyword);
 
     //지윤 26.07.20 추가: 일괄등록 시 주문번호로 ORDER_ID 조회 (본인 사업자 주문 아니면 null)
-    Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo, @Param("bizNo") Long bizNo);                          
+    Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 리뷰관리 목록 (내 상품에 달린 리뷰 + 삭제요청 상태)
+    List<BizReviewVO> selectBizReviewList(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 답글 저장 (본인 상품 리뷰만 수정되게 상품 BIZ_NO까지 조건에 포함)
+    int updateReviewBizReply(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo, @Param("bizReply") String bizReply);
+
+    //지윤 26.07.20 추가: 삭제요청 대상 리뷰가 본인 상품 리뷰인지 확인
+    int selectReviewOwnedByBiz(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 이미 대기중인 삭제요청이 있는지 확인 (중복 요청 방지)
+    int selectPendingReportExists(@Param("reviewId") Long reviewId);
+
+    //지윤 26.07.20 추가: 리뷰 삭제요청 등록 (TB_REVIEW_REPORT, REPORTER_TYPE='BIZ')
+    void insertReviewDeleteRequest(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo, @Param("reason") String reason);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

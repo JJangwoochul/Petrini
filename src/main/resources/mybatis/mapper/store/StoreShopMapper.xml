@@ -177,7 +177,11 @@
 
 <!-- 지윤 26.07.07 상품 리뷰 목록 조회 (TB_MEMBER 조인해서 닉네임 가져옴, 최신순) -->
 <select id="selectProductReviews" resultType="com.petcare.petcare.store.vo.ReviewVO">
-    SELECT r.REVIEW_ID, r.MEMBER_NO, m.NICKNAME, r.RATING, r.CONTENT, r.REG_DATE
+    SELECT r.REVIEW_ID, r.MEMBER_NO, m.NICKNAME, r.RATING, r.CONTENT, r.REG_DATE, r.BIZ_REPLY,
+           CASE WHEN EXISTS (
+               SELECT 1 FROM TB_REVIEW_REPORT rr
+               WHERE rr.REVIEW_ID = r.REVIEW_ID AND rr.REPORTER_TYPE = 'BIZ' AND rr.STATUS_CD = 'PENDING'
+           ) THEN 1 ELSE 0 END AS BLINDED
     FROM TB_REVIEW r
     JOIN TB_MEMBER m ON m.MEMBER_NO = r.MEMBER_NO
     WHERE r.REVIEW_TYPE = 'PRODUCT' AND r.TARGET_ID = #{productId}

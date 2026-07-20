@@ -247,9 +247,61 @@
     ORDER BY o.ORDER_ID DESC
 </select>
 
+
 <!-- 지윤 26.07.20 추가: 일괄등록 시 주문번호(문자열)로 ORDER_ID 찾기 (본인 사업자 주문인지도 같이 확인) -->
 <select id="selectOrderIdByOrderNo" resultType="Long">
     SELECT ORDER_ID FROM TB_ORDER WHERE ORDER_NO = #{orderNo} AND BIZ_NO = #{bizNo}
 </select>
+
+<!-- 지윤 26.07.20 추가: 리뷰관리 목록 - 내 상품(BIZ_NO)에 달린 리뷰 + 삭제요청(PENDING) 상태 -->
+<select id="selectBizReviewList" resultType="com.petcare.petcare.biz.store.vo.BizReviewVO">
+    SELECT  r.REVIEW_ID    AS reviewId,
+            r.TARGET_ID    AS productId,
+            r.MEMBER_NO    AS memberNo,
+            r.RATING       AS rating,
+            r.CONTENT      AS content,
+            r.BIZ_REPLY    AS bizReply,
+            r.REG_DATE     AS regDate,
+            m.NICKNAME     AS nickname,
+            p.PRODUCT_NAME AS productName,
+            (SELECT rr.STATUS_CD FROM TB_REVIEW_REPORT rr
+              WHERE rr.REVIEW_ID = r.REVIEW_ID AND rr.REPORTER_TYPE = 'BIZ' AND rr.STATUS_CD = 'PENDING'
+              AND ROWNUM = 1) AS reportStatus
+      FROM  TB_REVIEW r
+      JOIN  TB_MEMBER m  ON m.MEMBER_NO = r.MEMBER_NO
+      JOIN  TB_PRODUCT p ON p.PRODUCT_ID = r.TARGET_ID
+     WHERE  r.REVIEW_TYPE = 'PRODUCT'
+       AND  p.BIZ_NO = #{bizNo}
+     ORDER BY r.REG_DATE DESC, r.REVIEW_ID DESC
+</select>
+
+<!-- 지윤 26.07.20 추가: 답글 저장 - TARGET_ID(상품)의 BIZ_NO가 본인 것인지까지 확인 -->
+<update id="updateReviewBizReply">
+    UPDATE TB_REVIEW
+       SET BIZ_REPLY = #{bizReply}
+     WHERE REVIEW_ID = #{reviewId}
+       AND REVIEW_TYPE = 'PRODUCT'
+       AND TARGET_ID IN (SELECT PRODUCT_ID FROM TB_PRODUCT WHERE BIZ_NO = #{bizNo})
+</update>
+
+<!-- 지윤 26.07.20 추가: 삭제요청 대상 리뷰 소유 확인 (0/1) -->
+<select id="selectReviewOwnedByBiz" resultType="int">
+    SELECT COUNT(*) FROM TB_REVIEW r
+     WHERE r.REVIEW_ID = #{reviewId}
+       AND r.REVIEW_TYPE = 'PRODUCT'
+       AND r.TARGET_ID IN (SELECT PRODUCT_ID FROM TB_PRODUCT WHERE BIZ_NO = #{bizNo})
+</select>
+
+<!-- 지윤 26.07.20 추가: 이미 대기중인 삭제요청 있는지 확인 (0/1) -->
+<select id="selectPendingReportExists" resultType="int">
+    SELECT COUNT(*) FROM TB_REVIEW_REPORT
+     WHERE REVIEW_ID = #{reviewId} AND REPORTER_TYPE = 'BIZ' AND STATUS_CD = 'PENDING'
+</select>
+
+<!-- 지윤 26.07.20 추가: 리뷰 삭제요청 등록 (관리자 승인 대기) -->
+<insert id="insertReviewDeleteRequest">
+    INSERT INTO TB_REVIEW_REPORT (REPORT_ID, REPORTER_TYPE, REPORTER_NO, REVIEW_ID, BIZ_NO, REASON, STATUS_CD, REG_DATE)
+    VALUES (SEQ_TB_REVIEW_REPORT.NEXTVAL, 'BIZ', #{bizNo}, #{reviewId}, #{bizNo}, #{reason}, 'PENDING', SYSDATE)
+</insert>
 
 </mapper>

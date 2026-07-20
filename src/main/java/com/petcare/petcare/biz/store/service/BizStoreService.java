@@ -87,4 +87,13 @@ public interface BizStoreService {
 
     //지윤 26.07.20 추가: 송장 일괄등록 (한 줄당 "주문번호,택배사코드,송장번호"). 성공건수/실패라인 반환
     java.util.Map<String, Object> bulkRegisterDelivery(Long bizNo, String bulkText);
+
+    //지윤 26.07.20 추가: 리뷰관리 목록 조회 (내 상품 리뷰 + 삭제요청 상태 포함)
+    List<com.petcare.petcare.biz.store.vo.BizReviewVO> getBizReviewList(Long bizNo);
+
+    //지윤 26.07.20 추가: 답글 작성/수정. 본인 상품 리뷰 아니면 false
+    boolean saveReviewBizReply(Long bizNo, Long reviewId, String bizReply);
+
+    //지윤 26.07.20 추가: 리뷰 삭제요청 (관리자 승인 대기 등록). 본인 리뷰 아니거나 이미 요청중이면 실패 사유 반환
+    void requestReviewDelete(Long bizNo, Long reviewId, String reason);
 }

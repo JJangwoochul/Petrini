@@ -256,15 +256,29 @@
     <c:if test="${empty product.reviewList}">
       <div style="text-align:center;padding:60px 0;color:var(--text-muted)">아직 등록된 리뷰가 없습니다.</div>
     </c:if>
+
     <c:forEach var="rv" items="${product.reviewList}">
       <div class="review-card">
         <div class="review-card-head">
           <span class="reviewer">${rv.nickname} <c:forEach begin="1" end="${rv.rating}">⭐</c:forEach></span>
           <span class="review-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
         </div>
-        <div class="review-text">${rv.content}</div>
+        <c:choose>
+          <c:when test="${rv.blinded}">
+            <div class="review-text" style="color:var(--text-muted);font-style:italic">삭제 검토 중인 리뷰입니다.</div>
+          </c:when>
+          <c:otherwise>
+            <div class="review-text">${rv.content}</div>
+            <c:if test="${not empty rv.bizReply}">
+              <div class="review-text" style="margin-top:10px;padding:12px;background:#f7f7f7;border-radius:8px">
+                <b>사장님 답글</b><br>${rv.bizReply}
+              </div>
+            </c:if>
+          </c:otherwise>
+        </c:choose>
       </div>
     </c:forEach>
+    
   </div>
 
  <%-- 지윤 26.07.10 수정: 문의 등록(AJAX) 기능 추가 --%>

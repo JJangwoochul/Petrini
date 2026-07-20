@@ -283,4 +283,29 @@ public class BizStoreServiceImpl implements BizStoreService {
         result.put("failLines", failLines);
         return result;
     }
+
+    //지윤 26.07.20 추가: 리뷰관리 목록
+    @Override
+    public List<com.petcare.petcare.biz.store.vo.BizReviewVO> getBizReviewList(Long bizNo) {
+        return bizStoreMapper.selectBizReviewList(bizNo);
+    }
+
+    //지윤 26.07.20 추가: 답글 작성/수정 (본인 상품 리뷰만 반영됨 - UPDATE 조건에 BIZ_NO 포함)
+    @Override
+    public boolean saveReviewBizReply(Long bizNo, Long reviewId, String bizReply) {
+        int updated = bizStoreMapper.updateReviewBizReply(reviewId, bizNo, bizReply);
+        return updated > 0;
+    }
+
+    //지윤 26.07.20 추가: 리뷰 삭제요청 - 즉시 삭제 X, TB_REVIEW_REPORT에 PENDING 등록만 (관리자 승인 후 실제 삭제)
+    @Override
+    public void requestReviewDelete(Long bizNo, Long reviewId, String reason) {
+        if (bizStoreMapper.selectReviewOwnedByBiz(reviewId, bizNo) == 0) {
+            throw new IllegalArgumentException("본인 상품의 리뷰가 아닙니다.");
+        }
+        if (bizStoreMapper.selectPendingReportExists(reviewId) > 0) {
+            throw new IllegalStateException("이미 삭제 요청이 접수되어 관리자 승인을 기다리고 있습니다.");
+        }
+        bizStoreMapper.insertReviewDeleteRequest(reviewId, bizNo, reason);
+    }
 }

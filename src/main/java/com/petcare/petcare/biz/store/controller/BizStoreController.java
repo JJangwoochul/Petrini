@@ -25,11 +25,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.store.service.BizStoreService;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
+import com.petcare.petcare.biz.store.vo.BizReviewVO;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.store.vo.OptionVO;
+
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -40,6 +44,10 @@ public class BizStoreController extends BizBaseController {
     //지윤 26.07.14 상품관리(BIZ-04) 서비스 주입
     @Autowired
     private BizStoreService bizStoreService;
+
+    //지윤 26.07.20 추가: 리뷰관리 JSON 응답용
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @GetMapping({"", "/"})
     public String storeDashboard(HttpSession session) {
@@ -138,11 +146,60 @@ public class BizStoreController extends BizBaseController {
         return bizStoreService.bulkRegisterDelivery(bizNo, bulkText);
     }
 
+    //지윤 26.07.20 수정: 목업 -> 실데이터 연동. 리뷰 목록 조회해서 JS에서 쓸 JSON으로 변환
     @GetMapping("/reviews")
-    public String storeReviews(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
+    public String storeReviews(HttpSession session, Model model) throws Exception {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        List<BizReviewVO> reviewList = bizStoreService.getBizReviewList(bizNo);
+        java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        List<java.util.Map<String, Object>> rows = new ArrayList<>();
+        for (BizReviewVO r : reviewList) {
+            java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("id", r.getReviewId());
+            row.put("author", (r.getNickname() != null && !r.getNickname().isBlank()) ? r.getNickname() : "회원");
+            row.put("date", r.getRegDate() != null ? df.format(r.getRegDate()) : "");
+            row.put("rating", r.getRating() != null ? r.getRating() : 0);
+            row.put("product", r.getProductName());
+            row.put("content", r.getContent() != null ? r.getContent() : "");
+            row.put("reply", r.getBizReply());
+            row.put("deleteRequested", "PENDING".equals(r.getReportStatus())); //지윤 26.07.20 추가: 삭제요청 대기중이면 true
+            rows.add(row);
+        }
+        model.addAttribute("reviewListJson", objectMapper.writeValueAsString(rows));
         return "biz/store/reviews";
+    }
+
+    //지윤 26.07.20 추가: 리뷰 답글 작성/수정 (TB_REVIEW.BIZ_REPLY)
+    @PostMapping("/reviews/reply")
+    public String saveReviewReply(@RequestParam("reviewId") Long reviewId,
+                                   @RequestParam("bizReply") String bizReply,
+                                   HttpSession session, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        boolean ok = bizStoreService.saveReviewBizReply(bizNo, reviewId, bizReply);
+        rttr.addFlashAttribute(ok ? "msg" : "errorMsg", ok ? "답글이 저장되었습니다." : "본인 상품의 리뷰가 아닙니다.");
+        return "redirect:/biz/store/reviews";
+    }
+
+    //지윤 26.07.20 추가: 리뷰 삭제요청 - 즉시 삭제 X, TB_REVIEW_REPORT에 PENDING 등록만 (관리자 승인 후 실제 삭제됨)
+    @PostMapping("/reviews/delete-request")
+    public String requestReviewDelete(@RequestParam("reviewId") Long reviewId,
+                                       @RequestParam(value = "reason", required = false) String reason,
+                                       HttpSession session, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        try {
+            bizStoreService.requestReviewDelete(bizNo, reviewId, reason);
+            rttr.addFlashAttribute("msg", "삭제 요청이 접수되었습니다. 관리자 승인 후 삭제됩니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/biz/store/reviews";
     }
 
     @GetMapping("/settlement")
@@ -261,5 +318,3 @@ public class BizStoreController extends BizBaseController {
         return "biz/store/contract";
     }
 }
-
-

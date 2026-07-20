@@ -18,4 +18,6 @@ public class ReviewVO {
     private Double rating;
     private String content;
     private Date regDate;
+    private String bizReply;
+    private boolean blinded; //지윤 26.07.20 사업자 삭제요청(PENDING) 걸린 리뷰인지
 }

@@ -20,4 +20,12 @@
 
 package com.petcare.petcare.mypage.order.service;
 
-public interface MypageOrderService {}
+import java.util.List;
+
+import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
+
+public interface MypageOrderService {
+
+    //지윤 26.07.20 추가: 회원 본인 주문 목록 조회 (상태 필터, 상품목록까지 채워서 반환)
+    List<MypageOrderVO> getOrderList(Long memberNo, String statusCd);
+}
