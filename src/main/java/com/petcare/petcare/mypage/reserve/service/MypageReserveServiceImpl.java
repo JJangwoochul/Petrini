@@ -17,6 +17,7 @@ import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Service
 public class MypageReserveServiceImpl implements MypageReserveService {
@@ -91,5 +92,48 @@ public class MypageReserveServiceImpl implements MypageReserveService {
         String nickname = mypageReserveMapper.selectMemberNickname(memberNo);
         mypageNotifyService.sendHospitalReviewToBizNotification(
                 bizMemberNo, detail.getHospitalName(), nickname, rating, resvId);
+    }
+
+    // HYJ 26.07.20 — DONE + 미작성 예약만 숙소 리뷰 INSERT
+    @Override
+    @Transactional
+    public void addStayReview(Long memberNo, Long resvId, Double rating, String content) {
+        if (memberNo == null || resvId == null) {
+            throw new IllegalArgumentException("리뷰 정보가 올바르지 않습니다.");
+        }
+        if (rating == null || rating < 1.0 || rating > 5.0) {
+            throw new IllegalArgumentException("별점은 1~5점이어야 합니다.");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("리뷰 내용을 입력해 주세요.");
+        }
+
+        MypageReserveVO detail = mypageReserveMapper.selectMyReservationDetail(memberNo, resvId);
+        if (detail == null) {
+            throw new IllegalStateException("예약을 찾을 수 없습니다.");
+        }
+        if (!"DONE".equalsIgnoreCase(detail.getStatusCd())) {
+            throw new IllegalStateException("숙박 완료된 예약만 리뷰를 작성할 수 있습니다.");
+        }
+        if (!"STAY".equalsIgnoreCase(detail.getResvType())) {
+            throw new IllegalStateException("숙소 예약이 아닙니다.");
+        }
+        if ("Y".equalsIgnoreCase(detail.getReviewedYn())
+                || mypageReserveMapper.countStayReviewByResvId(resvId, memberNo) > 0) {
+            throw new IllegalStateException("이미 리뷰를 작성한 예약입니다.");
+        }
+        if (detail.getTargetId() == null || detail.getTargetId().isBlank()) {
+            throw new IllegalStateException("숙소 정보가 없습니다.");
+        }
+
+        Long stayId = Long.parseLong(detail.getTargetId());
+        StayReviewVO review = new StayReviewVO();
+        review.setTargetId(stayId);
+        review.setMemberNo(memberNo);
+        review.setResvId(resvId);
+        review.setRating(rating);
+        review.setContent(content.trim());
+
+        mypageReserveMapper.insertStayReview(review);
     }
 }

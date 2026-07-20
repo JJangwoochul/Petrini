@@ -100,14 +100,6 @@
   <div>
     <%-- 갤러리 --%>
     <div class="sd-gallery">
-      <%-- <img src="${contextPath}/upload/stay/${stay.stayId}/2.jpg"
-           onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진2'">
-      <img src="${contextPath}/upload/stay/${stay.stayId}/3.jpg"
-           onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진3'">
-      <img src="${contextPath}/upload/stay/${stay.stayId}/4.jpg"
-           onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진4'">
-      <img src="${contextPath}/upload/stay/${stay.stayId}/5.jpg"
-           onerror="this.src='https://placehold.co/350x180/EEE/999?text=사진5'"> --%>
       <c:forEach var="img" items="${imgList}">
         <img src="${contextPath}/upload/${img.fileUrl}" alt="${stay.name}" alt="${stay.name}">
       </c:forEach>
@@ -121,7 +113,17 @@
     </div>
     <div class="sd-rating">
       <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      4.9 <span style="font-size:13px;color:var(--text-muted);font-weight:400">(84개 리뷰)</span>
+      <c:choose>
+        <c:when test="${not empty reviewList}">
+          <c:set var="ratingSum" value="0"/><c:set var="ratingCnt" value="0"/>
+          <c:forEach var="r" items="${reviewList}"><c:set var="ratingSum" value="${ratingSum + r.rating}"/><c:set var="ratingCnt" value="${ratingCnt + 1}"/></c:forEach>
+          <fmt:formatNumber value="${ratingSum / ratingCnt}" pattern="0.0"/>
+          <span style="font-size:13px;color:var(--text-muted);font-weight:400">(<c:out value="${ratingCnt}"/>개 리뷰)</span>
+        </c:when>
+        <c:otherwise>
+          <span style="font-size:13px;color:var(--text-muted);font-weight:400">리뷰 없음</span>
+        </c:otherwise>
+      </c:choose>
     </div>
     <%-- 편의시설 태그 --%>
     <c:if test="${not empty stay.facilities}">
@@ -199,35 +201,50 @@
       </div>
     </c:if>
 
-    <%-- 리뷰 (아직 DB 연동 전 — 목업 유지) --%>
+    <%-- HYJ 26.07.20 리뷰 (DB 연동) --%>
     <div class="sd-section">
-      <h3><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>리뷰 (84)</h3>
-      <div class="review-summary">
-        <div class="rv-avg">
-          <div class="big">4.9</div>
-          <div class="rv-stars">
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <h3><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>리뷰 (<c:out value="${empty reviewList ? 0 : fn:length(reviewList)}"/>)</h3>
+      <c:if test="${not empty reviewList}">
+        <div class="review-summary">
+          <div class="rv-avg">
+            <div class="big"><c:set var="rvTotal" value="0"/><c:set var="rvCount" value="0"/><c:forEach var="rv" items="${reviewList}"><c:set var="rvTotal" value="${rvTotal + rv.rating}"/><c:set var="rvCount" value="${rvCount + 1}"/></c:forEach><fmt:formatNumber value="${rvTotal / rvCount}" pattern="0.0"/></div>
+            <div class="rv-stars">
+              <c:forEach begin="1" end="5"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></c:forEach>
+            </div>
+            <small><c:out value="${fn:length(reviewList)}"/>개 리뷰</small>
           </div>
-          <small>84개 리뷰</small>
         </div>
-        <div class="rv-bars">
-          <div class="rv-bar-row"><span>5점</span><div class="rv-bar-bg"><div class="rv-bar-fill" style="width:85%"></div></div><span>85%</span></div>
-          <div class="rv-bar-row"><span>4점</span><div class="rv-bar-bg"><div class="rv-bar-fill" style="width:11%"></div></div><span>11%</span></div>
-          <div class="rv-bar-row"><span>3점</span><div class="rv-bar-bg"><div class="rv-bar-fill" style="width:4%"></div></div><span>4%</span></div>
+      </c:if>
+      <c:if test="${empty reviewList}">
+        <p style="font-size:14px;color:var(--text-muted);padding:12px 0">아직 등록된 리뷰가 없습니다.</p>
+      </c:if>
+      <c:forEach var="rv" items="${reviewList}">
+        <div class="review-card">
+          <div class="rv-head">
+            <span class="rv-name">
+              <c:out value="${empty rv.nickname ? '회원' : rv.nickname}"/>
+              <c:if test="${not empty rv.petName}">
+                <span style="color:var(--text-muted);font-size:12px;font-weight:400"> · <c:out value="${rv.petName}"/>
+                  <c:if test="${not empty rv.petSpecies}"> (<c:out value="${rv.petSpecies}"/>)</c:if>
+                </span>
+              </c:if>
+            </span>
+            <span class="rv-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
+          </div>
+          <div style="display:flex;gap:2px;margin-bottom:6px">
+            <c:forEach begin="1" end="5" var="s">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:${s <= rv.rating ? 'var(--yellow)' : 'var(--border)'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </c:forEach>
+          </div>
+          <div class="rv-text"><c:out value="${rv.content}"/></div>
+          <c:if test="${not empty rv.bizReply}">
+            <div style="margin-top:10px;padding:10px 14px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-sub)">
+              <span style="font-weight:700;color:var(--primary-dark)">사업자 답변</span><br>
+              <c:out value="${rv.bizReply}"/>
+            </div>
+          </c:if>
         </div>
-      </div>
-      <div class="review-card">
-        <div class="rv-head"><span class="rv-name">김민준 · 골든 리트리버 1마리</span><span class="rv-date">2025.06.10</span></div>
-        <div class="rv-text">대형견 데리고 갈 곳이 없어서 걱정했는데 정말 천국이었어요. 마당이 넓어서 몽이가 뛰어놀기 너무 좋았고, 풀장도 같이 들어갈 수 있어서 최고였습니다!</div>
-      </div>
-      <div class="review-card">
-        <div class="rv-head"><span class="rv-name">이서연 · 포메라니안, 비숑 2마리</span><span class="rv-date">2025.05.28</span></div>
-        <div class="rv-text">반려동물 전용 침대와 식기까지 준비되어 있어서 너무 감동이었어요. 주변 산책로도 좋고 조용해서 힐링이 됐습니다. 꼭 다시 올게요!</div>
-      </div>
+      </c:forEach>
     </div>
   </div>
 

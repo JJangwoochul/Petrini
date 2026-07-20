@@ -78,6 +78,7 @@ public class StayController {
 
         model.addAttribute("stay", stay);
         model.addAttribute("imgList", imgList);
+        model.addAttribute("reviewList", stayService.getStayReviews(id));
         
         return "stay/detail";
     }

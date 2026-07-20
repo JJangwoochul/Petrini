@@ -26,6 +26,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 import com.petcare.petcare.hospital.vo.HospitalPetVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -49,6 +50,8 @@ public interface StayMapper {
     void insertReservation(ReservationVO vo);
     ReservationVO selectReservationById(Long resvId);
 
+    List<StayReviewVO> selectStayReviews(Long stayId) throws Exception;
+
     // HYJ 26.07.20 가용성 체크
     StayRoomVO selectRoomForUpdate(Long roomId);
     int countOverlappingReservation(Map<String, Object> param);
@@ -58,4 +61,7 @@ public interface StayMapper {
 
     // HYJ 26.07.20 결제
     void insertPayment(Map<String, Object> param);
+
+    // HYJ 26.07.20 스케줄러 — 체크아웃 지난 CONFIRMED → DONE 일괄 변경
+    int updateConfirmedToDone();
 }

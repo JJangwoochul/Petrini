@@ -32,6 +32,7 @@ import com.petcare.petcare.common.external.service.KakaoMessageService;
 import com.petcare.petcare.hospital.vo.HospitalPetVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -69,6 +70,15 @@ public class StayServiceImpl implements StayService {
     @Override
     public List<HospitalPetVO> getPetList(Long memberNo) {
         return stayMapper.selectPetListByMemberNo(memberNo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StayReviewVO> getStayReviews(Long stayId) throws Exception {
+        if (stayId == null) {
+            return List.of();
+        }
+        return stayMapper.selectStayReviews(stayId);
     }
 
     // HYJ 26.07.20 가용성 체크 (단순 조회 — 락 없음)

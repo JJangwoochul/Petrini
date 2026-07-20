@@ -58,8 +58,8 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  var statusLabel = { pending:'예약신청', confirmed:'예약확정', done:'진료완료' };
-  var statusColor = { pending:'#F5A623', confirmed:'#3B82F6', done:'#2BAB82' };
+  var statusLabel = { pending:'예약신청', confirmed:'예약확정', done:'숙박완료', cancel:'취소' };
+  var statusColor = { pending:'#F5A623', confirmed:'#4F6BC4', done:'#2BAB82', cancel:'#999' };
   var statusBadgeClass = { pending:'bs-wait', confirmed:'bs-ready', done:'bs-done' };
 
   var reservations = [
@@ -67,47 +67,57 @@
     {
       name: '<c:out value="${r.memberName}"/>',
       pet: '<c:out value="${r.petName}"/>',
-      time: '<c:out value="${r.resvTime}"/>',
-      date: '<fmt:formatDate value="${r.resvDate}" pattern="yyyy-MM-dd"/>',
+      room: '<c:out value="${r.serviceName}"/>',
+      checkin: '<fmt:formatDate value="${r.checkinDate}" pattern="yyyy-MM-dd"/>',
+      checkout: '<fmt:formatDate value="${r.checkoutDate}" pattern="yyyy-MM-dd"/>',
+      nightCnt: ${r.nightCnt},
       status: (function(cd){
         if (cd === 'PENDING') return 'pending';
         if (cd === 'CONFIRMED') return 'confirmed';
         if (cd === 'DONE') return 'done';
+        if (cd === 'CANCEL') return 'cancel';
         return 'pending';
       })('<c:out value="${r.statusCd}"/>')
     }<c:if test="${!st.last}">,</c:if>
     </c:forEach>
   ];
 
+  // FullCalendar 이벤트: start=체크인, end=체크아웃 → 구간 막대로 표시
   var events = reservations.map(function (r) {
     return {
-      title: r.time + ' ' + r.name,
-      start: r.date + 'T' + r.time,
+      title: r.room + ' · ' + r.name,
+      start: r.checkin,
+      end: r.checkout,
       color: statusColor[r.status],
       extendedProps: r
     };
   });
 
+  // 해당 날짜에 이용 중인 예약: 체크인 ≤ 날짜 < 체크아웃
   function eventsOnDay(key) {
-    return reservations.filter(function (r) { return r.date === key; })
-                        .sort(function (a, b) { return a.time.localeCompare(b.time); });
+    return reservations.filter(function (r) {
+      return key >= r.checkin && key < r.checkout;
+    }).sort(function (a, b) { return a.checkin.localeCompare(b.checkin); });
   }
 
   function confirmedCountOnDay(key) {
-    return reservations.filter(function (r) { return r.date === key && r.status === 'confirmed'; }).length;
+    return reservations.filter(function (r) {
+      return key >= r.checkin && key < r.checkout && r.status === 'confirmed';
+    }).length;
   }
 
   function renderDetail(key) {
     var d = new Date(key);
     var confirmedCnt = confirmedCountOnDay(key);
+    var allCnt = eventsOnDay(key).length;
     document.getElementById('detailTitle').textContent =
-      (d.getMonth() + 1) + '월 ' + d.getDate() + '일 예약 (확정 ' + confirmedCnt + '건 / 전체 ' + eventsOnDay(key).length + '건)';
+      (d.getMonth() + 1) + '월 ' + d.getDate() + '일 이용 현황 (확정 ' + confirmedCnt + '건 / 전체 ' + allCnt + '건)';
 
     var box = document.getElementById('calDetail');
     var list = eventsOnDay(key);
 
     if (list.length === 0) {
-      box.innerHTML = '<div class="cal-detail-empty">해당 날짜에 예약이 없습니다.</div>';
+      box.innerHTML = '<div class="cal-detail-empty">해당 날짜에 이용 중인 예약이 없습니다.</div>';
       return;
     }
 
@@ -116,8 +126,9 @@
       var item = document.createElement('div');
       item.className = 'cal-detail-item';
       item.innerHTML =
-        '<span class="bs-badge ' + statusBadgeClass[r.status] + ' badge">' + statusLabel[r.status] + '</span>' +
-        '<div class="info"><b>' + r.time + ' · ' + r.name + '</b><small>' + r.pet + '</small></div>';
+        '<span class="bs-badge ' + (statusBadgeClass[r.status] || '') + ' badge">' + statusLabel[r.status] + '</span>' +
+        '<div class="info"><b>' + r.room + ' · ' + r.name + '</b>' +
+        '<small>' + r.pet + ' · ' + r.checkin + ' ~ ' + r.checkout + ' (' + r.nightCnt + '박)</small></div>';
       box.appendChild(item);
     });
   }
@@ -131,7 +142,6 @@
       headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
       buttonText: { today: '오늘' },
       events: events,
-      eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
       dateClick: function (info) {
         renderDetail(info.dateStr);
       },

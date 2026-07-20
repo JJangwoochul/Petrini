@@ -83,4 +83,25 @@ public class MypageReserveController {
         }
         return "redirect:/mypage/reserve/detail?resvId=" + resvId;
     }
+
+    // HYJ 26.07.20 — 숙박완료 예약 숙소 리뷰·별점 등록
+    @PostMapping("/reserve/stay-review")
+    public String addStayReview(@RequestParam("resvId") Long resvId,
+                                @RequestParam("rating") Double rating,
+                                @RequestParam("content") String content,
+                                HttpSession session,
+                                RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId;
+        }
+
+        try {
+            mypageReserveService.addStayReview(member.getMemberNo(), resvId, rating, content);
+            rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/mypage/reserve/detail?resvId=" + resvId;
+    }
 }
