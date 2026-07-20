@@ -7,13 +7,10 @@
  * 쿼리 예시
  * - selectReservationList
  * - updateReservationStatus
- * - selectTreatmentList
- * - selectPatientList
  * - selectMedicalRecords
  *
  * 참고 테이블
  * - TB_RESERVATION
- * - TB_TREATMENT
  * - TB_MEDICAL_RECORD
  * - TB_REVIEW
  *

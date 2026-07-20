@@ -35,6 +35,14 @@ public class MypageReserveVO {
     private String hospitalName;
     private String hospitalAddr;
 
+    // 2026/07/20 장우철 — 병원 예약 고도화 표시용
+    private Long    doctorId;
+    private Long    treatTypeId;
+    private Integer durationMin;
+    private String  endTime;
+    private String  doctorName;
+    private String  treatTypeName;
+
     // 2026/07/13 장우철 — DONE 예약 리뷰 작성 여부 (Y/N)
     private String reviewedYn;
 

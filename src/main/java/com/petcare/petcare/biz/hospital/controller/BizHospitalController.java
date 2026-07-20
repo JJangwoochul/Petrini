@@ -417,20 +417,6 @@ public class BizHospitalController extends BizBaseController {
         }
     }
 
-    @GetMapping("/treatments")
-    public String hospitalTreatments(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
-        return "biz/hospital/treatments";
-    }
-
-    @GetMapping("/patients")
-    public String hospitalPatients(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
-        return "biz/hospital/patients";
-    }
-
     @GetMapping("/records")
     public String hospitalRecords(@RequestParam(value = "keyword", required = false) String keyword,
                                   @RequestParam(value = "period", required = false) Integer period,

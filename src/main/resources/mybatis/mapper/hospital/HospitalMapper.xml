@@ -198,6 +198,15 @@
            AND DOCTOR_ID   = #{doctorId}
     </select>
 
+    <!-- 2026/07/20 장우철 — 동시예약 방지: 선점·예약 INSERT 직전 의사 행 FOR UPDATE -->
+    <select id="lockDoctorForUpdate" resultType="long">
+        SELECT DOCTOR_ID
+          FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND DOCTOR_ID   = #{doctorId}
+           FOR UPDATE
+    </select>
+
     <!-- 2026/07/16 장우철 — 예약 제출: PENDING·CONFIRMED 겹침 (같은 의사·같은 날 [start,end)) -->
     <select id="countOverlappingReservations" resultType="int">
         SELECT COUNT(*)
@@ -387,6 +396,26 @@
            AND EXPIRE_DATE &gt; SYSDATE
     </select>
 
+    <!-- 2026/07/20 장우철 — hold 최종 제출 시 선점 행 FOR UPDATE (중복 제출 방지) -->
+    <select id="selectResvHoldByIdForUpdate"
+            resultType="com.petcare.petcare.hospital.vo.HospitalResvHoldVO">
+        SELECT HOLD_ID       AS holdId,
+               HOSPITAL_ID   AS hospitalId,
+               DOCTOR_ID     AS doctorId,
+               TREAT_TYPE_ID AS treatTypeId,
+               MEMBER_NO     AS memberNo,
+               RESV_DATE     AS resvDate,
+               RESV_TIME     AS resvTime,
+               DURATION_MIN  AS durationMin,
+               END_TIME      AS endTime,
+               EXPIRE_DATE   AS expireDate,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_RESV_HOLD
+         WHERE HOLD_ID = #{holdId}
+           AND EXPIRE_DATE &gt; SYSDATE
+           FOR UPDATE
+    </select>
+
     <delete id="deleteResvHoldById">
         DELETE FROM TB_HOSPITAL_RESV_HOLD
          WHERE HOLD_ID = #{holdId}
@@ -416,11 +445,15 @@
                 P.SPECIES        AS petSpecies,
                 P.BREED          AS petBreed,
                 P.AGE            AS petAge,
-                H.NAME           AS hospitalName
+                H.NAME           AS hospitalName,
+                D.DOCTOR_NAME    AS doctorName,
+                T.TYPE_NAME      AS treatTypeName
           FROM  TB_RESERVATION R
           JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
           JOIN  TB_PET P ON P.PET_ID = R.PET_ID
           LEFT JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+          LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+          LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
          WHERE  R.RESV_ID = #{resvId}
     </select>
 

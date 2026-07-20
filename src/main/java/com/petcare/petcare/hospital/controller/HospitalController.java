@@ -111,6 +111,25 @@ public class HospitalController extends CommonConfigController {
         */
     }
 
+    // 2026/07/20 장우철 — 예약 날짜 정기 휴무 확인 (Ajax)
+    @GetMapping("/reserve/day-check")
+    @ResponseBody
+    public Map<String, Object> reserveDayCheck(@RequestParam("hospitalId") Long hospitalId,
+                                               @RequestParam("resvDate")
+                                               @DateTimeFormat(pattern = "yyyy-MM-dd") Date resvDate,
+                                               HttpSession session) {
+        if (session.getAttribute("memberInfo") == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+        try {
+            return apiOk(hospitalService.checkReserveDate(hospitalId, resvDate));
+        } catch (IllegalArgumentException e) {
+            return apiFail(e.getMessage());
+        } catch (Exception e) {
+            return apiFail("예약 가능 여부를 확인하지 못했습니다.");
+        }
+    }
+
     // 2026/07/16 장우철 — 예약 가능 시간 (Ajax)
     @GetMapping("/reserve/times")
     @ResponseBody
@@ -157,6 +176,23 @@ public class HospitalController extends CommonConfigController {
             return apiFail(e.getMessage());
         } catch (Exception e) {
             return apiFail("예약 시간 선점에 실패했습니다.");
+        }
+    }
+
+    // 2026/07/20 장우철 — 2단계 이전 클릭 시 hold 해제 (Ajax)
+    @PostMapping("/reserve/hold/release")
+    @ResponseBody
+    public Map<String, Object> releaseReserveHold(@RequestParam("hospitalId") Long hospitalId,
+                                                  HttpSession session) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+        try {
+            hospitalService.releaseMemberReserveHolds(hospitalId, member.getMemberNo());
+            return apiOk(null);
+        } catch (Exception e) {
+            return apiFail("예약 선점 해제에 실패했습니다.");
         }
     }
 

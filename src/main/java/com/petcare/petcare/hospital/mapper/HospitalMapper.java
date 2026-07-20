@@ -84,6 +84,13 @@ public interface HospitalMapper {
     HospitalResvHoldVO selectResvHoldById(@Param("holdId") Long holdId) throws Exception;
     int deleteResvHoldById(@Param("holdId") Long holdId) throws Exception;
 
+    // 2026/07/20 장우철 — 동시예약 방지: 의사 행 비관적 락
+    Long lockDoctorForUpdate(@Param("hospitalId") Long hospitalId,
+                             @Param("doctorId") Long doctorId) throws Exception;
+
+    // 2026/07/20 장우철 — hold 최종 제출 시 선점 행 락
+    HospitalResvHoldVO selectResvHoldByIdForUpdate(@Param("holdId") Long holdId) throws Exception;
+
     // 2026/07/13 장우철 — 병원 상세 리뷰 목록 (REVIEW_TYPE=HOSPITAL)
     List<HospitalReviewVO> selectHospitalReviews(Long hospitalId) throws Exception;
 }

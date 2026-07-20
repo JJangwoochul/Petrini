@@ -82,6 +82,7 @@
 
     <div class="step-subtitle">예약 날짜</div>
     <input type="date" class="reserve-date-input" id="resvDate" required>
+    <div id="closedDayAlert" class="reserve-alert" style="display:none;margin-top:12px"></div>
 
     <div id="schedulePanel" style="display:none">
       <div class="step-subtitle">담당 의사</div>
@@ -190,7 +191,7 @@
     </div>
 
     <div class="reserve-nav">
-      <button type="button" class="btn-prev" onclick="goStep(1)">이전</button>
+      <button type="button" class="btn-prev" onclick="goBackToStep1()">이전</button>
       <button type="button" class="btn-next" onclick="submitReserve()">예약 완료</button>
     </div>
   </div>
@@ -225,20 +226,76 @@ function goStep(n) {
   window.scrollTo(0, 0);
 }
 
+// 2026/07/20 장우철 — 2단계 이전: hold 해제 후 1단계 (다른 회원 즉시 재선택)
+function goBackToStep1() {
+  var holdId = document.getElementById('holdIdInput').value;
+  function afterRelease() {
+    document.getElementById('holdIdInput').value = '';
+    goStep(1);
+    if (selectedResvDate && selectedDoctorId && selectedTreatId) {
+      loadAvailableTimes();
+    }
+  }
+  if (!holdId) {
+    afterRelease();
+    return;
+  }
+  var body = new URLSearchParams();
+  body.append('hospitalId', hospitalId);
+  fetch(contextPath + '/hospital/reserve/hold/release', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json'
+    },
+    body: body.toString()
+  })
+    .then(function() { afterRelease(); })
+    .catch(function() { afterRelease(); });
+}
+
 function onDateChange() {
   selectedResvDate = document.getElementById('resvDate').value;
   selectedResvTime = '';
   document.getElementById('holdIdInput').value = '';
   document.getElementById('btnToStep2').disabled = true;
   clearTimeSlots();
-  if (selectedResvDate) {
-    document.getElementById('schedulePanel').style.display = 'block';
-    if (selectedDoctorId && selectedTreatId) {
-      loadAvailableTimes();
-    }
-  } else {
+  document.getElementById('closedDayAlert').style.display = 'none';
+
+  if (!selectedResvDate) {
     document.getElementById('schedulePanel').style.display = 'none';
+    return;
   }
+
+  var dayUrl = contextPath + '/hospital/reserve/day-check'
+      + '?hospitalId=' + encodeURIComponent(hospitalId)
+      + '&resvDate=' + encodeURIComponent(selectedResvDate);
+
+  fetch(dayUrl, { headers: { 'Accept': 'application/json' } })
+    .then(function(res) { return res.json(); })
+    .then(function(json) {
+      if (!json.ok) {
+        document.getElementById('schedulePanel').style.display = 'none';
+        document.getElementById('closedDayAlert').textContent = json.msg || '예약 가능 여부를 확인하지 못했습니다.';
+        document.getElementById('closedDayAlert').style.display = 'block';
+        return;
+      }
+      if (json.data && json.data.closed) {
+        document.getElementById('schedulePanel').style.display = 'none';
+        document.getElementById('closedDayAlert').textContent = json.data.message || '선택한 날짜는 예약할 수 없습니다.';
+        document.getElementById('closedDayAlert').style.display = 'block';
+        return;
+      }
+      document.getElementById('schedulePanel').style.display = 'block';
+      if (selectedDoctorId && selectedTreatId) {
+        loadAvailableTimes();
+      }
+    })
+    .catch(function() {
+      document.getElementById('schedulePanel').style.display = 'none';
+      document.getElementById('closedDayAlert').textContent = '예약 가능 여부를 확인하지 못했습니다.';
+      document.getElementById('closedDayAlert').style.display = 'block';
+    });
 }
 
 function selectDoctor(el) {

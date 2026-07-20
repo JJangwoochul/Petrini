@@ -58,6 +58,8 @@ public class ReservationVO {
     private String  petBreed;
     private Integer petAge;
     private String  hospitalName;  // 2026/07/16 장우철 — 완료 화면 병원명 (H.NAME)
+    private String  doctorName;    // 2026/07/20 장우철 — JOIN 표시용 (D.DOCTOR_NAME)
+    private String  treatTypeName; // 2026/07/20 장우철 — JOIN 표시용 (T.TYPE_NAME)
 
     //HYJ 26.07.15 숙소용
     private String  stayName;

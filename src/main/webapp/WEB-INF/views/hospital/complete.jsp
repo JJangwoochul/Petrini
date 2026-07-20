@@ -45,10 +45,13 @@
           <c:choose>
             <c:when test="${not empty reservation.resvDate}">
               <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy.MM.dd"/> ${reservation.resvTime}
+              <c:if test="${not empty reservation.endTime}"> ~ ${reservation.endTime}</c:if>
             </c:when>
             <c:otherwise>${reservation.resvTime}</c:otherwise>
           </c:choose>
         </span></div>
+        <div class="complete-row"><span>담당 의사</span><span>${empty reservation.doctorName ? '-' : reservation.doctorName}</span></div>
+        <div class="complete-row"><span>진료 유형</span><span>${empty reservation.treatTypeName ? '-' : reservation.treatTypeName}</span></div>
         <div class="complete-row"><span>주증상</span><span>${empty reservation.symptoms ? '-' : reservation.symptoms}</span></div>
       </div>
     </c:when>

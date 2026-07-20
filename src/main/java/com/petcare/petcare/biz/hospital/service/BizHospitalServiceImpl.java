@@ -354,7 +354,10 @@ public class BizHospitalServiceImpl implements BizHospitalService {
             throw new IllegalArgumentException("유형명을 입력해 주세요.");
         }
         if (vo.getDurationMin() == null || vo.getDurationMin() <= 0) {
-            throw new IllegalArgumentException("소요 분을 확인해 주세요.");
+            throw new IllegalArgumentException("소요 시간(분)은 1 이상으로 입력해 주세요.");
+        }
+        if (vo.getDurationMin() > 480) {
+            throw new IllegalArgumentException("소요 시간(분)은 480분(8시간) 이하로 입력해 주세요.");
         }
         vo.setHospitalId(hospitalId);
         vo.setTypeName(vo.getTypeName().trim());
@@ -445,7 +448,10 @@ public class BizHospitalServiceImpl implements BizHospitalService {
             throw new IllegalArgumentException("병원 정보가 올바르지 않습니다.");
         }
         if (intervalMin == null || intervalMin <= 0) {
-            throw new IllegalArgumentException("예약 간격을 확인해 주세요.");
+            throw new IllegalArgumentException("예약 간격(분)을 1 이상 숫자로 입력해 주세요.");
+        }
+        if (intervalMin < 5 || intervalMin > 120) {
+            throw new IllegalArgumentException("예약 간격은 5~120분 사이로 입력해 주세요.");
         }
         int n = bizHospitalMapper.updateResvIntervalMin(hospitalId, intervalMin);
         if (n == 0) {
@@ -490,6 +496,9 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         vo.setHospitalId(hospitalId);
         vo.setStartTime(normalizeTime(vo.getStartTime()));
         vo.setEndTime(normalizeTime(vo.getEndTime()));
+        if (vo.getStartTime().compareTo(vo.getEndTime()) >= 0) {
+            throw new IllegalArgumentException("종료 시각은 시작 시각보다 늦어야 합니다.");
+        }
         if (vo.getStatusCd() == null || vo.getStatusCd().isBlank()) {
             vo.setStatusCd("Y");
         }

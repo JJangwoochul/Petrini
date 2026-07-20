@@ -17,8 +17,10 @@
   .sch-panel{display:none}
   .sch-panel.on{display:block}
   .sch-hint{font-size:12px;color:#999;padding:0 20px 12px;line-height:1.5}
-  .sch-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A2E;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:1200;max-width:90%;text-align:center}
+  .sch-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1A2E;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:1200;max-width:90%;text-align:center;line-height:1.45}
   .sch-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .sch-toast.error{background:#B91C1C}
+  .sch-toast.ok{background:#1F8464}
 
   .sch-exc-layout{display:grid;grid-template-columns:1.15fr 1fr;gap:16px}
   @media (max-width:960px){.sch-exc-layout{grid-template-columns:1fr}}
@@ -266,12 +268,17 @@
   var selectedExcDate = '';
   var excCal = null;
 
-  function showSchToast(msg) {
+  function showSchToast(msg, type) {
     var el = document.getElementById('schToast');
     el.textContent = msg;
+    el.classList.remove('error', 'ok');
+    if (type === 'error') el.classList.add('error');
+    else if (type === 'ok') el.classList.add('ok');
     el.classList.add('on');
     clearTimeout(window.__schToastTimer);
-    window.__schToastTimer = setTimeout(function () { el.classList.remove('on'); }, 2400);
+    window.__schToastTimer = setTimeout(function () {
+      el.classList.remove('on', 'error', 'ok');
+    }, 2800);
   }
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
   function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -302,12 +309,19 @@
   }
   function applyListResult(res, setter, okMsg) {
     if (!res || !res.ok) {
-      showSchToast((res && res.message) || '처리에 실패했습니다.');
+      showSchToast((res && res.message) || '처리에 실패했습니다. 잠시 후 다시 시도해 주세요.', 'error');
       return false;
     }
     setter(res.data || []);
-    if (okMsg) showSchToast(okMsg);
+    if (okMsg) showSchToast(okMsg, 'ok');
     return true;
+  }
+
+  function parseTimeToMin(t) {
+    if (!t) return null;
+    var p = String(t).substring(0, 5).split(':');
+    if (p.length < 2) return null;
+    return Number(p[0]) * 60 + Number(p[1]);
   }
 
   function doctorName(id) {
@@ -379,11 +393,20 @@
   }
   function saveTreat() {
     var name = document.getElementById('treatName').value.trim();
-    if (!name) { showSchToast('유형명을 입력해 주세요.'); return; }
+    if (!name) { showSchToast('유형명을 입력해 주세요.', 'error'); return; }
+    var durationMin = Number(document.getElementById('treatMin').value);
+    if (!durationMin || durationMin <= 0) {
+      showSchToast('소요 시간(분)은 1 이상 숫자로 입력해 주세요.', 'error');
+      return;
+    }
+    if (durationMin > 480) {
+      showSchToast('소요 시간은 480분(8시간) 이하로 입력해 주세요.', 'error');
+      return;
+    }
     var editId = document.getElementById('treatEditId').value;
     var body = {
       typeName: name,
-      durationMin: Number(document.getElementById('treatMin').value),
+      durationMin: durationMin,
       sortOrdr: Number(document.getElementById('treatSort').value) || 1,
       statusCd: document.getElementById('treatUse').value
     };
@@ -392,13 +415,13 @@
       if (applyListResult(res, setTreatList, editId ? '진료유형이 수정되었습니다.' : '진료유형이 등록되었습니다.')) {
         closeModal('treatModalBg');
       }
-    }).catch(function () { showSchToast('저장에 실패했습니다.'); });
+    }).catch(function () { showSchToast('네트워크 오류로 저장하지 못했습니다.', 'error'); });
   }
   function removeTreat(id) {
     if (!confirm('이 진료유형을 삭제할까요?')) return;
     apiPostParam('/biz/hospital/schedule/treat-types/delete', { treatTypeId: id }).then(function (res) {
-      applyListResult(res, setTreatList, '삭제되었습니다.');
-    }).catch(function () { showSchToast('삭제에 실패했습니다.'); });
+      applyListResult(res, setTreatList, '진료유형이 삭제되었습니다.');
+    }).catch(function () { showSchToast('네트워크 오류로 삭제하지 못했습니다.', 'error'); });
   }
 
   function setDoctorList(list) {
@@ -450,7 +473,7 @@
   }
   function saveDoctor() {
     var name = document.getElementById('doctorName').value.trim();
-    if (!name) { showSchToast('의사명을 입력해 주세요.'); return; }
+    if (!name) { showSchToast('의사명을 입력해 주세요.', 'error'); return; }
     var editId = document.getElementById('doctorEditId').value;
     var body = {
       doctorName: name,
@@ -463,19 +486,19 @@
       if (applyListResult(res, setDoctorList, editId ? '의사가 수정되었습니다.' : '의사가 등록되었습니다.')) {
         closeModal('doctorModalBg');
       }
-    }).catch(function () { showSchToast('저장에 실패했습니다.'); });
+    }).catch(function () { showSchToast('네트워크 오류로 저장하지 못했습니다.', 'error'); });
   }
   function removeDoctor(id) {
     if (!confirm('이 의사를 삭제할까요?')) return;
     apiPostParam('/biz/hospital/schedule/doctors/delete', { doctorId: id }).then(function (res) {
-      applyListResult(res, setDoctorList, '삭제되었습니다.');
-    }).catch(function () { showSchToast('삭제에 실패했습니다.'); });
+      applyListResult(res, setDoctorList, '의사가 삭제되었습니다.');
+    }).catch(function () { showSchToast('네트워크 오류로 삭제하지 못했습니다.', 'error'); });
   }
 
   function loadInterval() {
     return apiGet('/biz/hospital/schedule/interval').then(function (res) {
       if (!res || !res.ok) {
-        showSchToast((res && res.message) || '간격을 불러오지 못했습니다.');
+        showSchToast((res && res.message) || '예약 간격을 불러오지 못했습니다.', 'error');
         return;
       }
       var v = (res.data && res.data.resvIntervalMin) ? String(res.data.resvIntervalMin) : '15';
@@ -484,16 +507,24 @@
   }
   function saveInterval() {
     var v = Number(document.getElementById('resvIntervalMin').value);
+    if (!v || v <= 0) {
+      showSchToast('예약 간격(분)을 1 이상 숫자로 입력해 주세요.', 'error');
+      return;
+    }
+    if (v < 5 || v > 120) {
+      showSchToast('예약 간격은 5~120분 사이로 입력해 주세요.', 'error');
+      return;
+    }
     apiPostJson('/biz/hospital/schedule/interval/save', { resvIntervalMin: v }).then(function (res) {
       if (!res || !res.ok) {
-        showSchToast((res && res.message) || '저장에 실패했습니다.');
+        showSchToast((res && res.message) || '예약 간격 저장에 실패했습니다.', 'error');
         return;
       }
       if (res.data && res.data.resvIntervalMin != null) {
         document.getElementById('resvIntervalMin').value = String(res.data.resvIntervalMin);
       }
-      showSchToast('예약간격이 저장되었습니다.');
-    }).catch(function () { showSchToast('저장에 실패했습니다.'); });
+      showSchToast('예약 간격이 ' + v + '분으로 저장되었습니다.', 'ok');
+    }).catch(function () { showSchToast('네트워크 오류로 저장하지 못했습니다.', 'error'); });
   }
 
   function setExcList(list) {
@@ -575,7 +606,17 @@
     var date = document.getElementById('excDate').value;
     var start = document.getElementById('excStart').value;
     var end = document.getElementById('excEnd').value;
-    if (!date || !start || !end) { showSchToast('날짜·시간을 확인해 주세요.'); return; }
+    if (!date || !start || !end) { showSchToast('날짜·시간을 모두 입력해 주세요.', 'error'); return; }
+    var startMin = parseTimeToMin(start);
+    var endMin = parseTimeToMin(end);
+    if (startMin == null || endMin == null) {
+      showSchToast('시간 형식을 확인해 주세요. (예: 09:00)', 'error');
+      return;
+    }
+    if (startMin >= endMin) {
+      showSchToast('종료 시각은 시작 시각보다 늦어야 합니다.', 'error');
+      return;
+    }
     var target = document.getElementById('excTarget').value;
     var editId = document.getElementById('excEditId').value;
     var body = {
@@ -595,7 +636,7 @@
       }, editId ? '예외가 수정되었습니다.' : '예외가 등록되었습니다.')) {
         closeModal('excModalBg');
       }
-    }).catch(function () { showSchToast('저장에 실패했습니다.'); });
+    }).catch(function () { showSchToast('네트워크 오류로 저장하지 못했습니다.', 'error'); });
   }
   function removeExc(id) {
     if (!confirm('이 예외를 삭제할까요?')) return;
@@ -605,8 +646,8 @@
       if (applyListResult(res, function (list) {
         setExcList(list);
         renderExcDetail(keepDate || todayStr());
-      }, '삭제되었습니다.')) { /* ok */ }
-    }).catch(function () { showSchToast('삭제에 실패했습니다.'); });
+      }, '예외 일정이 삭제되었습니다.')) { /* ok */ }
+    }).catch(function () { showSchToast('네트워크 오류로 삭제하지 못했습니다.', 'error'); });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -632,7 +673,7 @@
     excCal.render();
 
     Promise.all([loadTreats(), loadDoctors(), loadInterval(), loadExceptions()])
-      .catch(function () { showSchToast('목록을 불러오지 못했습니다.'); });
+      .catch(function () { showSchToast('목록을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.', 'error'); });
   });
 </script>
 

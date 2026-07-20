@@ -12,7 +12,9 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,7 +39,7 @@ public class HospitalServiceImpl implements HospitalService {
     private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
     private static final String[] DAY_LABELS = {"월", "화", "수", "목", "금", "토", "일"};
-    private static final int HOLD_TTL_MINUTES = 15;
+    private static final int HOLD_TTL_MINUTES = 5; // 2026/07/20 장우철 — 선점 유효 5분
 
     @Autowired
     private HospitalMapper hospitalMapper;
@@ -114,6 +116,11 @@ public class HospitalServiceImpl implements HospitalService {
 
         List<TimeRange> openWindows = resolveOpenWindows(hospital, doctorId, date, intervalMin);
         if (openWindows.isEmpty()) {
+            // 2026/07/20 장우철 — 정기 휴무(HOURS_JSON에 없는 요일)면 명확한 메시지
+            String closedMsg = resolveRegularClosedMessage(hospital, date);
+            if (closedMsg != null) {
+                throw new IllegalStateException(closedMsg);
+            }
             return List.of();
         }
 
@@ -148,7 +155,35 @@ public class HospitalServiceImpl implements HospitalService {
         return slots;
     }
 
+    // 2026/07/20 장우철 — 예약 날짜 정기 휴무 여부 (유저 날짜 선택)
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> checkReserveDate(Long hospitalId, Date resvDate) throws Exception {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("closed", false);
+        if (hospitalId == null || resvDate == null) {
+            throw new IllegalArgumentException("일정 정보가 올바르지 않습니다.");
+        }
+        LocalDate date = toLocalDate(resvDate);
+        if (date.isBefore(LocalDate.now(ZONE))) {
+            result.put("closed", true);
+            result.put("message", "과거 날짜는 예약할 수 없습니다.");
+            return result;
+        }
+        HospitalVO hospital = hospitalMapper.selectHospitalById(hospitalId);
+        if (hospital == null) {
+            throw new IllegalArgumentException("병원 정보를 찾을 수 없습니다.");
+        }
+        String closedMsg = resolveRegularClosedMessage(hospital, date);
+        if (closedMsg != null) {
+            result.put("closed", true);
+            result.put("message", closedMsg);
+        }
+        return result;
+    }
+
     // 2026/07/16 장우철 — 펫 단계 이동 시 임시 선점
+    // 2026/07/20 장우철 — 의사 행 FOR UPDATE 로 동시 선점 race 방지
     @Override
     @Transactional
     public Long createReserveHold(Long hospitalId, Long memberNo, Long doctorId, Long treatTypeId,
@@ -177,17 +212,15 @@ public class HospitalServiceImpl implements HospitalService {
             throw new IllegalStateException("선택한 시간은 더 이상 예약할 수 없습니다. 다시 선택해 주세요.");
         }
 
+        lockDoctorSchedule(hospitalId, doctorId);
+
         try {
             hospitalMapper.deleteHoldsByMember(hospitalId, memberNo);
         } catch (Exception e) {
             System.out.println("[reserve/hold] 기존 선점 삭제 스킵: " + e.getMessage());
         }
 
-        int overlap = countOverlapSafe(
-                hospitalId, doctorId, resvDate, startTime, endTime, null);
-        if (overlap > 0) {
-            throw new IllegalStateException("선택한 시간에 이미 예약이 있습니다. 다른 시간을 선택해 주세요.");
-        }
+        assertNoScheduleOverlap(hospitalId, doctorId, resvDate, startTime, endTime, null);
 
         HospitalResvHoldVO hold = new HospitalResvHoldVO();
         hold.setHospitalId(hospitalId);
@@ -225,14 +258,24 @@ public class HospitalServiceImpl implements HospitalService {
         if (vo.getMemberNo() == null) {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
-        if (vo.getPetId() == null) {
-            throw new IllegalArgumentException("반려동물을 선택해 주세요.");
-        }
 
-        HospitalResvHoldVO hold = hospitalMapper.selectResvHoldById(vo.getHoldId());
+        HospitalResvHoldVO hold;
+        try {
+            hold = hospitalMapper.selectResvHoldByIdForUpdate(vo.getHoldId());
+        } catch (Exception e) {
+            throw new IllegalStateException("예약 선점이 만료되었습니다. 일정부터 다시 선택해 주세요.");
+        }
         if (hold == null || !hold.getMemberNo().equals(vo.getMemberNo())) {
             throw new IllegalStateException("예약 선점이 만료되었습니다. 일정부터 다시 선택해 주세요.");
         }
+
+        if (vo.getPetId() == null) {
+            // 2026/07/20 장우철 — 제출 실패 시 hold 해제 → 다른 회원 재선택 가능
+            releaseHoldSafe(hold.getHoldId());
+            throw new IllegalArgumentException("반려동물을 선택해 주세요.");
+        }
+
+        lockDoctorSchedule(hold.getHospitalId(), hold.getDoctorId());
 
         vo.setTargetId(String.valueOf(hold.getHospitalId()));
         vo.setResvDate(hold.getResvDate());
@@ -242,12 +285,13 @@ public class HospitalServiceImpl implements HospitalService {
         vo.setDurationMin(hold.getDurationMin());
         vo.setEndTime(hold.getEndTime());
 
-        int overlap = countOverlapSafe(
-                hold.getHospitalId(), hold.getDoctorId(), hold.getResvDate(),
-                hold.getResvTime(), hold.getEndTime(), hold.getHoldId());
-        if (overlap > 0) {
-            try { hospitalMapper.deleteResvHoldById(hold.getHoldId()); } catch (Exception ignore) {}
-            throw new IllegalStateException("선택한 시간에 이미 예약이 있습니다. 일정부터 다시 선택해 주세요.");
+        try {
+            assertNoScheduleOverlap(
+                    hold.getHospitalId(), hold.getDoctorId(), hold.getResvDate(),
+                    hold.getResvTime(), hold.getEndTime(), hold.getHoldId());
+        } catch (IllegalStateException e) {
+            releaseHoldSafe(hold.getHoldId());
+            throw e;
         }
 
         vo.setResvType("HOSPITAL");
@@ -255,8 +299,13 @@ public class HospitalServiceImpl implements HospitalService {
         if (vo.getResvNo() == null || vo.getResvNo().isBlank()) {
             vo.setResvNo(buildResvNo());
         }
-        hospitalMapper.insertReservation(vo);
-        try { hospitalMapper.deleteResvHoldById(hold.getHoldId()); } catch (Exception ignore) {}
+        try {
+            hospitalMapper.insertReservation(vo);
+        } catch (Exception e) {
+            releaseHoldSafe(hold.getHoldId());
+            throw e;
+        }
+        releaseHoldSafe(hold.getHoldId());
         return vo.getResvId();
     }
 
@@ -296,11 +345,9 @@ public class HospitalServiceImpl implements HospitalService {
         vo.setDurationMin(durationMin);
         vo.setEndTime(endTime);
 
-        int overlap = countOverlapSafe(
+        lockDoctorSchedule(hospitalId, vo.getDoctorId());
+        assertNoScheduleOverlap(
                 hospitalId, vo.getDoctorId(), vo.getResvDate(), startTime, endTime, null);
-        if (overlap > 0) {
-            throw new IllegalStateException("선택한 시간에 이미 예약이 있습니다. 다른 시간을 선택해 주세요.");
-        }
 
         vo.setResvType("HOSPITAL");
         vo.setStatusCd("PENDING");
@@ -325,6 +372,56 @@ public class HospitalServiceImpl implements HospitalService {
             return List.of();
         }
         return hospitalMapper.selectHospitalReviews(hospitalId);
+    }
+
+    // 2026/07/20 장우철 — 만료 hold 일괄 삭제 (스케줄·예약 API 공용)
+    @Override
+    @Transactional
+    public int cleanupExpiredHolds() throws Exception {
+        return hospitalMapper.deleteExpiredHolds();
+    }
+
+    // 2026/07/20 장우철 — 2단계 이전: 본인 hold 해제 (다른 회원 즉시 재선택)
+    @Override
+    @Transactional
+    public void releaseMemberReserveHolds(Long hospitalId, Long memberNo) throws Exception {
+        if (hospitalId == null || memberNo == null) {
+            return;
+        }
+        try {
+            hospitalMapper.deleteHoldsByMember(hospitalId, memberNo);
+        } catch (Exception e) {
+            System.out.println("[reserve/hold] 선점 해제 스킵: " + e.getMessage());
+        }
+    }
+
+    /** 2026/07/20 장우철 — 동시예약 방지: 의사 단위 직렬화 */
+    private void lockDoctorSchedule(Long hospitalId, Long doctorId) throws Exception {
+        Long locked = hospitalMapper.lockDoctorForUpdate(hospitalId, doctorId);
+        if (locked == null) {
+            throw new IllegalArgumentException("선택한 의사를 예약할 수 없습니다.");
+        }
+    }
+
+    /** 2026/07/20 장우철 — 겹침 시 사용자 메시지 (락 이후 재검사) */
+    private void assertNoScheduleOverlap(Long hospitalId, Long doctorId, Date resvDate,
+                                         String resvTime, String endTime, Long excludeHoldId) {
+        int overlap = countOverlapSafe(hospitalId, doctorId, resvDate, resvTime, endTime, excludeHoldId);
+        if (overlap > 0) {
+            throw new IllegalStateException("선택한 시간에 이미 예약이 있습니다. 다른 시간을 선택해 주세요.");
+        }
+    }
+
+    /** 2026/07/20 장우철 — hold 해제 (실패·완료 공통) */
+    private void releaseHoldSafe(Long holdId) {
+        if (holdId == null) {
+            return;
+        }
+        try {
+            hospitalMapper.deleteResvHoldById(holdId);
+        } catch (Exception e) {
+            System.out.println("[reserve/hold] 선점 해제 스킵: " + e.getMessage());
+        }
     }
 
     private int resolveIntervalMin(Long hospitalId) {
@@ -372,7 +469,7 @@ public class HospitalServiceImpl implements HospitalService {
 
     private void cleanupExpiredHoldsSafe() {
         try {
-            hospitalMapper.deleteExpiredHolds();
+            cleanupExpiredHolds();
         } catch (Exception e) {
             System.out.println("[reserve] hold 만료 정리 스킵: " + e.getMessage());
         }
@@ -498,7 +595,18 @@ public class HospitalServiceImpl implements HospitalService {
         if (!dayNode.isMissingNode() && !dayNode.isNull()) {
             return dayNode;
         }
-        return root.path("공휴일");
+        // 2026/07/20 장우철 — JSON에 없는 요일 = 정기 휴무 (공휴일 키로 대체하지 않음)
+        return null;
+    }
+
+    /** 2026/07/20 장우철 — HOURS_JSON 기준 정기 휴무 메시지 (없으면 null) */
+    private String resolveRegularClosedMessage(HospitalVO hospital, LocalDate date) throws Exception {
+        JsonNode dayNode = resolveDayHoursNode(hospital.getHoursJson(), date);
+        if (dayNode == null || dayNode.isMissingNode() || dayNode.isNull()) {
+            String dayName = DAY_LABELS[date.getDayOfWeek().getValue() - 1];
+            return dayName + "요일은 정기 휴무일입니다.";
+        }
+        return null;
     }
 
     private boolean overlapsOccupied(String start, String end, List<HospitalTimeBlockVO> occupied) {

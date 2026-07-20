@@ -62,8 +62,19 @@
       <span>
         <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy-MM-dd"/>
         <c:if test="${not empty reservation.resvTime}"> ${reservation.resvTime}</c:if>
+        <c:if test="${not empty reservation.endTime}"> ~ ${reservation.endTime}</c:if>
       </span>
     </div>
+    <c:if test="${reservation.resvType eq 'HOSPITAL'}">
+      <div class="rd-row">
+        <span>담당 의사</span>
+        <span><c:out value="${not empty reservation.doctorName ? reservation.doctorName : '-'}"/></span>
+      </div>
+      <div class="rd-row">
+        <span>진료 유형</span>
+        <span><c:out value="${not empty reservation.treatTypeName ? reservation.treatTypeName : '-'}"/></span>
+      </div>
+    </c:if>
     <div class="rd-row">
       <span>반려동물</span>
       <span>
