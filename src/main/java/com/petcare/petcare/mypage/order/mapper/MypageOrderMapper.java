@@ -34,4 +34,14 @@ public interface MypageOrderMapper {
 
     //지윤 26.07.20 추가: 주문 하나의 상품 목록
     List<MypageOrderItemVO> selectOrderItems(@Param("orderId") Long orderId);
+
+    //지윤 26.07.20 추가: 상품 리뷰 작성 (본인 주문/중복작성 여부는 SQL에서 검증, 영향받은 행수 반환)
+    int insertProductReview(@Param("orderItemId") Long orderItemId, @Param("memberNo") Long memberNo,
+                             @Param("rating") Double rating, @Param("content") String content);
+
+    //지윤 26.07.20 추가: 방금 등록한 리뷰의 REVIEW_ID 재조회 (사진 첨부용)
+    Long selectReviewIdByOrderItem(@Param("orderItemId") Long orderItemId);
+    
+    //지윤 26.07.20 추가: 주문상세보기 1건 (본인 주문 아니면 null)
+    MypageOrderVO selectOrderDetail(@Param("orderId") Long orderId, @Param("memberNo") Long memberNo);
 }

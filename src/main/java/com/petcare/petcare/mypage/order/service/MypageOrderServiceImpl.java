@@ -19,7 +19,9 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.mypage.order.mapper.MypageOrderMapper;
 import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
 
@@ -29,13 +31,45 @@ public class MypageOrderServiceImpl implements MypageOrderService {
     @Autowired
     private MypageOrderMapper mypageOrderMapper;
 
+    //지윤 26.07.20 추가: 리뷰 사진 첨부용 (biz 상품이미지 업로드와 동일한 서비스 재사용)
+    @Autowired
+    private FileService fileService;
+
     //지윤 26.07.20 추가: 주문 목록 조회 + 주문마다 상품목록도 같이 채워넣음 (화면에서 카드 하나에 상품 여러 개 보여줘야 해서)
-    @Override
+  @Override
     public List<MypageOrderVO> getOrderList(Long memberNo, String statusCd) {
         List<MypageOrderVO> list = mypageOrderMapper.selectOrderList(memberNo, statusCd);
         for (MypageOrderVO o : list) {
             o.setItemList(mypageOrderMapper.selectOrderItems(o.getOrderId()));
         }
         return list;
+    }
+
+    //지윤 26.07.20 수정: 사진 첨부 처리 추가. 리뷰 등록 성공하면 REVIEW_ID 재조회해서 이미지마다 FileService로 저장
+    @Override
+    public boolean writeReview(Long memberNo, Long orderItemId, Double rating, String content,
+                                List<MultipartFile> images) throws Exception {
+        int inserted = mypageOrderMapper.insertProductReview(orderItemId, memberNo, rating, content);
+        if (inserted == 0) return false;
+
+        if (images != null && !images.isEmpty()) {
+            Long reviewId = mypageOrderMapper.selectReviewIdByOrderItem(orderItemId);
+            for (MultipartFile image : images) {
+                if (image != null && !image.isEmpty()) {
+                    fileService.uploadFile(image, "REVIEW", reviewId);
+                }
+            }
+        }
+        return true;
+    }
+
+    //지윤 26.07.20 추가: 주문상세보기 1건 + 상품목록 (본인 주문 아니면 null 그대로 반환)
+    @Override
+    public MypageOrderVO getOrderDetail(Long memberNo, Long orderId) {
+        MypageOrderVO order = mypageOrderMapper.selectOrderDetail(orderId, memberNo);
+        if (order != null) {
+            order.setItemList(mypageOrderMapper.selectOrderItems(order.getOrderId()));
+        }
+        return order;
     }
 }

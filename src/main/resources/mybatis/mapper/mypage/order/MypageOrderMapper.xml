@@ -31,12 +31,28 @@
     ORDER BY ORDER_ID DESC
 </select>
 
+<!-- 지윤 26.07.20 추가: 주문상세보기 1건 (결제내역/배송지 포함, 본인 주문 아니면 조회 자체가 안 됨) -->
+<!-- 지윤 26.07.20 수정: TB_ORDER_DELIVERY LEFT JOIN 추가 (택배사/송장번호, 등록 전이면 NULL) -->
+<select id="selectOrderDetail" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderVO">
+    SELECT o.ORDER_ID, o.ORDER_NO, o.ORDER_DATE, o.ORDER_STATUS, o.PAY_AMOUNT,
+           o.TOTAL_AMOUNT, o.DELIVERY_FEE, o.DISCOUNT_AMOUNT, o.POINT_USED,
+           o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2,
+           d.COURIER_NAME, d.TRACKING_NO
+    FROM TB_ORDER o
+    LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+    WHERE o.ORDER_ID = #{orderId} AND o.MEMBER_NO = #{memberNo}
+</select>
+
 <!-- 지윤 26.07.20 추가: 주문 하나의 상품 목록 (썸네일은 상품 대표이미지, store 모듈과 동일 패턴) -->
+<!-- 지윤 26.07.20 수정: ORDER_ITEM_ID(리뷰작성 시 식별용), REVIEWED(이미 리뷰 썼는지) 추가 -->
 <select id="selectOrderItems" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderItemVO">
     SELECT
-        oi.PRODUCT_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
+        oi.ORDER_ITEM_ID, oi.PRODUCT_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
         oi.QTY, oi.TOTAL_PRICE,
-        f.FILE_URL AS THUMBNAIL_URL
+        f.FILE_URL AS THUMBNAIL_URL,
+        CASE WHEN EXISTS (
+            SELECT 1 FROM TB_REVIEW r WHERE r.ORDER_ITEM_ID = oi.ORDER_ITEM_ID
+        ) THEN 1 ELSE 0 END AS REVIEWED
     FROM TB_ORDER_ITEM oi
     LEFT JOIN (
         SELECT REF_ID, FILE_URL,
@@ -47,5 +63,26 @@
     WHERE oi.ORDER_ID = #{orderId}
     ORDER BY oi.ORDER_ITEM_ID
 </select>
+
+<!-- 지윤 26.07.20 추가: 방금 등록한 리뷰의 REVIEW_ID 재조회 (사진 첨부 시 TB_FILE.REF_ID로 필요) -->
+<select id="selectReviewIdByOrderItem" resultType="Long">
+    SELECT REVIEW_ID FROM TB_REVIEW WHERE ORDER_ITEM_ID = #{orderItemId} AND ROWNUM = 1
+</select>
+
+<!-- 지윤 26.07.20 추가: 상품 리뷰 작성 (병원 리뷰와 동일하게 시퀀스 없이 MAX+1)
+     본인 주문(o.MEMBER_NO=#{memberNo})인지, 이미 리뷰 쓴 상품(NOT EXISTS)인지 SQL에서 같이 검증함
+     -> 조건 안 맞으면 0건 INSERT되고 조용히 끝남 (Service에서 영향받은 행수로 성공/실패 판단) -->
+<insert id="insertProductReview">
+    <selectKey keyProperty="reviewId" resultType="long" order="BEFORE">
+        SELECT NVL(MAX(REVIEW_ID), 0) + 1 FROM TB_REVIEW
+    </selectKey>
+    INSERT INTO TB_REVIEW (REVIEW_ID, REVIEW_TYPE, TARGET_ID, MEMBER_NO, ORDER_ITEM_ID, RATING, CONTENT, REG_DATE)
+    SELECT #{reviewId}, 'PRODUCT', oi.PRODUCT_ID, #{memberNo}, oi.ORDER_ITEM_ID, #{rating}, #{content}, SYSDATE
+      FROM TB_ORDER_ITEM oi
+      JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
+     WHERE oi.ORDER_ITEM_ID = #{orderItemId}
+       AND o.MEMBER_NO = #{memberNo}
+       AND NOT EXISTS (SELECT 1 FROM TB_REVIEW r WHERE r.ORDER_ITEM_ID = oi.ORDER_ITEM_ID)
+</insert>
 
 </mapper>

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @ToString
 @NoArgsConstructor
 public class MypageOrderItemVO {
+    private Long orderItemId;     //지윤 26.07.20 추가: 리뷰작성 시 어느 주문상품인지 식별용
     private Long productId;
     private String productName;
     private String optionColor;
@@ -17,4 +18,5 @@ public class MypageOrderItemVO {
     private Integer qty;
     private Integer totalPrice;
     private String thumbnailUrl;
+    private boolean reviewed;     //지윤 26.07.20 추가: 이미 리뷰 작성했는지 (버튼 상태 분기용)
 }

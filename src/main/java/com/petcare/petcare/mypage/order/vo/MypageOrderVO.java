@@ -30,4 +30,19 @@ public class MypageOrderVO {
     private String orderStatus;   //PAID/READY/SHIPPING/DONE/CANCEL
     private Integer payAmount;
     private List<MypageOrderItemVO> itemList;
+
+   //지윤 26.07.20 추가: 주문상세보기(/mypage/orders/detail) 결제내역/배송지 표시용
+    private Integer totalAmount;
+    private Integer deliveryFee;
+    private Integer discountAmount;
+    private Integer pointUsed;
+    private String recvName;
+    private String recvPhone;
+    private String zipCode;
+    private String addr1;
+    private String addr2;
+
+    //지윤 26.07.20 추가: 배송정보 (TB_ORDER_DELIVERY, 등록 전이면 둘 다 null)
+    private String courierName;
+    private String trackingNo;
 }

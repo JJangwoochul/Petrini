@@ -41,17 +41,23 @@
                 <div class="order-card">
                     <div class="order-card-head">
                         <span>${o.orderDate} 주문 <strong>#${o.orderNo}</strong></span>
-                        <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
-                        <c:choose>
-                            <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
-                            <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
-                            <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
-                            <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
-                            <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
-                        </c:choose>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
+                            <c:choose>
+                                <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
+                                <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
+                                <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
+                                <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
+                                <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
+                            </c:choose>
+                            <%-- 지윤 26.07.20 추가: 주문상세보기 - 결제내역/배송지까지 자세히 보여주는 읽기전용 페이지로 이동 --%>
+                            <a href="${contextPath}/mypage/orders/detail?orderId=${o.orderId}" style="font-size:13px;color:var(--text-muted);text-decoration:none">주문상세보기 &gt;</a>
+                        </div>
                     </div>
 
-                    <%-- 지윤 26.07.20 수정: <div class="order-item"> 각 상품 블록을 <c:forEach>로 ${o.itemList} 반복 렌더링 --%>
+                    <%-- 지윤 26.07.20 수정: <div class="order-item"> 각 상품 블록을 <c:forEach>로 ${o.itemList} 반복 렌더링
+                         지윤 26.07.20 수정: 교환/반품·리뷰작성·재구매를 카드 하단(주문 단위) -> 이 상품 줄 안(상품 단위)으로 이동.
+                         한 주문에 상품이 여러 개면 상품마다 리뷰/재구매 대상이 다르기 때문 --%>
                     <c:forEach var="it" items="${o.itemList}">
                         <div class="order-item">
                             <%-- 지윤 26.07.20 수정: unsplash 고정 이미지 URL -> 실제 상품 썸네일 (로컬업로드/외부URL 둘 다 지원하는 store 모듈 공통 패턴) --%>
@@ -80,31 +86,160 @@
                                 <fmt:formatNumber value="${it.totalPrice}" pattern="#,###"/>원
                             </div>
                         </div>
+                        <%-- 지윤 26.07.20 추가: 상품별 액션 버튼 (교환/반품, 리뷰작성, 재구매). "배송조회"/"환불내역"은 주문 전체에 대한 거라 카드 하단에 그대로 둠 --%>
+                        <div class="order-item-actions" style="display:flex;justify-content:flex-end;gap:8px;padding:0 0 14px">
+                            <c:if test="${o.orderStatus == 'DONE'}">
+                                <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
+                                <c:choose>
+                                    <c:when test="${it.reviewed}">
+                                        <button class="btn-sm" disabled>리뷰완료</button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <button class="btn-sm" onclick="openReviewModal(${it.orderItemId}, '${fn:escapeXml(it.productName)}', '${fn:escapeXml(it.thumbnailUrl)}', '${fn:escapeXml(it.optionColor)}', '${fn:escapeXml(it.optionSize)}')">리뷰작성</button>
+                                    </c:otherwise>
+                                </c:choose>
+                                <button class="btn-sm" onclick="location.href='${contextPath}/store/detail?id=${it.productId}'">재구매</button>
+                            </c:if>
+                        </div>
                     </c:forEach>
 
-                    <%-- 지윤 26.07.20 수정: 카드마다 버튼 하드코딩 -> 상태별로 JSTL 분기.
-                         "배송조회"/"리뷰작성"/"교환·반품"/"환불내역"은 아직 실제로 연결할 기능(배송추적, 리뷰작성, 반품신청) 자체가
-                         프로젝트에 없어서 클릭하면 안내 문구만 뜨는 자리표시자임. "재구매"만 실제 상품 상세페이지로 이동하는 진짜 기능임 --%>
-                    <div class="order-card-foot">
-                        <c:if test="${o.orderStatus == 'SHIPPING'}">
-                            <button class="btn-sm" onclick="alert('배송조회 기능은 준비 중입니다.')">배송조회</button>
-                        </c:if>
-                        <c:if test="${o.orderStatus == 'DONE'}">
-                            <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
-                            <button class="btn-sm" onclick="alert('리뷰작성 기능은 준비 중입니다.')">리뷰작성</button>
-                            <c:if test="${not empty o.itemList}">
-                                <button class="btn-sm" onclick="location.href='${contextPath}/store/detail?id=${o.itemList[0].productId}'">재구매</button>
+                    <%-- 지윤 26.07.20 수정: "배송조회"/"환불내역"은 상품별이 아니라 주문(배송) 전체에 대한 액션이라 카드 하단에 유지.
+                         "교환/반품"/"리뷰작성"/"재구매"는 위 상품 줄 안으로 옮김 --%>
+                    <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'CANCEL'}">
+                        <div class="order-card-foot">
+                            <c:if test="${o.orderStatus == 'SHIPPING'}">
+                                <button class="btn-sm" onclick="alert('배송조회 기능은 준비 중입니다.')">배송조회</button>
                             </c:if>
-                        </c:if>
-                        <c:if test="${o.orderStatus == 'CANCEL'}">
-                            <button class="btn-sm" onclick="alert('환불내역 기능은 준비 중입니다.')">환불내역</button>
-                        </c:if>
-                    </div>
+                            <c:if test="${o.orderStatus == 'CANCEL'}">
+                                <button class="btn-sm" onclick="alert('환불내역 기능은 준비 중입니다.')">환불내역</button>
+                            </c:if>
+                        </div>
+                    </c:if>
                 </div>
             </c:forEach>
         </c:otherwise>
     </c:choose>
 </div>
+
+<%-- 지윤 26.07.20 수정: 모달 내용이 빈약하다는 피드백 반영 - 상품 썸네일/옵션 표시, 별점 라벨, 글자수 카운터, 사진첨부(최대 5장) 추가
+     hidden form + JS로 값 복사하던 방식 -> 모달 자체를 multipart/form-data form으로 바꿔서 그대로 submit --%>
+<div id="reviewModalBg" class="review-modal-bg" style="display:none">
+  <form id="reviewForm" class="review-modal" method="post" action="${contextPath}/mypage/orders/review"
+        enctype="multipart/form-data" onsubmit="return validateReviewForm()">
+    <button type="button" class="review-modal-close" onclick="closeReviewModal()">✕</button>
+    <h3>⭐ 리뷰 작성</h3>
+
+    <input type="hidden" name="orderItemId" id="reviewFormOrderItemId">
+
+    <div class="review-modal-product-row">
+      <img id="reviewModalThumb" src="" alt="" onerror="this.src='https://placehold.co/56x56/EAF7F2/2BAB82?text=IMG'">
+      <div>
+        <p id="reviewModalProductName" class="review-modal-product-name"></p>
+        <p id="reviewModalOption" class="review-modal-option"></p>
+      </div>
+    </div>
+
+    <div class="review-modal-stars" id="reviewModalStars">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <p id="reviewModalRatingLabel" class="review-modal-rating-label">별점을 선택해주세요</p>
+    <input type="hidden" name="rating" id="reviewFormRating">
+
+    <textarea name="content" id="reviewModalContent" maxlength="500"
+              placeholder="상품은 어떠셨나요? 다른 분들에게 도움이 되는 후기를 남겨주세요."
+              oninput="document.getElementById('reviewCharCount').textContent = this.value.length"></textarea>
+    <div class="review-modal-counter"><span id="reviewCharCount">0</span>/500</div>
+
+    <div class="review-modal-photo-section">
+      <p class="review-modal-photo-label">사진 첨부 <span>(선택, 최대 5장)</span></p>
+      <label class="review-modal-photo-add">
+        <input type="file" name="images" id="reviewPhotoInput" accept="image/*" multiple onchange="handlePhotoSelect(this)">
+        <span class="review-modal-photo-plus">+</span>
+        <span id="reviewPhotoHint">사진 선택</span>
+      </label>
+      <div class="review-modal-photo-preview" id="reviewPhotoPreview"></div>
+    </div>
+
+    <div class="review-modal-actions">
+      <button type="button" class="btn-sm" onclick="closeReviewModal()">취소</button>
+      <button type="submit" class="btn-sm primary">등록</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  //지윤 26.07.20 수정: 모달이 곧 form이라 hidden form 복사 로직 삭제, submit 직전 검증만 남김
+  var reviewRating = 0;
+
+  function openReviewModal(orderItemId, productName, thumbnailUrl, optionColor, optionSize) {
+    document.getElementById('reviewFormOrderItemId').value = orderItemId;
+    document.getElementById('reviewModalProductName').textContent = productName;
+
+    var optText = '';
+    if (optionSize && optionSize !== 'undefined' && optionSize !== '') {
+      optText = '옵션: ' + ((optionColor && optionColor !== '기본' && optionColor !== 'undefined') ? optionColor + ' / ' : '') + optionSize;
+    }
+    document.getElementById('reviewModalOption').textContent = optText;
+
+    var thumb = document.getElementById('reviewModalThumb');
+    thumb.src = (thumbnailUrl && thumbnailUrl !== 'undefined' && thumbnailUrl !== '')
+      ? (thumbnailUrl.indexOf('http') === 0 ? thumbnailUrl : '${contextPath}/upload/' + thumbnailUrl)
+      : 'https://placehold.co/56x56/EAF7F2/2BAB82?text=IMG';
+
+    document.getElementById('reviewModalContent').value = '';
+    document.getElementById('reviewCharCount').textContent = '0';
+    document.getElementById('reviewPhotoInput').value = '';
+    document.getElementById('reviewPhotoPreview').innerHTML = '';
+    document.getElementById('reviewPhotoHint').textContent = '사진 선택';
+    setStars(0);
+    document.getElementById('reviewModalBg').style.display = 'flex';
+  }
+
+  function closeReviewModal() {
+    document.getElementById('reviewModalBg').style.display = 'none';
+  }
+
+  var ratingLabels = ['별점을 선택해주세요', '아쉬워요', '별로예요', '보통이에요', '좋아요', '최고예요!'];
+
+  function setStars(v) {
+    reviewRating = v;
+    document.getElementById('reviewFormRating').value = v;
+    document.getElementById('reviewModalRatingLabel').textContent = ratingLabels[v];
+    document.querySelectorAll('#reviewModalStars span').forEach(function (s) {
+      s.classList.toggle('on', Number(s.dataset.v) <= v);
+    });
+  }
+
+  document.querySelectorAll('#reviewModalStars span').forEach(function (s) {
+    s.addEventListener('click', function () { setStars(Number(s.dataset.v)); });
+  });
+
+  //지윤 26.07.20 추가: 사진 선택 시 썸네일 미리보기 (최대 5장, 넘으면 경고만 하고 그대로 진행)
+  function handlePhotoSelect(input) {
+    var files = Array.from(input.files || []);
+    if (files.length > 5) { alert('사진은 최대 5장까지 첨부할 수 있어요.'); }
+    document.getElementById('reviewPhotoHint').textContent = files.length + '장 선택됨';
+
+    var preview = document.getElementById('reviewPhotoPreview');
+    preview.innerHTML = '';
+    files.slice(0, 5).forEach(function (file) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = document.createElement('img');
+        img.src = e.target.result;
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function validateReviewForm() {
+    if (reviewRating === 0) { alert('별점을 선택해주세요.'); return false; }
+    var content = document.getElementById('reviewModalContent').value.trim();
+    if (!content) { alert('리뷰 내용을 입력해주세요.'); return false; }
+    return true;
+  }
+</script>
 
 <%-- 지윤 26.07.20 삭제: <script> 안에 있던 filter-btn 클릭 시 active 클래스만 토글하던 JS -
      이제 필터 버튼 자체가 실제 <a href="?statusCd=..."> 링크라서 페이지 이동만으로 처리, JS 불필요해짐 --%>

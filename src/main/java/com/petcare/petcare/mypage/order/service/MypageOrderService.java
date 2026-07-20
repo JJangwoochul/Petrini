@@ -28,4 +28,11 @@ public interface MypageOrderService {
 
     //지윤 26.07.20 추가: 회원 본인 주문 목록 조회 (상태 필터, 상품목록까지 채워서 반환)
     List<MypageOrderVO> getOrderList(Long memberNo, String statusCd);
+
+    //지윤 26.07.20 수정: 사진 첨부(images) 파라미터 추가. 본인 주문 아니거나 이미 작성했으면 false
+    boolean writeReview(Long memberNo, Long orderItemId, Double rating, String content,
+                         java.util.List<org.springframework.web.multipart.MultipartFile> images) throws Exception;
+
+    //지윤 26.07.20 추가: 주문상세보기 1건 조회 (상품목록 포함, 본인 주문 아니면 null)
+    MypageOrderVO getOrderDetail(Long memberNo, Long orderId);
 }
