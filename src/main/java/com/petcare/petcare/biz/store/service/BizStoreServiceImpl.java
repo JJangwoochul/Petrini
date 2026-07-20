@@ -21,10 +21,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.biz.store.mapper.BizStoreMapper;
+import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
+import com.petcare.petcare.biz.store.vo.BizOrderVO;
+import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
 
 @Service
 public class BizStoreServiceImpl implements BizStoreService {
@@ -153,5 +157,130 @@ public class BizStoreServiceImpl implements BizStoreService {
     @Override
     public int getTotalCount(Long bizNo, String keyword, Long categoryId, String statusCd) {
         return bizStoreMapper.selectProductCount(bizNo, keyword, categoryId, statusCd);
+    }
+
+    //지윤 26.07.20 추가: 사업자 주문 목록 조회
+    @Override
+    public List<BizOrderVO> getOrderList(Long bizNo, String statusCd) {
+        return bizStoreMapper.selectOrderList(bizNo, statusCd);
+    }
+
+    //지윤 26.07.20 추가: 상태별 주문 개수를 Map으로 가공 (화면에서 statusCounts.PAID 이런 식으로 바로 꺼내쓰기 위함)
+    @Override
+    public java.util.Map<String, Integer> getOrderStatusCounts(Long bizNo) {
+        java.util.Map<String, Integer> result = new java.util.HashMap<>();
+        for (java.util.Map<String, Object> row : bizStoreMapper.selectOrderStatusCounts(bizNo)) {
+            String status = (String) row.get("STATUS");
+            Number cnt = (Number) row.get("CNT");
+            result.put(status, cnt.intValue());
+        }
+        return result;
+    }
+
+    //지윤 26.07.20 추가: 주문 상세 조회 (상품목록까지 같이 채워서 반환)
+    @Override
+    public BizOrderVO getOrderDetail(Long orderId, Long bizNo) {
+        BizOrderVO vo = bizStoreMapper.selectOrderDetail(orderId, bizNo);
+        if (vo != null) {
+            vo.setItemList(bizStoreMapper.selectOrderItems(orderId));
+        }
+        return vo;
+    }
+
+    //지윤 26.07.20 추가: 주문 상태 변경 + 배송정보(택배사/송장번호) 저장
+    //송장번호가 입력되면 배송상태를 자동으로 SHIPPING으로, 이미 배송정보 있으면 UPDATE 없으면 INSERT
+    @Override
+    public boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo) {
+        int updated = bizStoreMapper.updateOrderStatus(orderId, bizNo, orderStatus);
+        if (updated == 0) return false;
+
+        //택배사나 송장번호를 입력한 경우에만 배송정보 저장 (둘 다 비어있으면 배송정보 자체를 안 건드림)
+        if ((courierName != null && !courierName.isBlank()) || (trackingNo != null && !trackingNo.isBlank())) {
+            String deliveryStatus = (trackingNo != null && !trackingNo.isBlank()) ? "SHIPPING" : "READY";
+            int exists = bizStoreMapper.selectDeliveryExists(orderId);
+            if (exists > 0) {
+                bizStoreMapper.updateOrderDelivery(orderId, courierName, trackingNo, deliveryStatus);
+            } else {
+                bizStoreMapper.insertOrderDelivery(orderId, bizNo, courierName, trackingNo, deliveryStatus);
+            }
+        }
+        return true;
+    }
+
+    //지윤 26.07.20 추가: 배송관리 목록 조회 + 지연여부(3일 이상 SHIPPING) 자바에서 계산
+    @Override
+    public List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword) {
+        List<BizDeliveryVO> list = bizStoreMapper.selectDeliveryList(bizNo, carrier, statusCd, keyword);
+        for (BizDeliveryVO d : list) {
+            d.setDelayed(isDelayed(d));
+        }
+        return list;
+    }
+
+    //지윤 26.07.20 추가: 상단 요약카드 - 필터 없이 전체 기준으로 다시 조회해서 상태별 개수 집계
+    @Override
+    public java.util.Map<String, Integer> getDeliverySummary(Long bizNo) {
+        List<BizDeliveryVO> all = bizStoreMapper.selectDeliveryList(bizNo, null, null, null);
+        java.util.Map<String, Integer> result = new java.util.HashMap<>();
+        int ready = 0, shipping = 0, done = 0, delay = 0;
+        for (BizDeliveryVO d : all) {
+            if ("READY".equals(d.getOrderStatus())) ready++;
+            else if ("SHIPPING".equals(d.getOrderStatus())) shipping++;
+            else if ("DONE".equals(d.getOrderStatus())) done++;
+            if (isDelayed(d)) delay++;
+        }
+        result.put("READY", ready);
+        result.put("SHIPPING", shipping);
+        result.put("DONE", done);
+        result.put("DELAY", delay);
+        return result;
+    }
+
+    //지윤 26.07.20 지연 판단: SHIPPING 상태이고, 송장 등록일(shipDate)로부터 3일 이상 지난 경우
+    private boolean isDelayed(BizDeliveryVO d) {
+        if (!"SHIPPING".equals(d.getOrderStatus()) || d.getShipDate() == null) return false;
+        try {
+            java.time.LocalDate shipped = java.time.LocalDate.parse(d.getShipDate());
+            long diffDays = java.time.temporal.ChronoUnit.DAYS.between(shipped, java.time.LocalDate.now());
+            return diffDays >= 3;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    //지윤 26.07.20 추가: 송장 일괄등록 - 한 줄씩 파싱해서 주문번호로 ORDER_ID 찾고, 기존 updateOrderStatus 재사용해서 저장
+    @Override
+    public java.util.Map<String, Object> bulkRegisterDelivery(Long bizNo, String bulkText) {
+        java.util.List<String> validCarriers = java.util.List.of("cj", "hanjin", "lotte", "post");
+        int okCount = 0;
+        java.util.List<String> failLines = new java.util.ArrayList<>();
+
+        String[] lines = bulkText.split("\\r?\\n");
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
+            if (line.isEmpty()) continue;
+
+            String[] parts = line.split(",");
+            if (parts.length != 3) { failLines.add(line); continue; }
+
+            String orderNo = parts[0].trim();
+            String carrier = parts[1].trim();
+            String trackingNo = parts[2].trim();
+
+            if (!validCarriers.contains(carrier)) { failLines.add(line); continue; }
+
+            Long orderId = bizStoreMapper.selectOrderIdByOrderNo(orderNo, bizNo);
+            if (orderId == null) { failLines.add(line); continue; }
+
+            //지윤 26.07.20 참고: 아까 주문관리(orders.jsp)용으로 만든 updateOrderStatus를 그대로 재사용
+            //(택배사/송장번호 넣으면 자동으로 SHIPPING 상태 + 배송정보 upsert 처리됨)
+            boolean ok = updateOrderStatus(orderId, bizNo, "SHIPPING", carrier, trackingNo);
+            if (ok) okCount++; else failLines.add(line);
+        }
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("okCount", okCount);
+        result.put("failLines", failLines);
+        return result;
     }
 }
