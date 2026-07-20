@@ -167,6 +167,9 @@ public class MemberAuthController {
 
         session.setAttribute("memberInfo", member);
 
+        // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림용 — accessToken 세션 저장
+        session.setAttribute("kakaoAccessToken", accessToken);
+
         return "redirect:/";
     }
     

@@ -185,8 +185,9 @@ public class StayController {
         Long resvId = Long.parseLong(parts[1]);
 
         try {
-            // 예약 CONFIRMED + 결제 정보 INSERT
-            stayService.confirmPayment(resvId, paymentKey, orderId, null);
+            // HYJ 26.07.20 예약 CONFIRMED + 결제 정보 INSERT + 카카오톡 알림 발송
+            String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
+            stayService.confirmPayment(resvId, paymentKey, orderId, null, kakaoToken);
             return "redirect:/stay/complete?resvId=" + resvId;
         } catch (RuntimeException e) {
             model.addAttribute("errorMsg", e.getMessage());

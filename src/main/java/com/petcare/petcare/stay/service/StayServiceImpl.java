@@ -25,6 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.petcare.petcare.common.external.service.KakaoMessageService;
 import com.petcare.petcare.hospital.vo.HospitalPetVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
@@ -34,8 +38,13 @@ import com.petcare.petcare.stay.vo.StayVO;
 @Service
 public class StayServiceImpl implements StayService {
 
+    private static final Logger log = LoggerFactory.getLogger(StayServiceImpl.class);
+
     @Autowired
     private StayMapper stayMapper;
+
+    @Autowired
+    private KakaoMessageService kakaoMessageService;
 
     @Override
     public List<StayVO> getStayList() {
@@ -108,7 +117,7 @@ public class StayServiceImpl implements StayService {
     // HYJ 26.07.20 결제 확정 (PENDING → CONFIRMED + TB_PAYMENT INSERT)
     @Override
     @Transactional
-    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod) {
+    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken) {
         // 예약 조회
         ReservationVO resv = stayMapper.selectReservationById(resvId);
         if (resv == null) {
@@ -133,6 +142,36 @@ public class StayServiceImpl implements StayService {
         payParam.put("tossOrderId", tossOrderId);
         payParam.put("payStatus", "DONE");
         stayMapper.insertPayment(payParam);
+
+        // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림 발송
+        // 카카오 로그인 사용자만 (accessToken 있을 때) + 실패해도 결제는 정상 유지
+        if (kakaoAccessToken != null && !kakaoAccessToken.isBlank()) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd");
+                String ciStr = sdf.format(resv.getCheckinDate());
+                String coStr = sdf.format(resv.getCheckoutDate());
+
+                // 숙소명·객실명·반려동물명 조회 (JOIN 포함)
+                ReservationVO fullResv = stayMapper.selectReservationById(resvId);
+                String stayName = fullResv.getHospitalName() != null ? fullResv.getHospitalName() : "숙소";
+                String roomName = fullResv.getServiceName()  != null ? fullResv.getServiceName()  : "객실";
+                String petName  = fullResv.getPetName()      != null ? fullResv.getPetName()      : "";
+
+                kakaoMessageService.sendStayReservationMessage(
+                    kakaoAccessToken,
+                    resv.getResvNo(),
+                    stayName,
+                    roomName,
+                    ciStr,
+                    coStr,
+                    resv.getNightCnt(),
+                    resv.getTotalAmount(),
+                    petName
+                );
+            } catch (Exception e) {
+                log.warn("[Stay] 카카오톡 알림 발송 실패 — resvId={}, 예약은 정상 처리됨", resvId, e);
+            }
+        }
     }
         
     @Override
