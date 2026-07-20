@@ -17,11 +17,18 @@ package com.petcare.petcare.stay.service;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.petcare.petcare.common.external.service.KakaoMessageService;
 import com.petcare.petcare.hospital.vo.HospitalPetVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
@@ -31,8 +38,13 @@ import com.petcare.petcare.stay.vo.StayVO;
 @Service
 public class StayServiceImpl implements StayService {
 
+    private static final Logger log = LoggerFactory.getLogger(StayServiceImpl.class);
+
     @Autowired
     private StayMapper stayMapper;
+
+    @Autowired
+    private KakaoMessageService kakaoMessageService;
 
     @Override
     public List<StayVO> getStayList() {
@@ -59,8 +71,42 @@ public class StayServiceImpl implements StayService {
         return stayMapper.selectPetListByMemberNo(memberNo);
     }
 
+    // HYJ 26.07.20 가용성 체크 (단순 조회 — 락 없음)
+    @Override
+    public boolean checkRoomAvailability(Long roomId, Date checkinDate, Date checkoutDate) {
+        Map<String, Object> param = new HashMap<>();
+        param.put("roomId", roomId);
+        param.put("checkinDate", checkinDate);
+        param.put("checkoutDate", checkoutDate);
+        int count = stayMapper.countOverlappingReservation(param);
+        return count == 0;
+    }
+
+    // HYJ 26.07.20 예약 생성 (비관적 락 + 가용성 검증)
     @Override
     public Long createStayReservation(ReservationVO vo) {
+        // 1. 객실 행 잠금
+        StayRoomVO room = stayMapper.selectRoomForUpdate(vo.getRoomId());
+        if (room == null) {
+            throw new RuntimeException("존재하지 않는 객실입니다.");
+        }
+
+        // 2. 날짜 겹침 확인
+        Map<String, Object> param = new HashMap<>();
+        param.put("roomId", vo.getRoomId());
+        param.put("checkinDate", vo.getCheckinDate());
+        param.put("checkoutDate", vo.getCheckoutDate());
+        int overlap = stayMapper.countOverlappingReservation(param);
+        if (overlap > 0) {
+            throw new RuntimeException("해당 날짜에 이미 예약이 있습니다.");
+        }
+
+        // 3. 금액 계산 (서버에서 재계산)
+        int nightCnt = vo.getNightCnt();
+        long totalAmount = (long) room.getPricePerNight() * nightCnt;
+        vo.setTotalAmount(totalAmount);
+
+        // 4. PENDING 상태로 예약 INSERT
         vo.setResvType("STAY");
         vo.setStatusCd("PENDING");
         vo.setResvNo("S" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
@@ -68,6 +114,66 @@ public class StayServiceImpl implements StayService {
         return vo.getResvId();
     }
 
+    // HYJ 26.07.20 결제 확정 (PENDING → CONFIRMED + TB_PAYMENT INSERT)
+    @Override
+    @Transactional
+    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken) {
+        // 예약 조회
+        ReservationVO resv = stayMapper.selectReservationById(resvId);
+        if (resv == null) {
+            throw new RuntimeException("예약 정보를 찾을 수 없습니다.");
+        }
+        if (!"PENDING".equals(resv.getStatusCd())) {
+            throw new RuntimeException("결제할 수 없는 예약 상태입니다.");
+        }
+
+        // 예약 상태 → CONFIRMED
+        Map<String, Object> statusParam = new HashMap<>();
+        statusParam.put("resvId", resvId);
+        statusParam.put("statusCd", "CONFIRMED");
+        stayMapper.updateReservationStatus(statusParam);
+
+        // 결제 정보 INSERT
+        Map<String, Object> payParam = new HashMap<>();
+        payParam.put("resvId", resvId);
+        payParam.put("payMethod", payMethod);
+        payParam.put("payAmount", resv.getTotalAmount());
+        payParam.put("tossPaymentKey", tossPaymentKey);
+        payParam.put("tossOrderId", tossOrderId);
+        payParam.put("payStatus", "DONE");
+        stayMapper.insertPayment(payParam);
+
+        // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림 발송
+        // 카카오 로그인 사용자만 (accessToken 있을 때) + 실패해도 결제는 정상 유지
+        if (kakaoAccessToken != null && !kakaoAccessToken.isBlank()) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd");
+                String ciStr = sdf.format(resv.getCheckinDate());
+                String coStr = sdf.format(resv.getCheckoutDate());
+
+                // 숙소명·객실명·반려동물명 조회 (JOIN 포함)
+                ReservationVO fullResv = stayMapper.selectReservationById(resvId);
+                String stayName = fullResv.getHospitalName() != null ? fullResv.getHospitalName() : "숙소";
+                String roomName = fullResv.getServiceName()  != null ? fullResv.getServiceName()  : "객실";
+                String petName  = fullResv.getPetName()      != null ? fullResv.getPetName()      : "";
+
+                kakaoMessageService.sendStayReservationMessage(
+                    kakaoAccessToken,
+                    resv.getResvNo(),
+                    stayName,
+                    roomName,
+                    ciStr,
+                    coStr,
+                    resv.getNightCnt(),
+                    resv.getTotalAmount(),
+                    petName
+                );
+            } catch (Exception e) {
+                log.warn("[Stay] 카카오톡 알림 발송 실패 — resvId={}, 예약은 정상 처리됨", resvId, e);
+            }
+        }
+    }
+        
     @Override
     public ReservationVO getReservationById(Long resvId) {
         return stayMapper.selectReservationById(resvId);

@@ -61,7 +61,24 @@
   .rc-divider { height:1px; background:var(--border); margin:14px 0; }
   .btn-reserve-big { width:100%; padding:14px; border:none; border-radius:var(--radius-sm); background:var(--primary); color:#fff; font-size:16px; font-weight:800; cursor:pointer; margin-top:12px; transition:var(--transition); }
   .btn-reserve-big:hover { background:var(--primary-dark); }
+  .btn-reserve-big:disabled { background:var(--border); cursor:not-allowed; }
   .rc-notice { font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; }
+  .rc-date-group { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .rc-date-group label { font-size:12px; font-weight:600; color:var(--text-muted); }
+  .rc-date-group input { border:1px solid var(--border); border-radius:var(--radius-sm); padding:9px 12px; font-size:13px; color:var(--text-main); width:100%; box-sizing:border-box; outline:none; }
+  .rc-date-group input:focus { border-color:var(--primary); }
+  .rc-date-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .rc-avail-msg { padding:8px 12px; border-radius:6px; font-size:12px; font-weight:600; margin-bottom:10px; }
+  .rc-avail-msg.ok { background:#F0FDF4; border:1px solid #BBF7D0; color:#16A34A; }
+  .rc-avail-msg.no { background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; }
+  .rc-avail-msg.loading { background:var(--bg-page); border:1px solid var(--border); color:var(--text-muted); }
+  .room-card.unavailable { opacity:0.5; pointer-events:none; }
+  .room-card .room-avail { font-size:11px; font-weight:600; margin-top:3px; }
+  .room-card .room-avail.ok { color:#16A34A; }
+  .room-card .room-avail.no { color:#DC2626; }
+  .room-card.selectable { cursor:pointer; border:2px solid transparent; transition:.2s; }
+  .room-card.selectable:hover { border-color:var(--primary); }
+  .room-card.selectable.selected { border-color:var(--primary); background:var(--primary-light); }
 </style>
 
 <div style="max-width:var(--inner-width);margin:28px auto 0;padding:0 20px">
@@ -216,14 +233,33 @@
 
   <%-- 예약 카드 (우측 사이드바) --%>
   <div class="reserve-card">
-    <h3>객실 정보</h3>
+    <h3>숙박 예약</h3>
+
+    <%-- 날짜 선택 --%>
+    <div class="rc-date-row">
+      <div class="rc-date-group">
+        <label>체크인</label>
+        <input type="date" id="rcCheckin" onchange="onDateChange()">
+      </div>
+      <div class="rc-date-group">
+        <label>체크아웃</label>
+        <input type="date" id="rcCheckout" onchange="onDateChange()">
+      </div>
+    </div>
+
+    <%-- 가용성 메시지 영역 --%>
+    <div id="rcAvailMsg"></div>
+
+    <%-- 객실 목록 (날짜 선택 전) --%>
     <c:choose>
       <c:when test="${not empty stay.rooms}">
         <c:forEach var="room" items="${stay.rooms}">
-          <div class="room-card" style="margin-bottom:10px">
+          <div class="room-card" id="room-${room.roomId}" style="margin-bottom:10px"
+               data-room-id="${room.roomId}" data-price="${room.pricePerNight}">
             <div>
               <div class="room-name">${room.name}</div>
               <div class="room-meta">수용 ${room.capacity}인 · 반려동물 ${room.petLimit}마리</div>
+              <div class="room-avail" id="roomAvail-${room.roomId}"></div>
             </div>
             <div style="text-align:right">
               <div class="room-price"><fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원</div>
@@ -236,14 +272,23 @@
         <p style="font-size:14px;color:var(--text-muted);margin:0 0 12px">등록된 객실이 없습니다.</p>
       </c:otherwise>
     </c:choose>
+
     <div class="rc-divider"></div>
-    <c:if test="${not empty stay.rooms}">
-      <div class="rc-price">
-        <fmt:formatNumber value="${stay.rooms[0].pricePerNight}" pattern="#,###"/>원~
-        <span>/ 1박</span>
+
+    <%-- 요금 요약 --%>
+    <div id="rcPriceSummary" style="margin-bottom:12px;display:none">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-bottom:6px">
+        <span id="rcPriceDetail"></span>
       </div>
-    </c:if>
-    <button class="btn-reserve-big" onclick="location.href='${contextPath}/stay/reserve?id=${stay.stayId}'">예약하기</button>
+      <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:var(--text-main)">
+        <span>합계</span>
+        <span id="rcTotalPrice" style="color:var(--primary-dark)"></span>
+      </div>
+    </div>
+
+    <button class="btn-reserve-big" id="btnReserve" disabled
+            onclick="goReserve()">날짜와 객실을 선택하세요</button>
+
     <c:choose>
       <c:when test="${not empty stay.refundPolicy}">
         <div class="rc-notice">${stay.refundPolicy}</div>
@@ -255,5 +300,170 @@
   </div>
 </div>
 </c:if>
+
+<script>
+var stayId = '${stay.stayId}';
+var contextPath = '${contextPath}';
+var selectedRoomId = null;
+var selectedPrice = 0;
+
+(function() {
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('rcCheckin').min = today;
+    document.getElementById('rcCheckout').min = today;
+})();
+
+function onDateChange() {
+    var ci = document.getElementById('rcCheckin').value;
+    var co = document.getElementById('rcCheckout').value;
+
+    // 체크인 선택 시 체크아웃 min을 체크인 다음날로
+    if (ci) {
+        var nextDay = new Date(ci);
+        nextDay.setDate(nextDay.getDate() + 1);
+        document.getElementById('rcCheckout').min = nextDay.toISOString().split('T')[0];
+
+        // 체크아웃이 체크인보다 이전이면 초기화
+        if (co && co <= ci) {
+            document.getElementById('rcCheckout').value = '';
+            co = '';
+        }
+    }
+
+    // 선택 초기화
+    selectedRoomId = null;
+    selectedPrice = 0;
+    updatePriceSummary();
+
+    if (!ci || !co) {
+        resetRoomCards();
+        document.getElementById('rcAvailMsg').innerHTML = '';
+        return;
+    }
+
+    // 날짜 유효성
+    var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+    if (nights <= 0) {
+        document.getElementById('rcAvailMsg').innerHTML =
+            '<div class="rc-avail-msg no">체크아웃은 체크인 이후여야 합니다.</div>';
+        resetRoomCards();
+        return;
+    }
+
+    // 각 객실별 가용성 체크
+    document.getElementById('rcAvailMsg').innerHTML =
+        '<div class="rc-avail-msg loading">예약 가능 여부 확인 중...</div>';
+
+    var roomCards = document.querySelectorAll('.room-card[data-room-id]');
+    var checkCount = 0;
+    var totalCount = roomCards.length;
+    var anyAvailable = false;
+
+    for (var i = 0; i < roomCards.length; i++) {
+        (function(card) {
+            var roomId = card.dataset.roomId;
+            var availDiv = document.getElementById('roomAvail-' + roomId);
+
+            card.classList.remove('selectable', 'selected', 'unavailable');
+            card.onclick = null;
+            availDiv.textContent = '';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', contextPath + '/stay/checkAvailability'
+                + '?roomId=' + roomId
+                + '&checkinDate=' + ci
+                + '&checkoutDate=' + co);
+            xhr.onload = function() {
+                var res = JSON.parse(xhr.responseText);
+                checkCount++;
+
+                if (res.available) {
+                    anyAvailable = true;
+                    card.classList.remove('unavailable');
+                    card.classList.add('selectable');
+                    availDiv.textContent = '예약 가능';
+                    availDiv.className = 'room-avail ok';
+                    card.onclick = function() { selectRoom(card); };
+                } else {
+                    card.classList.add('unavailable');
+                    card.classList.remove('selectable');
+                    availDiv.textContent = '예약 마감';
+                    availDiv.className = 'room-avail no';
+                }
+
+                // 모든 체크 완료
+                if (checkCount === totalCount) {
+                    if (anyAvailable) {
+                        document.getElementById('rcAvailMsg').innerHTML =
+                            '<div class="rc-avail-msg ok">예약 가능한 객실을 선택하세요.</div>';
+                    } else {
+                        document.getElementById('rcAvailMsg').innerHTML =
+                            '<div class="rc-avail-msg no">선택한 날짜에 예약 가능한 객실이 없습니다.</div>';
+                    }
+                }
+            };
+            xhr.send();
+        })(roomCards[i]);
+    }
+}
+
+function resetRoomCards() {
+    var cards = document.querySelectorAll('.room-card[data-room-id]');
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.remove('selectable', 'selected', 'unavailable');
+        cards[i].onclick = null;
+        var availDiv = document.getElementById('roomAvail-' + cards[i].dataset.roomId);
+        if (availDiv) { availDiv.textContent = ''; availDiv.className = 'room-avail'; }
+    }
+    document.getElementById('btnReserve').disabled = true;
+    document.getElementById('btnReserve').textContent = '날짜와 객실을 선택하세요';
+}
+
+function selectRoom(card) {
+    // 기존 선택 해제
+    var cards = document.querySelectorAll('.room-card.selectable');
+    for (var i = 0; i < cards.length; i++) { cards[i].classList.remove('selected'); }
+
+    card.classList.add('selected');
+    selectedRoomId = card.dataset.roomId;
+    selectedPrice = Number(card.dataset.price);
+    updatePriceSummary();
+}
+
+function updatePriceSummary() {
+    var ci = document.getElementById('rcCheckin').value;
+    var co = document.getElementById('rcCheckout').value;
+    var summary = document.getElementById('rcPriceSummary');
+    var btn = document.getElementById('btnReserve');
+
+    if (!selectedRoomId || !ci || !co) {
+        summary.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '날짜와 객실을 선택하세요';
+        return;
+    }
+
+    var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+    var total = selectedPrice * nights;
+
+    document.getElementById('rcPriceDetail').textContent =
+        selectedPrice.toLocaleString() + '원 × ' + nights + '박';
+    document.getElementById('rcTotalPrice').textContent =
+        total.toLocaleString() + '원';
+    summary.style.display = 'block';
+
+    btn.disabled = false;
+    btn.textContent = total.toLocaleString() + '원 예약하기';
+}
+
+function goReserve() {
+    var ci = document.getElementById('rcCheckin').value;
+    var co = document.getElementById('rcCheckout').value;
+    location.href = contextPath + '/stay/reserve?id=' + stayId
+        + '&roomId=' + selectedRoomId
+        + '&checkinDate=' + ci
+        + '&checkoutDate=' + co;
+}
+</script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

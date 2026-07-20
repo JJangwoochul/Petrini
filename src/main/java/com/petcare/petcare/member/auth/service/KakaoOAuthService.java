@@ -47,7 +47,8 @@ public class KakaoOAuthService {
         return "https://kauth.kakao.com/oauth/authorize"
                 + "?client_id=" + clientId
                 + "&redirect_uri=" + redirectUri
-                + "&response_type=code";
+                + "&response_type=code"
+                + "&scope=talk_message";
     }
 
     // ── [2단계] 인가 코드 → 액세스 토큰 교환 ──
