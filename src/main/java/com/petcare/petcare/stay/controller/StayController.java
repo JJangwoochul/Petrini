@@ -10,9 +10,14 @@
 
 package com.petcare.petcare.stay.controller;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +25,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.common.external.service.KakaoMapService;
@@ -37,6 +43,9 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/stay")
 public class StayController {
 
+    @Value("${toss.client-key}")
+    private String tossApiKey;
+    
     @Autowired
     private KakaoMapService kakaoMapService;
     @Autowired
@@ -91,7 +100,31 @@ public class StayController {
         return "stay/reserve";
     }
 
-    // ── 예약 저장 ──
+    // ── HYJ 26.07.20 가용성 체크 API (AJAX) ──
+    @GetMapping("/checkAvailability")
+    @ResponseBody
+    public Map<String, Object> checkAvailability(
+            @RequestParam("roomId") Long roomId,
+            @RequestParam("checkinDate") String checkinDate,
+            @RequestParam("checkoutDate") String checkoutDate) throws Exception {
+
+        Map<String, Object> result = new HashMap<>();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date ciDate = sdf.parse(checkinDate);
+        Date coDate = sdf.parse(checkoutDate);
+
+        boolean available = stayService.checkRoomAvailability(roomId, ciDate, coDate);
+        result.put("available", available);
+
+        if (!available) {
+            result.put("message", "선택한 날짜에 이미 예약이 있습니다.");
+        }
+        return result;
+    }
+
+        
+    // ── HYJ 26.07.20 예약 저장 → 결제 페이지로 이동──
     @PostMapping("/reserve")
     public String saveReserve(@ModelAttribute ReservationVO vo,
                               @RequestParam("stayId") Long stayId,
@@ -104,8 +137,70 @@ public class StayController {
         vo.setMemberNo(member.getMemberNo());
         vo.setTargetId(String.valueOf(stayId));
 
-        Long resvId = stayService.createStayReservation(vo);
-        return "redirect:/stay/complete?resvId=" + resvId;
+        try {
+            Long resvId = stayService.createStayReservation(vo);
+            // 결제 페이지로 리다이렉트
+            return "redirect:/stay/payment?resvId=" + resvId;
+        } catch (RuntimeException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/stay/reserve?id=" + stayId;
+        }
+    }
+
+    // ── HYJ 26.07.20 결제 페이지 ──
+    @GetMapping("/payment")
+    public String payment(@RequestParam("resvId") Long resvId,
+                            HttpSession session,
+                            Model model) {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        ReservationVO reservation = stayService.getReservationById(resvId);
+        if (reservation == null) return "redirect:/stay";
+
+        // 본인 예약만 결제 가능
+        if (!member.getMemberNo().equals(reservation.getMemberNo())) {
+            return "redirect:/stay";
+        }
+
+        model.addAttribute("reservation", reservation);
+        model.addAttribute("tossApiKey", tossApiKey);
+        return "stay/payment";
+    }
+
+    // ── HYJ 26.07.20 결제 성공 콜백 (Toss → 여기로 리다이렉트) ──
+    @GetMapping("/payment/success")
+    public String paymentSuccess(@RequestParam("orderId") String orderId,
+                                    @RequestParam("paymentKey") String paymentKey,
+                                    @RequestParam("amount") Long amount,
+                                    HttpSession session,
+                                    Model model) {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        // orderId에서 resvId 추출 (형식: stay-{resvId}-{timestamp})
+        String[] parts = orderId.split("-");
+        Long resvId = Long.parseLong(parts[1]);
+
+        try {
+            // 예약 CONFIRMED + 결제 정보 INSERT
+            stayService.confirmPayment(resvId, paymentKey, orderId, null);
+            return "redirect:/stay/complete?resvId=" + resvId;
+        } catch (RuntimeException e) {
+            model.addAttribute("errorMsg", e.getMessage());
+            return "redirect:/stay";
+        }
+    }
+
+    // ── HYJ 26.07.20 결제 실패 콜백 ──
+    @GetMapping("/payment/fail")
+    public String paymentFail(@RequestParam(required = false) String code,
+                                @RequestParam(required = false) String message,
+                                RedirectAttributes rttr) {
+        rttr.addFlashAttribute("errorMsg", "결제에 실패했습니다: " + message);
+        return "redirect:/stay";
     }
 
     @GetMapping("/complete")

@@ -24,13 +24,27 @@
 </style>
 <div class="complete-wrap">
   <div class="complete-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-  <div class="complete-title">예약이 완료되었습니다!</div>
+  <div class="complete-title">예약 및 결제가 완료되었습니다!</div>
   <c:choose>
     <c:when test="${not empty reservation}">
       <div class="complete-desc">예약번호 <strong>${reservation.resvNo}</strong></div>
       <div class="complete-card">
         <h3>예약 정보</h3>
         <div class="complete-row"><span>예약번호</span><span>${reservation.resvNo}</span></div>
+        <div class="complete-row"><span>상태</span>
+          <span style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;
+            <c:choose>
+              <c:when test="${reservation.statusCd == 'CONFIRMED'}">background:#E8F5E9;color:#2E7D32</c:when>
+              <c:when test="${reservation.statusCd == 'PENDING'}">background:#FFF3E0;color:#E65100</c:when>
+              <c:otherwise>background:var(--bg-page);color:var(--text-muted)</c:otherwise>
+            </c:choose>">
+            <c:choose>
+              <c:when test="${reservation.statusCd == 'CONFIRMED'}">결제 완료</c:when>
+              <c:when test="${reservation.statusCd == 'PENDING'}">결제 대기</c:when>
+              <c:otherwise>${reservation.statusCd}</c:otherwise>
+            </c:choose>
+          </span>
+        </div>
         <div class="complete-row"><span>숙소</span><span>${reservation.stayName}</span></div>
         <div class="complete-row"><span>객실</span><span>${reservation.serviceName}</span></div>
         <div class="complete-row"><span>이용 기간</span>

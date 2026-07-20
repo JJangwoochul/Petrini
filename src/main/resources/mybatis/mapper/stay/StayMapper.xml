@@ -220,4 +220,52 @@
         LEFT    JOIN TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
         WHERE   R.RESV_ID = #{resvId}
     </select>
+
+    <!-- HYJ 26.07.20 객실 행 잠금 (비관적 락 — 동시 예약 방지) -->
+    <select id="selectRoomForUpdate" parameterType="long"
+            resultType="com.petcare.petcare.stay.vo.StayRoomVO">
+        SELECT ROOM_ID,
+               STAY_ID,
+               NAME,
+               PRICE_PER_NIGHT,
+               CAPACITY,
+               PET_LIMIT
+          FROM TB_STAY_ROOM
+         WHERE ROOM_ID = #{roomId}
+           FOR UPDATE
+    </select>
+
+    <!-- HYJ 26.07.20 날짜 겹침 예약 건수 (가용성 체크) -->
+    <select id="countOverlappingReservation" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE ROOM_ID       = #{roomId}
+           AND RESV_TYPE     = 'STAY'
+           AND STATUS_CD     IN ('PENDING', 'CONFIRMED')
+           AND CHECKIN_DATE  <![CDATA[<]]> #{checkoutDate}
+           AND CHECKOUT_DATE <![CDATA[>]]> #{checkinDate}
+    </select>
+
+    <!-- HYJ 26.07.20 예약 상태 변경 -->
+    <update id="updateReservationStatus" parameterType="map">
+        UPDATE TB_RESERVATION
+           SET STATUS_CD = #{statusCd}
+         WHERE RESV_ID   = #{resvId}
+    </update>
+
+    <!-- HYJ 26.07.20 결제 정보 등록 -->
+    <insert id="insertPayment" parameterType="map">
+        <selectKey keyProperty="paymentId" resultType="long" order="BEFORE">
+            SELECT SEQ_PAYMENT.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO TB_PAYMENT (
+            PAYMENT_ID, RESV_ID, PAY_TYPE, PAY_METHOD,
+            PAY_AMOUNT, TOSS_PAYMENT_KEY, TOSS_ORDER_ID,
+            PAY_STATUS, PAY_DATE
+        ) VALUES (
+            #{paymentId}, #{resvId}, 'RESERVATION', #{payMethod, jdbcType=VARCHAR},
+            #{payAmount}, #{tossPaymentKey}, #{tossOrderId},
+            #{payStatus}, SYSDATE
+        )
+    </insert>
 </mapper>

@@ -20,6 +20,7 @@
 package com.petcare.petcare.stay.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 
@@ -47,4 +48,14 @@ public interface StayMapper {
     List<HospitalPetVO> selectPetListByMemberNo(Long memberNo);
     void insertReservation(ReservationVO vo);
     ReservationVO selectReservationById(Long resvId);
+
+    // HYJ 26.07.20 가용성 체크
+    StayRoomVO selectRoomForUpdate(Long roomId);
+    int countOverlappingReservation(Map<String, Object> param);
+
+    // HYJ 26.07.20 예약 상태 변경
+    void updateReservationStatus(Map<String, Object> param);
+
+    // HYJ 26.07.20 결제
+    void insertPayment(Map<String, Object> param);
 }
