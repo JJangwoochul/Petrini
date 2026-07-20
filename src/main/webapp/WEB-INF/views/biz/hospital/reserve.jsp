@@ -87,10 +87,11 @@
       <thead>
         <tr>
           <th style="width:12%">예약번호</th>
-          <th style="width:12%">예약자</th>
-          <th style="width:18%">반려동물</th>
-          <th style="width:16%">예약일시</th>
-          <th style="width:12%">상태</th>
+          <th style="width:10%">예약자</th>
+          <th style="width:14%">반려동물</th>
+          <th style="width:18%">예약일시</th>
+          <th style="width:14%">의사·유형</th>
+          <th style="width:10%">상태</th>
           <th>관리</th>
         </tr>
       </thead>
@@ -115,6 +116,8 @@
       <div class="rv-row"><span>반려동물</span><span id="mdPet">-</span></div>
       <div class="rv-row"><span>예약일</span><span id="mdDate">-</span></div>
       <div class="rv-row"><span>예약시간</span><span id="mdTime">-</span></div>
+      <div class="rv-row"><span>담당 의사</span><span id="mdDoctor">-</span></div>
+      <div class="rv-row"><span>진료 유형</span><span id="mdTreat">-</span></div>
       <div class="rv-row"><span>증상</span><span id="mdSymptoms">-</span></div>
       <div class="rv-row"><span>요청사항</span><span id="mdMemo">-</span></div>
     </div>
@@ -256,6 +259,9 @@
       dateStr: '<fmt:formatDate value="${r.resvDate}" pattern="yyyy-MM-dd"/>',
       dateLabel: '<fmt:formatDate value="${r.resvDate}" pattern="M/d"/>',
       time: '<c:out value="${r.resvTime}"/>',
+      endTime: '<c:out value="${r.endTime}"/>',
+      doctorName: '<c:out value="${r.doctorName}"/>',
+      treatTypeName: '<c:out value="${r.treatTypeName}"/>',
       symptoms: '<c:out value="${r.symptoms}"/>',
       requestMemo: '<c:out value="${r.requestMemo}"/>',
       statusCd: '<c:out value="${r.statusCd}"/>',
@@ -299,13 +305,15 @@
     body.innerHTML = '';
 
     if (list.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#aaa; padding:60px 0;">해당 예약이 없습니다.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#aaa; padding:60px 0;">해당 예약이 없습니다.</td></tr>';
       return;
     }
 
     list.forEach(function (r) {
       var badge = badgeMap[r.status] || badgeMap.pending;
       var tr = document.createElement('tr');
+      var timeLabel = r.time + (r.endTime ? '~' + r.endTime : '');
+      var staffLabel = (r.doctorName || '-') + ' · ' + (r.treatTypeName || '-');
 
       var actionHtml =
         '<button type="button" class="biz-btn ghost" onclick="openReserveModal(' + r.resvId + ')">상세</button> ';
@@ -323,7 +331,8 @@
         '<td>' + r.resvNo + '</td>' +
         '<td>' + r.name + '</td>' +
         '<td>' + r.pet + '</td>' +
-        '<td>' + r.dateLabel + ' ' + r.time + '</td>' +
+        '<td>' + r.dateLabel + ' ' + timeLabel + '</td>' +
+        '<td>' + staffLabel + '</td>' +
         '<td><span class="bs-badge ' + badge.cls + '">' + badge.label + '</span></td>' +
         '<td>' + actionHtml + '</td>';
       body.appendChild(tr);
@@ -434,7 +443,11 @@
         if (data.petBreed) petLabel += ' (' + data.petBreed + ')';
         document.getElementById('mdPet').textContent = petLabel;
         document.getElementById('mdDate').textContent = data.resvDate ? String(data.resvDate).substring(0, 10) : '-';
-        document.getElementById('mdTime').textContent = data.resvTime || '-';
+        var timeText = data.resvTime || '-';
+        if (data.endTime) timeText += ' ~ ' + data.endTime;
+        document.getElementById('mdTime').textContent = timeText;
+        document.getElementById('mdDoctor').textContent = data.doctorName || '-';
+        document.getElementById('mdTreat').textContent = data.treatTypeName || '-';
         document.getElementById('mdSymptoms').textContent = data.symptoms || '-';
         document.getElementById('mdMemo').textContent = data.requestMemo || '-';
         document.getElementById('reserveModalBg').classList.add('open');

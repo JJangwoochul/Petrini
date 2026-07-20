@@ -85,7 +85,14 @@
                   <span>
                     <fmt:formatDate value="${r.resvDate}" pattern="yyyy년 M월 d일"/>
                     <c:if test="${not empty r.resvTime}"> ${r.resvTime}</c:if>
+                    <c:if test="${not empty r.endTime}">~${r.endTime}</c:if>
                   </span>
+                  <c:if test="${r.resvType eq 'HOSPITAL' and (not empty r.doctorName or not empty r.treatTypeName)}">
+                    <span>
+                      <c:if test="${not empty r.doctorName}">담당: <c:out value="${r.doctorName}"/></c:if>
+                      <c:if test="${not empty r.treatTypeName}"> · <c:out value="${r.treatTypeName}"/></c:if>
+                    </span>
+                  </c:if>
                 </c:otherwise>
               </c:choose>
               <c:if test="${not empty r.hospitalAddr}">

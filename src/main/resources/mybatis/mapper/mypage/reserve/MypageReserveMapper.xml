@@ -19,6 +19,10 @@
             R.TARGET_ID     AS targetId,
             R.RESV_DATE     AS resvDate,
             R.RESV_TIME     AS resvTime,
+            R.TREAT_TYPE_ID AS treatTypeId,
+            R.DOCTOR_ID     AS doctorId,
+            R.DURATION_MIN  AS durationMin,
+            R.END_TIME      AS endTime,
             R.SYMPTOMS      AS symptoms,
             R.REQUEST_MEMO  AS requestMemo,
             R.STATUS_CD     AS statusCd,
@@ -34,6 +38,8 @@
             P.BREED         AS petBreed,
             H.NAME          AS hospitalName,
             H.ADDR          AS hospitalAddr,
+            D.DOCTOR_NAME   AS doctorName,
+            T.TYPE_NAME     AS treatTypeName,
             CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn,
             S.NAME          AS stayName,
             S.ADDR          AS stayAddr,
@@ -43,6 +49,8 @@
       LEFT JOIN TB_HOSPITAL H
              ON R.RESV_TYPE = 'HOSPITAL'
             AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+      LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
       LEFT JOIN TB_REVIEW RV
              ON RV.RESV_ID = R.RESV_ID
             AND RV.REVIEW_TYPE = 'HOSPITAL'
@@ -79,6 +87,10 @@
             R.TARGET_ID     AS targetId,
             R.RESV_DATE     AS resvDate,
             R.RESV_TIME     AS resvTime,
+            R.TREAT_TYPE_ID AS treatTypeId,
+            R.DOCTOR_ID     AS doctorId,
+            R.DURATION_MIN  AS durationMin,
+            R.END_TIME      AS endTime,
             R.SYMPTOMS      AS symptoms,
             R.REQUEST_MEMO  AS requestMemo,
             R.STATUS_CD     AS statusCd,
@@ -94,6 +106,8 @@
             P.BREED         AS petBreed,
             COALESCE(H.NAME, S.NAME)  AS hospitalName,
             COALESCE(H.ADDR, S.ADDR)  AS hospitalAddr,
+            D.DOCTOR_NAME   AS doctorName,
+            T.TYPE_NAME     AS treatTypeName,
             CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn,
             SR.NAME         AS roomName
       FROM  TB_RESERVATION R
@@ -101,6 +115,8 @@
       LEFT JOIN TB_HOSPITAL H
              ON R.RESV_TYPE = 'HOSPITAL'
             AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+      LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+      LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
       LEFT JOIN TB_REVIEW RV
              ON RV.RESV_ID = R.RESV_ID
             AND RV.REVIEW_TYPE = 'HOSPITAL'

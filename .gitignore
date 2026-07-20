@@ -32,11 +32,13 @@ build/
 ### VS Code ###
 .vscode/
 
-### properties (src/main/resources 만 제외) ###
+### properties (로컬·서버 설정 — Git 제외) ###
 /src/main/resources/application.properties
 /src/main/resources/application-local.properties
 /src/main/resources/application-prod.properties
 /src/test/resources/application.properties
+application*.properties
+!**/application*.properties.example
 .env
 .env.*
 
