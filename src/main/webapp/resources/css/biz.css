@@ -626,23 +626,50 @@
 }
 .biz-review-item:last-child { border-bottom: none; }
 .biz-review-main { flex: 1; min-width: 0; }
-.biz-review-stars { display: flex; gap: 2px; margin-bottom: 8px; }
+/* 상품 썸네일 + 상품명/옵션 상단 블록 */
+.biz-review-product-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.biz-review-thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; border: 1px solid #E2E8E4; flex-shrink: 0; }
+.biz-review-thumb-empty { background: #F1F3F7; }
+.biz-review-product-info { min-width: 0; }
+.biz-review-product-name { font-size: 14px; font-weight: 700; color: #1A1A2E; margin-bottom: 3px; }
+.biz-review-option { font-size: 12px; color: #999; }
+
+.biz-review-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.biz-review-stars { display: flex; align-items: center; gap: 2px; }
 .biz-review-stars svg { width: 15px; height: 15px; }
 .biz-review-stars svg.on { fill: #F59E0B; stroke: #F59E0B; }
 .biz-review-stars svg.off { fill: none; stroke: #E2E8E4; }
-.biz-review-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.biz-review-score { font-size: 13px; font-weight: 700; color: #1A1A2E; margin-left: 4px; }
+.biz-review-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .biz-review-author { font-size: 13px; font-weight: 700; color: #1A1A2E; }
 .biz-review-date { font-size: 12px; color: #aaa; }
 .biz-review-reported {
     font-size: 11px; font-weight: 700; color: #DC2626;
     background: #FEE2E2; padding: 2px 8px; border-radius: 20px;
 }
-.biz-review-content { font-size: 14px; color: #555; line-height: 1.55; }
-.biz-review-reply {
-    background: #FAFBFA; border: 1px solid #E2E8E4; border-radius: 8px;
-    padding: 12px 14px; margin-top: 12px; font-size: 13px; color: #555;
+.biz-review-rejected {
+    font-size: 11px; font-weight: 700; color: #6B7280;
+    background: #F1F3F7; padding: 2px 8px; border-radius: 20px;
 }
-.biz-review-reply b { color: #2BAB82; margin-right: 6px; }
+.biz-review-flagged {
+    font-family: inherit; font-size: 11px; font-weight: 700; color: #DC2626;
+    background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 6px;
+    padding: 2px 8px; cursor: pointer; line-height: 1.6;
+}
+.biz-review-flagged:hover { background: #FCA5A5; color: #fff; }
+.biz-review-reporters {
+    font-size: 12px; color: #DC2626; background: #FFF5F5;
+    border-radius: 6px; padding: 6px 10px; margin-bottom: 8px;
+}
+.biz-review-content { font-size: 14px; color: #555; line-height: 1.55; }
+
+.biz-review-reply {
+    background: #FAFBFA; border-radius: 8px;
+    padding: 14px 16px; margin-top: 14px; font-size: 13px; color: #555;
+}
+.biz-review-reply-label { font-size: 13px; font-weight: 700; color: #2BAB82; margin-right: 8px; }
+.biz-review-reply-date { font-size: 12px; color: #aaa; }
+.biz-review-reply-text { margin-top: 6px; line-height: 1.55; }
 .biz-review-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 .biz-review-actions .biz-btn { width: 84px; text-align: center; }
 .biz-review-empty { text-align: center; padding: 60px 20px; color: #aaa; font-size: 14px; }

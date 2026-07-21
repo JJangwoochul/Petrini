@@ -22,6 +22,9 @@ public class BizReviewVO {
     // 조회용 조인
     private String nickname;
     private String productName;
+    private String optionColor;  //지윤 26.07.22 복원: ORDER_ITEM_ID로 조인한 실제 구매 옵션
+    private String optionSize;
+    private String thumbnailUrl; //지윤 26.07.22 추가: 상품 썸네일 (리뷰카드 UI 개선)
 
     // 삭제요청 상태 (TB_REVIEW_REPORT.STATUS_CD, 요청 없으면 null)
     private String reportStatus;

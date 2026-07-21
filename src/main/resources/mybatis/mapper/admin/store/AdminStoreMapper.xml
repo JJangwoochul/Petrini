@@ -54,7 +54,12 @@
      WHERE REPORT_ID = #{reportId}
 </update>
 
-<!-- 지윤 26.07.21 추가: 승인 - 원본 리뷰 실제 삭제 (updateReportApproved로 FK 참조 끊은 다음에만 호출) -->
+<!-- 지윤 26.07.22 추가: 이 리뷰를 참조하는 "모든" 행(다른 유저신고/삭제요청 포함) REVIEW_ID 비우기 -->
+<update id="clearAllReportRefsByReviewId">
+    UPDATE TB_REVIEW_REPORT SET REVIEW_ID = NULL WHERE REVIEW_ID = #{reviewId}
+</update>
+
+<!-- 지윤 26.07.21 추가: 승인 - 원본 리뷰 실제 삭제 (clearAllReportRefsByReviewId로 FK 참조 다 끊은 다음에만 호출) -->
 <delete id="deleteReview">
     DELETE FROM TB_REVIEW WHERE REVIEW_ID = #{reviewId}
 </delete>

@@ -71,9 +71,15 @@
     renderList();
   }
 
-  function toggleReply(id) {
+ function toggleReply(id) {
     openReplyId = (openReplyId === id) ? null : id;
     renderList();
+  }
+
+  //지윤 26.07.22 추가: "신고접수 N건" 뱃지 클릭 시에만 신고자 목록 보여주기 (renderList 다시 안 타므로 DOM에서 바로 토글)
+  function toggleReporters(id) {
+    var el = document.getElementById('reporters-' + id);
+    if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
   }
 
   //지윤 26.07.20 수정: 신고(r.reported) 기준 -> 삭제요청(r.deleteRequested) 기준으로 필터 변경
@@ -112,23 +118,26 @@
           '</div>';
       }
 
-      //지윤 26.07.20 수정: "신고접수" 뱃지 -> "삭제요청됨" 뱃지, 삭제요청 안 걸린 리뷰에만 "삭제요청" 버튼 노출
-      item.innerHTML =
+      //지윤 26.07.22 수정: 네이버 리뷰 스타일 참고해서 카드 레이아웃 재구성 - 썸네일+상품정보 상단 블록, 답글은 회색 박스로 정리
+    item.innerHTML =
         '<div class="biz-review-main">' +
-          '<div class="biz-review-stars">' + starsHtml(r.rating) + '</div>' +
+          '<div class="biz-review-product-row">' +
+            (r.thumbnail ? '<img class="biz-review-thumb" src="' + r.thumbnail + '">' : '<div class="biz-review-thumb biz-review-thumb-empty"></div>') +
+            '<div class="biz-review-product-info">' +
+              '<div class="biz-review-product-name">' + r.product + '</div>' +
+              (r.option ? '<div class="biz-review-option">옵션: ' + r.option + '</div>' : '') +
+            '</div>' +
+          '</div>' +
           '<div class="biz-review-top">' +
-            '<span class="biz-review-author">' + r.author + '</span>' +
-            '<span class="biz-review-date">' + r.date + '</span>' +
+            '<div class="biz-review-stars">' + starsHtml(r.rating) + '<span class="biz-review-score">' + r.rating + '</span></div>' +
             (r.deleteRequested ? '<span class="biz-review-reported">삭제요청됨</span>' : '') +
-            (r.reportCount > 0 ? '<span class="biz-review-flagged" title="' + (r.reporterNames || '') + '">신고접수 ' + r.reportCount + '건</span>' : '') +
+            (r.deleteRejected ? '<span class="biz-review-rejected">삭제요청 반려됨</span>' : '') +
+            (r.reportCount > 0 ? '<button type="button" class="biz-review-flagged" onclick="toggleReporters(' + r.id + ')">신고접수 ' + r.reportCount + '건</button>' : '') +
           '</div>' +
-          '<div class="biz-review-product">' +
-            '<b>' + r.product + '</b>' +
-            (r.option ? '<span class="biz-review-option">' + r.option + '</span>' : '') +
-          '</div>' +
-          (r.reportCount > 0 ? '<div class="biz-review-reporters">신고자: ' + (r.reporterNames || '-') + '</div>' : '') +
+          '<div class="biz-review-meta"><span class="biz-review-author">' + r.author + '</span><span class="biz-review-date">' + r.date + '</span></div>' +
+          (r.reportCount > 0 ? '<div class="biz-review-reporters" id="reporters-' + r.id + '" style="display:none">신고자: ' + (r.reporterNames || '-') + '</div>' : '') +
           '<div class="biz-review-content">' + r.content + '</div>' +
-          (r.reply && openReplyId !== r.id ? '<div class="biz-review-reply"><b>답글</b>' + r.reply + '</div>' : '') +
+          (r.reply && openReplyId !== r.id ? '<div class="biz-review-reply"><span class="biz-review-reply-label">판매자</span><span class="biz-review-reply-date">' + r.date + '</span><div class="biz-review-reply-text">' + r.reply + '</div></div>' : '') +
           replyBoxHtml +
         '</div>' +
         '<div class="biz-review-actions">' +

@@ -43,6 +43,9 @@ public class AdminStoreServiceImpl implements AdminStoreService {
     @Transactional
     public void approveReviewReport(Long reportId, Long reviewId, Long adminNo) {
         adminStoreMapper.updateReportApproved(reportId, adminNo);
+        //지윤 26.07.22 추가: 같은 리뷰에 다른 신고(예: 유저신고 여러 건)가 더 걸려있으면 그것들의 REVIEW_ID도 마저 비워야
+        //TB_REVIEW 삭제할 때 ORA-02292(자식 레코드 발견) 안 남
+        adminStoreMapper.clearAllReportRefsByReviewId(reviewId);
         adminStoreMapper.deleteReview(reviewId);
     }
 

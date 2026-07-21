@@ -276,17 +276,25 @@
             oi.OPTION_COLOR AS optionColor,
             oi.OPTION_SIZE  AS optionSize,
             (SELECT rr.STATUS_CD FROM TB_REVIEW_REPORT rr
-              WHERE rr.REVIEW_ID = r.REVIEW_ID AND rr.REPORTER_TYPE = 'BIZ' AND rr.STATUS_CD = 'PENDING'
-              AND ROWNUM = 1) AS reportStatus,
+              WHERE rr.REVIEW_ID = r.REVIEW_ID AND rr.REPORTER_TYPE = 'BIZ'
+              ORDER BY rr.REPORT_ID DESC
+              FETCH FIRST 1 ROWS ONLY) AS reportStatus,
             (SELECT COUNT(*) FROM TB_REVIEW_REPORT rr2
               WHERE rr2.REVIEW_ID = r.REVIEW_ID AND rr2.REPORTER_TYPE = 'USER') AS reportCount,
             (SELECT LISTAGG(m2.NICKNAME, ', ') WITHIN GROUP (ORDER BY rr2.REG_DATE)
                FROM TB_REVIEW_REPORT rr2 JOIN TB_MEMBER m2 ON m2.MEMBER_NO = rr2.REPORTER_NO
-              WHERE rr2.REVIEW_ID = r.REVIEW_ID AND rr2.REPORTER_TYPE = 'USER') AS reporterNames
+             WHERE rr2.REVIEW_ID = r.REVIEW_ID AND rr2.REPORTER_TYPE = 'USER') AS reporterNames,
+            f.FILE_URL AS thumbnailUrl
       FROM  TB_REVIEW r
       JOIN  TB_MEMBER m  ON m.MEMBER_NO = r.MEMBER_NO
       JOIN  TB_PRODUCT p ON p.PRODUCT_ID = r.TARGET_ID
       LEFT JOIN TB_ORDER_ITEM oi ON oi.ORDER_ITEM_ID = r.ORDER_ITEM_ID
+      LEFT JOIN (
+          SELECT REF_ID, FILE_URL,
+                 ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+          FROM TB_FILE
+          WHERE REF_TYPE = 'PRODUCT'
+      ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
      WHERE  r.REVIEW_TYPE = 'PRODUCT'
        AND  p.BIZ_NO = #{bizNo}
      ORDER BY r.REG_DATE DESC, r.REVIEW_ID DESC
@@ -318,7 +326,7 @@
 <!-- 지윤 26.07.20 추가: 리뷰 삭제요청 등록 (관리자 승인 대기) -->
 <insert id="insertReviewDeleteRequest">
     INSERT INTO TB_REVIEW_REPORT (REPORT_ID, REPORTER_TYPE, REPORTER_NO, REVIEW_ID, BIZ_NO, REASON, STATUS_CD, REG_DATE)
-    VALUES (SEQ_TB_REVIEW_REPORT.NEXTVAL, 'BIZ', #{bizNo}, #{reviewId}, #{bizNo}, #{reason}, 'PENDING', SYSDATE)
+    VALUES ((SELECT NVL(MAX(REPORT_ID), 0) + 1 FROM TB_REVIEW_REPORT), 'BIZ', #{bizNo}, #{reviewId}, #{bizNo}, #{reason}, 'PENDING', SYSDATE)
 </insert>
 
 <!-- 지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수 -->

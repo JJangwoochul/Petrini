@@ -174,9 +174,19 @@ public class BizStoreController extends BizBaseController {
             row.put("date", r.getRegDate() != null ? df.format(r.getRegDate()) : "");
             row.put("rating", r.getRating() != null ? r.getRating() : 0);
             row.put("product", r.getProductName());
+            row.put("thumbnail", r.getThumbnailUrl()); //지윤 26.07.22 추가: 상품 썸네일
+            //지윤 26.07.22 복원: 실제 구매 옵션 (색상/사이즈)
+            String optText = "";
+            if (r.getOptionSize() != null && !r.getOptionSize().isBlank()) {
+                optText = (r.getOptionColor() != null && !r.getOptionColor().isBlank() && !"기본".equals(r.getOptionColor()))
+                        ? r.getOptionColor() + " / " + r.getOptionSize() : r.getOptionSize();
+            }
+            row.put("option", optText);
             row.put("content", r.getContent() != null ? r.getContent() : "");
             row.put("reply", r.getBizReply());
             row.put("deleteRequested", "PENDING".equals(r.getReportStatus())); //지윤 26.07.20 추가: 삭제요청 대기중이면 true
+            //지윤 26.07.22 추가: 리뷰가 남아있는데 요청상태가 DONE이면 = 반려된 것 (승인됐으면 리뷰 자체가 삭제돼서 여기 조회조차 안 됨)
+            row.put("deleteRejected", "DONE".equals(r.getReportStatus()));
             row.put("reportCount", r.getReportCount() != null ? r.getReportCount() : 0); //지윤 26.07.21 추가: 유저 신고 건수
             row.put("reporterNames", r.getReporterNames());                              //지윤 26.07.21 추가: 신고자 닉네임 목록
             rows.add(row);
