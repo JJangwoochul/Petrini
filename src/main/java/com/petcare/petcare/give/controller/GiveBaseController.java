@@ -9,15 +9,6 @@
  */
 package com.petcare.petcare.give.controller;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

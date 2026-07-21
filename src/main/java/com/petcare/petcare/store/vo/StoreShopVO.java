@@ -15,15 +15,13 @@
 package com.petcare.petcare.store.vo;
 
 import java.util.List;
-import com.petcare.petcare.store.vo.OptionVO;
-import com.petcare.petcare.store.vo.ReviewVO;
-import com.petcare.petcare.store.vo.QnaVO;
+
+import org.springframework.stereotype.Component;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Component;
 
 @Getter @Setter
 @ToString
