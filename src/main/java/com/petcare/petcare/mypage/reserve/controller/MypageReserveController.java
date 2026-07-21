@@ -30,16 +30,20 @@ public class MypageReserveController {
     @Autowired
     private MypageReserveService mypageReserveService;
 
+    // 2026/07/21 장우철 — type(전체/병원/숙소) + status(상태) 2단 필터
     @GetMapping("/reserve")
     public String reserve(@RequestParam(value = "status", required = false, defaultValue = "all") String status,
+                          @RequestParam(value = "type", required = false, defaultValue = "all") String type,
                           HttpSession session,
                           Model model) {
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null || member.getMemberNo() == null) {
             return "redirect:/login?redirect=/mypage/reserve";
         }
-        List<MypageReserveVO> reservationList = mypageReserveService.getMyReservationList(member.getMemberNo(), status);
+        List<MypageReserveVO> reservationList =
+                mypageReserveService.getMyReservationList(member.getMemberNo(), status, type);
         model.addAttribute("statusFilter", status);
+        model.addAttribute("typeFilter", type);
         model.addAttribute("reservationList", reservationList);
         return "mypage/reserve";
     }
@@ -77,6 +81,27 @@ public class MypageReserveController {
 
         try {
             mypageReserveService.addHospitalReview(member.getMemberNo(), resvId, rating, content);
+            rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/mypage/reserve/detail?resvId=" + resvId;
+    }
+
+    // HYJ 26.07.20 — 숙박완료 예약 숙소 리뷰·별점 등록
+    @PostMapping("/reserve/stay-review")
+    public String addStayReview(@RequestParam("resvId") Long resvId,
+                                @RequestParam("rating") Double rating,
+                                @RequestParam("content") String content,
+                                HttpSession session,
+                                RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId;
+        }
+
+        try {
+            mypageReserveService.addStayReview(member.getMemberNo(), resvId, rating, content);
             rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다.");
         } catch (IllegalArgumentException | IllegalStateException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());

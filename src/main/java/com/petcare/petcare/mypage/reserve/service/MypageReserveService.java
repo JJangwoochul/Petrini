@@ -14,10 +14,14 @@ import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
 
 public interface MypageReserveService {
 
-    List<MypageReserveVO> getMyReservationList(Long memberNo, String statusFilter);
+    // 2026/07/21 장우철 — typeFilter(전체/병원/숙소) 추가
+    List<MypageReserveVO> getMyReservationList(Long memberNo, String statusFilter, String typeFilter);
 
     MypageReserveVO getMyReservationDetail(Long memberNo, Long resvId);
 
     // 2026/07/13 장우철 — DONE 예약에 한해 병원 리뷰·별점 등록
     void addHospitalReview(Long memberNo, Long resvId, Double rating, String content);
+    
+    // HYJ 26.07.20 — DONE 예약에 한해 숙소 리뷰·별점 등록
+    void addStayReview(Long memberNo, Long resvId, Double rating, String content);
 }

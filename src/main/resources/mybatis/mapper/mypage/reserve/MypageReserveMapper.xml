@@ -60,6 +60,15 @@
       LEFT JOIN TB_STAY_ROOM SR
              ON SR.ROOM_ID = R.ROOM_ID
      WHERE  R.MEMBER_NO = #{memberNo}
+    <!-- 2026/07/21 장우철 — 예약 유형 필터 (전체/병원/숙소) -->
+    <choose>
+      <when test="typeFilter == 'hospital'">
+       AND  R.RESV_TYPE = 'HOSPITAL'
+      </when>
+      <when test="typeFilter == 'stay'">
+       AND  R.RESV_TYPE = 'STAY'
+      </when>
+    </choose>
     <choose>
       <when test="statusFilter == 'pending'">
        AND  R.STATUS_CD = 'PENDING'
@@ -115,11 +124,15 @@
       LEFT JOIN TB_HOSPITAL H
              ON R.RESV_TYPE = 'HOSPITAL'
             AND H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+<!-- HYJ 26.07.20 병원/숙소 통합     LEFT JOIN TB_REVIEW RV
+             ON RV.RESV_ID = R.RESV_ID
+            AND RV.REVIEW_TYPE = 'HOSPITAL'-->
       LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
       LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
       LEFT JOIN TB_REVIEW RV
              ON RV.RESV_ID = R.RESV_ID
-            AND RV.REVIEW_TYPE = 'HOSPITAL'
+            AND RV.MEMBER_NO = R.MEMBER_NO
+            AND RV.REVIEW_TYPE = R.RESV_TYPE
       LEFT JOIN TB_STAY S
              ON R.RESV_TYPE = 'STAY'
             AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
@@ -178,6 +191,35 @@
 
   <select id="selectMemberNickname" resultType="string">
     SELECT NICKNAME FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}
+  </select>
+
+  <!-- HYJ 26.07.20 숙소 리뷰 중복 확인 -->
+  <select id="countStayReviewByResvId" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_REVIEW
+     WHERE REVIEW_TYPE = 'STAY'
+       AND RESV_ID = #{resvId}
+       AND MEMBER_NO = #{memberNo}
+  </select>
+
+  <!-- HYJ 26.07.20 숙소 리뷰 등록 -->
+  <insert id="insertStayReview"
+          parameterType="com.petcare.petcare.stay.vo.StayReviewVO">
+    <selectKey keyProperty="reviewId" resultType="long" order="BEFORE">
+      SELECT NVL(MAX(REVIEW_ID), 0) + 1 FROM TB_REVIEW
+    </selectKey>
+    INSERT INTO TB_REVIEW (
+      REVIEW_ID, REVIEW_TYPE, TARGET_ID, MEMBER_NO, RESV_ID,
+      RATING, CONTENT, REG_DATE
+    ) VALUES (
+      #{reviewId}, 'STAY', #{targetId}, #{memberNo}, #{resvId},
+      #{rating}, #{content, jdbcType=VARCHAR}, SYSDATE
+    )
+  </insert>
+
+  <!-- HYJ 26.07.20 숙소 소유 사업자 회원번호 조회 -->
+  <select id="selectStayMemberNo" resultType="long">
+    SELECT MEMBER_NO FROM TB_STAY WHERE STAY_ID = #{stayId}
   </select>
 
 </mapper>

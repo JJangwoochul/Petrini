@@ -26,8 +26,9 @@ package com.petcare.petcare.stay.service;
 import java.util.Date;
 import java.util.List;
 
-import com.petcare.petcare.hospital.vo.HospitalPetVO;
-import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayPetVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
 public interface StayService {
@@ -36,9 +37,11 @@ public interface StayService {
     public StayVO getStayById(Long stayId);
     
     // 예약
-    public List<HospitalPetVO> getPetList(Long memberNo);
+    public List<StayPetVO> getPetList(Long memberNo);
     public Long createStayReservation(ReservationVO vo);
     public ReservationVO getReservationById(Long resvId);
+
+    List<StayReviewVO> getStayReviews(Long stayId) throws Exception;
 
     // HYJ 26.07.20 가용성 체크
     public boolean checkRoomAvailability(Long roomId, Date checkinDate, Date checkoutDate);

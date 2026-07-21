@@ -31,7 +31,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
-import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.stay.service.StayServiceImpl;
 import com.petcare.petcare.stay.vo.StayVO;
@@ -78,6 +78,7 @@ public class StayController {
 
         model.addAttribute("stay", stay);
         model.addAttribute("imgList", imgList);
+        model.addAttribute("reviewList", stayService.getStayReviews(id));
         
         return "stay/detail";
     }

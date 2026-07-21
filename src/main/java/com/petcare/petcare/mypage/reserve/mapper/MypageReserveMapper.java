@@ -13,13 +13,16 @@ import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Mapper
 public interface MypageReserveMapper {
 
     // 2026/07/11 장우철 — 회원 예약 목록 (병원 중심, 2차)
+    // 2026/07/21 장우철 — typeFilter(전체/병원/숙소) 추가
     List<MypageReserveVO> selectMyReservationList(@Param("memberNo") Long memberNo,
-                                                    @Param("statusFilter") String statusFilter);
+                                                    @Param("statusFilter") String statusFilter,
+                                                    @Param("typeFilter") String typeFilter);
 
     // 2026/07/11 장우철 — 회원 예약 상세 (본인 건만)
     MypageReserveVO selectMyReservationDetail(@Param("memberNo") Long memberNo,
@@ -40,4 +43,14 @@ public interface MypageReserveMapper {
 
     // 2026/07/13 장우철 — TB_HOSPITAL 평균별점·리뷰수 갱신
     int updateHospitalRatingSummary(@Param("hospitalId") Long hospitalId);
+
+    // HYJ 26.07.20 — 숙소 리뷰 중복 확인
+    int countStayReviewByResvId(@Param("resvId") Long resvId,
+    @Param("memberNo") Long memberNo);
+
+    // HYJ 26.07.20 — 숙소 리뷰 INSERT (REVIEW_TYPE=STAY)
+    int insertStayReview(StayReviewVO review);
+
+    // HYJ 26.07.20 — 숙소 소유 사업자 회원번호
+    Long selectStayMemberNo(@Param("stayId") Long stayId);
 }

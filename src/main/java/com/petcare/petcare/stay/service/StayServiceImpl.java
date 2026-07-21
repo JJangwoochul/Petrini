@@ -29,9 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.petcare.petcare.common.external.service.KakaoMessageService;
-import com.petcare.petcare.hospital.vo.HospitalPetVO;
-import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayPetVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -67,8 +68,17 @@ public class StayServiceImpl implements StayService {
     }
 
     @Override
-    public List<HospitalPetVO> getPetList(Long memberNo) {
+    public List<StayPetVO> getPetList(Long memberNo) {
         return stayMapper.selectPetListByMemberNo(memberNo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StayReviewVO> getStayReviews(Long stayId) throws Exception {
+        if (stayId == null) {
+            return List.of();
+        }
+        return stayMapper.selectStayReviews(stayId);
     }
 
     // HYJ 26.07.20 가용성 체크 (단순 조회 — 락 없음)
@@ -153,8 +163,8 @@ public class StayServiceImpl implements StayService {
 
                 // 숙소명·객실명·반려동물명 조회 (JOIN 포함)
                 ReservationVO fullResv = stayMapper.selectReservationById(resvId);
-                String stayName = fullResv.getHospitalName() != null ? fullResv.getHospitalName() : "숙소";
-                String roomName = fullResv.getServiceName()  != null ? fullResv.getServiceName()  : "객실";
+                String stayName = fullResv.getStayName()    != null ? fullResv.getStayName()    : "숙소";
+                String roomName = fullResv.getServiceName() != null ? fullResv.getServiceName() : "객실";
                 String petName  = fullResv.getPetName()      != null ? fullResv.getPetName()      : "";
 
                 kakaoMessageService.sendStayReservationMessage(

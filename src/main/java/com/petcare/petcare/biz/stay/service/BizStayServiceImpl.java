@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
-import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
