@@ -27,9 +27,20 @@
 .od-item .name { font-weight:700; font-size:14px; color:var(--text-main); }
 .od-item .meta { font-size:13px; color:var(--text-muted); margin-top:4px; }
 .od-item .price { margin-left:auto; font-weight:700; color:var(--text-main); }
-.od-tracking { display:flex; align-items:center; gap:10px; background:var(--primary-light); border-radius:10px; padding:14px 16px; font-size:14px; }
+.od-tracking { display:flex; align-items:center; gap:10px; background:var(--primary-light); border-radius:10px; padding:14px 16px; font-size:14px; margin-bottom:18px; }
 .od-tracking b { color:var(--primary); }
 .od-empty-tracking { color:var(--text-muted); font-size:13px; }
+.od-stepper { display:flex; align-items:flex-start; padding-top:6px; }
+.od-step { display:flex; flex-direction:column; align-items:center; width:25%; }
+.od-step-dot { width:14px; height:14px; border-radius:50%; border:1.5px solid #D8DEDA; background:#fff; }
+.od-step-dot.done { background:var(--primary); border-color:var(--primary); }
+.od-step-dot.current { box-shadow:0 0 0 3px var(--primary-light); }
+.od-step-label { font-size:13px; font-weight:600; margin:8px 0 2px; text-align:center; color:var(--text-muted); }
+.od-step-label.done { color:var(--text-main); font-weight:700; }
+.od-step-label.current { color:var(--primary); }
+.od-step-time { font-size:11px; color:var(--text-muted); margin:0; text-align:center; }
+.od-step-line { flex:1; height:1.5px; background:#E2E8E4; margin-top:7px; }
+.od-step-line.done { background:var(--primary); }
 </style>
 
 <div class="mypage-wrap">
@@ -53,32 +64,83 @@
     </div>
   </div>
 
+  <%-- 지윤 26.07.21 추가: 주문정보 섹션 - 주문번호/주문일자/주문자/주문처리상태 한눈에 정리 --%>
+  <div class="od-section">
+    <p class="od-section-title">📋 주문정보</p>
+    <div class="od-row"><span class="label">주문번호</span><span class="value">#${order.orderNo}</span></div>
+    <div class="od-row"><span class="label">주문일자</span><span class="value">${order.orderDate}</span></div>
+    <div class="od-row"><span class="label">주문자</span><span class="value">${order.ordererName}</span></div>
+    <div class="od-row">
+      <span class="label">주문처리상태</span>
+      <span class="value">
+        <c:choose>
+          <c:when test="${order.orderStatus == 'PAID'}">결제완료</c:when>
+          <c:when test="${order.orderStatus == 'READY'}">배송준비</c:when>
+          <c:when test="${order.orderStatus == 'SHIPPING'}">배송중</c:when>
+          <c:when test="${order.orderStatus == 'DONE'}">배송완료</c:when>
+          <c:when test="${order.orderStatus == 'CANCEL'}">취소완료</c:when>
+        </c:choose>
+      </span>
+    </div>
+  </div>
+
   <%-- 지윤 26.07.20 추가: 배송정보(택배사/송장번호) - 기존엔 아예 없던 섹션. TB_ORDER_DELIVERY 미등록이면 안내문구만 --%>
   <div class="od-section">
     <p class="od-section-title">🚚 배송정보</p>
+    <c:if test="${not empty order.courierName}">
+      <div class="od-tracking">
+        <span><b>${order.courierName}</b></span>
+        <span>송장번호 ${order.trackingNo}</span>
+      </div>
+    </c:if>
+
     <c:choose>
-      <c:when test="${not empty order.courierName}">
-        <div class="od-tracking">
-          <span><b>${order.courierName}</b></span>
-          <span>송장번호 ${order.trackingNo}</span>
-        </div>
-      </c:when>
-      <c:otherwise>
-        <p class="od-empty-tracking">아직 등록된 배송정보가 없습니다.</p>
-      </c:otherwise>
+      <c:when test="${not empty order.deliveredAt}"><c:set var="curStep" value="4"/></c:when>
+      <c:when test="${not empty order.shippingAt}"><c:set var="curStep" value="3"/></c:when>
+      <c:when test="${not empty order.readyAt}"><c:set var="curStep" value="2"/></c:when>
+      <c:otherwise><c:set var="curStep" value="1"/></c:otherwise>
     </c:choose>
+
+    <div class="od-stepper">
+      <div class="od-step">
+        <div class="od-step-dot done"></div>
+        <p class="od-step-label done">결제완료</p>
+        <p class="od-step-time">${order.orderDate}</p>
+      </div>
+      <div class="od-step-line ${curStep >= 2 ? 'done' : ''}"></div>
+
+      <div class="od-step">
+        <div class="od-step-dot ${curStep >= 2 ? 'done' : ''} ${curStep == 2 ? 'current' : ''}"></div>
+        <p class="od-step-label ${curStep >= 2 ? 'done' : ''} ${curStep == 2 ? 'current' : ''}">배송준비</p>
+        <p class="od-step-time"><fmt:formatDate value="${order.readyAt}" pattern="yyyy.MM.dd HH:mm"/></p>
+      </div>
+      <div class="od-step-line ${curStep >= 3 ? 'done' : ''}"></div>
+
+      <div class="od-step">
+        <div class="od-step-dot ${curStep >= 3 ? 'done' : ''} ${curStep == 3 ? 'current' : ''}"></div>
+        <p class="od-step-label ${curStep >= 3 ? 'done' : ''} ${curStep == 3 ? 'current' : ''}">배송중</p>
+        <p class="od-step-time"><fmt:formatDate value="${order.shippingAt}" pattern="yyyy.MM.dd HH:mm"/></p>
+      </div>
+      <div class="od-step-line ${curStep >= 4 ? 'done' : ''}"></div>
+
+      <div class="od-step">
+        <div class="od-step-dot ${curStep >= 4 ? 'done' : ''}"></div>
+        <p class="od-step-label ${curStep >= 4 ? 'done' : ''}">배송완료</p>
+        <p class="od-step-time">${curStep < 4 ? '예정' : ''}<fmt:formatDate value="${order.deliveredAt}" pattern="yyyy.MM.dd HH:mm"/></p>
+      </div>
+    </div>
   </div>
 
   <div class="od-section">
     <p class="od-section-title">💳 결제 내역</p>
     <div class="od-row"><span class="label">총 주문금액</span><span class="value"><fmt:formatNumber value="${order.totalAmount}" pattern="#,###"/>원</span></div>
     <div class="od-row"><span class="label">배송비</span><span class="value"><fmt:formatNumber value="${order.deliveryFee}" pattern="#,###"/>원</span></div>
-    <c:if test="${not empty order.discountAmount && order.discountAmount > 0}">
-      <div class="od-row"><span class="label">할인금액</span><span class="value">-<fmt:formatNumber value="${order.discountAmount}" pattern="#,###"/>원</span></div>
-    </c:if>
-    <c:if test="${not empty order.pointUsed && order.pointUsed > 0}">
-      <div class="od-row"><span class="label">포인트사용</span><span class="value">-<fmt:formatNumber value="${order.pointUsed}" pattern="#,###"/>원</span></div>
-    </c:if>
+    <c:set var="couponAmt" value="${empty order.discountAmount ? 0 : order.discountAmount}" />
+    <c:set var="pointAmt" value="${empty order.pointUsed ? 0 : order.pointUsed}" />
+    <c:set var="totalDiscAmt" value="${couponAmt + pointAmt}" />
+    <div class="od-row"><span class="label">쿠폰사용</span><span class="value">${couponAmt > 0 ? '-' : ''}<fmt:formatNumber value="${couponAmt}" pattern="#,###"/>원</span></div>
+    <div class="od-row"><span class="label">포인트사용</span><span class="value">${pointAmt > 0 ? '-' : ''}<fmt:formatNumber value="${pointAmt}" pattern="#,###"/>원</span></div>
+    <div class="od-row"><span class="label">총 할인금액</span><span class="value">${totalDiscAmt > 0 ? '-' : ''}<fmt:formatNumber value="${totalDiscAmt}" pattern="#,###"/>원</span></div>
     <div class="od-row total"><span class="label">총 결제금액</span><span class="value"><fmt:formatNumber value="${order.payAmount}" pattern="#,###"/>원</span></div>
   </div>
 
@@ -114,6 +176,7 @@
     <div class="od-row"><span class="label">받는분</span><span class="value">${order.recvName}</span></div>
     <div class="od-row"><span class="label">연락처</span><span class="value">${order.recvPhone}</span></div>
     <div class="od-row"><span class="label">주소</span><span class="value">(${order.zipCode}) ${order.addr1} ${order.addr2}</span></div>
+    <div class="od-row"><span class="label">배송메시지</span><span class="value">${empty order.deliveryMemo ? '-' : order.deliveryMemo}</span></div>
   </div>
 
   <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/orders'">← 목록으로</button>

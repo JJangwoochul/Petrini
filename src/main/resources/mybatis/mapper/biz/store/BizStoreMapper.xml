@@ -78,11 +78,11 @@
 <insert id="insertProduct">
     INSERT INTO TB_PRODUCT (
         PRODUCT_ID, PRODUCT_CD, PRODUCT_NAME, BIZ_NO, CATEGORY_ID,
-        PRICE, SALE_PRICE, DESCRIPTION, BRAND_NAME, STATUS_CD, REG_DATE
+        PRICE, SALE_PRICE, DESCRIPTION, BRAND_NAME, STATUS_CD, TAGS, REG_DATE
     ) VALUES (
         #{productId}, #{productCd}, #{productName}, #{bizNo}, #{categoryId},
         #{price}, #{salePrice}, #{description}, #{brandName},
-        #{statusCd}, TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+        #{statusCd}, #{tags}, TO_CHAR(SYSDATE, 'YYYY-MM-DD')
     )
 </insert>
 
@@ -98,9 +98,10 @@
     SELECT
         p.PRODUCT_ID, p.PRODUCT_CD, p.PRODUCT_NAME, p.BIZ_NO, p.CATEGORY_ID,
         TO_NUMBER(p.PRICE) AS PRICE, TO_NUMBER(p.SALE_PRICE) AS SALE_PRICE,
-        NVL(os.STOCK_QTY, 0) AS STOCK_QTY, p.DESCRIPTION, p.BRAND_NAME, p.STATUS_CD,
+        NVL(os.STOCK_QTY, 0) AS STOCK_QTY, p.DESCRIPTION, p.BRAND_NAME, p.STATUS_CD, p.TAGS,
         f.FILE_URL AS THUMBNAIL_URL
     FROM TB_PRODUCT p
+
     LEFT JOIN (
         SELECT PRODUCT_ID, SUM(STOCK_QTY) AS STOCK_QTY
         FROM TB_PRODUCT_OPTION GROUP BY PRODUCT_ID
@@ -117,7 +118,7 @@
     UPDATE TB_PRODUCT
     SET PRODUCT_NAME = #{productName}, CATEGORY_ID = #{categoryId}, PRICE = #{price},
         SALE_PRICE = #{salePrice}, DESCRIPTION = #{description},
-        BRAND_NAME = #{brandName}, STATUS_CD = #{statusCd}
+        BRAND_NAME = #{brandName}, STATUS_CD = #{statusCd}, TAGS = #{tags}
     WHERE PRODUCT_ID = #{productId} AND BIZ_NO = #{bizNo}
 </update>
 
@@ -212,6 +213,15 @@
     SELECT COUNT(*) FROM TB_ORDER_DELIVERY WHERE ORDER_ID = #{orderId}
 </select>
 
+<update id="updateDeliveryTimestamp">
+    MERGE INTO TB_ORDER_DELIVERY d
+    USING (SELECT #{orderId} AS ORDER_ID FROM DUAL) src
+    ON (d.ORDER_ID = src.ORDER_ID)
+    WHEN MATCHED THEN UPDATE SET d.${column} = NVL(d.${column}, SYSDATE)
+    WHEN NOT MATCHED THEN INSERT (DELIVERY_ID, ORDER_ID, BIZ_NO, DELIVERY_STATUS, ${column})
+        VALUES ((SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY), #{orderId}, #{bizNo}, 'READY', SYSDATE)
+</update>
+
 <insert id="insertOrderDelivery">
     INSERT INTO TB_ORDER_DELIVERY (DELIVERY_ID, ORDER_ID, BIZ_NO, COURIER_NAME, TRACKING_NO, DELIVERY_STATUS, REGISTERED_AT)
     VALUES ((SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY), #{orderId}, #{bizNo}, #{courierName}, #{trackingNo}, #{deliveryStatus}, SYSDATE)
@@ -253,7 +263,6 @@
     SELECT ORDER_ID FROM TB_ORDER WHERE ORDER_NO = #{orderNo} AND BIZ_NO = #{bizNo}
 </select>
 
-<!-- 지윤 26.07.20 추가: 리뷰관리 목록 - 내 상품(BIZ_NO)에 달린 리뷰 + 삭제요청(PENDING) 상태 -->
 <select id="selectBizReviewList" resultType="com.petcare.petcare.biz.store.vo.BizReviewVO">
     SELECT  r.REVIEW_ID    AS reviewId,
             r.TARGET_ID    AS productId,
@@ -264,12 +273,20 @@
             r.REG_DATE     AS regDate,
             m.NICKNAME     AS nickname,
             p.PRODUCT_NAME AS productName,
+            oi.OPTION_COLOR AS optionColor,
+            oi.OPTION_SIZE  AS optionSize,
             (SELECT rr.STATUS_CD FROM TB_REVIEW_REPORT rr
               WHERE rr.REVIEW_ID = r.REVIEW_ID AND rr.REPORTER_TYPE = 'BIZ' AND rr.STATUS_CD = 'PENDING'
-              AND ROWNUM = 1) AS reportStatus
+              AND ROWNUM = 1) AS reportStatus,
+            (SELECT COUNT(*) FROM TB_REVIEW_REPORT rr2
+              WHERE rr2.REVIEW_ID = r.REVIEW_ID AND rr2.REPORTER_TYPE = 'USER') AS reportCount,
+            (SELECT LISTAGG(m2.NICKNAME, ', ') WITHIN GROUP (ORDER BY rr2.REG_DATE)
+               FROM TB_REVIEW_REPORT rr2 JOIN TB_MEMBER m2 ON m2.MEMBER_NO = rr2.REPORTER_NO
+              WHERE rr2.REVIEW_ID = r.REVIEW_ID AND rr2.REPORTER_TYPE = 'USER') AS reporterNames
       FROM  TB_REVIEW r
       JOIN  TB_MEMBER m  ON m.MEMBER_NO = r.MEMBER_NO
       JOIN  TB_PRODUCT p ON p.PRODUCT_ID = r.TARGET_ID
+      LEFT JOIN TB_ORDER_ITEM oi ON oi.ORDER_ITEM_ID = r.ORDER_ITEM_ID
      WHERE  r.REVIEW_TYPE = 'PRODUCT'
        AND  p.BIZ_NO = #{bizNo}
      ORDER BY r.REG_DATE DESC, r.REVIEW_ID DESC
@@ -303,5 +320,35 @@
     INSERT INTO TB_REVIEW_REPORT (REPORT_ID, REPORTER_TYPE, REPORTER_NO, REVIEW_ID, BIZ_NO, REASON, STATUS_CD, REG_DATE)
     VALUES (SEQ_TB_REVIEW_REPORT.NEXTVAL, 'BIZ', #{bizNo}, #{reviewId}, #{bizNo}, #{reason}, 'PENDING', SYSDATE)
 </insert>
+
+<!-- 지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수 -->
+<select id="selectPaidOrderCount" resultType="int">
+    SELECT COUNT(*) FROM TB_ORDER WHERE BIZ_NO = #{bizNo} AND ORDER_STATUS = 'PAID'
+</select>
+
+<!-- 지윤 26.07.21 추가: Q&A관리 목록 - 내 상품(BIZ_NO)에 달린 질문 전체, 미답변 먼저 -->
+<select id="selectBizQnaList" resultType="com.petcare.petcare.biz.store.vo.BizQnaVO">
+    SELECT  q.QNA_ID       AS qnaId,
+            q.PRODUCT_ID   AS productId,
+            q.MEMBER_NO    AS memberNo,
+            q.QUESTION     AS question,
+            q.ANSWER       AS answer,
+            q.REG_DATE     AS regDate,
+            m.NICKNAME     AS nickname,
+            p.PRODUCT_NAME AS productName
+      FROM  TB_PRODUCT_QNA q
+      JOIN  TB_MEMBER m  ON m.MEMBER_NO = q.MEMBER_NO
+      JOIN  TB_PRODUCT p ON p.PRODUCT_ID = q.PRODUCT_ID
+     WHERE  p.BIZ_NO = #{bizNo}
+     ORDER BY (CASE WHEN q.ANSWER IS NULL THEN 0 ELSE 1 END), q.QNA_ID DESC
+</select>
+
+<!-- 지윤 26.07.21 추가: Q&A 답변 등록/수정 - 상품(TARGET) BIZ_NO가 본인 것인지까지 확인 -->
+<update id="updateQnaAnswer">
+    UPDATE TB_PRODUCT_QNA
+       SET ANSWER = #{answer}
+     WHERE QNA_ID = #{qnaId}
+       AND PRODUCT_ID IN (SELECT PRODUCT_ID FROM TB_PRODUCT WHERE BIZ_NO = #{bizNo})
+</update>
 
 </mapper>

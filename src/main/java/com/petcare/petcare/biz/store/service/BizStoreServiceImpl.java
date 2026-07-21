@@ -87,7 +87,7 @@ public class BizStoreServiceImpl implements BizStoreService {
 
         bizStoreMapper.insertProduct(newId, productCd, product.getProductName(), product.getBizNo(),
                 product.getCategoryId(), product.getPrice(), product.getSalePrice(),
-                product.getDescription(), product.getBrandName(), statusCd);
+                product.getDescription(), product.getBrandName(), statusCd, product.getTags());
 
         saveOptions(newId, options);
 
@@ -115,7 +115,7 @@ public class BizStoreServiceImpl implements BizStoreService {
 
         int updated = bizStoreMapper.updateProduct(product.getProductId(), product.getBizNo(),
                 product.getProductName(), product.getCategoryId(), product.getPrice(), product.getSalePrice(),
-                product.getDescription(), product.getBrandName(), statusCd);
+                product.getDescription(), product.getBrandName(), statusCd, product.getTags());
         if (updated == 0) return false;
 
         bizStoreMapper.deleteProductOptions(product.getProductId());
@@ -193,6 +193,17 @@ public class BizStoreServiceImpl implements BizStoreService {
     public boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo) {
         int updated = bizStoreMapper.updateOrderStatus(orderId, bizNo, orderStatus);
         if (updated == 0) return false;
+
+        //지윤 26.07.21 추가: READY/SHIPPING/DONE으로 바뀔 때마다 해당 단계 시각 자동 기록 (배송정보 타임라인용)
+        String tsColumn = switch (orderStatus) {
+            case "READY" -> "READY_AT";
+            case "SHIPPING" -> "SHIPPING_AT";
+            case "DONE" -> "DELIVERED_AT";
+            default -> null;
+        };
+        if (tsColumn != null) {
+            bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, tsColumn);
+        }
 
         //택배사나 송장번호를 입력한 경우에만 배송정보 저장 (둘 다 비어있으면 배송정보 자체를 안 건드림)
         if ((courierName != null && !courierName.isBlank()) || (trackingNo != null && !trackingNo.isBlank())) {
@@ -308,4 +319,23 @@ public class BizStoreServiceImpl implements BizStoreService {
         }
         bizStoreMapper.insertReviewDeleteRequest(reviewId, bizNo, reason);
     }
+
+   //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수
+   @Override
+   public int getPaidOrderCount(Long bizNo) {
+       return bizStoreMapper.selectPaidOrderCount(bizNo);
+   }
+
+   //지윤 26.07.21 추가: Q&A관리 목록
+   @Override
+   public List<com.petcare.petcare.biz.store.vo.BizQnaVO> getBizQnaList(Long bizNo) {
+       return bizStoreMapper.selectBizQnaList(bizNo);
+   }
+
+   //지윤 26.07.21 추가: Q&A 답변 등록/수정 (본인 상품 질문만 반영됨 - UPDATE 조건에 BIZ_NO 포함)
+   @Override
+   public boolean saveQnaAnswer(Long bizNo, Long qnaId, String answer) {
+       int updated = bizStoreMapper.updateQnaAnswer(qnaId, bizNo, answer);
+       return updated > 0;
+   }
 }

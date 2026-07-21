@@ -52,7 +52,10 @@ public interface MypageNotifyService {
                                              Long resvId, Long hospitalId);
 
     // 2026-07-16 지윤 — 상품 품절 알림 → 사업자 회원 알림함 "재고" 탭
-    void sendProductSoldoutNotification(Long bizMemberNo, String productName, Long productId);                                         
+    void sendProductSoldoutNotification(Long bizMemberNo, String productName, Long productId);
+
+    // 2026-07-21 지윤 추가 — 신규 주문 알림 → 사업자 회원 알림함 "주문" 탭
+    void sendNewOrderNotification(Long bizMemberNo, String orderNo, String productName, int itemCount);                                         
 
     // 2026-07-09 장우철 — 알림함 목록·상세 (DB only, 이메일/FCM 은 후속 API)
     List<MypageNotifyVO> getNotificationList(Long memberNo);

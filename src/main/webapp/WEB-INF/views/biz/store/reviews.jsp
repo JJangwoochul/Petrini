@@ -120,9 +120,14 @@
             '<span class="biz-review-author">' + r.author + '</span>' +
             '<span class="biz-review-date">' + r.date + '</span>' +
             (r.deleteRequested ? '<span class="biz-review-reported">삭제요청됨</span>' : '') +
+            (r.reportCount > 0 ? '<span class="biz-review-flagged" title="' + (r.reporterNames || '') + '">신고접수 ' + r.reportCount + '건</span>' : '') +
           '</div>' +
-          '<div class="biz-review-content"><b>상품명</b> ' + r.product + '</div>' +
-          '<div class="biz-review-content" style="margin-top:6px">' + r.content + '</div>' +
+          '<div class="biz-review-product">' +
+            '<b>' + r.product + '</b>' +
+            (r.option ? '<span class="biz-review-option">' + r.option + '</span>' : '') +
+          '</div>' +
+          (r.reportCount > 0 ? '<div class="biz-review-reporters">신고자: ' + (r.reporterNames || '-') + '</div>' : '') +
+          '<div class="biz-review-content">' + r.content + '</div>' +
           (r.reply && openReplyId !== r.id ? '<div class="biz-review-reply"><b>답글</b>' + r.reply + '</div>' : '') +
           replyBoxHtml +
         '</div>' +
@@ -130,6 +135,7 @@
           '<button class="biz-btn" onclick="toggleReply(' + r.id + ')">' + (r.reply ? '답글수정' : '답글쓰기') + '</button>' +
           (r.deleteRequested ? '' : '<button class="biz-btn" onclick="requestDelete(' + r.id + ')">삭제요청</button>') +
         '</div>';
+
       box.appendChild(item);
     });
   }

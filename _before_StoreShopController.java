@@ -1,12 +1,11 @@
-/**
- * 역할: 쇼핑몰 URL 처리 → Service 호출 → JSP 반환
+﻿/**
+ * ??븷: ?쇳븨紐?URL 泥섎━ ??Service ?몄텧 ??JSP 諛섑솚
  *
- * 연결
+ * ?곌껐
  * - Service: StoreShopService
  *
- * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
- * return 경로는 담당 JSP와 동일하게 맞출 것
- */
+ * SQL쨌鍮꾩쫰?덉뒪 濡쒖쭅? ?ｌ? 留?寃???Service濡??꾩엫
+ * return 寃쎈줈???대떦 JSP? ?숈씪?섍쾶 留욎텧 寃? */
 
 package com.petcare.petcare.store.controller;
 
@@ -36,31 +35,31 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/store")
 public class StoreShopController {
 
-    //HYJ 26.07.03 토스결제 api key
+    //HYJ 26.07.03 ?좎뒪寃곗젣 api key
     @Value("${toss.client-key}")
     private String tossApiKey;
 
-    //지윤 26.07.06 상품목록 조회용 Service 주입
+    //吏??26.07.06 ?곹뭹紐⑸줉 議고쉶??Service 二쇱엯
     @Autowired
     private StoreShopService storeShopService;
 
-    //지윤 26.07.09 로그인 기능 연동: 세션에서 로그인한 회원번호 가져오기 (없으면 null)
+    //吏??26.07.09 濡쒓렇??湲곕뒫 ?곕룞: ?몄뀡?먯꽌 濡쒓렇?명븳 ?뚯썝踰덊샇 媛?몄삤湲?(?놁쑝硫?null)
     private Long getLoginMemberNo(HttpSession session) {
     MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
     return (memberInfo != null) ? memberInfo.getMemberNo() : null;
 }
 
-    // ----- 수정 전 원본 -----
+    // ----- ?섏젙 ???먮낯 -----
     // @GetMapping({"", "/"})
     // public String store(@RequestParam(required = false) String q) {
     //     if (q != null && !q.isBlank()) {
     //         return "redirect:/search?q=" + java.net.URLEncoder.encode(q.trim(), java.nio.charset.StandardCharsets.UTF_8);}
     //     return "store/list";}
-    // ----- 수정 전 원본 -----
-    //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
-    //지윤 26.07.06 카테고리 트리(species/category/age 3단계) 적용
-    // 우선순위: age > category > species (더 세부적으로 고른 게 있으면 그걸로 필터링)
-   //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
+    // ----- ?섏젙 ???먮낯 -----
+    //吏??26.07.06 移댄뀒怨좊━/寃?됱뼱/?뺣젹/?섏씠吏?ㅼ씠???뚮씪誘명꽣
+    //吏??26.07.06 移댄뀒怨좊━ ?몃━(species/category/age 3?④퀎) ?곸슜
+    // ?곗꽑?쒖쐞: age > category > species (???몃??곸쑝濡?怨좊Ⅸ 寃??덉쑝硫?洹멸구濡??꾪꽣留?
+   //吏??26.07.12 媛寃⑸?(minPrice/maxPrice)쨌釉뚮옖??brand) ?꾪꽣 ?뚮씪誘명꽣 異붽?
     @GetMapping({"", "/"})
     public String store(@RequestParam(required = false) String q,
                          @RequestParam(required = false, defaultValue = "5") Long species,
@@ -91,20 +90,19 @@ public class StoreShopController {
         model.addAttribute("selectedSort", sort);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
-        model.addAttribute("totalCount", storeShopService.getTotalCount(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
         return "store/list";
     }
     
     
-   //지윤 26.07.07 상품 상세 실데이터 연동
+   //吏??26.07.07 ?곹뭹 ?곸꽭 ?ㅻ뜲?댄꽣 ?곕룞
     @GetMapping("/detail")
     public String detail(@RequestParam(defaultValue = "1") Long id, Model model) {
     model.addAttribute("product", storeShopService.getProductDetail(id));
     return "store/detail";
 }
 
-//지윤 26.07.08 장바구니 담기 (POST). 로그인 기능 없어서 MEMBER_NO=1 임시 고정
-//지윤 26.07.09 수정: 로그인 안 했으면 장바구니 담기 막고 알림 후 로그인페이지로 이동
+//吏??26.07.08 ?λ컮援щ땲 ?닿린 (POST). 濡쒓렇??湲곕뒫 ?놁뼱??MEMBER_NO=1 ?꾩떆 怨좎젙
+//吏??26.07.09 ?섏젙: 濡쒓렇?????덉쑝硫??λ컮援щ땲 ?닿린 留됯퀬 ?뚮┝ ??濡쒓렇?명럹?댁?濡??대룞
 @PostMapping("/cart/add")
 public String addToCart(@RequestParam Long productId,
                          @RequestParam(required = false) String optionId,
@@ -123,7 +121,7 @@ public String addToCart(@RequestParam Long productId,
     return "redirect:/store/cart";
 }
 
-//지윤 26.07.08 장바구니 수량 변경 (AJAX, cart.jsp에서 호출)
+//吏??26.07.08 ?λ컮援щ땲 ?섎웾 蹂寃?(AJAX, cart.jsp?먯꽌 ?몄텧)
 @PostMapping("/cart/updateQty")
 @ResponseBody
 public String updateCartQty(@RequestParam Long cartItemId, @RequestParam int qty) {
@@ -131,7 +129,7 @@ public String updateCartQty(@RequestParam Long cartItemId, @RequestParam int qty
     return "OK";
 }
 
-//지윤 26.07.08 장바구니 항목 삭제 (AJAX, cart.jsp에서 호출)
+//吏??26.07.08 ?λ컮援щ땲 ??ぉ ??젣 (AJAX, cart.jsp?먯꽌 ?몄텧)
 @PostMapping("/cart/delete")
 @ResponseBody
 public String deleteCartItem(@RequestParam Long cartItemId) {
@@ -139,7 +137,7 @@ public String deleteCartItem(@RequestParam Long cartItemId) {
     return "OK";
 }
 
-//지윤 26.07.08 장바구니 선택삭제/전체삭제 (AJAX)
+//吏??26.07.08 ?λ컮援щ땲 ?좏깮??젣/?꾩껜??젣 (AJAX)
 @PostMapping("/cart/deleteAll")
 @ResponseBody
 public String deleteCartItems(@RequestParam java.util.List<Long> cartItemIds) {
@@ -147,7 +145,7 @@ public String deleteCartItems(@RequestParam java.util.List<Long> cartItemIds) {
     return "OK";
 }
 
-//지윤 26.07.08 헤더 장바구니 뱃지용 (AJAX, 모든 페이지 로드 시 header에서 호출)
+//吏??26.07.08 ?ㅻ뜑 ?λ컮援щ땲 諭껋???(AJAX, 紐⑤뱺 ?섏씠吏 濡쒕뱶 ??header?먯꽌 ?몄텧)
 @GetMapping("/cart/count")
 @ResponseBody
 public int getCartCount(HttpSession session) {
@@ -156,7 +154,7 @@ public int getCartCount(HttpSession session) {
     return storeShopService.getCartItemCount(memberNo);
 }
 
-//지윤 26.07.09 장바구니 실데이터 연동 
+//吏??26.07.09 ?λ컮援щ땲 ?ㅻ뜲?댄꽣 ?곕룞 
 @GetMapping("/cart")
 public String cart(Model model, HttpSession session) {
     Long memberNo = getLoginMemberNo(session);
@@ -169,11 +167,11 @@ public String cart(Model model, HttpSession session) {
 
 /*@GetMapping("/payment")
 public String payment(Model model) {
-    //HYJ 26.07.03 결제 api key
+    //HYJ 26.07.03 寃곗젣 api key
     model.addAttribute("tossApiKey", tossApiKey);
     return "store/payment";
 }*/
-//지윤 26.07.10 수정: GET -> POST, 쿠폰/포인트 서버 재검증 후 결제페이지에 실데이터 전달
+//吏??26.07.10 ?섏젙: GET -> POST, 荑좏룿/?ъ씤???쒕쾭 ?ш?利???寃곗젣?섏씠吏???ㅻ뜲?댄꽣 ?꾨떖
 @PostMapping("/payment")
 public String payment(@RequestParam(required = false) Long productId,
                        @RequestParam(required = false) Long optionId,
@@ -195,7 +193,7 @@ public String payment(@RequestParam(required = false) Long productId,
     }
     MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
 
-    // 지윤 26.07.10 주문 아이템은 클라이언트 값 안 믿고 서버에서 다시 조회
+    // 吏??26.07.10 二쇰Ц ?꾩씠?쒖? ?대씪?댁뼵??媛???誘욧퀬 ?쒕쾭?먯꽌 ?ㅼ떆 議고쉶
     List<CartItemVO> orderItems = (productId != null)
             ? storeShopService.getDirectOrderItem(productId, optionId, qty)
             : storeShopService.getCartOrderItems(cartItemIds);
@@ -206,7 +204,7 @@ public String payment(@RequestParam(required = false) Long productId,
     }
     int deliveryFee = (productTotal == 0 || productTotal >= 50000) ? 0 : 3000;
 
-    // 지윤 26.07.10 쿠폰 재검증: 본인이 실제 보유한(UNUSED) 쿠폰인지 확인
+    // 吏??26.07.10 荑좏룿 ?ш?利? 蹂몄씤???ㅼ젣 蹂댁쑀??UNUSED) 荑좏룿?몄? ?뺤씤
     int couponDiscount = 0;
     String couponName = null;
     if (couponId != null && couponId > 0) {
@@ -223,7 +221,7 @@ public String payment(@RequestParam(required = false) Long productId,
         }
     }
 
-    // 지윤 26.07.10 포인트 재검증: 보유 포인트, 결제금액 넘게 사용 못 하도록 제한
+    // 吏??26.07.10 ?ъ씤???ш?利? 蹂댁쑀 ?ъ씤?? 寃곗젣湲덉븸 ?섍쾶 ?ъ슜 紐??섎룄濡??쒗븳
     long memberPoint = (memberInfo != null && memberInfo.getPointBalance() != null)
             ? memberInfo.getPointBalance() : 0L;
     long maxUsable = Math.max(0, Math.min(memberPoint, productTotal + deliveryFee - couponDiscount));
@@ -246,11 +244,11 @@ public String payment(@RequestParam(required = false) Long productId,
     model.addAttribute("addr1", addr1);
     model.addAttribute("addr2", addr2);
     model.addAttribute("deliveryMemo", deliveryMemo);
-    //HYJ 26.07.03 결제 api key
+    //HYJ 26.07.03 寃곗젣 api key
     model.addAttribute("tossApiKey", tossApiKey);
 
-    //지윤 26.07.13 추가: 토스 위젯이 결제 인증 후 우리 서버를 거치지 않고 order-complete로 바로 이동시키기 때문에,
-    //그 사이 없어질 주문정보(상품/배송지/쿠폰/포인트)를 세션에 담아뒀다가 order-complete에서 꺼내 씀
+    //吏??26.07.13 異붽?: ?좎뒪 ?꾩젽??寃곗젣 ?몄쬆 ???곕━ ?쒕쾭瑜?嫄곗튂吏 ?딄퀬 order-complete濡?諛붾줈 ?대룞?쒗궎湲??뚮Ц??
+    //洹??ъ씠 ?놁뼱吏?二쇰Ц?뺣낫(?곹뭹/諛곗넚吏/荑좏룿/?ъ씤??瑜??몄뀡???댁븘??ㅺ? order-complete?먯꽌 爰쇰궡 ?
     OrderTempVO orderTemp = new OrderTempVO();
     orderTemp.setMemberNo(memberNo);
     orderTemp.setOrderItems(orderItems);
@@ -273,23 +271,23 @@ public String payment(@RequestParam(required = false) Long productId,
     return "store/payment";
 }
 
-    // HYJ 26.07.03 결제 요청 성공 시 여기로 돌아옴 (아직 승인 API는 호출 안 함)
+    // HYJ 26.07.03 寃곗젣 ?붿껌 ?깃났 ???ш린濡??뚯븘??(?꾩쭅 ?뱀씤 API???몄텧 ????
     @GetMapping("/test/payment/success")
     @ResponseBody
     public String success(@RequestParam String orderId,
                             @RequestParam String amount,
                             @RequestParam String paymentKey) {
-        return "결제 요청 성공! orderId=" + orderId + ", amount=" + amount + ", paymentKey=" + paymentKey;
+        return "寃곗젣 ?붿껌 ?깃났! orderId=" + orderId + ", amount=" + amount + ", paymentKey=" + paymentKey;
     }
 
     @GetMapping("/test/payment/fail")
     @ResponseBody
     public String fail(@RequestParam(required = false) String code,
                         @RequestParam(required = false) String message) {
-        return "결제 요청 실패: " + code + " - " + message;
+        return "寃곗젣 ?붿껌 ?ㅽ뙣: " + code + " - " + message;
     }
 
-    //지윤 26.07.13 수정: 하드코딩된 화면 -> 세션에 저장해둔 주문정보로 실제 DB 저장 후 실데이터 표시
+    //吏??26.07.13 ?섏젙: ?섎뱶肄붾뵫???붾㈃ -> ?몄뀡????ν빐??二쇰Ц?뺣낫濡??ㅼ젣 DB ??????ㅻ뜲?댄꽣 ?쒖떆
     @GetMapping("/order-complete")
     public String orderComplete(@RequestParam(required = false) String orderId,
                                  @RequestParam(required = false) String paymentKey,
@@ -297,23 +295,22 @@ public String payment(@RequestParam(required = false) Long productId,
                                  HttpSession session, Model model) {
         OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
 
-        // 새로고침 등으로 세션에 남은 주문정보가 없으면 저장할 게 없다는 안내만 보여줌
-        if (orderTemp == null) {
+        // ?덈줈怨좎묠 ?깆쑝濡??몄뀡???⑥? 二쇰Ц?뺣낫媛 ?놁쑝硫???ν븷 寃??녿떎???덈궡留?蹂댁뿬以?        if (orderTemp == null) {
             model.addAttribute("noOrderData", true);
             return "store/order-complete";
         }
 
         String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, orderId);
-        session.removeAttribute("orderTemp"); // 새로고침해도 중복저장 안 되게 바로 비움
+        session.removeAttribute("orderTemp"); // ?덈줈怨좎묠?대룄 以묐났??????섍쾶 諛붾줈 鍮꾩?
 
         model.addAttribute("orderNo", orderNo);
         model.addAttribute("orderItems", orderTemp.getOrderItems());
         model.addAttribute("payAmount", orderTemp.getFinalTotal());
-        model.addAttribute("payMethodLabel", "NORMAL".equals(paymentType) ? "일반결제" : paymentType);
+        model.addAttribute("payMethodLabel", "NORMAL".equals(paymentType) ? "?쇰컲寃곗젣" : paymentType);
         return "store/order-complete";
     }
 
-    //지윤 26.07.09 수정: cartItemIds 파라미터 추가 - 장바구니에서 주문하기로 들어온 경우 처리
+    //吏??26.07.09 ?섏젙: cartItemIds ?뚮씪誘명꽣 異붽? - ?λ컮援щ땲?먯꽌 二쇰Ц?섍린濡??ㅼ뼱??寃쎌슦 泥섎━
 @GetMapping("/order")
 public String order(@RequestParam(required = false) Long productId,
                 @RequestParam(required = false) Long optionId,
@@ -326,7 +323,7 @@ public String order(@RequestParam(required = false) Long productId,
         return "redirect:/login";
     }
 
-//지윤 26.07.10 보유 포인트 + 기본 배송지 실데이터 연동 (세션의 memberInfo에서 그대로 가져옴)
+//吏??26.07.10 蹂댁쑀 ?ъ씤??+ 湲곕낯 諛곗넚吏 ?ㅻ뜲?댄꽣 ?곕룞 (?몄뀡??memberInfo?먯꽌 洹몃?濡?媛?몄샂)
 MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
 model.addAttribute("memberPoint", memberInfo != null && memberInfo.getPointBalance() != null ? memberInfo.getPointBalance() : 0L);
 model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
@@ -334,23 +331,23 @@ model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode(
 model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
 model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
 
-    // 바로구매로 들어온 경우: 상품 1개만 주문서에 넘김
+    // 諛붾줈援щℓ濡??ㅼ뼱??寃쎌슦: ?곹뭹 1媛쒕쭔 二쇰Ц?쒖뿉 ?섍?
     if (productId != null) {
         model.addAttribute("orderItems",
                 storeShopService.getDirectOrderItem(productId, optionId, qty));
     }
-    // 장바구니에서 주문하기로 들어온 경우: 체크된 항목들만 주문서에 넘김
+    // ?λ컮援щ땲?먯꽌 二쇰Ц?섍린濡??ㅼ뼱??寃쎌슦: 泥댄겕????ぉ?ㅻ쭔 二쇰Ц?쒖뿉 ?섍?
     else if (cartItemIds != null && !cartItemIds.isEmpty()) {
         model.addAttribute("orderItems",
                 storeShopService.getCartOrderItems(cartItemIds));
     }
-    // 기존 쿠폰 조회는 그대로 유지
+    // 湲곗〈 荑좏룿 議고쉶??洹몃?濡??좎?
     model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));
     return "store/order";
 }
 
-//지윤 26.07.10 상품 Q&A 문의 등록 (AJAX)
-//지윤 26.07.12 수정: 응답을 "OK:qnaId" 형식으로 변경 (등록 직후 삭제버튼 붙이기 위함)
+//吏??26.07.10 ?곹뭹 Q&A 臾몄쓽 ?깅줉 (AJAX)
+//吏??26.07.12 ?섏젙: ?묐떟??"OK:qnaId" ?뺤떇?쇰줈 蹂寃?(?깅줉 吏곹썑 ??젣踰꾪듉 遺숈씠湲??꾪븿)
 @PostMapping("/qna/add")
 @ResponseBody
 public String addQna(@RequestParam Long productId, @RequestParam String question, HttpSession session) {
@@ -365,7 +362,7 @@ public String addQna(@RequestParam Long productId, @RequestParam String question
     return "OK:" + qnaId;
 }
 
-//지윤 26.07.12 상품 Q&A 삭제 (AJAX, 본인 글 + 답변 미완료 건만 삭제 가능)
+//吏??26.07.12 ?곹뭹 Q&A ??젣 (AJAX, 蹂몄씤 湲 + ?듬? 誘몄셿猷?嫄대쭔 ??젣 媛??
 @PostMapping("/qna/delete")
 @ResponseBody
 public String deleteQna(@RequestParam Long qnaId, HttpSession session) {
@@ -374,30 +371,6 @@ public String deleteQna(@RequestParam Long qnaId, HttpSession session) {
         return "LOGIN_REQUIRED";
     }
     boolean deleted = storeShopService.deleteProductQna(qnaId, memberNo);
-    return deleted ? "OK" : "FAILED";
-}
-
-//지윤 26.07.21 추가: 유저 리뷰 신고 (AJAX). 이미 신고한 리뷰면 ALREADY 반환
-@PostMapping("/review/report")
-@ResponseBody
-public String reportReview(@RequestParam Long reviewId, @RequestParam(required = false) String reason, HttpSession session) {
-    Long memberNo = getLoginMemberNo(session);
-    if (memberNo == null) {
-        return "LOGIN_REQUIRED";
-    }
-    boolean ok = storeShopService.reportReview(reviewId, memberNo, reason);
-    return ok ? "OK" : "ALREADY";
-}
-
-//지윤 26.07.21 추가: 본인이 작성한 상품 리뷰 삭제 (AJAX)
-@PostMapping("/review/delete")
-@ResponseBody
-public String deleteReview(@RequestParam Long reviewId, HttpSession session) {
-    Long memberNo = getLoginMemberNo(session);
-    if (memberNo == null) {
-        return "LOGIN_REQUIRED";
-    }
-    boolean deleted = storeShopService.deleteProductReview(reviewId, memberNo);
     return deleted ? "OK" : "FAILED";
 }
 }

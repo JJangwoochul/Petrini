@@ -100,6 +100,28 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026-07-21 지윤 추가 — 신규 주문 알림 (알림함 "주문" 탭은 NOTI_TYPE='ORDER' 기준으로 필터링됨)
+   @Override
+   @Transactional
+   public void sendNewOrderNotification(Long bizMemberNo, String orderNo, String productName, int itemCount) {
+       if (bizMemberNo == null) {
+           return;
+       }
+       String safeName = productName != null ? productName : "상품";
+       String extra = itemCount > 1 ? " 외 " + (itemCount - 1) + "건" : "";
+       String content = "[" + safeName + extra + "] 주문이 새로 접수되었습니다.\n\n주문번호: " + orderNo + "\n주문 관리에서 확인해 주세요.";
+
+       MypageNotifyVO vo = new MypageNotifyVO();
+       vo.setMemberNo(bizMemberNo);
+       vo.setNotiType("ORDER");
+       vo.setTitle("새 주문이 들어왔습니다");
+       vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+       vo.setLinkUrl("/biz/store/orders");
+       vo.setIsRead("N");
+
+       mypageNotifyMapper.insertNotification(vo);
+   }
+
     // 2026/07/11 장우철 — 병원 예약 확정 알림
     @Override
     @Transactional

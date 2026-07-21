@@ -25,4 +25,8 @@ public class BizReviewVO {
 
     // 삭제요청 상태 (TB_REVIEW_REPORT.STATUS_CD, 요청 없으면 null)
     private String reportStatus;
+
+    //지윤 26.07.21 추가: 유저 신고 정보 (REPORTER_TYPE='USER' 건수/신고자 목록)
+    private Integer reportCount;
+    private String reporterNames; // 쉼표로 구분된 신고자 닉네임 목록
 }

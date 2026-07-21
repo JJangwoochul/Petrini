@@ -36,9 +36,12 @@
 <select id="selectOrderDetail" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderVO">
     SELECT o.ORDER_ID, o.ORDER_NO, o.ORDER_DATE, o.ORDER_STATUS, o.PAY_AMOUNT,
            o.TOTAL_AMOUNT, o.DELIVERY_FEE, o.DISCOUNT_AMOUNT, o.POINT_USED,
-           o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2,
-           d.COURIER_NAME, d.TRACKING_NO
+           o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2, o.DELIVERY_MEMO,
+           m.NICKNAME AS ORDERER_NAME,
+           d.COURIER_NAME, d.TRACKING_NO, d.READY_AT, d.SHIPPING_AT, d.DELIVERED_AT
+
     FROM TB_ORDER o
+    JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
     WHERE o.ORDER_ID = #{orderId} AND o.MEMBER_NO = #{memberNo}
 </select>

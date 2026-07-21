@@ -208,15 +208,21 @@
           </select>
           <small id="soldoutHint" style="display:none;color:#E24B4A">옵션 재고 합계가 0이라 품절로 고정됩니다.</small>
         </div>
+        
         <div class="biz-form-row">
           <label>옵션(색상/사이즈)<span class="req">*</span></label>
           <div id="optionRows"></div>
           <button type="button" class="biz-btn-ghost" onclick="addOptionRow()">+ 옵션추가</button>
         </div>
         <div class="biz-form-row">
+          <label>특징 태그 <span style="color:#888;font-weight:400;font-size:12px">(쉼표로 구분, 상품 상세페이지에 뱃지로 표시됨)</span></label>
+          <input type="text" name="tags" id="pTags" placeholder="예: 무료배송,중형견 적합,글루텐 프리">
+        </div>
+        <div class="biz-form-row">
           <label>상품설명</label>
           <textarea name="description" id="pDesc"></textarea>
         </div>
+
         <div class="biz-form-row">
           <label>상품이미지</label>
           <div style="display:flex;gap:10px;align-items:center">
@@ -389,6 +395,7 @@
         document.getElementById('pPrice').value = p.price;
         document.getElementById('pSalePrice').value = p.salePrice;
         document.getElementById('pDesc').value = p.description || '';
+        document.getElementById('pTags').value = p.tags || '';
         document.getElementById('pStatus').value = p.statusCd;
 
         document.getElementById('optionRows').innerHTML = '';

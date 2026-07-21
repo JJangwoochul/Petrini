@@ -44,6 +44,9 @@ List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPri
 //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
 int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand);
 
+//지윤 26.07.21 추가: 필터 조건에 맞는 전체 상품 개수 (목록 화면 "총 O개 상품" 표시용, 페이지 크기와 무관한 실제 총합)
+int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand);
+
 //지윤 26.07.12 사이드바 브랜드별 상품 수 조회
 List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice);
 
@@ -88,4 +91,10 @@ boolean deleteProductQna(Long qnaId, Long memberNo);
 
 //지윤 26.07.13 결제 완료 시 주문/주문상품/결제내역 저장 + 쿠폰사용처리 + 포인트차감 + 주문한 장바구니항목 삭제를 한 트랜잭션으로 처리. 생성된 ORDER_NO 반환
 String completeOrder(OrderTempVO orderTemp, String tossPaymentKey, String tossOrderId);
+
+//지윤 26.07.21 추가: 유저 리뷰 신고. 이미 신고한 경우 false
+boolean reportReview(Long reviewId, Long reporterNo, String reason);
+
+//지윤 26.07.21 추가: 본인이 작성한 상품 리뷰 삭제
+boolean deleteProductReview(Long reviewId, Long memberNo);
 }

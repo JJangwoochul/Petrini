@@ -424,6 +424,7 @@
 .noti-icon.resv   { background:#E0F2FE; } .noti-icon.resv svg   { stroke:#0284C7; }
 .noti-icon.notice { background:#F3E8FF; } .noti-icon.notice svg { stroke:#9333EA; }
 .noti-icon.chat   { background:#DCFCE7; } .noti-icon.chat svg   { stroke:#16A34A; }
+.noti-icon.stock  { background:#FEE2E2; } .noti-icon.stock svg  { stroke:#DC2626; }
 .noti-body { flex:1; min-width:0; }
 .noti-msg  { font-size:14px; color:var(--text-sub); line-height:1.5; margin-bottom:3px; }
 .noti-time { font-size:12px; color:var(--text-muted); }

@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,6 +49,16 @@ public class BizStoreController extends BizBaseController {
     //지윤 26.07.20 추가: 리뷰관리 JSON 응답용
     @Autowired
     private ObjectMapper objectMapper;
+
+    //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지 하드코딩(12) 제거 - 이 컨트롤러가 처리하는 모든 페이지(상품관리/주문관리/배송관리/리뷰관리 등) 렌더링 전에
+    //자동으로 실행돼서 model에 paidOrderCount를 채워줌. 로그인 안 됐으면 0으로 조용히 넘어감 (개별 핸들러가 알아서 redirect:/login 처리하므로 여기선 막지 않음)
+    @ModelAttribute
+    public void addPaidOrderCount(HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) { model.addAttribute("paidOrderCount", 0); return; }
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        model.addAttribute("paidOrderCount", bizStoreService.getPaidOrderCount(bizNo));
+    }
 
     @GetMapping({"", "/"})
     public String storeDashboard(HttpSession session) {
@@ -166,6 +177,8 @@ public class BizStoreController extends BizBaseController {
             row.put("content", r.getContent() != null ? r.getContent() : "");
             row.put("reply", r.getBizReply());
             row.put("deleteRequested", "PENDING".equals(r.getReportStatus())); //지윤 26.07.20 추가: 삭제요청 대기중이면 true
+            row.put("reportCount", r.getReportCount() != null ? r.getReportCount() : 0); //지윤 26.07.21 추가: 유저 신고 건수
+            row.put("reporterNames", r.getReporterNames());                              //지윤 26.07.21 추가: 신고자 닉네임 목록
             rows.add(row);
         }
         model.addAttribute("reviewListJson", objectMapper.writeValueAsString(rows));
@@ -202,6 +215,30 @@ public class BizStoreController extends BizBaseController {
         return "redirect:/biz/store/reviews";
     }
 
+    //지윤 26.07.21 추가: Q&A관리 목록 (미답변 우선 정렬)
+    @GetMapping("/qna")
+    public String storeQna(HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        model.addAttribute("qnaList", bizStoreService.getBizQnaList(bizNo));
+        return "biz/store/qna";
+    }
+
+    //지윤 26.07.21 추가: Q&A 답변 작성/수정
+    @PostMapping("/qna/answer")
+    public String saveQnaAnswer(@RequestParam("qnaId") Long qnaId,
+                                 @RequestParam("answer") String answer,
+                                 HttpSession session, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        boolean ok = bizStoreService.saveQnaAnswer(bizNo, qnaId, answer);
+        rttr.addFlashAttribute(ok ? "msg" : "errorMsg", ok ? "답변이 등록되었습니다." : "본인 상품의 문의가 아닙니다.");
+        return "redirect:/biz/store/qna";
+    }
+
     @GetMapping("/settlement")
     public String storeSettlement(HttpSession session) {
         if (getBizMember(session) == null)
@@ -225,6 +262,7 @@ public class BizStoreController extends BizBaseController {
                                    @RequestParam(required = false) String brandName,
                                    @RequestParam(required = false) String description,
                                    @RequestParam String statusCd,
+                                   @RequestParam(required = false) String tags,
                                    @RequestParam(required = false) String[] optionColor,
                                    @RequestParam String[] optionSize,
                                    @RequestParam Integer[] addPrice,
@@ -244,6 +282,7 @@ public class BizStoreController extends BizBaseController {
         product.setBrandName(brandName);
         product.setDescription(description);
         product.setStatusCd(statusCd);
+        product.setTags(tags);
 
         bizStoreService.addProduct(product, buildOptions(optionColor, optionSize, addPrice, stockQty), image);
         return "redirect:/biz/store/products";
@@ -269,6 +308,7 @@ public class BizStoreController extends BizBaseController {
                                        @RequestParam(required = false) String brandName,
                                        @RequestParam(required = false) String description,
                                        @RequestParam String statusCd,
+                                       @RequestParam(required = false) String tags,
                                        @RequestParam(required = false) String[] optionColor,
                                        @RequestParam String[] optionSize,
                                        @RequestParam Integer[] addPrice,
@@ -289,6 +329,7 @@ public class BizStoreController extends BizBaseController {
         product.setBrandName(brandName);
         product.setDescription(description);
         product.setStatusCd(statusCd);
+        product.setTags(tags);
 
         bizStoreService.updateProduct(product, buildOptions(optionColor, optionSize, addPrice, stockQty), image);
         return "redirect:/biz/store/products";

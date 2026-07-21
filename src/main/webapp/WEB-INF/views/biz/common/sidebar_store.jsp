@@ -35,7 +35,7 @@
         <path d="M12 3v14"/>
         <path d="M8 7l4-4 4 4"/>
       </svg>
-      주문 관리<span class="biz-nav-badge">12</span>
+      주문 관리<c:if test="${not empty paidOrderCount && paidOrderCount > 0}"><span class="biz-nav-badge">${paidOrderCount}</span></c:if>
     </a>
     <a href="${contextPath}/biz/store/delivery" class="biz-nav-link ${bizPage eq 'delivery' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -55,7 +55,7 @@
       리뷰 관리
     </a>
 
-    <a href="${contextPath}/biz/store/reviews" class="biz-nav-link ${bizPage eq 'reviews' ? 'active' : ''}">
+   <a href="${contextPath}/biz/store/qna" class="biz-nav-link ${bizPage eq 'qna' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>

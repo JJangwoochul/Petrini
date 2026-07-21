@@ -65,7 +65,7 @@ public interface BizStoreMapper {
                         @Param("categoryId") Long categoryId, @Param("price") Integer price,
                         @Param("salePrice") Integer salePrice,
                         @Param("description") String description, @Param("brandName") String brandName,
-                        @Param("statusCd") String statusCd);
+                        @Param("statusCd") String statusCd, @Param("tags") String tags);
 
     //지윤 26.07.14 상품 등록 시 이미지 URL도 같이 저장 (TB_FILE에 REF_TYPE='PRODUCT'로 저장)
     void insertProductImage(@Param("productId") Long productId, @Param("fileUrl") String fileUrl,
@@ -79,11 +79,11 @@ public interface BizStoreMapper {
     //WHERE절에 bizNo도 같이 걸어서 본인이 등록한 상품만 수정되게 함 (다른 사업자 상품 ID로 요청 보내도 0건 수정되고 조용히 끝남)
     //statusCd도 같이 받아서 판매중/품절/입고대기/판매중지 상태를 강제로 바꿀 수 있게 함
     //지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제
-        int updateProduct(@Param("productId") Long productId, @Param("bizNo") Long bizNo,
-        @Param("productName") String productName, @Param("categoryId") Long categoryId,
-        @Param("price") Integer price, @Param("salePrice") Integer salePrice,
-        @Param("description") String description,
-        @Param("brandName") String brandName, @Param("statusCd") String statusCd);
+    int updateProduct(@Param("productId") Long productId, @Param("bizNo") Long bizNo,
+    @Param("productName") String productName, @Param("categoryId") Long categoryId,
+    @Param("price") Integer price, @Param("salePrice") Integer salePrice,
+    @Param("description") String description,
+    @Param("brandName") String brandName, @Param("statusCd") String statusCd, @Param("tags") String tags);
 
     //지윤 26.07.14 상품 등록/수정 폼의 카테고리 드롭다운용
     //최하위(4단계) 카테고리만 조회 (TB_PRODUCT.CATEGORY_ID가 실제로 참조하는 단계라서 그것만 골라옴)
@@ -118,6 +118,9 @@ public interface BizStoreMapper {
     //지윤 26.07.20 추가: 주문 상태 변경 (본인 주문만, 수정된 row수 반환)
     int updateOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("orderStatus") String orderStatus);
 
+    //지윤 26.07.21 추가: 배송 단계(READY_AT/SHIPPING_AT/DELIVERED_AT)별 시각 자동 기록 - 타임라인용
+    void updateDeliveryTimestamp(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("column") String column);
+
     //지윤 26.07.20 추가: 배송정보(TB_ORDER_DELIVERY) 존재 여부 확인
     int selectDeliveryExists(@Param("orderId") Long orderId);
 
@@ -151,6 +154,15 @@ public interface BizStoreMapper {
 
     //지윤 26.07.20 추가: 리뷰 삭제요청 등록 (TB_REVIEW_REPORT, REPORTER_TYPE='BIZ')
     void insertReviewDeleteRequest(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo, @Param("reason") String reason);
+
+    //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수
+    int selectPaidOrderCount(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A관리 목록 (내 상품에 달린 질문 전체, 미답변 우선)
+    java.util.List<com.petcare.petcare.biz.store.vo.BizQnaVO> selectBizQnaList(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A 답변 등록/수정 (본인 상품 질문만 수정되게 상품 BIZ_NO까지 조건에 포함)
+    int updateQnaAnswer(@Param("qnaId") Long qnaId, @Param("bizNo") Long bizNo, @Param("answer") String answer);
 }
 
 

@@ -46,6 +46,7 @@ public class StoreShopVO {
     private String description;
     private Double avgRating;
     private Integer reviewCount;
+    private String tags; //지윤 26.07.21 추가: 상품 특징 태그, 쉼표 구분 문자열 (사업자가 등록/수정 시 입력)
 
     //지윤 26.07.07 상품 상세 이미지 목록
     private List<String> imageList;

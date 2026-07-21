@@ -96,4 +96,13 @@ public interface BizStoreService {
 
     //지윤 26.07.20 추가: 리뷰 삭제요청 (관리자 승인 대기 등록). 본인 리뷰 아니거나 이미 요청중이면 실패 사유 반환
     void requestReviewDelete(Long bizNo, Long reviewId, String reason);
+
+    //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수
+    int getPaidOrderCount(Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A관리 목록 조회
+    java.util.List<com.petcare.petcare.biz.store.vo.BizQnaVO> getBizQnaList(Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A 답변 등록/수정. 본인 상품 질문 아니면 false
+    boolean saveQnaAnswer(Long bizNo, Long qnaId, String answer);
 }
