@@ -40,11 +40,24 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+
 @Controller
 @RequestMapping("/mypage/biz")
 public class MypageBizController extends CommonConfigController {
     @Value("${file.upload-dir}")
     private String uploadDir;
+
+    @Value("${gcs.enabled:false}")
+    private boolean gcsEnabled;
+
+    @Value("${gcs.bucket-name:}")
+    private String gcsBucket;
+
+    @Autowired(required = false)
+    private Storage storage;
     
     @Autowired
     private MypageBizService mypageBizService;
@@ -207,30 +220,28 @@ public class MypageBizController extends CommonConfigController {
         vo.setStatusCd("PENDING");
 
         try {
-            // 1) 파일을 디스크에 저장 + FileVO 목록 준비
+            // 1) 파일을 로컬 또는 GCS에 저장 + FileVO 목록 준비 — 2026/07/22 장우철
             String subDir = "biz/" + vo.getBizId();
-            File dir = new File(uploadDir + subDir);
-            if (!dir.exists()) 
-                dir.mkdirs();
-
             List<FileVO> fileList = new ArrayList<>();
 
             if (docFile != null && !docFile.isEmpty()) {
-                docFile.transferTo(new File(dir, docFile.getOriginalFilename()));
+                String objectPath = subDir + "/" + docFile.getOriginalFilename();
+                storeBizUploadFile(docFile, objectPath);
                 FileVO fv = new FileVO();
                 fv.setRefType("BIZ_AUTH");
-                fv.setFileUrl(subDir + "/" + docFile.getOriginalFilename());
-                fv.setDriveFileId("biz_auth" + System.currentTimeMillis());
+                fv.setFileUrl(objectPath);
+                fv.setDriveFileId(gcsEnabled ? "GCS" : ("biz_auth" + System.currentTimeMillis()));
                 fv.setOriginName(docFile.getOriginalFilename());
                 fileList.add(fv);
             }
 
             if (licenseFile != null && !licenseFile.isEmpty()) {
-                licenseFile.transferTo(new File(dir, licenseFile.getOriginalFilename()));
+                String objectPath = subDir + "/" + licenseFile.getOriginalFilename();
+                storeBizUploadFile(licenseFile, objectPath);
                 FileVO fv = new FileVO();
                 fv.setRefType("BIZ_LICENSE");
-                fv.setFileUrl(subDir + "/" + licenseFile.getOriginalFilename());
-                fv.setDriveFileId("biz_license" + System.currentTimeMillis());
+                fv.setFileUrl(objectPath);
+                fv.setDriveFileId(gcsEnabled ? "GCS" : ("biz_license" + System.currentTimeMillis()));
                 fv.setOriginName(licenseFile.getOriginalFilename());
                 fileList.add(fv);
             }
@@ -295,5 +306,38 @@ public class MypageBizController extends CommonConfigController {
         /* [변경 전] 2026-07-09 장우철 — 상태 확인 없이 complete.jsp 만 반환
         return "mypage/biz/complete";
         */
+    }
+
+    /**
+     * 사업자 신청 서류 저장 — gcs.enabled 분기
+     * 2026/07/22 장우철
+     */
+    private void storeBizUploadFile(MultipartFile file, String objectPath) throws Exception {
+        if (gcsEnabled) {
+            // [GCS 업로드 — gcs.enabled=true] 2026/07/22 장우철
+            //#region구글 스토리지 GCS 전환코드 START
+            if (storage == null) {
+                throw new IllegalStateException("GCS enabled but Storage bean is missing");
+            }
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
+            BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(gcsBucket, objectPath))
+                    .setContentType(contentType)
+                    .build();
+            storage.create(blobInfo, file.getBytes());
+            //#endregion GCS 전환코드 END
+        } else {
+            // [로컬 저장 — gcs.enabled=false] 2026/07/22 장우철
+            //#region로컬 파일관리
+            File dest = new File(uploadDir + objectPath);
+            File parent = dest.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            file.transferTo(dest);
+            //#endregion
+        }
     }
 }

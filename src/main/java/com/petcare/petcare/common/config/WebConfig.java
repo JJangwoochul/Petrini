@@ -3,6 +3,7 @@
  *
  * - 박유정 / 2026-07-07
  * - /upload/** → file.upload-dir (C:/upload/) — give/report 사진 서빙용
+ * - gcs.enabled=true 이면 /upload/** 는 UploadFileController(GCS)가 처리 — 2026/07/21 장우철
  */
 
 package com.petcare.petcare.common.config;
@@ -19,16 +20,21 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${file.upload-dir}")
     public String uploadDir;
 
+    @Value("${gcs.enabled:false}")
+    private boolean gcsEnabled;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/resources/**")
                 .addResourceLocations("/resources/")
                 .setCachePeriod(0);
 
-        // 로컬 업로드 파일 서빙: /upload/** → file.upload-dir (C:/upload/)
-        String location = uploadDir.endsWith("/") ? uploadDir : uploadDir + "/";
-        registry.addResourceHandler("/upload/**")
-                .addResourceLocations("file:" + location)
-                .setCachePeriod(0);
+        // [로컬 /upload 매핑 — gcs.enabled=false 일 때만] 2026/07/21 장우철
+        if (!gcsEnabled) {
+            String location = uploadDir.endsWith("/") ? uploadDir : uploadDir + "/";
+            registry.addResourceHandler("/upload/**")
+                    .addResourceLocations("file:" + location)
+                    .setCachePeriod(0);
+        }
     }
 }
