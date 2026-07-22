@@ -76,6 +76,12 @@ public interface BizStoreService {
     //지윤 26.07.20 추가: 주문 상세 조회 (상품목록까지 같이 채워서 반환)
     BizOrderVO getOrderDetail(Long orderId, Long bizNo);
 
+    //지윤 26.07.22 추가: 취소신청 승인 (토스취소+재고/포인트/쿠폰 복구). null=성공, 실패면 에러메시지
+    String approveOrderCancel(Long orderId, Long bizNo);
+
+    //지윤 26.07.22 추가: 취소신청 반려
+    boolean rejectOrderCancel(Long orderId, Long bizNo);
+
     //지윤 26.07.20 추가: 주문 상태 + 배송정보(택배사/송장번호) 한번에 저장. 본인 주문 아니면 false
     boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo);
 

@@ -118,6 +118,22 @@ public interface BizStoreMapper {
     //지윤 26.07.20 추가: 주문 상태 변경 (본인 주문만, 수정된 row수 반환)
     int updateOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("orderStatus") String orderStatus);
 
+    //지윤 26.07.22 추가: 취소신청 대기중 건수 (탭 숫자용)
+    int selectClaimPendingCount(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.22 추가: 취소신청 승인/반려
+    int updateClaimApprove(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("refundAmount") Integer refundAmount);
+    int updateClaimReject(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.22 추가: 취소승인 후속처리 (결제상태/재고/포인트/쿠폰)
+    int updatePaymentCancelStatus(@Param("orderId") Long orderId);
+    int restoreStock(@Param("optionId") Long optionId, @Param("qty") Integer qty);
+    int selectMemberPointBalance(@Param("memberNo") Long memberNo);
+    int restoreMemberPoint(@Param("memberNo") Long memberNo, @Param("newBalance") Integer newBalance);
+    int insertPointRefundHistory(@Param("memberNo") Long memberNo, @Param("pointAmount") Integer pointAmount,
+                                  @Param("balanceAfter") Integer balanceAfter, @Param("orderId") Long orderId);
+    int restoreCoupon(@Param("memberCouponId") Long memberCouponId);
+
     //지윤 26.07.21 추가: 배송 단계(READY_AT/SHIPPING_AT/DELIVERED_AT)별 시각 자동 기록 - 타임라인용
     void updateDeliveryTimestamp(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("column") String column);
 

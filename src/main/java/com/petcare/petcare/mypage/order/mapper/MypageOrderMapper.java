@@ -44,4 +44,7 @@ public interface MypageOrderMapper {
     
     //지윤 26.07.20 추가: 주문상세보기 1건 (본인 주문 아니면 null)
     MypageOrderVO selectOrderDetail(@Param("orderId") Long orderId, @Param("memberNo") Long memberNo);
+
+    //지윤 26.07.22 추가: 주문취소 신청 (조건 안 맞으면 0건 UPDATE되어 반환)
+    int requestCancel(@Param("orderId") Long orderId, @Param("memberNo") Long memberNo, @Param("reason") String reason);
 }

@@ -155,6 +155,7 @@
 </delete>
 
 <!-- 지윤 26.07.20 추가: 사업자 주문 목록 조회 (상품명은 주문당 첫 상품 + 외 N건으로 요약) -->
+<!-- 지윤 26.07.22 수정: statusCd='CLAIM_PENDING'이면 ORDER_STATUS 대신 CLAIM_STATUS='PENDING'으로 필터링 (취소신청 탭용) -->
 <select id="selectOrderList" resultType="com.petcare.petcare.biz.store.vo.BizOrderVO">
     SELECT
         o.ORDER_ID, o.ORDER_NO, o.ORDER_STATUS, o.PAY_AMOUNT, o.ORDER_DATE,
@@ -164,7 +165,10 @@
     FROM TB_ORDER o
     JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     WHERE o.BIZ_NO = #{bizNo}
-    <if test="statusCd != null and statusCd != ''">
+    <if test="statusCd == 'CLAIM_PENDING'">
+        AND o.CLAIM_STATUS = 'PENDING'
+    </if>
+    <if test="statusCd != null and statusCd != '' and statusCd != 'CLAIM_PENDING'">
         AND o.ORDER_STATUS = #{statusCd}
     </if>
     ORDER BY o.ORDER_ID DESC
@@ -178,14 +182,22 @@
     GROUP BY ORDER_STATUS
 </select>
 
+<!-- 지윤 26.07.22 추가: 취소신청 대기중 건수 (탭 숫자용, ORDER_STATUS와 별개 카운트) -->
+<select id="selectClaimPendingCount" resultType="int">
+    SELECT COUNT(*) FROM TB_ORDER WHERE BIZ_NO = #{bizNo} AND CLAIM_STATUS = 'PENDING'
+</select>
+
 <!-- 지윤 26.07.20 추가: 주문 상세 조회 (구매자 정보 + 배송정보 + 결제방법 다 조인) -->
+<!-- 지윤 26.07.22 수정: 취소신청 처리에 필요한 컬럼 추가 -->
 <select id="selectOrderDetail" resultType="com.petcare.petcare.biz.store.vo.BizOrderVO">
     SELECT
         o.ORDER_ID, o.ORDER_NO, o.ORDER_STATUS, o.PAY_AMOUNT, o.ORDER_DATE,
         m.NICKNAME AS BUYER_NAME, m.PHONE AS BUYER_PHONE, m.EMAIL AS BUYER_EMAIL,
         o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2,
-        p.PAY_METHOD,
-        d.COURIER_NAME, d.TRACKING_NO, d.DELIVERY_STATUS
+        p.PAY_METHOD, p.TOSS_PAYMENT_KEY,
+        d.COURIER_NAME, d.TRACKING_NO, d.DELIVERY_STATUS,
+        o.CLAIM_STATUS, o.CANCEL_REASON, o.REQUESTED_AT, o.REFUND_AMOUNT,
+        o.MEMBER_NO, o.POINT_USED, o.MEMBER_COUPON_ID
     FROM TB_ORDER o
     JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     LEFT JOIN TB_PAYMENT p ON p.ORDER_ID = o.ORDER_ID
@@ -194,8 +206,9 @@
 </select>
 
 <!-- 지윤 26.07.20 추가: 주문 상세 - 상품 목록 -->
+<!-- 지윤 26.07.22 수정: OPTION_ID 추가 (취소승인 시 재고복구용) -->
 <select id="selectOrderItems" resultType="com.petcare.petcare.biz.store.vo.BizOrderItemVO">
-    SELECT ORDER_ITEM_ID, PRODUCT_ID, PRODUCT_NAME, OPTION_COLOR, OPTION_SIZE, QTY, UNIT_PRICE, TOTAL_PRICE
+    SELECT ORDER_ITEM_ID, PRODUCT_ID, OPTION_ID, PRODUCT_NAME, OPTION_COLOR, OPTION_SIZE, QTY, UNIT_PRICE, TOTAL_PRICE
     FROM TB_ORDER_ITEM
     WHERE ORDER_ID = #{orderId}
     ORDER BY ORDER_ITEM_ID
@@ -206,6 +219,51 @@
     UPDATE TB_ORDER
     SET ORDER_STATUS = #{orderStatus}
     WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo}
+</update>
+
+<!-- 지윤 26.07.22 추가: 취소신청 승인 (토스취소 성공 후 호출, ORDER_STATUS까지 CANCEL로 확정) -->
+<update id="updateClaimApprove">
+    UPDATE TB_ORDER
+    SET CLAIM_STATUS = 'DONE', ORDER_STATUS = 'CANCEL', REFUND_AMOUNT = #{refundAmount}
+    WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND CLAIM_STATUS = 'PENDING'
+</update>
+
+<!-- 지윤 26.07.22 추가: 취소신청 반려 (토스 호출 없이 상태만 변경) -->
+<update id="updateClaimReject">
+    UPDATE TB_ORDER
+    SET CLAIM_STATUS = 'REJECTED'
+    WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND CLAIM_STATUS = 'PENDING'
+</update>
+
+<!-- 지윤 26.07.22 추가: 결제 상태를 취소로 변경 -->
+<update id="updatePaymentCancelStatus">
+    UPDATE TB_PAYMENT SET PAY_STATUS = 'CANCEL' WHERE ORDER_ID = #{orderId}
+</update>
+
+<!-- 지윤 26.07.22 추가: 취소승인 시 옵션 재고 복구 -->
+<update id="restoreStock">
+    UPDATE TB_PRODUCT_OPTION SET STOCK_QTY = STOCK_QTY + #{qty} WHERE OPTION_ID = #{optionId}
+</update>
+
+<!-- 지윤 26.07.22 추가: 포인트 복구 전 현재 잔액 조회 -->
+<select id="selectMemberPointBalance" resultType="int">
+    SELECT NVL(POINT_BALANCE, 0) FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}
+</select>
+
+<!-- 지윤 26.07.22 추가: 포인트 잔액 복구 -->
+<update id="restoreMemberPoint">
+    UPDATE TB_MEMBER SET POINT_BALANCE = #{newBalance} WHERE MEMBER_NO = #{memberNo}
+</update>
+
+<!-- 지윤 26.07.22 추가: 포인트 복구 이력 -->
+<insert id="insertPointRefundHistory">
+    INSERT INTO TB_POINT (POINT_ID, MEMBER_NO, POINT_TYPE, POINT_AMOUNT, BALANCE_AFTER, REASON_CD, REF_TYPE, REF_ID, REG_DATE)
+    VALUES ((SELECT NVL(MAX(POINT_ID),0)+1 FROM TB_POINT), #{memberNo}, 'REFUND', #{pointAmount}, #{balanceAfter}, 'ORDER_CANCEL', 'ORDER', #{orderId}, SYSDATE)
+</insert>
+
+<!-- 지윤 26.07.22 추가: 취소승인 시 쿠폰 복구 -->
+<update id="restoreCoupon">
+    UPDATE TB_MEMBER_COUPON SET STATUS_CD = 'UNUSED' WHERE MEMBER_COUPON_ID = #{memberCouponId}
 </update>
 
 <!-- 지윤 26.07.20 추가: 배송정보(택배사/송장번호) 저장 - 있으면 UPDATE, 없으면 INSERT -->
@@ -343,18 +401,31 @@
             q.ANSWER       AS answer,
             q.REG_DATE     AS regDate,
             m.NICKNAME     AS nickname,
-            p.PRODUCT_NAME AS productName
+            p.PRODUCT_NAME AS productName,
+
+            f.FILE_URL     AS thumbnailUrl,
+            o.OPTION_COLOR AS optionColor,
+            o.OPTION_SIZE  AS optionSize,
+            q.ANSWER_DATE  AS answerDate
       FROM  TB_PRODUCT_QNA q
       JOIN  TB_MEMBER m  ON m.MEMBER_NO = q.MEMBER_NO
       JOIN  TB_PRODUCT p ON p.PRODUCT_ID = q.PRODUCT_ID
+      LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = q.OPTION_ID
+      LEFT JOIN (
+          SELECT REF_ID, FILE_URL,
+                 ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+          FROM TB_FILE
+          WHERE REF_TYPE = 'PRODUCT'
+      ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
      WHERE  p.BIZ_NO = #{bizNo}
+
      ORDER BY (CASE WHEN q.ANSWER IS NULL THEN 0 ELSE 1 END), q.QNA_ID DESC
 </select>
 
 <!-- 지윤 26.07.21 추가: Q&A 답변 등록/수정 - 상품(TARGET) BIZ_NO가 본인 것인지까지 확인 -->
 <update id="updateQnaAnswer">
     UPDATE TB_PRODUCT_QNA
-       SET ANSWER = #{answer}
+       SET ANSWER = #{answer}, ANSWER_DATE = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
      WHERE QNA_ID = #{qnaId}
        AND PRODUCT_ID IN (SELECT PRODUCT_ID FROM TB_PRODUCT WHERE BIZ_NO = #{bizNo})
 </update>

@@ -38,13 +38,27 @@
            o.TOTAL_AMOUNT, o.DELIVERY_FEE, o.DISCOUNT_AMOUNT, o.POINT_USED,
            o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2, o.DELIVERY_MEMO,
            m.NICKNAME AS ORDERER_NAME,
-           d.COURIER_NAME, d.TRACKING_NO, d.READY_AT, d.SHIPPING_AT, d.DELIVERED_AT
+           d.COURIER_NAME, d.TRACKING_NO, d.READY_AT, d.SHIPPING_AT, d.DELIVERED_AT,
+           o.CLAIM_STATUS, o.CANCEL_REASON, o.REFUND_AMOUNT, o.REQUESTED_AT
 
     FROM TB_ORDER o
     JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
     WHERE o.ORDER_ID = #{orderId} AND o.MEMBER_NO = #{memberNo}
 </select>
+
+<!-- 지윤 26.07.22 추가: 주문취소 신청. PAID 상태 + 아직 신청 안 한 주문만 대상 (조건 안 맞으면 0건 UPDATE) -->
+<update id="requestCancel">
+    UPDATE TB_ORDER
+       SET CLAIM_TYPE = 'CANCEL',
+           CLAIM_STATUS = 'PENDING',
+           CANCEL_REASON = #{reason},
+           REQUESTED_AT = SYSDATE
+     WHERE ORDER_ID = #{orderId}
+       AND MEMBER_NO = #{memberNo}
+       AND ORDER_STATUS = 'PAID'
+       AND CLAIM_STATUS IS NULL
+</update>
 
 <!-- 지윤 26.07.20 추가: 주문 하나의 상품 목록 (썸네일은 상품 대표이미지, store 모듈과 동일 패턴) -->
 <!-- 지윤 26.07.20 수정: ORDER_ITEM_ID(리뷰작성 시 식별용), REVIEWED(이미 리뷰 썼는지) 추가 -->

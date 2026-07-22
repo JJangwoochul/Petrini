@@ -53,4 +53,10 @@ public class MypageOrderVO {
     private java.util.Date readyAt;
     private java.util.Date shippingAt;
     private java.util.Date deliveredAt;
+
+    //지윤 26.07.22 추가: 주문취소 신청/처리 상태 (TB_ORDER 클레임 컬럼)
+    private String claimStatus;         // PENDING/DONE/REJECTED (신청 안 했으면 null)
+    private String cancelReason;        // 유저가 신청 시 입력한 사유
+    private Integer refundAmount;       // 실제 환불된 금액 (DONE일 때만 값 있음)
+    private java.util.Date requestedAt; // 취소 신청일시
 }

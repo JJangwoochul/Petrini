@@ -353,7 +353,8 @@ model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() !=
 //지윤 26.07.12 수정: 응답을 "OK:qnaId" 형식으로 변경 (등록 직후 삭제버튼 붙이기 위함)
 @PostMapping("/qna/add")
 @ResponseBody
-public String addQna(@RequestParam Long productId, @RequestParam String question, HttpSession session) {
+public String addQna(@RequestParam Long productId, @RequestParam String question,
+                      @RequestParam(required = false) Long optionId, HttpSession session) {
     Long memberNo = getLoginMemberNo(session);
     if (memberNo == null) {
         return "LOGIN_REQUIRED";
@@ -361,7 +362,7 @@ public String addQna(@RequestParam Long productId, @RequestParam String question
     if (question == null || question.isBlank()) {
         return "EMPTY";
     }
-    Long qnaId = storeShopService.addProductQna(productId, memberNo, question.trim());
+    Long qnaId = storeShopService.addProductQna(productId, memberNo, question.trim(), optionId);
     return "OK:" + qnaId;
 }
 

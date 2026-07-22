@@ -128,8 +128,29 @@ public class BizStoreController extends BizBaseController {
         boolean ok = bizStoreService.updateOrderStatus(id, bizNo, orderStatus, courierName, trackingNo);
         return ok ? "OK" : "FAILED";
     }
+
+    //지윤 26.07.22 추가: 취소신청 승인
+    @PostMapping("/orders/{id}/cancel/approve")
+    @ResponseBody
+    public String approveOrderCancel(@PathVariable Long id, HttpSession session) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "LOGIN_REQUIRED";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        String error = bizStoreService.approveOrderCancel(id, bizNo);
+        return error == null ? "OK" : error;
+    }
+
+    //지윤 26.07.22 추가: 취소신청 반려
+    @PostMapping("/orders/{id}/cancel/reject")
+    @ResponseBody
+    public String rejectOrderCancel(@PathVariable Long id, HttpSession session) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "LOGIN_REQUIRED";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        boolean ok = bizStoreService.rejectOrderCancel(id, bizNo);
+        return ok ? "OK" : "FAILED";
+    }
     
-    //지윤 26.07.20 수정: 목업 -> 실데이터 연동 (택배사/상태/키워드 필터)
     @GetMapping("/delivery")
     public String storeDelivery(@RequestParam(required = false) String carrier,
                                  @RequestParam(required = false) String statusCd,

@@ -72,4 +72,11 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         }
         return order;
     }
+
+    //지윤 26.07.22 추가: 주문취소 신청 (실제 조건 체크는 매퍼 UPDATE의 WHERE절에서 함, 여기선 결과만 판단)
+    @Override
+    public boolean requestCancel(Long memberNo, Long orderId, String reason) {
+        int updated = mypageOrderMapper.requestCancel(orderId, memberNo, reason);
+        return updated > 0;
+    }
 }

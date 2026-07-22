@@ -375,8 +375,8 @@ SELECT
 
 <!-- 지윤 26.07.10 상품 Q&A 문의 등록 -->
 <insert id="insertProductQna">
-    INSERT INTO TB_PRODUCT_QNA (QNA_ID, PRODUCT_ID, MEMBER_NO, QUESTION, REG_DATE)
-    VALUES ((SELECT NVL(MAX(QNA_ID), 0) + 1 FROM TB_PRODUCT_QNA), #{productId}, #{memberNo}, #{question}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'))
+    INSERT INTO TB_PRODUCT_QNA (QNA_ID, PRODUCT_ID, MEMBER_NO, QUESTION, REG_DATE, OPTION_ID)
+    VALUES ((SELECT NVL(MAX(QNA_ID), 0) + 1 FROM TB_PRODUCT_QNA), #{productId}, #{memberNo}, #{question}, TO_CHAR(SYSDATE, 'YYYY-MM-DD'), #{optionId, jdbcType=NUMERIC})
 </insert>
 
 <!-- 지윤 26.07.12 상품 Q&A 삭제: MEMBER_NO 조건으로 본인 글만, ANSWER IS NULL 조건으로 답변 달린 글은 삭제 불가 -->
@@ -401,7 +401,7 @@ SELECT
     ) VALUES (
         (SELECT NVL(MAX(ORDER_ID), 0) + 1 FROM TB_ORDER), #{orderNo}, #{memberNo}, 'PAID',
         #{totalAmount}, #{deliveryFee}, #{discountAmount}, #{pointUsed}, #{payAmount},
-        TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
+        TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI'),
         #{recvName}, #{recvPhone}, #{zipCode}, #{addr1}, #{addr2}, #{deliveryMemo}, #{bizNo}
     )
 </insert>

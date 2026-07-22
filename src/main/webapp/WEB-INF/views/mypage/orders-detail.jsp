@@ -179,10 +179,57 @@
     <div class="od-row"><span class="label">배송메시지</span><span class="value">${empty order.deliveryMemo ? '-' : order.deliveryMemo}</span></div>
   </div>
 
-  <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/orders'">← 목록으로</button>
+  <%-- 지윤 26.07.22 추가: 취소신청 상태 안내 배너 (신청 이력 있을 때만) --%>
+  <c:if test="${not empty order.claimStatus}">
+    <div class="od-section" style="border-color:#F0AD4E;">
+      <p class="od-section-title">🚫 취소 신청 내역</p>
+      <div class="od-row">
+        <span class="label">처리상태</span>
+        <span class="value">
+          <c:choose>
+            <c:when test="${order.claimStatus == 'PENDING'}">사업자 확인중</c:when>
+            <c:when test="${order.claimStatus == 'DONE'}">취소완료 (환불 <fmt:formatNumber value="${order.refundAmount}" pattern="#,###"/>원)</c:when>
+            <c:when test="${order.claimStatus == 'REJECTED'}">취소 반려됨</c:when>
+          </c:choose>
+        </span>
+      </div>
+      <div class="od-row"><span class="label">신청사유</span><span class="value">${order.cancelReason}</span></div>
+      <div class="od-row"><span class="label">신청일시</span><span class="value"><fmt:formatDate value="${order.requestedAt}" pattern="yyyy.MM.dd HH:mm"/></span></div>
+    </div>
+  </c:if>
+
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/orders'">← 목록으로</button>
+
+    <%-- 지윤 26.07.22 추가: 결제완료 상태 + 아직 취소신청 안 한 주문만 버튼 노출 --%>
+    <c:if test="${order.orderStatus == 'PAID' && empty order.claimStatus}">
+      <button type="button" class="btn-sm" style="background:#fff;border:1px solid #E2445C;color:#E2445C;" onclick="openCancelModal()">주문취소</button>
+    </c:if>
+  </div>
 </div>
 
 </div>
 </div>
+
+<%-- 지윤 26.07.22 추가: 취소사유 입력 모달 --%>
+<div id="cancelModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:14px; padding:24px; width:360px;">
+    <p style="font-weight:800; font-size:15px; margin:0 0 12px;">주문취소 신청</p>
+    <p style="font-size:13px; color:var(--text-muted); margin:0 0 14px;">배송 시작 전 상품에 한해 취소 가능하며, 신청 후 사업자 확인을 거쳐 환불됩니다.</p>
+    <form id="cancelForm" method="post" action="${contextPath}/mypage/orders/cancel">
+      <input type="hidden" name="orderId" value="${order.orderId}">
+      <textarea name="reason" required placeholder="취소 사유를 입력해주세요" style="width:100%; height:80px; border:1px solid #E2E8E4; border-radius:8px; padding:10px; font-size:13px; resize:none; box-sizing:border-box;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button type="button" class="btn-sm" style="flex:1;" onclick="closeCancelModal()">닫기</button>
+        <button type="submit" class="btn-sm" style="flex:1; background:#E2445C; color:#fff; border:none;">취소 신청</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openCancelModal() { document.getElementById('cancelModal').style.display = 'flex'; }
+function closeCancelModal() { document.getElementById('cancelModal').style.display = 'none'; }
+</script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

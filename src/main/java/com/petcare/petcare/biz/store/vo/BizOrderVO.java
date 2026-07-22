@@ -33,4 +33,16 @@ public class BizOrderVO {
     private String trackingNo;
     private String deliveryStatus;
     private List<BizOrderItemVO> itemList;
+
+    //지윤 26.07.22 추가: 취소신청 정보 (취소신청 탭/상세용)
+    private String claimStatus;    // PENDING/DONE/REJECTED
+    private String cancelReason;   // 유저가 입력한 취소사유
+    private String requestedAt;    // 취소 신청일시
+    private Integer refundAmount;  // 실제 환불금액 (승인완료 시에만 값 있음)
+
+    //지윤 26.07.22 추가: 취소승인 처리(토스취소/재고/포인트/쿠폰 복구)에 필요한 값
+    private Long memberNo;
+    private Integer pointUsed;
+    private Long memberCouponId;
+    private String tossPaymentKey;
 }

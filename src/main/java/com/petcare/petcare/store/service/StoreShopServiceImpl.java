@@ -199,8 +199,8 @@ public List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds) {
 //지윤 26.07.10 상품 Q&A 문의 등록
 //지윤 26.07.12 수정: 등록 직후 QNA_ID 조회해서 반환하도록 변경 (프론트에서 삭제버튼 바로 붙이기 위함)
 @Override
-public Long addProductQna(Long productId, Long memberNo, String question) {
-    storeShopMapper.insertProductQna(productId, memberNo, question);
+public Long addProductQna(Long productId, Long memberNo, String question, Long optionId) {
+    storeShopMapper.insertProductQna(productId, memberNo, question, optionId);
     return storeShopMapper.selectLatestQnaId(productId, memberNo);
 }
 

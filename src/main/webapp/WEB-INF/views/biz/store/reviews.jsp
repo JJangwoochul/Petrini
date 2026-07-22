@@ -50,6 +50,8 @@
 </form>
 
 <script>
+  //지윤 26.07.22 추가: 썸네일 경로 조합용 (detail.jsp와 동일 패턴)
+  var contextPath = '${contextPath}';
   //지윤 26.07.20 수정: 목업 배열 -> 컨트롤러가 내려주는 실데이터 JSON 그대로 사용
   var reviews = ${empty reviewListJson ? '[]' : reviewListJson};
 
@@ -110,6 +112,7 @@
       if (openReplyId === r.id) {
         replyBoxHtml =
           '<div class="biz-reply-box">' +
+            '<div class="biz-reply-box-label"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>답글 작성</div>' +
             '<textarea id="replyInput-' + r.id + '" placeholder="답글 내용을 입력해주세요">' + (r.reply || '') + '</textarea>' +
             '<div class="biz-reply-box-actions">' +
               '<button class="btn-cancel" onclick="toggleReply(' + r.id + ')">취소</button>' +
@@ -122,7 +125,7 @@
     item.innerHTML =
         '<div class="biz-review-main">' +
           '<div class="biz-review-product-row">' +
-            (r.thumbnail ? '<img class="biz-review-thumb" src="' + r.thumbnail + '">' : '<div class="biz-review-thumb biz-review-thumb-empty"></div>') +
+    (r.thumbnail ? '<img class="biz-review-thumb" src="' + (r.thumbnail.indexOf('http') === 0 ? r.thumbnail : contextPath + '/upload/' + r.thumbnail) + '">' : '<div class="biz-review-thumb biz-review-thumb-empty"></div>') +
             '<div class="biz-review-product-info">' +
               '<div class="biz-review-product-name">' + r.product + '</div>' +
               (r.option ? '<div class="biz-review-option">옵션: ' + r.option + '</div>' : '') +

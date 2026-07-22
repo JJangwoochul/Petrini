@@ -84,7 +84,7 @@ List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qty);
 List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds);
 
 //지윤 26.07.12 수정: 등록 직후 삭제버튼 붙이려면 새로 생긴 QNA_ID가 필요해서 void -> Long으로 변경
-Long addProductQna(Long productId, Long memberNo, String question);
+Long addProductQna(Long productId, Long memberNo, String question, Long optionId);
 
 //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 성공 여부 반환
 boolean deleteProductQna(Long qnaId, Long memberNo);

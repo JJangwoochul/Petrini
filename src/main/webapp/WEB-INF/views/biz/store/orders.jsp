@@ -44,6 +44,7 @@
         <a href="${contextPath}/biz/store/orders?statusCd=SHIPPING" class="biz-tab ${selectedStatusCd == 'SHIPPING' ? 'active' : ''}">배송중<span class="biz-tab-count">${statusCounts.SHIPPING}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=DONE" class="biz-tab ${selectedStatusCd == 'DONE' ? 'active' : ''}">배송완료<span class="biz-tab-count">${statusCounts.DONE}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=CANCEL" class="biz-tab ${selectedStatusCd == 'CANCEL' ? 'active' : ''}">취소/반품<span class="biz-tab-count">${statusCounts.CANCEL}</span></a>
+        <a href="${contextPath}/biz/store/orders?statusCd=CLAIM_PENDING" class="biz-tab ${selectedStatusCd == 'CLAIM_PENDING' ? 'active' : ''}" style="color:#E2445C;">배송전취소<span class="biz-tab-count">${statusCounts.CLAIM_PENDING}</span></a>
       </div>
     </div>
 
@@ -154,9 +155,17 @@
       </div>
     </div>
 
+    <div id="claimInfoBox" style="display:none; margin:0 20px 20px; padding:16px; background:#FFF5F5; border:1px solid #FFD4D4; border-radius:10px;">
+      <p style="font-weight:700; font-size:13px; color:#E2445C; margin:0 0 8px;">🚫 취소신청 대기중</p>
+      <div class="order-info-row"><span>신청사유</span><span id="dCancelReason"></span></div>
+      <div class="order-info-row"><span>신청일시</span><span id="dRequestedAt"></span></div>
+    </div>
+
     <div class="order-detail-actions">
       <button type="button" class="biz-btn-ghost" onclick="closeDetail()">이전 목록으로</button>
       <button type="button" class="biz-btn-primary" id="saveBtn" onclick="saveStatus()">상태변경</button>
+      <button type="button" class="biz-btn-primary" id="rejectBtn" style="display:none; background:#999;" onclick="rejectCancel()">취소반려</button>
+      <button type="button" class="biz-btn-primary" id="approveBtn" style="display:none; background:#E2445C;" onclick="approveCancel()">취소승인</button>
     </div>
   </div>
 </main>
@@ -234,8 +243,50 @@
         });
         document.getElementById('dTotalAmount').textContent = fmtWon(o.payAmount);
 
+        var isPending = (o.claimStatus === 'PENDING');
+        document.getElementById('claimInfoBox').style.display = isPending ? 'block' : 'none';
+        document.getElementById('approveBtn').style.display = isPending ? 'inline-block' : 'none';
+        document.getElementById('rejectBtn').style.display = isPending ? 'inline-block' : 'none';
+        document.getElementById('saveBtn').style.display = isPending ? 'none' : 'inline-block';
+        if (isPending) {
+          document.getElementById('dCancelReason').textContent = o.cancelReason || '-';
+          document.getElementById('dRequestedAt').textContent = o.requestedAt || '-';
+        }
+
         document.getElementById('detailCard').style.display = 'block';
         document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+  }
+
+  function approveCancel() {
+    if (!currentOrderId) return;
+    if (!confirm('취소를 승인하시겠습니까? 승인 즉시 결제가 취소되고 재고/포인트/쿠폰이 복구됩니다.')) return;
+
+    fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/cancel/approve', { method: 'POST' })
+      .then(function (res) { return res.text(); })
+      .then(function (result) {
+        if (result === 'OK') {
+          alert('취소가 승인되었습니다.');
+          location.reload();
+        } else {
+          alert('승인 실패: ' + result);
+        }
+      });
+  }
+
+  function rejectCancel() {
+    if (!currentOrderId) return;
+    if (!confirm('취소신청을 반려하시겠습니까?')) return;
+
+    fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/cancel/reject', { method: 'POST' })
+      .then(function (res) { return res.text(); })
+      .then(function (result) {
+        if (result === 'OK') {
+          alert('취소신청이 반려되었습니다.');
+          location.reload();
+        } else {
+          alert('반려 처리에 실패했습니다.');
+        }
       });
   }
 

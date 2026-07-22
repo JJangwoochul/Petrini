@@ -114,7 +114,7 @@ public interface StoreShopMapper {
    List<CartItemVO> selectCartItemsByIds(@Param("cartItemIds") java.util.List<Long> cartItemIds);
 
    //지윤 26.07.10 상품 Q&A 문의 등록
-   void insertProductQna(@Param("productId") Long productId, @Param("memberNo") Long memberNo, @Param("question") String question);
+   void insertProductQna(@Param("productId") Long productId, @Param("memberNo") Long memberNo, @Param("question") String question, @Param("optionId") Long optionId);
 
    //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 삭제된 row수 반환 (0이면 실패 원인 구분용)
    int deleteProductQna(@Param("qnaId") Long qnaId, @Param("memberNo") Long memberNo);

@@ -283,8 +283,8 @@
           <c:otherwise>
             <div class="review-text">${rv.content}</div>
             <c:if test="${not empty rv.bizReply}">
-              <div class="review-text" style="margin-top:10px;padding:12px;background:#f7f7f7;border-radius:8px">
-                <b>사장님 답글</b><br>${rv.bizReply}
+              <div class="review-text" style="margin-top:10px;padding:12px 14px;background:#EAF7F2;border-left:3px solid #2BAB82;border-radius:8px">
+                <b style="color:#1F8464">사장님 답글</b><br>${rv.bizReply}
               </div>
             </c:if>
             <%-- 지윤 26.07.21 추가: 리뷰 신고 - 로그인했고 본인 리뷰가 아닐 때만 노출 --%>
@@ -302,9 +302,18 @@
  <%-- 지윤 26.07.10 수정: 문의 등록(AJAX) 기능 추가 --%>
 <div class="tab-section" id="tab-qna">
     <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <c:if test="${not empty product.optionList}">
+        <select id="qnaOptionSelect" style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:13px; color:var(--text-sub); max-width:160px;">
+          <option value="">옵션 선택(선택)</option>
+          <c:forEach var="opt" items="${product.optionList}">
+            <option value="${opt.optionId}"><c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}</option>
+          </c:forEach>
+        </select>
+      </c:if>
       <input type="text" id="qnaInput" maxlength="500" placeholder="상품에 대해 궁금한 점을 문의해보세요" style="flex:1; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; font-size:14px; outline:none;">
       <button type="button" id="btnAddQna" style="padding:10px 20px; border:1px solid var(--primary); border-radius:var(--radius-sm); background:#fff; color:var(--primary); font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;">문의하기</button>
     </div>
+
     <div id="qnaEmptyMsg" style="text-align:center;padding:60px 0;color:var(--text-muted); ${empty product.qnaList ? '' : 'display:none;'}">아직 등록된 문의가 없습니다.</div>
     <div id="qnaList">
     <c:forEach var="qna" items="${product.qnaList}">
@@ -546,10 +555,12 @@ document.getElementById('btnAddQna').addEventListener('click', function () {
     alert('문의 내용을 입력해주세요.');
     return;
   }
+  var optionSelectEl = document.getElementById('qnaOptionSelect');
+  var qnaOptionId = optionSelectEl ? optionSelectEl.value : '';
   fetch('${contextPath}/store/qna/add', {
     method: 'POST',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    body: 'productId=${product.productId}&question=' + encodeURIComponent(question)
+    body: 'productId=${product.productId}&question=' + encodeURIComponent(question) + '&optionId=' + encodeURIComponent(qnaOptionId)
   }).then(function(res){ return res.text(); })
     .then(function(result){
       if (result.indexOf('OK:') === 0) {

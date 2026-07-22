@@ -467,21 +467,35 @@
    리뷰 답글 인라인 박스 (모달 대신 카드 안에서 펼쳐지는 방식) 7/2 지윤
 ================================================================ */
 .biz-reply-box {
-    background: #FAFBFA; border: 1px solid #E2E8E4; border-radius: 8px;
-    padding: 12px; margin-top: 12px;
-    display: flex; flex-direction: column; gap: 8px;
+    background: #fff; border: 1px solid #E2E8E4; border-radius: 12px;
+    padding: 16px; margin-top: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    box-sizing: border-box; width: 100%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
+.biz-reply-box-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700; color: #1F8464;
+}
+.biz-reply-box-label svg { width: 14px; height: 14px; stroke: #1F8464; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .biz-reply-box textarea {
-    width: 100%; min-height: 70px; padding: 10px;
+    width: 100%; min-height: 70px; padding: 12px;
     border: 1px solid #E2E8E4; border-radius: 8px;
-    font-family: inherit; font-size: 13px; resize: vertical;
+    font-family: inherit; font-size: 13px; line-height: 1.5; resize: vertical;
+    background: #FAFBFA; transition: border-color .15s, background .15s;
+}
+.biz-reply-box textarea:focus {
+    outline: none; border-color: #2BAB82; background: #fff;
 }
 .biz-reply-box-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .biz-reply-box-actions button {
-    padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    padding: 7px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all .15s;
 }
 .biz-reply-box-actions .btn-submit { border: none; background: #2BAB82; color: #fff; }
-.biz-reply-box-actions .btn-cancel { border: 1px solid #E2E8E4; background: #fff; color: #555; }
+.biz-reply-box-actions .btn-submit:hover { background: #1F8464; }
+.biz-reply-box-actions .btn-cancel { border: 1px solid #E2E8E4; background: #fff; color: #666; }
+.biz-reply-box-actions .btn-cancel:hover { background: #F5F5F5; }
 
 /* ================================================================
    7/2, [지윤] — info.jsp (업체정보 수정) 화면 전용
@@ -621,9 +635,13 @@
 ================================================================ */
 .biz-review-list { display: flex; flex-direction: column; }
 .biz-review-item {
-    display: flex; justify-content: space-between; gap: 20px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px;
     padding: 22px 4px; border-bottom: 1px solid #E2E8E4;
 }
+/* 지윤 26.07.22 추가: 답변수정 입력창(.biz-edit-box)이 flex 3번째 자식으로 끼어들면서 본문이 눌려 깨지던 문제 -
+   무조건 다음 줄로 내려가서 카드 전체 폭을 쓰게 강제 */
+.biz-edit-box { flex: 1 1 100%; order: 3; }
+
 .biz-review-item:last-child { border-bottom: none; }
 .biz-review-main { flex: 1; min-width: 0; }
 /* 상품 썸네일 + 상품명/옵션 상단 블록 */
@@ -644,8 +662,10 @@
 .biz-review-author { font-size: 13px; font-weight: 700; color: #1A1A2E; }
 .biz-review-date { font-size: 12px; color: #aaa; }
 .biz-review-reported {
-    font-size: 11px; font-weight: 700; color: #DC2626;
-    background: #FEE2E2; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; color: #0284C7;
+    background: #E0F2FE; border: 1px solid #7DD3FC; border-radius: 6px;
+    padding: 2px 8px; line-height: 1.6;
+    box-sizing: border-box; vertical-align: middle;
 }
 .biz-review-rejected {
     font-size: 11px; font-weight: 700; color: #6B7280;
@@ -655,6 +675,7 @@
     font-family: inherit; font-size: 11px; font-weight: 700; color: #DC2626;
     background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 6px;
     padding: 2px 8px; cursor: pointer; line-height: 1.6;
+    box-sizing: border-box; margin: 0; vertical-align: middle; -webkit-appearance: none; appearance: none;
 }
 .biz-review-flagged:hover { background: #FCA5A5; color: #fff; }
 .biz-review-reporters {
@@ -664,9 +685,10 @@
 .biz-review-content { font-size: 14px; color: #555; line-height: 1.55; }
 
 .biz-review-reply {
-    background: #FAFBFA; border-radius: 8px;
+    background: #EAF7F2; border-radius: 8px; border-left: 3px solid #2BAB82;
     padding: 14px 16px; margin-top: 14px; font-size: 13px; color: #555;
 }
+
 .biz-review-reply-label { font-size: 13px; font-weight: 700; color: #2BAB82; margin-right: 8px; }
 .biz-review-reply-date { font-size: 12px; color: #aaa; }
 .biz-review-reply-text { margin-top: 6px; line-height: 1.55; }

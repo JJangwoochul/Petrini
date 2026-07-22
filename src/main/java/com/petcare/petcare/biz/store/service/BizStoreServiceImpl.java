@@ -29,6 +29,7 @@ import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.common.external.service.TossPaymentService;
 
 @Service
 public class BizStoreServiceImpl implements BizStoreService {
@@ -38,6 +39,14 @@ public class BizStoreServiceImpl implements BizStoreService {
 
     @Autowired
     private FileService fileService;
+
+    //지윤 26.07.22 추가: 주문취소 승인 시 토스 결제취소 API 호출용
+    @Autowired
+    private TossPaymentService tossPaymentService;
+
+    //지윤 26.07.22 추가: 취소승인 DB반영 트랜잭션 전용 (self-invocation 문제로 별도 빈 분리)
+    @Autowired
+    private OrderCancelTxService orderCancelTxService;
 
     //지윤 26.07.14 페이지당 상품 개수 (요청대로 10개)
     private static final int PAGE_SIZE = 10;
@@ -174,6 +183,8 @@ public class BizStoreServiceImpl implements BizStoreService {
             Number cnt = (Number) row.get("CNT");
             result.put(status, cnt.intValue());
         }
+        //지윤 26.07.22 추가: 취소신청 대기중 건수도 같은 Map에 넣어서 화면에서 statusCounts.CLAIM_PENDING으로 바로 사용
+        result.put("CLAIM_PENDING", bizStoreMapper.selectClaimPendingCount(bizNo));
         return result;
     }
 
@@ -185,6 +196,33 @@ public class BizStoreServiceImpl implements BizStoreService {
             vo.setItemList(bizStoreMapper.selectOrderItems(orderId));
         }
         return vo;
+    }
+
+    //지윤 26.07.22 추가: 취소신청 승인
+    //순서 중요: 토스 API를 먼저 부르고, 성공했을 때만 DB를 건드림
+    @Override
+    public String approveOrderCancel(Long orderId, Long bizNo) {
+        BizOrderVO order = bizStoreMapper.selectOrderDetail(orderId, bizNo);
+        if (order == null || !"PENDING".equals(order.getClaimStatus())) {
+            return "취소신청 대기중인 주문이 아닙니다.";
+        }
+        if (order.getTossPaymentKey() == null) {
+            return "결제 정보를 찾을 수 없습니다.";
+        }
+
+        String tossError = tossPaymentService.cancelPayment(order.getTossPaymentKey(), order.getCancelReason());
+        if (tossError != null) {
+            return tossError;
+        }
+
+        orderCancelTxService.applyCancelToDb(order, bizNo);
+        return null;
+    }
+
+    //지윤 26.07.22 추가: 취소신청 반려 (토스 호출 없이 상태만 변경)
+    @Override
+    public boolean rejectOrderCancel(Long orderId, Long bizNo) {
+        return bizStoreMapper.updateClaimReject(orderId, bizNo) > 0;
     }
 
     //지윤 26.07.20 추가: 주문 상태 변경 + 배송정보(택배사/송장번호) 저장

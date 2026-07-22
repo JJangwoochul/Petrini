@@ -61,4 +61,18 @@ public class MypageOrderController {
         model.addAttribute("order", detail);
         return "mypage/orders-detail";
     }
+
+    //지윤 26.07.22 추가: 주문취소 신청 (사유 입력 모달 → 폼 submit, 처리 후 상세페이지로 리다이렉트)
+    @PostMapping("/orders/cancel")
+    public String cancelOrder(@RequestParam("orderId") Long orderId,
+                               @RequestParam("reason") String reason,
+                               HttpSession session, RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        boolean ok = mypageOrderService.requestCancel(member.getMemberNo(), orderId, reason);
+        rttr.addFlashAttribute(ok ? "msg" : "errorMsg",
+                ok ? "취소 신청이 접수되었습니다. 사업자 확인 후 처리됩니다." : "취소 신청에 실패했습니다. 이미 배송이 시작되었거나 신청 이력이 있습니다.");
+        return "redirect:/mypage/orders/detail?orderId=" + orderId;
+    }
 }
