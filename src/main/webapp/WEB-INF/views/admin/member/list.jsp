@@ -1,6 +1,10 @@
 <%--
-  - 박유정 / 2026-07-16
-  - GET /admin/member/list → ${list}, ${totalCount}
+  - 박유정 / 2026-07-16 (목록), 2026-07-20 (STEP 7), 2026-07-21 (STEP 12·②), 2026-07-22 (일괄복구·목록정지제거)
+  - POST /admin/member/bulk-suspend  — 선택 일괄 정지 (suspendType)
+  - POST /admin/member/bulk-restore  — 선택 일괄 복구
+  - POST /admin/member/bulk-withdraw   — 선택 일괄 탈퇴
+  - GET /admin/member/export — Excel(CSV)보내기
+  - 정지/복구는 상세 페이지에서만 처리
 --%>
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
@@ -17,14 +21,18 @@
             <p class="adm-page-desc">전체 회원 목록을 조회하고 관리하세요.</p>
         </div>
         <div class="adm-page-actions">
-            <button class="adm-filter-btn outline">
+            <a href="${contextPath}/admin/member/export?keyword=${keyword}&statusCd=${statusCd}&roleType=${roleType}"
+               class="adm-filter-btn outline" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">
                 <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Excel 내보내기
-            </button>
+                Excel보내기
+            </a>
         </div>
     </div>
 
     <%-- 2026-07-16 박유정 — 처리 결과 flash (상세 redirect) --%>
+    <c:if test="${not empty successMsg}">
+        <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${successMsg}</div>
+    </c:if>
     <c:if test="${not empty errorMsg}">
         <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${errorMsg}</div>
     </c:if>
@@ -103,8 +111,16 @@
                                             <c:when test="${item.statusCd eq 'NORMAL'}">
                                                 <span class="adm-badge active">활성</span>
                                             </c:when>
+                                            <%-- 2026-07-21 박유정 STEP ② — 기간 정지 뱃지 (영구 / ~종료일) --%>
                                             <c:when test="${item.statusCd eq 'SUSPENDED'}">
-                                                <span class="adm-badge banned">정지</span>
+                                                <span class="adm-badge banned">
+                                      <c:choose>
+                                            <c:when test="${empty item.suspendEndDate}">영구 정지</c:when>
+                                          <c:otherwise>
+                                                    정지 (~${item.suspendEndDate.year}.${item.suspendEndDate.monthValue}.${item.suspendEndDate.dayOfMonth})
+                                          </c:otherwise>
+                                        </c:choose>
+                                                </span>
                                             </c:when>
                                             <c:when test="${item.statusCd eq 'WITHDRAWN'}">
                                                 <span class="adm-badge cancel">탈퇴</span>
@@ -121,13 +137,6 @@
                                     </td>
                                     <td style="white-space:nowrap">
                                         <a href="${contextPath}/admin/member/detail?id=${item.memberNo}" class="adm-btn blue">상세</a>
-                                        <%-- STEP 7 — 정지/복구 버튼 연동 예정 --%>
-                                        <c:if test="${item.statusCd eq 'NORMAL'}">
-                                            <button type="button" class="adm-btn gray" style="margin-left:4px">정지</button>
-                                        </c:if>
-                                        <c:if test="${item.statusCd eq 'SUSPENDED'}">
-                                            <button type="button" class="adm-btn green" style="margin-left:4px">복구</button>
-                                        </c:if>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -138,8 +147,16 @@
         </div>
         <div style="padding:16px 20px;border-top:1px solid #E4E6ED;display:flex;justify-content:space-between;align-items:center">
             <div style="display:flex;gap:8px">
-                <button class="adm-btn red">선택 정지</button>
-                <button class="adm-btn gray">선택 탈퇴처리</button>
+               <%-- 2026-07-21 박유정 STEP ② — 일괄 정지 기간 선택 --%>
+               <select id="bulkSuspendType" class="adm-filter-select" style="width:auto">
+               <option value="DAY3">3일 정지</option>
+               <option value="DAY7">7일 정지</option>
+                <option value="PERMANENT" selected>영구 정지</option>
+                </select>
+                <button type="button" class="adm-btn red" id="btnBulkSuspend">선택 정지</button>
+                <%-- 2026-07-22 박유정 — 선택 일괄 복구 --%>
+                <button type="button" class="adm-btn green" id="btnBulkRestore">선택 복구</button>
+                <button type="button" class="adm-btn gray" id="btnBulkWithdraw">선택 탈퇴처리</button>
             </div>
             <div class="adm-pagination" style="margin:0">
                 <c:if test="${page > 1}">
@@ -155,8 +172,8 @@
                         <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                     </a>
                 </c:if>
+                <span style="font-size:12px;color:#999">페이지당 20건</span>
             </div>
-            <span style="font-size:12px;color:#999">페이지당 20건</span>
         </div>
     </div>
 </main>
@@ -181,6 +198,63 @@
         });
     });
 })();
+
+// 2026-07-21 박유정 STEP 12 — 선택 일괄 정지·탈퇴
+// 2026-07-21 박유정 STEP ② — extraFields로 suspendType 전달
+var listQuery = 'keyword=${keyword}&statusCd=${statusCd}&roleType=${roleType}&page=${page}';
+
+function submitBulkAction(url, confirmMsg, extraFields) {
+    var checked = document.querySelectorAll('.member-row-check:checked');
+    if (checked.length === 0) {
+        alert('선택된 회원이 없습니다.');
+        return;
+    }
+    if (!confirm(confirmMsg)) return;
+
+    var form = document.createElement('form');
+    form.method = 'post';
+    form.action = url + '?' + listQuery;
+
+    checked.forEach(function (cb) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'memberNos';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    if (extraFields) {
+        Object.keys(extraFields).forEach(function (name) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = extraFields[name];
+            form.appendChild(input);
+        });
+    }
+    document.body.appendChild(form);
+    form.submit();
+}
+
+document.getElementById('btnBulkSuspend').addEventListener('click', function () {
+    submitBulkAction(
+        '${contextPath}/admin/member/bulk-suspend',
+        '선택한 ' + document.querySelectorAll('.member-row-check:checked').length + '명을 정지하시겠습니까?',
+        { suspendType: document.getElementById('bulkSuspendType').value }
+    );
+});
+
+// 2026-07-22 박유정 — 선택 일괄 복구
+document.getElementById('btnBulkRestore').addEventListener('click', function () {
+    submitBulkAction(
+        '${contextPath}/admin/member/bulk-restore',
+        '선택한 ' + document.querySelectorAll('.member-row-check:checked').length + '명을 복구하시겠습니까?'
+    );
+});
+
+document.getElementById('btnBulkWithdraw').addEventListener('click', function () {
+    submitBulkAction('${contextPath}/admin/member/bulk-withdraw',
+        '선택한 회원을 탈퇴 처리하시겠습니까?\n이 작업은 되돌릴 수 없습니다.');
+});
 </script>
 
 <%@ include file="/WEB-INF/views/admin/common/footer.jsp" %>

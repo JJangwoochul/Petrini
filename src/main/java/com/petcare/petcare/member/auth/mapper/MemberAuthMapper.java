@@ -71,4 +71,10 @@ public interface MemberAuthMapper {
     int insertSocialLink(
             @Param("memberNo") Long memberNo,
             @Param("providerUid") String providerUid);
+
+    // 2026-07-21 박유정 STEP ② — 기간 정지 만료 시 STATUS_CD=NORMAL 복구
+    int releaseExpiredSuspensions();
+
+    // 2026-07-22 박유정 — 탈퇴 회원 이메일 재가입 차단
+    int countWithdrawnMemberByEmail(@Param("email")String email);
 }

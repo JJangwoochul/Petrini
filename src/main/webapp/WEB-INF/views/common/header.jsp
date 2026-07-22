@@ -1,8 +1,10 @@
+<%--
+  역할: 공통 헤더 (일반 회원·고객센터 등)
+  - 박유정 / 2026-07-22 — 정지 회원 안내 배너 (SUSPENDED + role=USER)
+--%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -16,9 +18,18 @@
     <link rel="apple-touch-icon" href="${contextPath}/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css?v=20260705">
+    <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css?v=20260723">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
+<%-- 2026-07-22 박유정 — 정지 회원 안내 (일반 회원 화면) --%>
+<c:if test="${not empty memberInfo and memberInfo.status eq 'SUSPENDED' and memberInfo.role eq 'USER'}">
+    <div class="suspended-banner">
+        <%-- 정지 회원 고객센터 이용 안내 문구 --%>
+        정지된 회원입니다. 고객센터 탭만 이용 가능합니다.
+    </div>
+</c:if>
+
 <header class="pc-header">
     <div class="header-top">
         <div class="header-top-inner">
@@ -38,17 +49,7 @@
                 <a href="${contextPath}/join">회원가입</a>
             </c:otherwise>
             </c:choose>
-            <%-- [변경 전] 로그인 시 로그아웃만 표시 (관리자 전용 링크 없음)
-            <c:choose>
-            <c:when test="${not empty memberInfo}">
-                <a href="${contextPath}/member/logout">로그아웃</a>
-            </c:when>
-            <c:otherwise>
-                <a href="${contextPath}/login">로그인</a>
-                <a href="${contextPath}/join">회원가입</a>
-            </c:otherwise>
-            </c:choose>
-            --%>
+            <%-- [변경 전] 로그인 시 로그아웃만 표시 (관리자 전용 링크 없음) — c:choose 없이 로그아웃/로그인·회원가입만 노출 --%>
                 <a href="${contextPath}/member/cs">고객센터</a>
             
             </nav>
