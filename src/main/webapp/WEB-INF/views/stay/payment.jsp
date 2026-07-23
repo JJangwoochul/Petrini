@@ -56,7 +56,7 @@
   </div>
 
   <%-- 결제 수단 (Toss Widget) --%>
-  <div class="pay-section">
+  <div class="pay-section" id="tossSection">
     <h3>
       <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       결제 수단
@@ -75,10 +75,32 @@
       <span>숙박 요금</span>
       <span><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
     </div>
+
+    <%-- 포인트 사용 --%>
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:14px 16px;margin:12px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700;color:#166534">보유 포인트</span>
+          <span style="font-size:14px;font-weight:800;color:#16A34A"><fmt:formatNumber value="${memberInfo.pointBalance}" pattern="#,###"/>P</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="pointInput" min="0" max="${memberInfo.pointBalance > reservation.totalAmount ? reservation.totalAmount : memberInfo.pointBalance}"
+                 value="0" style="flex:1;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;font-size:14px;outline:none"
+                 oninput="calcFinalAmount()">
+          <button type="button" onclick="useAllPoints()" style="flex-shrink:0;padding:8px 14px;border:1px solid #16A34A;border-radius:6px;background:#fff;color:#16A34A;font-size:13px;font-weight:700;cursor:pointer">전액 사용</button>
+        </div>
+        <div id="pointMsg" style="font-size:12px;color:#888;margin-top:6px"></div>
+      </div>
+
+    <div style="display:none"><span id="pointDiscountRow"></span></div>
+
     <div class="pay-total-box">
+        <div class="pay-row" id="pointDiscountDisplay" style="display:none;margin-bottom:10px">
+          <span>포인트 사용</span>
+          <span id="pointDiscountLabel" style="color:#16A34A">0P</span>
+        </div>
       <div class="pay-total-row">
         <span>총 결제금액</span>
-        <span><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
+        <span id="finalAmountLabel"><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
       </div>
     </div>
     <div class="agree-row">
@@ -93,26 +115,94 @@
 
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
-  var amount = ${reservation.totalAmount};
+  var totalAmount = ${reservation.totalAmount};
+  var memberPoint = ${memberPoint != null ? memberPoint : 0};
   var clientKey = "${tossApiKey}";
   var customerKey = "petcare_user_${memberInfo.memberId}";
   var resvId = ${reservation.resvId};
   var resvNo = "${reservation.resvNo}";
   var contextPath = "${contextPath}";
+  var usedPoint = 0;
 
   var tossPayments = TossPayments(clientKey);
   var widgets = tossPayments.widgets({ customerKey: customerKey });
 
   (async function() {
-    await widgets.setAmount({ currency: "KRW", value: amount });
+    await widgets.setAmount({ currency: "KRW", value: totalAmount });
     await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
     await widgets.renderAgreement({ selector: "#agreement" });
   })();
 
+  function useAllPoints() {
+    var maxUsable = Math.min(memberPoint, totalAmount);
+    document.getElementById('pointInput').value = maxUsable;
+    calcFinalAmount();
+  }
+
+  function calcFinalAmount() {
+    var input = document.getElementById('pointInput');
+    var val = parseInt(input.value) || 0;
+    var maxUsable = Math.min(memberPoint, totalAmount);
+
+    // 범위 제한
+    if (val < 0) val = 0;
+    if (val > maxUsable) val = maxUsable;
+    input.value = val;
+
+    usedPoint = val;
+    var finalAmount = totalAmount - usedPoint;
+
+    // 포인트 할인 행 표시
+    var discountDisplay = document.getElementById('pointDiscountDisplay');
+    if (discountDisplay) {
+      if (usedPoint > 0) {
+        discountDisplay.style.display = 'flex';
+        document.getElementById('pointDiscountLabel').textContent = '-' + usedPoint.toLocaleString() + 'P';
+      } else {
+        discountDisplay.style.display = 'none';
+      }
+    }
+
+    // 최종 금액 + 버튼
+    document.getElementById('finalAmountLabel').textContent = finalAmount.toLocaleString() + '원';
+    var btn = document.getElementById('btnPayFinal');
+
+    if (finalAmount === 0) {
+      btn.textContent = '포인트로 결제하기';
+      document.getElementById('tossSection').style.display = 'none';
+    } else {
+      btn.textContent = finalAmount.toLocaleString() + '원 결제하기';
+      document.getElementById('tossSection').style.display = 'block';
+      // Toss 금액 업데이트
+      widgets.setAmount({ currency: "KRW", value: finalAmount });
+    }
+
+    // 메시지
+    var msgEl = document.getElementById('pointMsg');
+    if (msgEl) {
+      if (usedPoint > 0) {
+        msgEl.textContent = usedPoint.toLocaleString() + 'P 사용 → 실결제 ' + finalAmount.toLocaleString() + '원';
+        msgEl.style.color = '#16A34A';
+      } else {
+        msgEl.textContent = '';
+      }
+    }
+  }
+
   async function requestPayment() {
+    var finalAmount = totalAmount - usedPoint;
+
+    // 전액 포인트 결제 — Toss 없이 서버로 직접 요청
+    if (finalAmount === 0) {
+      location.href = contextPath + '/stay/payment/point-only?resvId=' + resvId + '&usedPoint=' + usedPoint;
+      return;
+    }
+
     try {
+      // 포인트 사용액을 orderId에 포함시켜 서버에서 파싱
+      var orderId = 'stay-' + resvId + '-' + usedPoint + '-' + Date.now();
       await widgets.requestPayment({
-        orderId: "stay-" + resvId + "-" + Date.now(),
+        orderId: orderId,
         orderName: "${reservation.stayName} - ${reservation.serviceName} ${reservation.nightCnt}박",
         successUrl: window.location.origin + contextPath + "/stay/payment/success",
         failUrl: window.location.origin + contextPath + "/stay/payment/fail"

@@ -43,4 +43,7 @@ public interface GiveReportService {
 
     // 5. 진행 상태 변경 (FINDING / RESCUED / OWNER_FOUND)
     void updateFindingStatus(long postId, String findingStatus, MemberVO loginMember);
+
+    // 2026/07/22 장우철 — 제보 사진 물리 삭제(로컬/GCS) + TB_FILE 삭제
+    void deletePhotosByPostId(long postId);
 }

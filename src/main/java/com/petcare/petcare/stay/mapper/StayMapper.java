@@ -62,6 +62,11 @@ public interface StayMapper {
     // HYJ 26.07.20 결제
     void insertPayment(Map<String, Object> param);
 
+    // HYJ 26.07.21 포인트 사용
+    Long selectMemberPointBalance(Long memberNo);
+    void deductMemberPointBalance(Map<String, Object> param);
+    void insertPointHistory(Map<String, Object> param);
+
     // HYJ 26.07.20 스케줄러 — 체크아웃 지난 CONFIRMED → DONE 일괄 변경
     int updateConfirmedToDone();
 }

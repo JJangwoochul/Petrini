@@ -34,8 +34,14 @@ public class StayReservationScheduler {
     /**
      * 매일 새벽 01:00 실행
      * 체크아웃 날짜가 오늘 이전인 CONFIRMED 예약 → DONE 일괄 변경
+     *  초  분  시  일  월  요일
+        0   0   1   *   *   *   → 매일 아침 1시
+        0   0   9   *   *   *   → 매일 아침 9시
+        0   30  12  *   *   *   → 매일 오후 12시 30분
+        0   0   0   1   *   *   → 매월 1일 자정
+        0   *   *   *   *   *   → 매분 실행 (테스트용)
      */
-    // @Scheduled(cron = "0 0 1 * * *")
+    
     @Scheduled(cron = "0 * * * * *")
     public void autoCompleteStayReservations() {
         try {

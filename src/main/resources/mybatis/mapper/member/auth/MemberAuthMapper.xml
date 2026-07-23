@@ -105,10 +105,20 @@
         이메일 중복 확인 (join — checkEmail)
         - EMAIL 컬럼만 검사 (MEMBER_ID 는 아이디이므로 별도)
     -->
+    <!-- 2026-07-22 박유정 — 이메일 중복 확인 시 탈퇴(WITHDRAWN) 회원 제외 -->
     <select id="countMemberByEmail" resultType="int">
         SELECT COUNT(*)
           FROM TB_MEMBER
          WHERE EMAIL = #{email}
+          AND STATUS_CD !='WITHDRAWN'
+    </select>
+
+    <!-- 2026-07-22 박유정 — 탈퇴 회원 이메일 재가입 차단 -->
+    <select id="countWithdrawnMemberByEmail" resultType="int">
+        SELECT COUNT(*)
+           FROM TB_MEMBER
+         WHERE EMAIL = #{email}
+           AND STATUS_CD = 'WITHDRAWN'
     </select>
 
     <!--
@@ -263,4 +273,14 @@
             SYSDATE
         )
     </insert>
+
+    <!-- 2026-07-21 박유정 — 기간 정지 만료 시 자동 복구 -->
+    <update id="releaseExpiredSuspensions">
+      UPDATE TB_MEMBER
+      SET STATUS_CD = 'NORMAL',
+          SUSPEND_END_DATE = NULL
+      WHERE STATUS_CD = 'SUSPENDED'
+        AND SUSPEND_END_DATE IS NOT NULL
+        AND SUSPEND_END_DATE &lt;= SYSDATE
+</update>
 </mapper>

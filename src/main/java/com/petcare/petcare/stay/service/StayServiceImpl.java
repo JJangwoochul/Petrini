@@ -124,10 +124,10 @@ public class StayServiceImpl implements StayService {
         return vo.getResvId();
     }
 
-    // HYJ 26.07.20 결제 확정 (PENDING → CONFIRMED + TB_PAYMENT INSERT)
+    // HYJ 26.07.20 결제 확정 (PENDING → CONFIRMED + TB_PAYMENT INSERT + 포인트 차감)
     @Override
     @Transactional
-    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken) {
+    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken, Long memberNo, long usedPoint) {
         // 예약 조회
         ReservationVO resv = stayMapper.selectReservationById(resvId);
         if (resv == null) {
@@ -135,6 +135,36 @@ public class StayServiceImpl implements StayService {
         }
         if (!"PENDING".equals(resv.getStatusCd())) {
             throw new RuntimeException("결제할 수 없는 예약 상태입니다.");
+        }
+
+        // 포인트 사용 처리
+        if (usedPoint > 0) {
+            if (memberNo == null) {
+                throw new RuntimeException("회원 정보가 없습니다.");
+            }
+            // 보유 포인트 확인
+            Long currentBalance = stayMapper.selectMemberPointBalance(memberNo);
+            if (currentBalance == null || currentBalance < usedPoint) {
+                throw new RuntimeException("보유 포인트가 부족합니다.");
+            }
+
+            // 포인트 잔액 차감
+            Map<String, Object> deductParam = new HashMap<>();
+            deductParam.put("memberNo", memberNo);
+            deductParam.put("pointAmount", usedPoint);
+            stayMapper.deductMemberPointBalance(deductParam);
+
+            // 차감 후 잔액 조회
+            Long balanceAfter = stayMapper.selectMemberPointBalance(memberNo);
+
+            // 포인트 이력 INSERT
+            Map<String, Object> pointParam = new HashMap<>();
+            pointParam.put("memberNo", memberNo);
+            pointParam.put("pointAmount", String.valueOf(usedPoint));
+            pointParam.put("balanceAfter", String.valueOf(balanceAfter));
+            pointParam.put("refType", "STAY_PAYMENT");
+            pointParam.put("refId", String.valueOf(resvId));
+            stayMapper.insertPointHistory(pointParam);
         }
 
         // 예약 상태 → CONFIRMED

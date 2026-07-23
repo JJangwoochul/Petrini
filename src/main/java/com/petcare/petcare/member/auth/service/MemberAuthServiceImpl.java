@@ -1,6 +1,8 @@
 /**
  * 역할: MemberAuthService 구현체 (@Service)
  *
+ * - 박유정 / 2026-07-22 — 정지 회원 로그인 허용·세션 status 세팅·탈퇴 이메일 재가입 차단
+ *
  * 연결: MemberAuthMapper, PasswordEncoder
  */
 
@@ -10,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.petcare.petcare.member.auth.exception.MemberLoginBlockedException;
 import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
 import com.petcare.petcare.member.auth.vo.AdminAuthVO;
 import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
@@ -43,6 +46,9 @@ public class MemberAuthServiceImpl implements MemberAuthService {
 
         String id = loginId.trim();
 
+        // 2026-07-21 박유정 — 기간 정지 만료 회원 자동 복구 (로그인 시)
+        memberAuthMapper.releaseExpiredSuspensions();
+
         // [1] 먼저 일반 회원 조회 (이메일 = MEMBER_ID 또는 EMAIL)
         MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(id);
 
@@ -50,8 +56,9 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         if (found != null) {
 
             // [2-1] 정상 회원만 로그인 허용 (STATUS_CD = NORMAL)
-            if (!"NORMAL".equals(found.getStatusCd())) {
-                return null;
+            // 2026-07-22 박유정 — 탈퇴 회원만 로그인 차단 (정지는 로그인 후 고객센터만)
+            if ("WITHDRAWN".equals(found.getStatusCd())) {
+                throw new MemberLoginBlockedException(found.getStatusCd());
             }
 
             // [2-2] BCrypt 비밀번호 검증
@@ -71,6 +78,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             sessionMember.setMemberName(found.getMemberName());
             sessionMember.setNickname(found.getNickname());
             sessionMember.setRole("USER");
+            // 2026-07-22 박유정 — 세션에 회원 상태 (정지 회원 고객센터 제한용)
+            sessionMember.setStatus(found.getStatusCd());
             // 2026/07/08 장우철 — 마이페이지 A단계: TB_MEMBER 보유 포인트 세션에 담기
             sessionMember.setPointBalance(
                     found.getPointBalance() != null ? found.getPointBalance() : 0L);
@@ -83,7 +92,10 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             // 2026-07-09 장우철 — [변경 후] 승인된 사업자면 role=BIZ + bizType 세팅
             // 이유: TB_BUSINESS.STATUS_CD=APPROVED 일 때 신청 시 저장한 BIZ_TYPE 으로
             //       /biz/hospital, /biz/stay, /biz/store 등 업종별 화면 진입 (test* URL 과 동일 분기)
-            enrichSessionWithApprovedBiz(sessionMember);
+            // 2026-07-22 박유정 — 정지 회원은 사업자 권한 안 줌
+            if (!"SUSPENDED".equals(found.getStatusCd())) {
+                enrichSessionWithApprovedBiz(sessionMember);
+            }
 
             /* [변경 전] 2026-07-09 장우철 — role=USER 고정만 하고 사업자 조회 없음
             sessionMember.setRole("USER");
@@ -185,6 +197,9 @@ public class MemberAuthServiceImpl implements MemberAuthService {
     public MemberVO kakaoLogin(KakaoUserVO kakaoUser) {
 
         String kakaoId = kakaoUser.getKakaoId();
+        
+        // 2026-07-21 박유정 — 기간 정지 만료 회원 자동 복구
+        memberAuthMapper.releaseExpiredSuspensions();
 
         // [1] MEMBER_ID = 카카오ID 인 회원 조회
         MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(kakaoId);
@@ -192,6 +207,11 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         // [2] 가입된 회원이 아님 → null 반환 (회원가입 필요)
         if (found == null) {
             return null;
+        }
+
+        // 2026-07-22 박유정 — 탈퇴 회원만 로그인 차단 (정지는 로그인 후 고객센터만)
+        if ("WITHDRAWN".equals(found.getStatusCd())) {
+            throw new MemberLoginBlockedException(found.getStatusCd());
         }
 
         // [3] 로그인 성공 → 최종 로그인 일시 갱신
@@ -205,6 +225,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         sessionMember.setMemberName(found.getMemberName());
         sessionMember.setNickname(found.getNickname());
         sessionMember.setRole("USER");
+        // 2026-07-22 박유정 — 세션에 회원 상태 (정지 회원 고객센터 제한용)
+        sessionMember.setStatus(found.getStatusCd());
         sessionMember.setPointBalance(found.getPointBalance() != null ? found.getPointBalance() : 0L);
         sessionMember.setPhone(found.getPhone());
         sessionMember.setZipcode(found.getZipcode());
@@ -212,7 +234,10 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         sessionMember.setAddr2(found.getAddr2());
 
         // 사업자 승인 여부 확인
-        enrichSessionWithApprovedBiz(sessionMember);
+        // 2026-07-22 박유정 — 정지 회원은 사업자 권한 안 줌
+        if (!"SUSPENDED".equals(found.getStatusCd())) {
+             enrichSessionWithApprovedBiz(sessionMember);
+        }
 
         return sessionMember;
     }
@@ -243,11 +268,15 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         if (!trimmed.matches(EMAIL_PATTERN)) {
             return new EmailCheckResultVO(false, "올바른 이메일 형식이 아닙니다.");
         }
+        // 2026-07-22 박유정 — 탈퇴 이메일 재가입 불가
+        if (memberAuthMapper.countWithdrawnMemberByEmail(trimmed) > 0) {
+            return new EmailCheckResultVO(false, "탈퇴한 이메일은 재가입할 수 없습니다.");
+        }
         if (memberAuthMapper.countMemberByEmail(trimmed) > 0) {
             return new EmailCheckResultVO(false, "이미 사용 중인 이메일입니다.");
         }
         return new EmailCheckResultVO(true, "사용 가능한 이메일입니다.");
-    }
+    } 
 
     /**
      * join — checkMemberId
@@ -288,6 +317,11 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         }
 
         String email = vo.getEmail().trim();
+        
+        // 2026-07-22 박유정 — 탈퇴 이메일 재가입 불가 (POST 우회 방지)
+        if (memberAuthMapper.countWithdrawnMemberByEmail(email) > 0) {
+            return "withdrawn_email";
+        }
 
         // [2] 아이디 중복 재확인
         String memberId = vo.getMemberId() != null ? vo.getMemberId().trim() : null;

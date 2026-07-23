@@ -54,7 +54,5 @@ cart-test.log
 cart-test-err.log
 cart-test*.log
 
-### GCS 키 (커밋 금지) ###
-/config/gcs-key.json
-/config/*.json
-!/config/.gitkeep
+config/gcs-key.json
+**/gcs-key*.json

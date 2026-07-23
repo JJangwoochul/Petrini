@@ -1,3 +1,7 @@
+<%--
+  역할: 고객센터 메인
+  - 박유정 / 2026-07-22 — 정지 회원 접근 허용 화면 (스타일은 petcare.css)
+--%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -5,34 +9,7 @@
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
-<style>
-.cs-hero{background:linear-gradient(135deg,#1F8464 0%,#2BAB82 60%,#5BC8A8 100%);padding:48px 0;text-align:center;color:#fff}
-.cs-hero h1{font-size:28px;font-weight:800;margin:0 0 8px}
-.cs-hero p{font-size:14px;opacity:.9;margin:0}
-.cs-wrap{max-width:var(--inner-width);margin:36px auto 80px;padding:0 20px}
-.cs-contact{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px}
-.cs-contact-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;text-align:center}
-.cs-contact-card svg{width:32px;height:32px;stroke:var(--primary);fill:none;stroke-width:1.8;margin-bottom:12px}
-.cs-contact-card h3{font-size:15px;font-weight:800;margin:0 0 6px;color:var(--text-main)}
-.cs-contact-card p{font-size:13px;color:var(--text-muted);margin:0}
-.cs-contact-card strong{display:block;font-size:18px;font-weight:800;color:var(--primary);margin-top:8px}
-.cs-section{margin-bottom:36px}
-.cs-section-title{font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--border)}
-.cs-faq-item{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden}
-.cs-faq-q{width:100%;padding:16px 18px;background:#fff;border:none;text-align:left;font-size:14px;font-weight:700;color:var(--text-main);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.cs-faq-q:hover{background:#F8FAFC}
-.cs-faq-a{display:none;padding:0 18px 16px;font-size:14px;color:var(--text-sub);line-height:1.7}
-.cs-faq-item.open .cs-faq-a{display:block}
-.cs-notice-list{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
-.cs-notice-item{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:var(--transition)}
-.cs-notice-item:last-child{border-bottom:none}
-.cs-notice-item:hover{background:#F8FAFC}
-.cs-notice-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:var(--primary-light);color:var(--primary-dark);flex-shrink:0}
-.cs-notice-title{flex:1;font-size:14px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cs-notice-date{font-size:12px;color:var(--text-muted);flex-shrink:0}
-@media(max-width:768px){.cs-contact{grid-template-columns:1fr}}
-</style>
-
+<main class="cs-page">
 <div class="cs-hero">
     <div class="cs-wrap" style="margin:0 auto;padding:0 20px">
         <h1>고객센터</h1>
@@ -115,5 +92,6 @@
         </div>
     </section>
 </div>
+</main>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

@@ -29,6 +29,13 @@
         <c:if test="${param.error eq 'invalid'}">
             <p class="login-error-msg">아이디 또는 비밀번호가 올바르지 않습니다.</p>
         </c:if>
+        <%-- 2026-07-22 박유정 — 탈퇴 회원 로그인 메시지 (정지는 로그인 허용 → 고객센터) --%>
+        <c:if test="${param.error eq 'suspended'}">
+            <p class="login-error-msg">정지된 계정입니다. 관리자에게 문의해 주세요.</p>
+        </c:if>
+        <c:if test="${param.error eq 'withdrawn'}">
+            <p class="login-error-msg">탈퇴한 계정입니다.</p>
+        </c:if>
         <c:if test="${param.error eq 'kakao_cancel'}">
             <p class="login-error-msg">카카오 로그인이 취소되었습니다.</p>
         </c:if>
