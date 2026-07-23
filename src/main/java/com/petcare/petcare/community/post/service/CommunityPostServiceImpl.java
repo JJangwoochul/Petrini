@@ -432,8 +432,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     /**
      * 2026-07-23 HYJ — 게시글 삭제 (본인 글만)
-     * - LIFE(수의사 상담): 소프트 삭제 → IS_DELETED='Y', DELETED_DATE=SYSDATE (기록 보관)
-     * - TOWN/SHARE: 물리 삭제 → DELETE FROM TB_POST + TB_FILE
+     * - LIFE(수의사 상담): STATUS_CD='DELETED' + DELETED_DATE (관리자 방식 통일, 7일 보관)
+     * - TOWN/SHARE: 즉시 물리 삭제 (댓글 → 파일 → 게시글 DELETE)
      */
     @Override
     public void deletePost(long postId, MemberVO loginMember) {
@@ -457,14 +457,13 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         int result;
 
         if (isLife) {
-            // LIFE — 댓글·대댓글 소프트 삭제 → 게시글 소프트 삭제
-            communityCommentService.softDeleteCommentsByPostId(postId);
-            result = communityPostMapper.softDeletePost(postId, loginMemberNo);
+            // LIFE — STATUS_CD='DELETED' (관리자와 동일, 7일 후 스케줄러가 물리 삭제)
+            result = communityPostMapper.softDeletePostByUser(postId, loginMemberNo);
         } else {
-            // TOWN, SHARE — 댓글·대댓글 물리 삭제 → 파일 삭제 → 게시글 물리 삭제
+            // TOWN, SHARE — 즉시 물리 삭제
             communityCommentService.hardDeleteCommentsByPostId(postId);
             communityPostMapper.deleteFilesByPostId(postId);
-            result = communityPostMapper.hardDeletePost(postId, loginMemberNo);
+            result = communityPostMapper.hardDeletePostByUser(postId, loginMemberNo);
         }
 
         if (result == 0) {
@@ -480,12 +479,13 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
 
     /**
-     * 2026-07-23 HYJ — 소프트 삭제 후 N일 경과 데이터 완전 삭제 (스케줄러)
-     * 삭제 순서: 댓글 → 파일 → 게시글 (FK 순서)
+     * 2026-07-23 HYJ — LIFE 7일 경과 DELETED 게시글 물리 삭제 (스케줄러)
+     * STATUS_CD='DELETED' + DELETED_DATE 기준
+     * 삭제 순서: 댓글 → 파일 → 게시글
      */
     @Override
-    public int purgeExpiredSoftDeletedPosts(int days) {
-        List<Long> expiredPostIds = communityPostMapper.selectExpiredSoftDeletedPostIds(days);
+    public int purgeExpiredDeletedPosts(int days) {
+        List<Long> expiredPostIds = communityPostMapper.selectExpiredDeletedPostIds(days);
         if (expiredPostIds == null || expiredPostIds.isEmpty()) {
             return 0;
         }

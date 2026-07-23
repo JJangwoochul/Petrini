@@ -90,14 +90,12 @@
     FROM TB_POST
     WHERE POST_ID = #{postId}
       AND NVL(STATUS_CD, 'ACTIVE') = 'ACTIVE'
-      AND NVL(IS_DELETED, 'N') = 'N'
       AND BOARD_TYPE IN ('TOWN', 'LIFE', 'SHARE')
   </select>
 
   <!-- 목록 공통 WHERE (탭별 boardType) -->
   <sql id="postListWhere">
     WHERE p.STATUS_CD = 'ACTIVE'
-      AND NVL(p.IS_DELETED, 'N') = 'N'
     <choose>
       <when test="boardType == null or boardType == ''">
         AND p.BOARD_TYPE IN ('TOWN', 'LIFE', 'SHARE')
@@ -225,49 +223,48 @@
       AND NVL(STATUS_CD, 'ACTIVE') = 'ACTIVE'
   </update>
 
-  <!-- 2026-07-23 HYJ — LIFE 게시글 소프트 삭제 (IS_DELETED='Y', DELETED_DATE=SYSDATE) -->
-  <update id="softDeletePost">
+  <!-- 2026-07-23 HYJ — LIFE 유저 삭제: STATUS_CD='DELETED' (관리자 방식 통일, 7일 보관) -->
+  <update id="softDeletePostByUser">
     UPDATE TB_POST
-    SET IS_DELETED   = 'Y',
+    SET STATUS_CD    = 'DELETED',
         DELETED_DATE = SYSDATE
     WHERE POST_ID = #{postId}
       AND MEMBER_NO = #{memberNo}
+      AND NVL(STATUS_CD, 'ACTIVE') = 'ACTIVE'
       AND BOARD_TYPE = 'LIFE'
-      AND NVL(IS_DELETED, 'N') = 'N'
   </update>
 
-  <!-- 2026-07-23 HYJ — TOWN/SHARE 게시글 물리 삭제 -->
-  <delete id="hardDeletePost">
+  <!-- 2026-07-23 HYJ — TOWN/SHARE 유저 삭제: 즉시 물리 삭제 -->
+  <delete id="hardDeletePostByUser">
     DELETE FROM TB_POST
     WHERE POST_ID = #{postId}
       AND MEMBER_NO = #{memberNo}
-      AND BOARD_TYPE IN ('TOWN', 'SHARE')
       AND NVL(STATUS_CD, 'ACTIVE') = 'ACTIVE'
+      AND BOARD_TYPE IN ('TOWN', 'SHARE')
   </delete>
 
-  <!-- 2026-07-23 HYJ — 게시글에 연결된 파일 삭제 (물리 삭제 시 함께) -->
+  <!-- 2026-07-23 HYJ — 게시글에 연결된 파일 삭제 -->
   <delete id="deleteFilesByPostId">
     DELETE FROM TB_FILE
     WHERE REF_TYPE = 'POST'
       AND REF_ID = #{postId}
   </delete>
 
-  <!-- 2026-07-23 HYJ — 7일 경과 소프트 삭제 게시글 ID 목록 조회 (스케줄러용) -->
-  <select id="selectExpiredSoftDeletedPostIds" resultType="long">
+  <!-- 2026-07-23 HYJ — 7일 경과 DELETED LIFE 게시글 ID 목록 (스케줄러용) -->
+  <select id="selectExpiredDeletedPostIds" resultType="long">
     SELECT POST_ID
     FROM TB_POST
-    WHERE IS_DELETED = 'Y'
+    WHERE STATUS_CD = 'DELETED'
       AND DELETED_DATE &lt;= SYSDATE - #{days}
       AND BOARD_TYPE = 'LIFE'
   </select>
 
-  <!-- 2026-07-23 HYJ — 소프트 삭제 게시글 물리 삭제 (스케줄러용) -->
+  <!-- 2026-07-23 HYJ — DELETED 게시글 물리 삭제 (스케줄러용) -->
   <delete id="hardDeleteExpiredPost">
     DELETE FROM TB_POST
     WHERE POST_ID = #{postId}
-      AND IS_DELETED = 'Y'
+      AND STATUS_CD = 'DELETED'
   </delete>
-
 </mapper>
 
 
