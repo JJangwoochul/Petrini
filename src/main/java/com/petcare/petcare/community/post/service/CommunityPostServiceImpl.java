@@ -399,4 +399,106 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         }
         communityPostMapper.updatePostTags(postId, "ANSWERED");
     }
+
+    /**
+     * 2026-07-23 HYJ — 게시글 수정 (본인 글만)
+     * 1. 로그인 확인 → MEMBER_NO 매칭
+     * 2. UPDATE TB_POST SET TITLE, BODY WHERE POST_ID AND MEMBER_NO
+     */
+    @Override
+    public void updatePost(CommunityPostVO vo, MemberVO loginMember) {
+        if (loginMember == null) {
+            throw new IllegalStateException("LOGIN_REQUIRED");
+        }
+        Long loginMemberNo = resolveMemberNoForUpdate(loginMember);
+        if (loginMemberNo == null) {
+            throw new IllegalStateException("MEMBER_NOT_FOUND");
+        }
+
+        CommunityPostVO existing = communityPostMapper.selectPostDetail(vo.getPostId());
+        if (existing == null) {
+            throw new IllegalArgumentException("POST_NOT_FOUND");
+        }
+        if (!loginMemberNo.equals(existing.getMemberNo())) {
+            throw new IllegalStateException("FORBIDDEN");
+        }
+
+        vo.setMemberNo(loginMemberNo);
+        int updated = communityPostMapper.updatePost(vo);
+        if (updated == 0) {
+            throw new IllegalStateException("UPDATE_FAILED");
+        }
+    }
+
+    /**
+     * 2026-07-23 HYJ — 게시글 삭제 (본인 글만)
+     * - LIFE(수의사 상담): 소프트 삭제 → IS_DELETED='Y', DELETED_DATE=SYSDATE (기록 보관)
+     * - TOWN/SHARE: 물리 삭제 → DELETE FROM TB_POST + TB_FILE
+     */
+    @Override
+    public void deletePost(long postId, MemberVO loginMember) {
+        if (loginMember == null) {
+            throw new IllegalStateException("LOGIN_REQUIRED");
+        }
+        Long loginMemberNo = resolveMemberNoForUpdate(loginMember);
+        if (loginMemberNo == null) {
+            throw new IllegalStateException("MEMBER_NOT_FOUND");
+        }
+
+        CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
+        if (existing == null) {
+            throw new IllegalArgumentException("POST_NOT_FOUND");
+        }
+        if (!loginMemberNo.equals(existing.getMemberNo())) {
+            throw new IllegalStateException("FORBIDDEN");
+        }
+
+        boolean isLife = "LIFE".equalsIgnoreCase(existing.getBoardType());
+        int result;
+
+        if (isLife) {
+            // LIFE — 댓글·대댓글 소프트 삭제 → 게시글 소프트 삭제
+            communityCommentService.softDeleteCommentsByPostId(postId);
+            result = communityPostMapper.softDeletePost(postId, loginMemberNo);
+        } else {
+            // TOWN, SHARE — 댓글·대댓글 물리 삭제 → 파일 삭제 → 게시글 물리 삭제
+            communityCommentService.hardDeleteCommentsByPostId(postId);
+            communityPostMapper.deleteFilesByPostId(postId);
+            result = communityPostMapper.hardDeletePost(postId, loginMemberNo);
+        }
+
+        if (result == 0) {
+            throw new IllegalStateException("DELETE_FAILED");
+        }
+    }
+
+    private Long resolveMemberNoForUpdate(MemberVO loginMember) {
+        if (loginMember.getMemberNo() != null) {
+            return loginMember.getMemberNo();
+        }
+        return lookupMemberNo(loginMember);
+    }
+
+    /**
+     * 2026-07-23 HYJ — 소프트 삭제 후 N일 경과 데이터 완전 삭제 (스케줄러)
+     * 삭제 순서: 댓글 → 파일 → 게시글 (FK 순서)
+     */
+    @Override
+    public int purgeExpiredSoftDeletedPosts(int days) {
+        List<Long> expiredPostIds = communityPostMapper.selectExpiredSoftDeletedPostIds(days);
+        if (expiredPostIds == null || expiredPostIds.isEmpty()) {
+            return 0;
+        }
+
+        int purged = 0;
+        for (Long postId : expiredPostIds) {
+            communityCommentService.hardDeleteCommentsByPostId(postId);
+            communityPostMapper.deleteFilesByPostId(postId);
+            int result = communityPostMapper.hardDeleteExpiredPost(postId);
+            if (result > 0) {
+                purged++;
+            }
+        }
+        return purged;
+    }
 }
