@@ -46,6 +46,6 @@ public interface StayService {
     // HYJ 26.07.20 가용성 체크
     public boolean checkRoomAvailability(Long roomId, Date checkinDate, Date checkoutDate);
 
-    // HYJ 26.07.20 결제 확정
-    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken);
+    // HYJ 26.07.20 결제 확정 (+ 포인트 사용)
+    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken, Long memberNo, long usedPoint);
 }

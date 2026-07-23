@@ -217,6 +217,36 @@
     )
   </insert>
 
+  <!-- HYJ 26.07.21 리뷰 작성 포인트 적립 이력 INSERT -->
+  <insert id="insertReviewPoint" parameterType="map">
+    INSERT INTO TB_POINT (
+      POINT_ID, MEMBER_NO, POINT_TYPE, POINT_AMOUNT,
+      BALANCE_AFTER, REASON_CD, REF_TYPE, REF_ID, REG_DATE
+    ) VALUES (
+      (SELECT NVL(MAX(POINT_ID), 0) + 1 FROM TB_POINT),
+      #{memberNo},
+      'EARN',
+      #{pointAmount},
+      #{balanceAfter},
+      'REVIEW',
+      #{refType},
+      #{refId},
+      SYSDATE
+    )
+  </insert>
+
+  <!-- HYJ 26.07.21 회원 포인트 잔액 증가 -->
+  <update id="addMemberPointBalance" parameterType="map">
+    UPDATE TB_MEMBER
+       SET POINT_BALANCE = NVL(POINT_BALANCE, 0) + #{pointAmount}
+     WHERE MEMBER_NO = #{memberNo}
+  </update>
+
+  <!-- HYJ 26.07.21 현재 포인트 잔액 조회 -->
+  <select id="selectMemberPointBalance" parameterType="long" resultType="long">
+    SELECT NVL(POINT_BALANCE, 0) FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}
+  </select>
+  
   <!-- HYJ 26.07.20 숙소 소유 사업자 회원번호 조회 -->
   <select id="selectStayMemberNo" resultType="long">
     SELECT MEMBER_NO FROM TB_STAY WHERE STAY_ID = #{stayId}

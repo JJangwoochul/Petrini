@@ -101,9 +101,27 @@ public class MypageReserveController {
         }
 
         try {
+            // 적립 전 잔액
+            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId);
+            long totalAmount = (detail != null && detail.getTotalAmount() != null) ? detail.getTotalAmount() : 0;
+            long earnedPoint = (long) Math.floor(totalAmount * 0.03);
+            
             mypageReserveService.addStayReview(member.getMemberNo(), resvId, rating, content);
-            rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
+
+            // 세션 포인트 갱신
+            if (earnedPoint > 0) {
+                long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
+                member.setPointBalance(currentBalance + earnedPoint);
+                session.setAttribute("memberInfo", member);
+            }
+
+            String msg = "리뷰가 등록되었습니다.";
+            if (earnedPoint > 0) {
+                msg += " " + String.format("%,d", earnedPoint) + "P가 적립되었습니다!";
+            }
+            rttr.addFlashAttribute("msg", msg);
+        } 
+        catch (IllegalArgumentException | IllegalStateException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
         }
         return "redirect:/mypage/reserve/detail?resvId=" + resvId;

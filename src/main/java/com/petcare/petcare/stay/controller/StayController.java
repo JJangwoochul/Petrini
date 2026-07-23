@@ -54,7 +54,7 @@ public class StayController {
     private FileService fileService;
 
     @GetMapping({"", "/"})
-    public String list(@ModelAttribute("search") StayVO searchVO, Model model) {
+    public String list(@ModelAttribute("search") StayVO searchVO, Model model) throws Exception {
         //List<StayVO> stayList = stayService.getStayList();
         List<StayVO> stayList = stayService.getStayListBySearch(searchVO);
         kakaoMapService.addMapAttributes(model, stayList);
@@ -104,10 +104,9 @@ public class StayController {
     // ── HYJ 26.07.20 가용성 체크 API (AJAX) ──
     @GetMapping("/checkAvailability")
     @ResponseBody
-    public Map<String, Object> checkAvailability(
-            @RequestParam("roomId") Long roomId,
-            @RequestParam("checkinDate") String checkinDate,
-            @RequestParam("checkoutDate") String checkoutDate) throws Exception {
+    public Map<String, Object> checkAvailability(@RequestParam("roomId") Long roomId,
+                                                 @RequestParam("checkinDate") String checkinDate,
+                                                 @RequestParam("checkoutDate") String checkoutDate) throws Exception {
 
         Map<String, Object> result = new HashMap<>();
 
@@ -130,7 +129,7 @@ public class StayController {
     public String saveReserve(@ModelAttribute ReservationVO vo,
                               @RequestParam("stayId") Long stayId,
                               HttpSession session,
-                              RedirectAttributes rttr) {
+                              RedirectAttributes rttr) throws Exception {
 
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null) return "redirect:/login";
@@ -139,6 +138,8 @@ public class StayController {
         vo.setTargetId(String.valueOf(stayId));
 
         try {
+            
+            //HYJ 26.07.23 결제 없이 예약버튼만 눌러도 예약처리됨 -> 수정필요
             Long resvId = stayService.createStayReservation(vo);
             // 결제 페이지로 리다이렉트
             return "redirect:/stay/payment?resvId=" + resvId;
@@ -152,7 +153,7 @@ public class StayController {
     @GetMapping("/payment")
     public String payment(@RequestParam("resvId") Long resvId,
                             HttpSession session,
-                            Model model) {
+                            Model model) throws Exception {
 
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null) return "redirect:/login";
@@ -176,19 +177,27 @@ public class StayController {
                                     @RequestParam("paymentKey") String paymentKey,
                                     @RequestParam("amount") Long amount,
                                     HttpSession session,
-                                    Model model) {
+                                    Model model) throws Exception {
 
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null) return "redirect:/login";
 
-        // orderId에서 resvId 추출 (형식: stay-{resvId}-{timestamp})
+        // orderId 형식: stay-{resvId}-{usedPoint}-{timestamp}
         String[] parts = orderId.split("-");
         Long resvId = Long.parseLong(parts[1]);
+        long usedPoint = parts.length >= 4 ? Long.parseLong(parts[2]) : 0;
 
         try {
-            // HYJ 26.07.20 예약 CONFIRMED + 결제 정보 INSERT + 카카오톡 알림 발송
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
-            stayService.confirmPayment(resvId, paymentKey, orderId, null, kakaoToken);
+            stayService.confirmPayment(resvId, paymentKey, orderId, null, kakaoToken, member.getMemberNo(), usedPoint);
+
+            // 세션 포인트 갱신
+            if (usedPoint > 0) {
+                long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
+                member.setPointBalance(currentBalance - usedPoint);
+                session.setAttribute("memberInfo", member);
+            }
+
             return "redirect:/stay/complete?resvId=" + resvId;
         } catch (RuntimeException e) {
             model.addAttribute("errorMsg", e.getMessage());
@@ -196,18 +205,45 @@ public class StayController {
         }
     }
 
+    // ── HYJ 26.07.21 전액 포인트 결제 (Toss 없이 직접 처리) ──
+    @GetMapping("/payment/point-only")
+    public String paymentPointOnly(@RequestParam("resvId") Long resvId,
+                                    @RequestParam("usedPoint") Long usedPoint,
+                                    HttpSession session,
+                                    RedirectAttributes rttr) throws Exception {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        try {
+            String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
+            stayService.confirmPayment(resvId, "POINT_ONLY", "point-" + resvId + "-" + System.currentTimeMillis(),
+                    "POINT", kakaoToken, member.getMemberNo(), usedPoint);
+
+            // 세션 포인트 갱신
+            long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
+            member.setPointBalance(currentBalance - usedPoint);
+            session.setAttribute("memberInfo", member);
+
+            return "redirect:/stay/complete?resvId=" + resvId;
+        } catch (RuntimeException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/stay/payment?resvId=" + resvId;
+        }
+    }
+
     // ── HYJ 26.07.20 결제 실패 콜백 ──
     @GetMapping("/payment/fail")
     public String paymentFail(@RequestParam(required = false) String code,
                                 @RequestParam(required = false) String message,
-                                RedirectAttributes rttr) {
+                                RedirectAttributes rttr) throws Exception {
         rttr.addFlashAttribute("errorMsg", "결제에 실패했습니다: " + message);
         return "redirect:/stay";
     }
 
     @GetMapping("/complete")
     public String complete(@RequestParam(value = "resvId", required = false) Long resvId,
-                           Model model)  {
+                           Model model) throws Exception {
         if (resvId != null) {
             ReservationVO reservation = stayService.getReservationById(resvId);
             model.addAttribute("reservation", reservation);
