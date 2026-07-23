@@ -463,7 +463,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         } else {
             // TOWN, SHARE — 댓글·대댓글 물리 삭제 → 파일 삭제 → 게시글 물리 삭제
             communityCommentService.hardDeleteCommentsByPostId(postId);
-            communityPostMapper.deleteFilesByPostId(postId);
+            deletePhotosByPostId(postId);
             result = communityPostMapper.hardDeletePost(postId, loginMemberNo);
         }
 
@@ -493,7 +493,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         int purged = 0;
         for (Long postId : expiredPostIds) {
             communityCommentService.hardDeleteCommentsByPostId(postId);
-            communityPostMapper.deleteFilesByPostId(postId);
+            deletePhotosByPostId(postId);
             int result = communityPostMapper.hardDeleteExpiredPost(postId);
             if (result > 0) {
                 purged++;
