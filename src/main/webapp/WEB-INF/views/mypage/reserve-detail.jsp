@@ -155,7 +155,12 @@
   <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'DONE' and reservation.reviewedYn ne 'Y'}">
     <div class="rd-review">
       <h3>숙소 리뷰 작성</h3>
-      <p style="font-size:13px;color:#666;margin:0 0 12px">숙박하신 숙소에 별점과 후기를 남겨 주세요.</p>
+      <p style="font-size:13px;color:#666;margin:0 0 6px">숙박하신 숙소에 별점과 후기를 남겨 주세요.</p>
+      <c:if test="${not empty reservation.totalAmount and reservation.totalAmount > 0}">
+        <p style="font-size:13px;color:#2BAB82;font-weight:700;margin:0 0 12px">
+          🎉 리뷰 작성 시 결제 금액의 3% (<fmt:formatNumber value="${reservation.totalAmount * 0.03}" pattern="#,###" maxFractionDigits="0"/>P) 적립!
+        </p>
+      </c:if>
       <form method="post" action="${contextPath}/mypage/reserve/stay-review">
         <input type="hidden" name="resvId" value="${reservation.resvId}">
         <div class="rd-stars">
@@ -171,7 +176,7 @@
     </div>
   </c:if>
   <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'DONE' and reservation.reviewedYn eq 'Y'}">
-    <p style="font-size:14px;color:#166534;margin-bottom:16px">이 예약에 대한 리뷰를 작성하셨습니다.</p>
+    <p style="font-size:14px;color:#166534;margin-bottom:16px">이 예약에 대한 리뷰를 작성하셨습니다. (포인트 적립 완료)</p>
   </c:if>
 
   <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/reserve'">← 목록으로</button>

@@ -7,7 +7,9 @@
 package com.petcare.petcare.mypage.reserve.service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -140,6 +142,31 @@ public class MypageReserveServiceImpl implements MypageReserveService {
         review.setRating(rating);
         review.setContent(content.trim());
 
+        // 1. 리뷰 INSERT
         mypageReserveMapper.insertStayReview(review);
+
+        // 2. 포인트 적립 — 결제 금액의 3% (소수점 버림)
+        if (detail.getTotalAmount() != null && detail.getTotalAmount() > 0) {
+            long pointAmount = (long) Math.floor(detail.getTotalAmount() * 0.03);
+            if (pointAmount > 0) {
+                // 잔액 먼저 증가
+                Map<String, Object> balanceParam = new HashMap<>();
+                balanceParam.put("memberNo", memberNo);
+                balanceParam.put("pointAmount", pointAmount);
+                mypageReserveMapper.addMemberPointBalance(balanceParam);
+
+                // 증가 후 잔액 조회
+                Long balanceAfter = mypageReserveMapper.selectMemberPointBalance(memberNo);
+
+                // 포인트 이력 INSERT
+                Map<String, Object> pointParam = new HashMap<>();
+                pointParam.put("memberNo", memberNo);
+                pointParam.put("pointAmount", String.valueOf(pointAmount));
+                pointParam.put("balanceAfter", String.valueOf(balanceAfter));
+                pointParam.put("refType", "STAY_REVIEW");
+                pointParam.put("refId", String.valueOf(review.getReviewId()));
+                mypageReserveMapper.insertReviewPoint(pointParam);
+            }
+        }
     }
 }

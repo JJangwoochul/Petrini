@@ -53,4 +53,9 @@ public interface MypageReserveMapper {
 
     // HYJ 26.07.20 — 숙소 소유 사업자 회원번호
     Long selectStayMemberNo(@Param("stayId") Long stayId);
+
+    // HYJ 26.07.21 — 리뷰 포인트 적립
+    void insertReviewPoint(java.util.Map<String, Object> param);
+    void addMemberPointBalance(java.util.Map<String, Object> param);
+    Long selectMemberPointBalance(@Param("memberNo") Long memberNo);
 }

@@ -96,6 +96,4 @@
     WHERE POST_ID = #{postId}
       AND BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
   </update>
-
-
 </mapper>
