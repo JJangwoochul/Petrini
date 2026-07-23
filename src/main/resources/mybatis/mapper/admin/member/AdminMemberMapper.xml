@@ -140,10 +140,11 @@
   </select>
 
     <!-- 2026-07-20 박유정 STEP 7 — 회원 상태 변경 (NORMAL / SUSPENDED / WITHDRAWN) -->
+  <!-- 2026/07/23 장우철 — SET 절 콤마 누락으로 강제탈퇴 SQL 오류 나던 부분 수정 -->
   <update id="updateMemberStatus">
     UPDATE TB_MEMBER
-    SET STATUS_CD = #{statusCd}
-          SUSPEND_END_DATE = NULL
+    SET STATUS_CD = #{statusCd},
+        SUSPEND_END_DATE = NULL
     WHERE MEMBER_NO = #{memberNo}
   </update>
     <!-- 2026-07-21 박유정 STEP 9 — 회원 등급 변경 (BRONZE / SILVER / GOLD) -->
