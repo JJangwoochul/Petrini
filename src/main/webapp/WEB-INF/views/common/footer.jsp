@@ -40,13 +40,17 @@ window.refreshCartCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/store/cart/count')
     .then(function(res){ return res.text(); })
     .then(function(count){
-      document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = count; });
-    });
+      // 2026/07/23 장우철 — 숫자만 반영 (HTML 리다이렉트 응답이 뱃지에 덤프되지 않게)
+      if (!/^\d+$/.test(String(count).trim())) return;
+      document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = count.trim(); });
+    })
+    .catch(function(){ /* 비로그인·차단 등 */ });
 };
 window.refreshNotiCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/mypage/notifications/count')
     .then(function(res){ return res.text(); })
     .then(function(count){
+      if (!/^\d+$/.test(String(count).trim())) return;
       var n = parseInt(count, 10) || 0;
       document.querySelectorAll('.noti-count').forEach(function(el){
         el.textContent = n > 99 ? '99+' : String(n);

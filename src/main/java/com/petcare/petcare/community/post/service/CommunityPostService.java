@@ -55,4 +55,7 @@ public interface CommunityPostService {
 
     // 2026-07-23 HYJ — 소프트 삭제 후 7일 경과 데이터 물리 삭제 (스케줄러)
     int purgeExpiredSoftDeletedPosts(int days);
+
+    // 2026/07/22 장우철 — 글 사진 물리 삭제(로컬/GCS) + TB_FILE 삭제 (관리자 글 삭제 시)
+    void deletePhotosByPostId(long postId);
 }

@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
 
@@ -18,18 +21,23 @@ public class FileService {
     @Value("${file.upload-dir}")
     public String uploadDir;
 
+    @Value("${gcs.enabled:false}")
+    private boolean gcsEnabled;
+
+    @Value("${gcs.bucket-name:}")
+    private String gcsBucket;
+
+    @Autowired(required = false)
+    private Storage storage;
+
     @Autowired
     public FileMapper fileMapper;
-    
+
     @Transactional
     public FileVO uploadFile(MultipartFile file, String refType, Long refId) throws Exception {
 
-        // 1) 저장 폴더: uploadDir/hospital/3/
+        // 1) 저장 경로: hospital/3/
         String subDir = refType.toLowerCase() + "/" + refId;
-        File dir = new File(uploadDir + subDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
 
         // 2) 파일명 중복 방지: UUID + 원본 확장자
         String originName = file.getOriginalFilename();
@@ -38,22 +46,47 @@ public class FileService {
             ext = originName.substring(originName.lastIndexOf("."));
         }
         String savedName = UUID.randomUUID().toString() + ext;
+        String objectPath = subDir + "/" + savedName;
 
-        // 3) 디스크에 저장
-        File dest = new File(dir, savedName);
-        file.transferTo(dest);
+        if (gcsEnabled) {
+            // [GCS 업로드 — gcs.enabled=true] 2026/07/21 장우철
+            //#region구글 스토리지 GCS 전환코드 START
+            if (storage == null) {
+                throw new IllegalStateException("GCS enabled but Storage bean is missing");
+            }
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "application/octet-stream";
+            }
+            BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(gcsBucket, objectPath))
+                    .setContentType(contentType)
+                    .build();
+            storage.create(blobInfo, file.getBytes());
+            //#endregion GCS 전환코드 END
+        } else {
+            // [로컬 저장 — gcs.enabled=false] 2026/07/21 장우철
+            //#region로컬 파일관리
+            File dir = new File(uploadDir + subDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            File dest = new File(dir, savedName);
+            file.transferTo(dest);
+            //#endregion
+        }
 
-        // 4) DB INSERT (selectKey로 fileId가 VO에 자동 세팅됨)
+        // 3) DB INSERT (selectKey로 fileId가 VO에 자동 세팅됨)
         FileVO vo = new FileVO();
         vo.setRefType(refType);
         vo.setRefId(refId);
-        vo.setFileUrl(subDir + "/" + savedName);
+        vo.setFileUrl(objectPath);
         vo.setOriginName(originName);
+        vo.setDriveFileId(gcsEnabled ? "GCS" : "LOCAL");
         fileMapper.insertFile(vo);
 
         return vo;
     }
-    
+
     @Transactional
     public void deleteFile(Long fileId) throws Exception {
 
@@ -63,17 +96,28 @@ public class FileService {
             return;
         }
 
-        // 2) 디스크 파일 삭제
-        File diskFile = new File(uploadDir + file.getFileUrl());
-        if (diskFile.exists()) {
-            diskFile.delete();
+        if (gcsEnabled) {
+            // [GCS 삭제 — gcs.enabled=true] 2026/07/21 장우철
+            //#region구글 스토리지 GCS 전환코드 START
+            if (storage != null) {
+                storage.delete(BlobId.of(gcsBucket, file.getFileUrl()));
+            }
+            //#endregion GCS 전환코드 END
+        } else {
+            // [로컬 삭제 — gcs.enabled=false] 2026/07/21 장우철
+            //#region로컬 파일관리
+            File diskFile = new File(uploadDir + file.getFileUrl());
+            if (diskFile.exists()) {
+                diskFile.delete();
+            }
+            //#endregion
         }
 
-        // 3) DB 삭제
+        // 2) DB 삭제
         fileMapper.deleteFile(fileId);
     }
 
-public List<FileVO> getFileList(String refType, Long refId) throws Exception {
+    public List<FileVO> getFileList(String refType, Long refId) throws Exception {
         FileVO param = new FileVO();
         param.setRefType(refType);
         param.setRefId(refId);

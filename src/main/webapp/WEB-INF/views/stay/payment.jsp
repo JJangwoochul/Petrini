@@ -80,10 +80,10 @@
       <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:14px 16px;margin:12px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <span style="font-size:13px;font-weight:700;color:#166534">보유 포인트</span>
-          <span style="font-size:14px;font-weight:800;color:#16A34A"><fmt:formatNumber value="${memberPoint}" pattern="#,###"/>P</span>
+          <span style="font-size:14px;font-weight:800;color:#16A34A"><fmt:formatNumber value="${memberInfo.pointBalance}" pattern="#,###"/>P</span>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="number" id="pointInput" min="0" max="${memberPoint > reservation.totalAmount ? reservation.totalAmount : memberPoint}"
+          <input type="number" id="pointInput" min="0" max="${memberInfo.pointBalance > reservation.totalAmount ? reservation.totalAmount : memberInfo.pointBalance}"
                  value="0" style="flex:1;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;font-size:14px;outline:none"
                  oninput="calcFinalAmount()">
           <button type="button" onclick="useAllPoints()" style="flex-shrink:0;padding:8px 14px;border:1px solid #16A34A;border-radius:6px;background:#fff;color:#16A34A;font-size:13px;font-weight:700;cursor:pointer">전액 사용</button>

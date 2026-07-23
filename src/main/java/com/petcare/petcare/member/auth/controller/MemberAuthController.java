@@ -1,6 +1,8 @@
 /**
  * 역할: 회원 로그인·가입 URL 처리 → Service 호출 → JSP/리다이렉트 반환
  *
+ * - 박유정 / 2026-07-22 — 정지 회원 로그인 후 /member/cs 리다이렉트, 탈퇴 로그인 메시지
+ *
  * 연결
  * - Service: MemberAuthService
  *
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.petcare.petcare.member.auth.exception.MemberLoginBlockedException;
 import com.petcare.petcare.member.auth.service.EmailService;
 import com.petcare.petcare.member.auth.service.KakaoOAuthService;
 import com.petcare.petcare.member.auth.service.MemberAuthService;
@@ -69,21 +72,31 @@ public class MemberAuthController {
         }
 
         // [2] Service 호출 — TB_MEMBER 조회 + BCrypt 검증, 성공 시 세션용 MemberVO 반환
-        MemberVO member = memberAuthService.login(loginId, loginPw);
-        if (member == null) {
-            // 회원 없음 / 비밀번호 틀림 / 정지·탈퇴 회원 → error=invalid (login.jsp 메시지는 추후 추가)
-            return "redirect:/login?error=invalid";
-        }
+        try {
+            MemberVO member = memberAuthService.login(loginId, loginPw);
+            if (member == null) {
+                // 회원 없음 / 비밀번호 틀림 → error=invalid
+                return "redirect:/login?error=invalid";
+            }
 
-        // [3] 로그인 성공 — 세션에 회원 정보 저장 (header.jsp에서 memberInfo로 로그아웃 표시)
-        session.setAttribute("memberInfo", member);
+            // [3] 로그인 성공 — 세션에 회원 정보 저장 (header.jsp에서 memberInfo로 로그아웃 표시)
+            session.setAttribute("memberInfo", member);
 
-        // [4] 로그인 전 가려던 페이지가 있으면 해당 URL로 이동
-        // "//" 로 시작하는 외부 URL 차단 (오픈 리다이렉트 방지)
-        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/") && !redirect.startsWith("//")) {
-            return "redirect:" + redirect;
+            // 2026-07-22 박유정 — 정지 회원은 고객센터로
+            if("SUSPENDED".equals(member.getStatus())) {
+                return "redirect:/member/cs";
+            }
+
+            // [4] 로그인 전 가려던 페이지가 있으면 해당 URL로 이동
+            // "//" 로 시작하는 외부 URL 차단 (오픈 리다이렉트 방지)
+            if (redirect != null && !redirect.isBlank() && redirect.startsWith("/") && !redirect.startsWith("//")) {
+                return "redirect:" + redirect;
+            }
+            return "redirect:/";
+        } catch (MemberLoginBlockedException e) {
+            // 2026-07-22 박유정 — 정지·탈퇴 회원 전용 메시지
+            return "redirect:/login?error=" + mapLoginBlockedError(e.getErrorCode());
         }
-        return "redirect:/";
 
         /* ── [변경 전] 더미 로그인 ──
          * DB·비밀번호 검증 없이 입력한 이메일만으로 세션을 만들던 코드
@@ -157,20 +170,27 @@ public class MemberAuthController {
         }
 
         // [4] 기존 회원 조회 + 연동
-        MemberVO member = memberAuthService.kakaoLogin(kakaoUser);
+        try {
+            MemberVO member = memberAuthService.kakaoLogin(kakaoUser);
 
-        // [5] 가입된 회원이 아니면 → 카카오 정보를 세션에 담고 회원가입 페이지로 이동
-        if (member == null) {
-            session.setAttribute("kakaoUserInfo", kakaoUser);
-            return "redirect:/join";
+            // [5] 가입된 회원이 아니면 → 카카오 정보를 세션에 담고 회원가입 페이지로 이동
+            if (member == null) {
+                session.setAttribute("kakaoUserInfo", kakaoUser);
+                return "redirect:/join";
+            }
+            session.setAttribute("memberInfo", member);
+            // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림용 — accessToken 세션 저장
+            session.setAttribute("kakaoAccessToken", accessToken);
+
+            // 2026-07-22 박유정 — 정지 회원은 고객센터로
+            if("SUSPENDED".equals(member.getStatus())) {
+                return "redirect:/member/cs";
+            }
+            return "redirect:/";
+        } catch (MemberLoginBlockedException e) {
+            // 2026-07-22 박유정 — 카카오 로그인 탈퇴 회원 차단
+            return "redirect:/login?error=" + mapLoginBlockedError(e.getErrorCode());
         }
-
-        session.setAttribute("memberInfo", member);
-
-        // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림용 — accessToken 세션 저장
-        session.setAttribute("kakaoAccessToken", accessToken);
-
-        return "redirect:/";
     }
     
     /** join — 화면 (GET /join) */
@@ -402,5 +422,16 @@ public class MemberAuthController {
         member.setRole("ADMIN");
         session.setAttribute("memberInfo", member);
         return "redirect:/admin";
+    }
+
+    // 2026-07-22 박유정 — STATUS_CD → login.jsp error 파라미터
+    private String mapLoginBlockedError(String statusCd) {
+        if ("SUSPENDED".equals(statusCd)) {
+            return "suspended";
+        }
+        if ("WITHDRAWN".equals(statusCd)) {
+            return "withdrawn";
+        }
+        return "invalid";
     }
 }

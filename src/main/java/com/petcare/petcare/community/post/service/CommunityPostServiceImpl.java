@@ -2,6 +2,7 @@
  * 역할: CommunityPostService 구현체 (@Service)
  *
  * - 박유정 / 2026-07-08~10
+ * - 2026/07/22 장우철 — 사진 저장/삭제 gcs.enabled 분기 (로컬 ↔ GCS)
  *
  * [getPostList — 목록]
  * 1. boardType·keyword·page 로 TB_POST 조회 (5건/페이지)
@@ -15,8 +16,11 @@
  * [insertPost — 등록]
  * 1. 로그인 회원 → MEMBER_NO
  * 2. TB_POST INSERT (SEQ_TB_POST)
- * 3. 사진 로컬 저장(C:/upload/) + TB_FILE INSERT (최대 5장)
+ * 3. 사진 저장(로컬 또는 GCS) + TB_FILE INSERT (최대 5장)
  * 4. LIFE 등록 시 TAGS = WAITING (2026-07-10)
+ *
+ * [deletePhotosByPostId — 글 사진 삭제] 2026/07/22 장우철
+ * - 관리자 글 삭제 시 버킷/로컬 + TB_FILE 정리
  *
  * [markLifeAnswered — LIFE 답변완료] 2026-07-10 STEP 4
  * 1. BOARD_TYPE = LIFE 인지 확인
@@ -37,14 +41,20 @@ import java.util.UUID;
 
 import com.petcare.petcare.give.report.vo.GiveReportFileVO;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import com.petcare.petcare.community.comment.service.CommunityCommentService;
 import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.community.post.mapper.CommunityPostMapper;
 import com.petcare.petcare.community.post.vo.CommunityPostVO;
+import com.petcare.petcare.file.mapper.FileMapper;
+import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
 @Service
@@ -55,6 +65,18 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     @Value("${file.upload-dir}")
     private String uploadDir;
+
+    @Value("${gcs.enabled:false}")
+    private boolean gcsEnabled;
+
+    @Value("${gcs.bucket-name:}")
+    private String gcsBucket;
+
+    @Autowired(required = false)
+    private Storage storage;
+
+    @Autowired
+    private FileMapper fileMapper;
 
     private static final int MAX_PHOTOS = 5;
     private static final int PAGE_SIZE = 5;
@@ -238,13 +260,6 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             return;
         }
 
-        Path dir = Paths.get(uploadDir, "community", "post", String.valueOf(postId));
-        try {
-            Files.createDirectories(dir);
-        } catch (IOException e) {
-            throw new IllegalStateException("UPLOAD_DIR_FAILED", e);
-        }
-
         int saved = 0;
         for (MultipartFile file : photos) {
             if (file == null || file.isEmpty()) {
@@ -255,23 +270,109 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             }
 
             String savedName = UUID.randomUUID() + resolveExtension(file.getOriginalFilename());
-            Path target = dir.resolve(savedName);
-            try {
-                file.transferTo(target);
-            } catch (IOException e) {
-                throw new IllegalStateException("FILE_SAVE_FAILED", e);
+            // DB·JSP용 URL (앞에 /upload 유지) / GCS·로컬 실제 경로는 objectPath
+            String objectPath = "community/post/" + postId + "/" + savedName;
+            String fileUrl = "/upload/" + objectPath;
+
+            if (gcsEnabled) {
+                // [GCS 업로드 — gcs.enabled=true] 2026/07/22 장우철
+                //#region구글 스토리지 GCS 전환코드 START
+                if (storage == null) {
+                    throw new IllegalStateException("GCS enabled but Storage bean is missing");
+                }
+                try {
+                    String contentType = file.getContentType();
+                    if (contentType == null || contentType.isBlank()) {
+                        contentType = "application/octet-stream";
+                    }
+                    BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(gcsBucket, objectPath))
+                            .setContentType(contentType)
+                            .build();
+                    storage.create(blobInfo, file.getBytes());
+                } catch (IOException e) {
+                    throw new IllegalStateException("FILE_SAVE_FAILED", e);
+                }
+                //#endregion GCS 전환코드 END
+            } else {
+                // [로컬 저장 — gcs.enabled=false] 2026/07/22 장우철
+                //#region로컬 파일관리
+                Path dir = Paths.get(uploadDir, "community", "post", String.valueOf(postId));
+                try {
+                    Files.createDirectories(dir);
+                    file.transferTo(dir.resolve(savedName));
+                } catch (IOException e) {
+                    throw new IllegalStateException("FILE_SAVE_FAILED", e);
+                }
+                //#endregion
             }
 
-            String fileUrl = "/upload/community/post/" + postId + "/" + savedName;
             GiveReportFileVO fileVo = new GiveReportFileVO();
             fileVo.setRefType("POST");
             fileVo.setRefId(postId);
-            fileVo.setDriveFileId("LOCAL");
+            fileVo.setDriveFileId(gcsEnabled ? "GCS" : "LOCAL");
             fileVo.setFileUrl(fileUrl);
             fileVo.setOriginName(file.getOriginalFilename());
             communityPostMapper.insertFile(fileVo);
             saved++;
         }
+    }
+
+    /**
+     * 게시글 사진 물리 삭제 + TB_FILE 삭제
+     * 관리자 글 삭제 시 호출 — 2026/07/22 장우철
+     */
+    @Override
+    public void deletePhotosByPostId(long postId) {
+        List<String> urls = communityPostMapper.selectFileUrlsByPostId(postId);
+        if (urls != null) {
+            for (String fileUrl : urls) {
+                deleteStoredFile(fileUrl);
+            }
+        }
+        try {
+            FileVO del = new FileVO();
+            del.setRefType("POST");
+            del.setRefId(postId);
+            fileMapper.deleteFilesByRefId(del);
+        } catch (Exception e) {
+            throw new IllegalStateException("FILE_DB_DELETE_FAILED", e);
+        }
+    }
+
+    private void deleteStoredFile(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+        String objectPath = toObjectPath(fileUrl);
+        if (gcsEnabled) {
+            // [GCS 삭제 — gcs.enabled=true] 2026/07/22 장우철
+            //#region구글 스토리지 GCS 전환코드 START
+            if (storage != null) {
+                storage.delete(BlobId.of(gcsBucket, objectPath));
+            }
+            //#endregion GCS 전환코드 END
+        } else {
+            // [로컬 삭제 — gcs.enabled=false] 2026/07/22 장우철
+            //#region로컬 파일관리
+            try {
+                Files.deleteIfExists(Paths.get(uploadDir, objectPath));
+            } catch (IOException ignored) {
+                // 로컬 파일 없으면 무시
+            }
+            //#endregion
+        }
+    }
+
+    /** DB FILE_URL (/upload/...) → 버킷·로컬 상대경로 */
+    private String toObjectPath(String fileUrl) {
+        String path = fileUrl.trim();
+        if (path.startsWith("/upload/")) {
+            return path.substring("/upload/".length());
+        }
+        if (path.startsWith("upload/")) {
+            return path.substring("upload/".length());
+        }
+        return path.startsWith("/") ? path.substring(1) : path;
     }
 
     private String resolveExtension(String originalName) {

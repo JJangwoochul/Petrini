@@ -53,3 +53,6 @@ application*.properties
 cart-test.log
 cart-test-err.log
 cart-test*.log
+
+config/gcs-key.json
+**/gcs-key*.json
