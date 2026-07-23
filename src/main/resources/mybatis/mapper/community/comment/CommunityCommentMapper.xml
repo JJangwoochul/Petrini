@@ -124,7 +124,8 @@
     <!-- 댓글 삭제(soft) — 작성자 본인만 Service에서 검증 후 호출 -->
   <update id="softDeleteComment">
     UPDATE TB_POST_COMMENT
-    SET IS_DELETED = 'Y'
+    SET IS_DELETED   = 'Y',
+        DELETED_DATE = SYSDATE
     WHERE COMMENT_ID = #{commentId}
       AND NVL(IS_DELETED, 'N') = 'N'
   </update>
@@ -136,5 +137,20 @@
     WHERE COMMENT_ID = #{commentId}
       AND NVL(IS_DELETED, 'N') = 'N'
   </update>
+
+  <!-- 2026-07-23 HYJ — LIFE 게시글 삭제 시 댓글·대댓글 일괄 소프트 삭제 -->
+  <update id="softDeleteCommentsByPostId">
+    UPDATE TB_POST_COMMENT
+    SET IS_DELETED   = 'Y',
+        DELETED_DATE = SYSDATE
+    WHERE POST_ID = #{postId}
+      AND NVL(IS_DELETED, 'N') = 'N'
+  </update>
+
+  <!-- 2026-07-23 HYJ — TOWN/SHARE 게시글 삭제 시 댓글·대댓글 일괄 물리 삭제 -->
+  <delete id="hardDeleteCommentsByPostId">
+    DELETE FROM TB_POST_COMMENT
+    WHERE POST_ID = #{postId}
+  </delete>
 
 </mapper>

@@ -46,4 +46,13 @@ public interface CommunityPostService {
 
     // LIFE 상담 — 답변 완료 (TAGS = ANSWERED) / 2026-07-10 STEP 4
     void markLifeAnswered(long postId);
+
+    // 2026-07-23 HYJ — 게시글 수정 (본인 글만)
+    void updatePost(CommunityPostVO vo, MemberVO loginMember);
+
+    // 2026-07-23 HYJ — 게시글 삭제 (LIFE: 소프트 삭제 / TOWN·SHARE: 물리 삭제)
+    void deletePost(long postId, MemberVO loginMember);
+
+    // 2026-07-23 HYJ — 소프트 삭제 후 7일 경과 데이터 물리 삭제 (스케줄러)
+    int purgeExpiredSoftDeletedPosts(int days);
 }
