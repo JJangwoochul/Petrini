@@ -70,6 +70,9 @@ public interface StoreShopMapper {
    //지윤 26.07.07 상품 리뷰 목록 조회
    List<ReviewVO> selectProductReviews(@Param("productId") Long productId);
 
+   //지윤 26.07.23 추가: 리뷰 첨부 이미지 목록
+   List<String> selectReviewImages(@Param("reviewId") Long reviewId);
+
    //지윤 26.07.07 상품 Q&A 목록 조회
    List<QnaVO> selectProductQna(@Param("productId") Long productId);
 
@@ -121,13 +124,14 @@ public interface StoreShopMapper {
 
    //지윤 26.07.13 주문 저장 (결제 완료 시)
    //지윤 26.07.21 수정: 배송 요청사항(deliveryMemo) 파라미터 추가
+   //지윤 26.07.23 수정: 사용한 회원쿠폰(memberCouponId) 파라미터 추가 (취소 시 복구용)
    void insertOrder(@Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
                       @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
                       @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
                       @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
                       @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
                       @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo,
-                      @Param("deliveryMemo") String deliveryMemo);
+                      @Param("deliveryMemo") String deliveryMemo, @Param("memberCouponId") Long memberCouponId);
 
     //지윤 26.07.13 방금 저장한 주문의 ORDER_ID 조회 (ORDER_NO는 UNIQUE라 이걸로 되짚어 조회)
     Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo);

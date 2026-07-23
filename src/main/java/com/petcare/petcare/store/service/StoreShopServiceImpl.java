@@ -109,6 +109,10 @@ public StoreShopVO getProductDetail(Long productId) {
 
 //지윤 26.07.07 리뷰 목록 조회 + 별점별 비율(%) 계산 (별점 막대그래프용)
 List<ReviewVO> reviews = storeShopMapper.selectProductReviews(productId);
+//지윤 26.07.23 추가: 리뷰마다 첨부 이미지 목록도 같이 채워넣음
+for (ReviewVO r : reviews) {
+    r.setImageUrls(storeShopMapper.selectReviewImages(r.getReviewId()));
+}
 product.setReviewList(reviews);
 int[] count = new int[6]; // index 1~5 사용
 for (ReviewVO r : reviews) {
@@ -223,7 +227,7 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
     storeShopMapper.insertOrder(orderNo, p.getMemberNo(), p.getProductTotal(), p.getDeliveryFee(),
     p.getCouponDiscount(), p.getPointUsed(), p.getFinalTotal(),
     p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo,
-    p.getDeliveryMemo());
+    p.getDeliveryMemo(), p.getCouponMemberCouponId());
 
     Long orderId = storeShopMapper.selectOrderIdByOrderNo(orderNo);
 

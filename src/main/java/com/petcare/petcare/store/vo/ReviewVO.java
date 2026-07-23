@@ -20,4 +20,5 @@ public class ReviewVO {
     private Date regDate;
     private String bizReply;
     private boolean blinded; //지윤 26.07.20 사업자 삭제요청(PENDING) 걸린 리뷰인지
+    private java.util.List<String> imageUrls; //지윤 26.07.23 추가: 리뷰 첨부 이미지 목록
 }

@@ -121,6 +121,9 @@ public interface BizStoreMapper {
     //지윤 26.07.22 추가: 취소신청 대기중 건수 (탭 숫자용)
     int selectClaimPendingCount(@Param("bizNo") Long bizNo);
 
+    //지윤 26.07.23 추가: 오늘 신규 주문 건수 (홈 대시보드용)
+    int selectTodayNewOrderCount(@Param("bizNo") Long bizNo);
+    
     //지윤 26.07.22 추가: 취소신청 승인/반려
     int updateClaimApprove(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("refundAmount") Integer refundAmount);
     int updateClaimReject(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
@@ -128,6 +131,7 @@ public interface BizStoreMapper {
     //지윤 26.07.22 추가: 취소승인 후속처리 (결제상태/재고/포인트/쿠폰)
     int updatePaymentCancelStatus(@Param("orderId") Long orderId);
     int restoreStock(@Param("optionId") Long optionId, @Param("qty") Integer qty);
+    int restoreProductStatusIfNeeded(@Param("productId") Long productId);
     int selectMemberPointBalance(@Param("memberNo") Long memberNo);
     int restoreMemberPoint(@Param("memberNo") Long memberNo, @Param("newBalance") Integer newBalance);
     int insertPointRefundHistory(@Param("memberNo") Long memberNo, @Param("pointAmount") Integer pointAmount,
@@ -179,6 +183,15 @@ public interface BizStoreMapper {
 
     //지윤 26.07.21 추가: Q&A 답변 등록/수정 (본인 상품 질문만 수정되게 상품 BIZ_NO까지 조건에 포함)
     int updateQnaAnswer(@Param("qnaId") Long qnaId, @Param("bizNo") Long bizNo, @Param("answer") String answer);
+
+    //지윤 26.07.23 추가: 사업자 정보 조회
+    com.petcare.petcare.biz.store.vo.BizInfoVO selectBusinessInfo(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.23 추가: 사업자 정보 수정
+    void updateBusinessInfo(@Param("bizNo") Long bizNo, @Param("shopName") String shopName, @Param("ceoName") String ceoName,
+                             @Param("bizRegNo") String bizRegNo, @Param("bizType") String bizType,
+                             @Param("addr") String addr, @Param("addrDetail") String addrDetail,
+                             @Param("phone") String phone);
 }
 
 

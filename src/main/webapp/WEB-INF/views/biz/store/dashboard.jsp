@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath"  value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="반려동물 쇼핑몰" />
 <c:set var="bizPage"      value="dashboard" />
@@ -24,8 +25,7 @@
       <div class="summary-icon green">📦</div>
       <div>
         <p>신규 주문</p>
-        <strong>12 <span>건</span></strong>
-        <small>어제 대비 ▲ 3건</small>
+        <strong>${todayNewOrderCount} <span>건</span></strong>
       </div>
     </div>
 
@@ -33,8 +33,7 @@
       <div class="summary-icon blue">🚚</div>
       <div>
         <p>배송중</p>
-        <strong>8 <span>건</span></strong>
-        <small>어제 대비 ▲ 1건</small>
+        <strong>${not empty statusCounts.SHIPPING ? statusCounts.SHIPPING : 0} <span>건</span></strong>
       </div>
     </div>
 
@@ -42,8 +41,7 @@
       <div class="summary-icon purple">✅</div>
       <div>
         <p>배송완료</p>
-        <strong>24 <span>건</span></strong>
-        <small>어제 대비 ▲ 5건</small>
+        <strong>${not empty statusCounts.DONE ? statusCounts.DONE : 0} <span>건</span></strong>
       </div>
     </div>
 
@@ -51,8 +49,7 @@
       <div class="summary-icon orange">₩</div>
       <div>
         <p>이번 달 매출</p>
-        <strong>12,600,000 <span>원</span></strong>
-        <small>어제 대비 ▲ 480,000원</small>
+        <strong style="font-size:15px;color:var(--text-muted)">기능 준비중</strong>
       </div>
     </div>
   </section>
@@ -116,19 +113,25 @@
         <h3>주문 상태 현황</h3>
       </div>
 
+      <c:set var="cPaid" value="${not empty statusCounts.PAID ? statusCounts.PAID : 0}" />
+      <c:set var="cReady" value="${not empty statusCounts.READY ? statusCounts.READY : 0}" />
+      <c:set var="cShipping" value="${not empty statusCounts.SHIPPING ? statusCounts.SHIPPING : 0}" />
+      <c:set var="cDone" value="${not empty statusCounts.DONE ? statusCounts.DONE : 0}" />
+      <c:set var="cTotal" value="${cPaid + cReady + cShipping + cDone}" />
+
       <div class="donut-wrap">
         <div class="donut-chart">
           <div>
             <span>총 주문</span>
-            <strong>44건</strong>
+            <strong>${cTotal}건</strong>
           </div>
         </div>
 
         <ul class="status-list">
-          <li><span class="box green-box"></span>배송완료 <b>24건 (55%)</b></li>
-          <li><span class="box blue-box"></span>배송중 <b>8건 (18%)</b></li>
-          <li><span class="box orange-box"></span>배송준비 <b>7건 (16%)</b></li>
-          <li><span class="box gray-box"></span>결제완료 <b>5건 (11%)</b></li>
+          <li><span class="box green-box"></span>배송완료 <b>${cDone}건 (<c:choose><c:when test="${cTotal > 0}"><fmt:formatNumber value="${cDone * 100 / cTotal}" pattern="0"/></c:when><c:otherwise>0</c:otherwise></c:choose>%)</b></li>
+          <li><span class="box blue-box"></span>배송중 <b>${cShipping}건 (<c:choose><c:when test="${cTotal > 0}"><fmt:formatNumber value="${cShipping * 100 / cTotal}" pattern="0"/></c:when><c:otherwise>0</c:otherwise></c:choose>%)</b></li>
+          <li><span class="box orange-box"></span>배송준비 <b>${cReady}건 (<c:choose><c:when test="${cTotal > 0}"><fmt:formatNumber value="${cReady * 100 / cTotal}" pattern="0"/></c:when><c:otherwise>0</c:otherwise></c:choose>%)</b></li>
+          <li><span class="box gray-box"></span>결제완료 <b>${cPaid}건 (<c:choose><c:when test="${cTotal > 0}"><fmt:formatNumber value="${cPaid * 100 / cTotal}" pattern="0"/></c:when><c:otherwise>0</c:otherwise></c:choose>%)</b></li>
         </ul>
       </div>
     </div>
@@ -153,30 +156,32 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>#ORD-2026-0892</td>
-            <td>김민준</td>
-            <td>로얄캐닌 사료 4kg 외 1건</td>
-            <td>74,900원</td>
-            <td><span class="badge wait">결제완료</span></td>
-            <td><button class="detail-btn">출고처리</button></td>
-          </tr>
-          <tr>
-            <td>#ORD-2026-0891</td>
-            <td>이서연</td>
-            <td>노즈워크 매트 오렌지</td>
-            <td>18,500원</td>
-            <td><span class="badge wait">결제완료</span></td>
-            <td><button class="detail-btn">출고처리</button></td>
-          </tr>
-          <tr>
-            <td>#ORD-2026-0890</td>
-            <td>박지호</td>
-            <td>H형 하네스 M 블루</td>
-            <td>22,000원</td>
-            <td><span class="badge confirm">배송중</span></td>
-            <td>—</td>
-          </tr>
+          <c:choose>
+            <c:when test="${empty recentOrders}">
+              <tr><td colspan="6" style="text-align:center;color:#999;padding:20px 0">아직 주문이 없습니다.</td></tr>
+            </c:when>
+            <c:otherwise>
+              <c:forEach var="o" items="${recentOrders}">
+                <tr>
+                  <td>#${o.orderNo}</td>
+                  <td>${o.buyerName}</td>
+                  <td>${o.firstProductName}<c:if test="${o.itemCount > 1}"> 외 ${o.itemCount - 1}건</c:if></td>
+                  <td><fmt:formatNumber value="${o.payAmount}" pattern="#,###"/>원</td>
+                  <td>
+                    <c:choose>
+                      <c:when test="${o.orderStatus == 'PAID'}"><span class="badge wait">결제완료</span></c:when>
+                      <c:when test="${o.orderStatus == 'READY'}"><span class="badge wait">배송준비</span></c:when>
+                      <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge confirm">배송중</span></c:when>
+                      <c:when test="${o.orderStatus == 'DONE'}"><span class="badge confirm">배송완료</span></c:when>
+                      <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge">취소/반품</span></c:when>
+                      <c:otherwise>${o.orderStatus}</c:otherwise>
+                    </c:choose>
+                  </td>
+                  <td><a href="${contextPath}/biz/store/orders" class="detail-btn" style="text-decoration:none;display:inline-block">확인하기</a></td>
+                </tr>
+              </c:forEach>
+            </c:otherwise>
+          </c:choose>
         </tbody>
       </table>
     </div>
@@ -187,32 +192,25 @@
         <a href="${contextPath}/biz/store/reviews" class="outline-btn">전체 리뷰 보기</a>
       </div>
 
-      <div class="review-item">
-        <div class="avatar"></div>
-        <div>
-          <p><b>김민준 님</b> <span class="stars">★★★★★</span></p>
-          <small>사료 배송이 빠르고 포장도 꼼꼼했어요.</small>
-        </div>
-        <em>2026-07-02</em>
-      </div>
-
-      <div class="review-item">
-        <div class="avatar"></div>
-        <div>
-          <p><b>이서연 님</b> <span class="stars">★★★★☆</span></p>
-          <small>매트 재질이 생각보다 도톰해서 만족스러워요.</small>
-        </div>
-        <em>2026-07-01</em>
-      </div>
-
-      <div class="review-item">
-        <div class="avatar"></div>
-        <div>
-          <p><b>박지호 님</b> <span class="stars">★★★★★</span></p>
-          <small>하네스 사이즈가 딱 맞고 착용감이 좋습니다.</small>
-        </div>
-        <em>2026-06-30</em>
-      </div>
+      <c:choose>
+        <c:when test="${empty recentReviews}">
+          <p style="text-align:center;color:#999;padding:20px 0">아직 리뷰가 없습니다.</p>
+        </c:when>
+        <c:otherwise>
+          <c:forEach var="r" items="${recentReviews}">
+            <div class="review-item">
+              <div class="avatar"></div>
+              <div>
+                <p><b>${not empty r.nickname ? r.nickname : '회원'} 님</b>
+                  <span class="stars"><c:forEach begin="1" end="5" var="i"><c:choose><c:when test="${i <= r.rating}">★</c:when><c:otherwise>☆</c:otherwise></c:choose></c:forEach></span>
+                </p>
+                <small>${r.content}</small>
+              </div>
+              <em><fmt:formatDate value="${r.regDate}" pattern="yyyy-MM-dd"/></em>
+            </div>
+          </c:forEach>
+        </c:otherwise>
+      </c:choose>
     </div>
   </section>
 </main>

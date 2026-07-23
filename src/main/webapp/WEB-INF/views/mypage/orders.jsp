@@ -103,15 +103,29 @@
                         </div>
                     </c:forEach>
 
-                    <%-- 지윤 26.07.20 수정: "배송조회"/"환불내역"은 상품별이 아니라 주문(배송) 전체에 대한 액션이라 카드 하단에 유지.
+                   <%-- 지윤 26.07.20 수정: "배송조회"/"환불내역"은 상품별이 아니라 주문(배송) 전체에 대한 액션이라 카드 하단에 유지.
                          "교환/반품"/"리뷰작성"/"재구매"는 위 상품 줄 안으로 옮김 --%>
-                    <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'CANCEL'}">
+                    <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'CANCEL' || o.orderStatus == 'DONE'}">
                         <div class="order-card-foot">
                             <c:if test="${o.orderStatus == 'SHIPPING'}">
                                 <button class="btn-sm" onclick="alert('배송조회 기능은 준비 중입니다.')">배송조회</button>
                             </c:if>
                             <c:if test="${o.orderStatus == 'CANCEL'}">
                                 <button class="btn-sm" onclick="alert('환불내역 기능은 준비 중입니다.')">환불내역</button>
+                            </c:if>
+                            <%-- 지윤 26.07.23 추가: 구매확정 버튼 (배송완료 + 아직 확정 안 한 주문만) --%>
+                            <c:if test="${o.orderStatus == 'DONE'}">
+                                <c:choose>
+                                    <c:when test="${o.confirmYn == 'Y'}">
+                                        <button class="btn-sm" disabled>구매확정 완료</button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <form method="post" action="${contextPath}/mypage/orders/confirm" style="display:inline" onsubmit="return confirm('구매확정 하시겠습니까?\n적립금은 확정 즉시 지급되며 취소할 수 없습니다.')">
+                                            <input type="hidden" name="orderId" value="${o.orderId}">
+                                            <button type="submit" class="btn-sm primary">구매확정</button>
+                                        </form>
+                                    </c:otherwise>
+                                </c:choose>
                             </c:if>
                         </div>
                     </c:if>
@@ -148,7 +162,7 @@
     <textarea name="content" id="reviewModalContent" maxlength="500"
               placeholder="상품은 어떠셨나요? 다른 분들에게 도움이 되는 후기를 남겨주세요."
               oninput="document.getElementById('reviewCharCount').textContent = this.value.length"></textarea>
-    <div class="review-modal-counter"><span id="reviewCharCount">0</span>/500</div>
+    <div class="review-modal-counter"><span id="reviewCharCount">0</span>/500 <small style="color:var(--text-muted)">(50자 이상 작성 시 500P, 사진 첨부 시 1000P 적립)</small></div>
 
     <div class="review-modal-photo-section">
       <p class="review-modal-photo-label">사진 첨부 <span>(선택, 최대 5장)</span></p>
@@ -237,6 +251,8 @@
     if (reviewRating === 0) { alert('별점을 선택해주세요.'); return false; }
     var content = document.getElementById('reviewModalContent').value.trim();
     if (!content) { alert('리뷰 내용을 입력해주세요.'); return false; }
+    //지윤 26.07.23 추가: 50자 미만이면 등록 안 되게 미리 막음 (서버에서도 이중 체크함)
+    if (content.length < 50) { alert('리뷰는 50자 이상 작성해야 적립금이 지급됩니다.\n(현재 ' + content.length + '자)'); return false; }
     return true;
   }
 </script>

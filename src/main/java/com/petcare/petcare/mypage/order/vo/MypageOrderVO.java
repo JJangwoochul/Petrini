@@ -59,4 +59,7 @@ public class MypageOrderVO {
     private String cancelReason;        // 유저가 신청 시 입력한 사유
     private Integer refundAmount;       // 실제 환불된 금액 (DONE일 때만 값 있음)
     private java.util.Date requestedAt; // 취소 신청일시
+
+    //지윤 26.07.23 추가: 구매확정 여부 (Y=적립금 지급완료)
+    private String confirmYn;
 }

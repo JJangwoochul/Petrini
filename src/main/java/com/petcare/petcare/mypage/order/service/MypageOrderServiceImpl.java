@@ -24,9 +24,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.mypage.order.mapper.MypageOrderMapper;
 import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
 @Service
 public class MypageOrderServiceImpl implements MypageOrderService {
+
+    //지윤 26.07.23 추가: 취소신청 시 사업자에게 알림 보내기 위함
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     @Autowired
     private MypageOrderMapper mypageOrderMapper;
@@ -45,22 +50,38 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         return list;
     }
 
-    //지윤 26.07.20 수정: 사진 첨부 처리 추가. 리뷰 등록 성공하면 REVIEW_ID 재조회해서 이미지마다 FileService로 저장
+   //지윤 26.07.20 수정: 사진 첨부 처리 추가. 리뷰 등록 성공하면 REVIEW_ID 재조회해서 이미지마다 FileService로 저장
+    //지윤 26.07.23 수정: 50자 미만 리뷰는 등록 자체를 막음 + 등록 성공 시 텍스트/포토 적립금 지급
     @Override
-    public boolean writeReview(Long memberNo, Long orderItemId, Double rating, String content,
+    public Integer writeReview(Long memberNo, Long orderItemId, Double rating, String content,
                                 List<MultipartFile> images) throws Exception {
-        int inserted = mypageOrderMapper.insertProductReview(orderItemId, memberNo, rating, content);
-        if (inserted == 0) return false;
+        int minLength = Integer.parseInt(mypageOrderMapper.selectPolicyValue("REVIEW_MIN_LENGTH"));
+        if (content == null || content.trim().length() < minLength) {
+            return null;
+        }
 
+        int inserted = mypageOrderMapper.insertProductReview(orderItemId, memberNo, rating, content);
+        if (inserted == 0) return null;
+
+        Long reviewId = mypageOrderMapper.selectReviewIdByOrderItem(orderItemId);
+        boolean hasImage = false;
         if (images != null && !images.isEmpty()) {
-            Long reviewId = mypageOrderMapper.selectReviewIdByOrderItem(orderItemId);
             for (MultipartFile image : images) {
                 if (image != null && !image.isEmpty()) {
                     fileService.uploadFile(image, "REVIEW", reviewId);
+                    hasImage = true;
                 }
             }
         }
-        return true;
+
+        String policyKey = hasImage ? "REVIEW_PHOTO" : "REVIEW_TEXT";
+        int earnPoint = Integer.parseInt(mypageOrderMapper.selectPolicyValue(policyKey));
+        int currentBalance = mypageOrderMapper.selectMemberPointBalance(memberNo);
+        int newBalance = currentBalance + earnPoint;
+        mypageOrderMapper.addMemberPoint(memberNo, newBalance);
+        mypageOrderMapper.insertPointEarnHistory(memberNo, earnPoint, newBalance, "REVIEW", "REVIEW", reviewId);
+
+        return earnPoint;
     }
 
     //지윤 26.07.20 추가: 주문상세보기 1건 + 상품목록 (본인 주문 아니면 null 그대로 반환)
@@ -73,10 +94,34 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         return order;
     }
 
-    //지윤 26.07.22 추가: 주문취소 신청 (실제 조건 체크는 매퍼 UPDATE의 WHERE절에서 함, 여기선 결과만 판단)
+//지윤 26.07.22 추가: 주문취소 신청 (실제 조건 체크는 매퍼 UPDATE의 WHERE절에서 함, 여기선 결과만 판단)
+    //지윤 26.07.23 수정: 성공하면 사업자에게 알림도 같이 전송
     @Override
     public boolean requestCancel(Long memberNo, Long orderId, String reason) {
         int updated = mypageOrderMapper.requestCancel(orderId, memberNo, reason);
+        if (updated > 0) {
+            Long bizMemberNo = mypageOrderMapper.selectBizMemberNoByOrderId(orderId);
+            MypageOrderVO order = mypageOrderMapper.selectOrderDetail(orderId, memberNo);
+            mypageNotifyService.sendCancelRequestNotification(bizMemberNo, order.getOrderNo(), reason);
+        }
         return updated > 0;
+    }
+
+    //지윤 26.07.23 추가: 구매확정 처리 (DONE 상태 주문만, 결제금액의 정책 % 만큼 적립)
+    @Override
+    public Integer confirmPurchase(Long memberNo, Long orderId) {
+        int updated = mypageOrderMapper.confirmPurchaseOrder(orderId, memberNo);
+        if (updated == 0) return null;
+
+        MypageOrderVO order = mypageOrderMapper.selectOrderDetail(orderId, memberNo);
+        int rate = Integer.parseInt(mypageOrderMapper.selectPolicyValue("PURCHASE_RATE"));
+        int earnPoint = order.getPayAmount() * rate / 100;
+
+        int currentBalance = mypageOrderMapper.selectMemberPointBalance(memberNo);
+        int newBalance = currentBalance + earnPoint;
+        mypageOrderMapper.addMemberPoint(memberNo, newBalance);
+        mypageOrderMapper.insertPointEarnHistory(memberNo, earnPoint, newBalance, "PURCHASE_CONFIRM", "ORDER", orderId);
+
+        return earnPoint;
     }
 }

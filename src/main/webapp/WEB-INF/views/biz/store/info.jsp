@@ -18,39 +18,48 @@
   <div class="biz-card">
     <div class="biz-card-head"><span>사업자 정보</span><small>* 표시 항목은 필수 입력입니다</small></div>
 
-    <form id="bizInfoForm" style="padding:20px;max-width:640px">
+    <form id="bizInfoForm" method="post" action="${contextPath}/biz/store/info" enctype="multipart/form-data" style="padding:20px;max-width:640px">
+      
       <div class="biz-form-fields">
         <div class="biz-form-row">
+          <label>상호명<span class="req">*</span></label>
+          <input type="text" id="bShopName" name="shopName" value="${info.shopName}" placeholder="상호명을 입력하세요">
+        </div>
+        <div class="biz-form-row">
           <label>대표자 명<span class="req">*</span></label>
-          <input type="text" id="bOwner" value="박펫몰" placeholder="대표자 명을 입력하세요">
+          <input type="text" id="bOwner" name="ceoName" value="${info.ceoName}" placeholder="대표자 명을 입력하세요">
         </div>
         <div class="biz-form-row">
           <label>사업자 등록번호<span class="req">*</span></label>
-          <input type="text" id="bRegNo" value="234-56-78901" placeholder="000-00-00000">
+          <input type="text" id="bRegNo" name="bizRegNo" value="${info.bizRegNo}" placeholder="000-00-00000">
         </div>
         <div class="biz-form-row">
-          <label>업종<span class="req">*</span></label>
-          <select id="bType">
-            <option value="stay">반려동물 숙박업</option>
-            <option value="hospital">동물병원</option>
-            <option value="grooming">미용업</option>
-            <option value="store" selected>반려용품 판매업</option>
-          </select>
+          <label>업종</label>
+          <input type="text" value="${info.bizType == 'STAY' ? '반려동물 숙박업' : info.bizType == 'HOSPITAL' ? '동물병원' : '반려용품 판매업'}" readonly style="background:#FAFBFA">
+          <small style="color:#E2445C;font-size:12px;margin-top:4px;display:block;font-weight:600">⚠ 업종 변경은 고객센터로 문의해주세요.</small>
         </div>
+
         <div class="biz-form-row">
           <label>사업장 주소<span class="req">*</span></label>
-          <input type="text" id="bAddress" value="서울특별시 강남구 테헤란로 020" placeholder="사업장 주소를 입력하세요">
+          <input type="text" id="bAddress" name="addr" value="${info.addr}" placeholder="사업장 주소를 입력하세요">
+        </div>
+        <div class="biz-form-row">
+          <label>상세 주소</label>
+          <input type="text" id="bAddressDetail" name="addrDetail" value="${info.addrDetail}" placeholder="상세 주소를 입력하세요">
         </div>
         <div class="biz-form-row">
           <label>사업장 전화번호<span class="req">*</span></label>
-          <input type="tel" id="bPhone" value="02-000-0000" placeholder="예) 02-000-0000">
+          <input type="tel" id="bPhone" name="phone" value="${info.phone}" placeholder="예) 02-000-0000">
         </div>
         <div class="biz-form-row">
           <label>사업자 등록증 첨부</label>
           <div style="display:flex;gap:10px;align-items:center">
-            <input type="text" id="bFileName" value="사업자등록증.pdf" readonly style="flex:1;background:#FAFBFA">
+            <input type="text" id="bFileName" value="${not empty info.certFileName ? info.certFileName : '등록된 파일 없음'}" readonly style="flex:1;background:#FAFBFA">
+            <c:if test="${not empty info.certFileUrl}">
+              <a href="${contextPath}/upload/${info.certFileUrl}" target="_blank" class="biz-btn-ghost" style="white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center">보기</a>
+            </c:if>
             <button type="button" class="biz-btn-ghost" style="white-space:nowrap" onclick="document.getElementById('bFile').click()">파일선택</button>
-            <input type="file" id="bFile" accept="image/*,.pdf" style="display:none">
+            <input type="file" id="bFile" name="certFile" accept="image/*,.pdf" style="display:none">
           </div>
         </div>
       </div>
@@ -68,6 +77,15 @@
 </div>
 
 <script>
+  //지윤 26.07.23 추가: 저장 후 리다이렉트됐을 때 flash 메시지 있으면 토스트 자동으로 띄움
+  <c:if test="${not empty msg}">
+    window.addEventListener('DOMContentLoaded', function () {
+      var toast = document.getElementById('saveToast');
+      toast.classList.add('on');
+      setTimeout(function () { toast.classList.remove('on'); }, 2200);
+    });
+  </c:if>
+
   document.getElementById('bFile').addEventListener('change', function (e) {
     var file = e.target.files[0];
     if (!file) return;
@@ -77,6 +95,7 @@
   function saveInfo() {
     var required = [
       { id: 'bOwner',   label: '대표자 명' },
+      { id: 'bShopName', label: '상호명' },
       { id: 'bRegNo',   label: '사업자 등록번호' },
       { id: 'bAddress', label: '사업장 주소' },
       { id: 'bPhone',   label: '사업장 전화번호' }
@@ -89,9 +108,7 @@
         return;
       }
     }
-    var toast = document.getElementById('saveToast');
-    toast.classList.add('on');
-    setTimeout(function () { toast.classList.remove('on'); }, 2200);
+    document.getElementById('bizInfoForm').submit();
   }
 </script>
 

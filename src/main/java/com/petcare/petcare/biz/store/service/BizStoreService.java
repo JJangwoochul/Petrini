@@ -106,9 +106,18 @@ public interface BizStoreService {
     //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수
     int getPaidOrderCount(Long bizNo);
 
+    //지윤 26.07.23 추가: 오늘 신규 주문 건수 (홈 대시보드용)
+    int getTodayNewOrderCount(Long bizNo);
+    
     //지윤 26.07.21 추가: Q&A관리 목록 조회
     java.util.List<com.petcare.petcare.biz.store.vo.BizQnaVO> getBizQnaList(Long bizNo);
 
     //지윤 26.07.21 추가: Q&A 답변 등록/수정. 본인 상품 질문 아니면 false
     boolean saveQnaAnswer(Long bizNo, Long qnaId, String answer);
+
+    //지윤 26.07.23 추가: 사업자 정보 조회
+    com.petcare.petcare.biz.store.vo.BizInfoVO getBusinessInfo(Long bizNo);
+
+    //지윤 26.07.23 추가: 사업자 정보 수정 (등록증 새로 올리면 기존 것 교체)
+    void updateBusinessInfo(Long bizNo, com.petcare.petcare.biz.store.vo.BizInfoVO info, org.springframework.web.multipart.MultipartFile certFile) throws Exception;
 }

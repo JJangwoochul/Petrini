@@ -178,7 +178,8 @@
       <div class="order-form-group">
         <label>보유 포인트 <fmt:formatNumber value="${memberPoint}" pattern="#,###"/>P</label>
         <div style="display:flex;gap:8px">
-          <input type="number" id="pointInput" placeholder="사용할 포인트 입력" value="0" min="0" style="flex:1" onchange="updateOrderTotal()">
+          <input type="number" id="pointInput" placeholder="사용할 포인트 입력" value="0" min="0" style="flex:1"
+       oninput="this.value = this.value.replace(/^0+(?=\d)/, '')" onchange="updateOrderTotal()">
           <button type="button" id="btnUseAllPoint" class="addr-btn">최대사용</button>
         </div>
       </div>

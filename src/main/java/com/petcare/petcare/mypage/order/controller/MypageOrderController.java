@@ -35,19 +35,31 @@ public class MypageOrderController {
     }
 
  //지윤 26.07.20 수정: 리뷰작성 모달에서 폼 submit + 사진 첨부(최대 5장, 선택). 배송완료 상품만 대상, 중복작성은 서비스에서 막음
-    @PostMapping("/orders/review")
-    public String writeReview(@RequestParam("orderItemId") Long orderItemId,
-                               @RequestParam("rating") Double rating,
-                               @RequestParam("content") String content,
-                               @RequestParam(value = "images", required = false) List<MultipartFile> images,
-                               HttpSession session, RedirectAttributes rttr) throws Exception {
-        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
-        if (member == null) return "redirect:/login";
+ @PostMapping("/orders/review")
+ public String writeReview(@RequestParam("orderItemId") Long orderItemId,
+                            @RequestParam("rating") Double rating,
+                            @RequestParam("content") String content,
+                            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+                            HttpSession session, RedirectAttributes rttr) throws Exception {
+     MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+     if (member == null) return "redirect:/login";
 
-        boolean ok = mypageOrderService.writeReview(member.getMemberNo(), orderItemId, rating, content, images);
-        rttr.addFlashAttribute(ok ? "msg" : "errorMsg", ok ? "리뷰가 등록되었습니다." : "이미 작성했거나 본인 주문이 아닙니다.");
-        return "redirect:/mypage/orders?statusCd=DONE";
-    }
+     //지윤 26.07.23 수정: 반환타입 변경에 맞춰 처리. earnPoint가 null이면 실패(50자 미만/중복작성/본인주문아님)
+     Integer earnPoint = mypageOrderService.writeReview(member.getMemberNo(), orderItemId, rating, content, images);
+     if (earnPoint != null) {
+         rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다. " + earnPoint + "P가 적립되었습니다.");
+         //지윤 26.07.23 추가: 세션의 포인트 잔액도 즉시 갱신 (로그아웃 안 해도 마이홈에 바로 반영되게)
+         MemberVO sessionMember = (MemberVO) session.getAttribute("memberInfo");
+         if (sessionMember != null) {
+             long current = sessionMember.getPointBalance() != null ? sessionMember.getPointBalance() : 0L;
+             sessionMember.setPointBalance(current + earnPoint);
+             session.setAttribute("memberInfo", sessionMember);
+         }
+     } else {
+         rttr.addFlashAttribute("errorMsg", "리뷰는 50자 이상 작성해야 하며, 이미 작성했거나 본인 주문이 아니면 등록할 수 없습니다.");
+     }
+     return "redirect:/mypage/orders?statusCd=DONE";
+ }
 
     //지윤 26.07.20 추가: 주문상세보기 (결제내역/배송지, 읽기전용 - 리뷰작성은 목록에서 모달로 처리)
     @GetMapping("/orders/detail")
@@ -74,5 +86,26 @@ public class MypageOrderController {
         rttr.addFlashAttribute(ok ? "msg" : "errorMsg",
                 ok ? "취소 신청이 접수되었습니다. 사업자 확인 후 처리됩니다." : "취소 신청에 실패했습니다. 이미 배송이 시작되었거나 신청 이력이 있습니다.");
         return "redirect:/mypage/orders/detail?orderId=" + orderId;
+    }
+    
+    //지윤 26.07.23 추가: 구매확정 처리 (배송완료 상태 주문에서 버튼 누르면 결제금액의 % 만큼 적립)
+    @PostMapping("/orders/confirm")
+    public String confirmPurchase(@RequestParam("orderId") Long orderId, HttpSession session, RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        Integer earnPoint = mypageOrderService.confirmPurchase(member.getMemberNo(), orderId);
+        if (earnPoint != null) {
+            rttr.addFlashAttribute("msg", "구매확정 되었습니다. " + earnPoint + "P가 적립되었습니다.");
+            MemberVO sessionMember = (MemberVO) session.getAttribute("memberInfo");
+            if (sessionMember != null) {
+                long current = sessionMember.getPointBalance() != null ? sessionMember.getPointBalance() : 0L;
+                sessionMember.setPointBalance(current + earnPoint);
+                session.setAttribute("memberInfo", sessionMember);
+            }
+        } else {
+            rttr.addFlashAttribute("errorMsg", "이미 구매확정했거나 배송완료 상태가 아닙니다.");
+        }
+        return "redirect:/mypage/orders";
     }
 }

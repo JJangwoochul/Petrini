@@ -282,6 +282,14 @@
           </c:when>
           <c:otherwise>
             <div class="review-text">${rv.content}</div>
+            <%-- 지윤 26.07.23 추가: 리뷰 첨부 이미지 --%>
+            <c:if test="${not empty rv.imageUrls}">
+              <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                <c:forEach var="imgUrl" items="${rv.imageUrls}">
+                  <img src="${contextPath}/upload/${imgUrl}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;" onclick="window.open('${contextPath}/upload/${imgUrl}', '_blank')">
+                </c:forEach>
+              </div>
+            </c:if>
             <c:if test="${not empty rv.bizReply}">
               <div class="review-text" style="margin-top:10px;padding:12px 14px;background:#EAF7F2;border-left:3px solid #2BAB82;border-radius:8px">
                 <b style="color:#1F8464">사장님 답글</b><br>${rv.bizReply}

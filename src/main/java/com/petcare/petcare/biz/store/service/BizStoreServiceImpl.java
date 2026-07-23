@@ -364,6 +364,12 @@ public class BizStoreServiceImpl implements BizStoreService {
        return bizStoreMapper.selectPaidOrderCount(bizNo);
    }
 
+   //지윤 26.07.23 추가: 오늘 신규 주문 건수
+   @Override
+   public int getTodayNewOrderCount(Long bizNo) {
+       return bizStoreMapper.selectTodayNewOrderCount(bizNo);
+   }
+
    //지윤 26.07.21 추가: Q&A관리 목록
    @Override
    public List<com.petcare.petcare.biz.store.vo.BizQnaVO> getBizQnaList(Long bizNo) {
@@ -375,5 +381,24 @@ public class BizStoreServiceImpl implements BizStoreService {
    public boolean saveQnaAnswer(Long bizNo, Long qnaId, String answer) {
        int updated = bizStoreMapper.updateQnaAnswer(qnaId, bizNo, answer);
        return updated > 0;
+   }
+
+   //지윤 26.07.23 추가: 사업자 정보 조회
+   @Override
+   public com.petcare.petcare.biz.store.vo.BizInfoVO getBusinessInfo(Long bizNo) {
+       return bizStoreMapper.selectBusinessInfo(bizNo);
+   }
+
+   //지윤 26.07.23 추가: 사업자 정보 수정 (등록증 새로 올리면 기존 것 삭제 후 교체)
+   @Override
+   public void updateBusinessInfo(Long bizNo, com.petcare.petcare.biz.store.vo.BizInfoVO info,
+                                   org.springframework.web.multipart.MultipartFile certFile) throws Exception {
+                                    bizStoreMapper.updateBusinessInfo(bizNo, info.getShopName(), info.getCeoName(), info.getBizRegNo(), info.getBizType(),
+                                    info.getAddr(), info.getAddrDetail(), info.getPhone());
+
+       if (certFile != null && !certFile.isEmpty()) {
+           fileService.deleteFilesByRef("BIZ_AUTH", bizNo);
+           fileService.uploadFile(certFile, "BIZ_AUTH", bizNo);
+       }
    }
 }

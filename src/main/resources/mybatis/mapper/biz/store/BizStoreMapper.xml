@@ -187,6 +187,12 @@
     SELECT COUNT(*) FROM TB_ORDER WHERE BIZ_NO = #{bizNo} AND CLAIM_STATUS = 'PENDING'
 </select>
 
+<!-- 지윤 26.07.23 추가: 오늘 들어온 신규 주문 건수 (홈 대시보드용) -->
+<select id="selectTodayNewOrderCount" resultType="int">
+    SELECT COUNT(*) FROM TB_ORDER
+    WHERE BIZ_NO = #{bizNo} AND SUBSTR(ORDER_DATE, 1, 10) = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+</select>
+
 <!-- 지윤 26.07.20 추가: 주문 상세 조회 (구매자 정보 + 배송정보 + 결제방법 다 조인) -->
 <!-- 지윤 26.07.22 수정: 취소신청 처리에 필요한 컬럼 추가 -->
 <select id="selectOrderDetail" resultType="com.petcare.petcare.biz.store.vo.BizOrderVO">
@@ -243,6 +249,15 @@
 <!-- 지윤 26.07.22 추가: 취소승인 시 옵션 재고 복구 -->
 <update id="restoreStock">
     UPDATE TB_PRODUCT_OPTION SET STOCK_QTY = STOCK_QTY + #{qty} WHERE OPTION_ID = #{optionId}
+</update>
+
+<!-- 지윤 26.07.23 추가: 취소승인으로 재고 복구된 상품이 SOLDOUT이었으면, 재고 합계가 0보다 클 때 자동으로 NORMAL 복귀 -->
+<update id="restoreProductStatusIfNeeded">
+    UPDATE TB_PRODUCT
+    SET STATUS_CD = 'NORMAL'
+    WHERE PRODUCT_ID = #{productId}
+      AND STATUS_CD = 'SOLDOUT'
+      AND (SELECT NVL(SUM(STOCK_QTY),0) FROM TB_PRODUCT_OPTION WHERE PRODUCT_ID = #{productId}) > 0
 </update>
 
 <!-- 지윤 26.07.22 추가: 포인트 복구 전 현재 잔액 조회 -->
@@ -428,6 +443,28 @@
        SET ANSWER = #{answer}, ANSWER_DATE = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
      WHERE QNA_ID = #{qnaId}
        AND PRODUCT_ID IN (SELECT PRODUCT_ID FROM TB_PRODUCT WHERE BIZ_NO = #{bizNo})
+</update>
+
+<!-- 지윤 26.07.23 추가: 사업자 정보 조회 (등록증은 최신 파일 1건만) -->
+<select id="selectBusinessInfo" resultType="com.petcare.petcare.biz.store.vo.BizInfoVO">
+    SELECT
+        b.BIZ_NAME AS shopName, b.CEO_NAME, b.BIZ_REG_NO, b.BIZ_TYPE, b.ADDR, b.ADDR_DETAIL, b.PHONE,
+        f.FILE_URL AS certFileUrl, f.ORIGIN_NAME AS certFileName
+    FROM TB_BUSINESS b
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL, ORIGIN_NAME,
+               ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID DESC) AS RN
+        FROM TB_FILE WHERE REF_TYPE = 'BIZ_AUTH'
+    ) f ON f.REF_ID = b.BIZ_NO AND f.RN = 1
+    WHERE b.BIZ_NO = #{bizNo}
+</select>
+
+<!-- 지윤 26.07.23 수정: SHOP_NAME(안 쓰는 예전 컬럼) -> BIZ_NAME(신청서 업체명이 실제 저장되는 컬럼)으로 수정 -->
+<update id="updateBusinessInfo">
+    UPDATE TB_BUSINESS
+    SET BIZ_NAME = #{shopName}, CEO_NAME = #{ceoName}, BIZ_REG_NO = #{bizRegNo}, BIZ_TYPE = #{bizType},
+        ADDR = #{addr}, ADDR_DETAIL = #{addrDetail}, PHONE = #{phone}
+    WHERE BIZ_NO = #{bizNo}
 </update>
 
 </mapper>

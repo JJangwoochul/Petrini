@@ -60,12 +60,24 @@ public class BizStoreController extends BizBaseController {
         model.addAttribute("paidOrderCount", bizStoreService.getPaidOrderCount(bizNo));
     }
 
-    @GetMapping({"", "/"})
-    public String storeDashboard(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
-        return "biz/store/dashboard";
-    }
+   //지윤 26.07.23 수정: 목업 -> 실데이터 연동 (매출 통계 라인차트/이번달매출은 패스, 나머지는 실데이터)
+   @GetMapping({"", "/"})
+   public String storeDashboard(HttpSession session, Model model) {
+       MemberVO biz = getBizMember(session);
+       if (biz == null) return "redirect:/login";
+       Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+       model.addAttribute("todayNewOrderCount", bizStoreService.getTodayNewOrderCount(bizNo));
+       model.addAttribute("statusCounts", bizStoreService.getOrderStatusCounts(bizNo));
+
+       List<com.petcare.petcare.biz.store.vo.BizOrderVO> orders = bizStoreService.getOrderList(bizNo, null);
+       model.addAttribute("recentOrders", orders.subList(0, Math.min(3, orders.size())));
+
+       List<BizReviewVO> reviews = bizStoreService.getBizReviewList(bizNo);
+       model.addAttribute("recentReviews", reviews.subList(0, Math.min(3, reviews.size())));
+
+       return "biz/store/dashboard";
+   }
 
     //지윤 26.07.14 수정: 상품목록 실데이터 연동 (검색/카테고리/상태 필터 + 페이지네이션, 페이지당 10개)
     @GetMapping("/products")
@@ -277,13 +289,44 @@ public class BizStoreController extends BizBaseController {
         return "biz/store/settlement";
     }
 
+    //지윤 26.07.23 수정: 목업 -> 실데이터 연동
     @GetMapping("/info")
-    public String storeInfo(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
+    public String storeInfo(HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        model.addAttribute("info", bizStoreService.getBusinessInfo(bizNo));
         return "biz/store/info";
     }
 
+    //지윤 26.07.23 추가: 사업자 정보 저장
+    @PostMapping("/info")
+    public String saveInfo(@RequestParam String shopName, @RequestParam String ceoName, @RequestParam String bizRegNo,
+                            @RequestParam String addr,
+                            @RequestParam(required = false) String addrDetail, @RequestParam String phone,
+                            @RequestParam(required = false) MultipartFile certFile,
+                            HttpSession session, RedirectAttributes rttr) throws Exception {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        com.petcare.petcare.biz.store.vo.BizInfoVO existing = bizStoreService.getBusinessInfo(bizNo);
+
+        com.petcare.petcare.biz.store.vo.BizInfoVO info = new com.petcare.petcare.biz.store.vo.BizInfoVO();
+        info.setShopName(shopName);
+        info.setCeoName(ceoName);
+        info.setBizRegNo(bizRegNo);
+        info.setBizType(existing.getBizType());
+        info.setAddr(addr);
+        info.setAddrDetail(addrDetail);
+        info.setPhone(phone);
+
+        bizStoreService.updateBusinessInfo(bizNo, info, certFile);
+        rttr.addFlashAttribute("msg", "사업자 정보가 저장되었습니다.");
+        return "redirect:/biz/store/info";
+    }
+    
     //지윤 26.07.15 상품 등록 모달 제출 처리 (옵션 여러 개 + 이미지 1장)
     @PostMapping("/products")
     public String registerProduct(@RequestParam String productName,
