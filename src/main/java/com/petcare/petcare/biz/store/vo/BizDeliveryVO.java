@@ -14,6 +14,7 @@ public class BizDeliveryVO {
     private String orderNo;
     private String buyerName;
     private String courierName;
+    private String courierCode;   //지윤 26.07.24 추가: 스마트택배 API 택배사 코드
     private String trackingNo;
     private String orderStatus;   //READY / SHIPPING / DONE
     private String shipDate;      //TB_ORDER_DELIVERY.REGISTERED_AT (송장 등록한 날, 없으면 null)

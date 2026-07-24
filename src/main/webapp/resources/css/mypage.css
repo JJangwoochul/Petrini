@@ -116,6 +116,24 @@
 }
 .btn-sm:hover { border-color:var(--primary); color:var(--primary); }
 .btn-sm.danger:hover { border-color:var(--accent); color:var(--accent); }
+
+/* 지윤 26.07.24 추가: 구매확정 버튼 - 적립금 받는 액션이라 눈에 띄게 채워진 스타일로 구분 */
+.btn-confirm-purchase {
+    padding:6px 14px; border-radius:50px;
+    font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid var(--primary); background:var(--primary);
+    color:#fff; transition:var(--transition);
+    box-shadow:0 2px 6px rgba(43,171,130,.25);
+}
+.btn-confirm-purchase:hover { background:var(--primary-dark); border-color:var(--primary-dark); transform:translateY(-1px); }
+
+.confirm-done-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:5px 12px; border-radius:50px;
+    font-size:12px; font-weight:600;
+    background:#F0F2F0; color:var(--text-muted);
+}
+
 .btn-primary {
     padding:10px 24px; border-radius:50px;
     background:var(--primary); color:#fff;

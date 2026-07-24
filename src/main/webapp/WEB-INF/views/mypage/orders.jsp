@@ -117,12 +117,12 @@
                             <c:if test="${o.orderStatus == 'DONE'}">
                                 <c:choose>
                                     <c:when test="${o.confirmYn == 'Y'}">
-                                        <button class="btn-sm" disabled>구매확정 완료</button>
+                                        <span class="confirm-done-badge">✓ 구매확정 완료</span>
                                     </c:when>
                                     <c:otherwise>
                                         <form method="post" action="${contextPath}/mypage/orders/confirm" style="display:inline" onsubmit="return confirm('구매확정 하시겠습니까?\n적립금은 확정 즉시 지급되며 취소할 수 없습니다.')">
                                             <input type="hidden" name="orderId" value="${o.orderId}">
-                                            <button type="submit" class="btn-sm primary">구매확정</button>
+                                            <button type="submit" class="btn-confirm-purchase">🎁 구매확정하고 적립받기</button>
                                         </form>
                                     </c:otherwise>
                                 </c:choose>

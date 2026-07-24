@@ -83,7 +83,8 @@ public interface BizStoreService {
     boolean rejectOrderCancel(Long orderId, Long bizNo);
 
     //지윤 26.07.20 추가: 주문 상태 + 배송정보(택배사/송장번호) 한번에 저장. 본인 주문 아니면 false
-    boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo);
+    //지윤 26.07.24 수정: courierCode 파라미터 추가 (택배사 API 연동용, null 허용 - orders.jsp는 아직 안 보냄)
+    boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String courierCode, String trackingNo);
 
     //지윤 26.07.20 추가: 배송관리 목록 조회 (필터 적용됨, 지연여부 계산 포함)
     List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword);

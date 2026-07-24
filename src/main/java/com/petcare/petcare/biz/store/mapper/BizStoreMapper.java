@@ -100,6 +100,14 @@ public interface BizStoreMapper {
                               @Param("optionColor") String optionColor, @Param("optionSize") String optionSize,
                               @Param("addPrice") Integer addPrice, @Param("stockQty") Integer stockQty);
 
+    //지윤 26.07.24 추가: 상품수정 시 OPTION_ID 기준 옵션 upsert 처리용
+    void updateProductOptionById(@Param("optionId") Long optionId, @Param("optionColor") String optionColor,
+                                  @Param("optionSize") String optionSize, @Param("addPrice") Integer addPrice,
+                                  @Param("stockQty") Integer stockQty);
+    int selectOrderItemCountByOption(@Param("optionId") Long optionId);
+    void deleteProductOptionById(@Param("optionId") Long optionId);
+    
+
     //지윤 26.07.15 상품 옵션 전체 삭제 (수정 시 기존 옵션 지우고 새로 등록하는 방식이라 필요)
     void deleteProductOptions(@Param("productId") Long productId);
 
@@ -145,12 +153,15 @@ public interface BizStoreMapper {
     int selectDeliveryExists(@Param("orderId") Long orderId);
 
     //지윤 26.07.20 추가: 배송정보 신규 등록
+    //지윤 26.07.24 수정: courierCode 파라미터 추가 (택배사 API 연동용)
     void insertOrderDelivery(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo,
-                              @Param("courierName") String courierName, @Param("trackingNo") String trackingNo,
-                              @Param("deliveryStatus") String deliveryStatus);
+                              @Param("courierName") String courierName, @Param("courierCode") String courierCode,
+                              @Param("trackingNo") String trackingNo, @Param("deliveryStatus") String deliveryStatus);
 
     //지윤 26.07.20 추가: 배송정보 수정
+    //지윤 26.07.24 수정: courierCode 파라미터 추가
     void updateOrderDelivery(@Param("orderId") Long orderId, @Param("courierName") String courierName,
+                              @Param("courierCode") String courierCode,
                               @Param("trackingNo") String trackingNo, @Param("deliveryStatus") String deliveryStatus);
 
     //지윤 26.07.20 추가: 배송관리 목록 조회 (택배사/상태/키워드 필터)

@@ -50,6 +50,10 @@ public class BizStoreController extends BizBaseController {
     @Autowired
     private ObjectMapper objectMapper;
 
+    //지윤 26.07.24 추가: 택배사 API 연동용
+    @Autowired
+    private com.petcare.petcare.common.external.service.SmartTrackerService smartTrackerService;
+
     //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지 하드코딩(12) 제거 - 이 컨트롤러가 처리하는 모든 페이지(상품관리/주문관리/배송관리/리뷰관리 등) 렌더링 전에
     //자동으로 실행돼서 model에 paidOrderCount를 채워줌. 로그인 안 됐으면 0으로 조용히 넘어감 (개별 핸들러가 알아서 redirect:/login 처리하므로 여기선 막지 않음)
     @ModelAttribute
@@ -132,12 +136,13 @@ public class BizStoreController extends BizBaseController {
     public String updateOrderStatus(@PathVariable Long id,
                                      @RequestParam String orderStatus,
                                      @RequestParam(required = false) String courierName,
+                                     @RequestParam(required = false) String courierCode,
                                      @RequestParam(required = false) String trackingNo,
                                      HttpSession session) {
         MemberVO biz = getBizMember(session);
         if (biz == null) return "LOGIN_REQUIRED";
         Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
-        boolean ok = bizStoreService.updateOrderStatus(id, bizNo, orderStatus, courierName, trackingNo);
+        boolean ok = bizStoreService.updateOrderStatus(id, bizNo, orderStatus, courierName, courierCode, trackingNo);
         return ok ? "OK" : "FAILED";
     }
 
@@ -179,6 +184,23 @@ public class BizStoreController extends BizBaseController {
         model.addAttribute("selectedKeyword", keyword);
         return "biz/store/delivery";
     }
+
+    //지윤 26.07.24 추가: 택배사 전체목록 조회 (드롭다운 채우기용, AJAX)
+    @GetMapping("/delivery/companies")
+    @ResponseBody
+    public java.util.List<java.util.Map<String, String>> getCompanyList(HttpSession session) {
+        if (getBizMember(session) == null) return java.util.List.of();
+        return smartTrackerService.getCompanyList();
+    }
+
+    //지윤 26.07.24 추가: 실시간 배송조회 (AJAX, 원본 JSON 그대로 화면에 넘김)
+    @GetMapping("/delivery/track")
+    @ResponseBody
+    public String trackDelivery(@RequestParam String courierCode, @RequestParam String trackingNo, HttpSession session) {
+        if (getBizMember(session) == null) return "{\"status\":false,\"msg\":\"로그인이 필요합니다.\"}";
+        return smartTrackerService.getTrackingInfo(courierCode, trackingNo);
+    }
+    
 
     //지윤 26.07.20 추가: 송장 일괄등록 (텍스트 여러 줄 파싱)
     @PostMapping("/delivery/bulk")
@@ -383,6 +405,7 @@ public class BizStoreController extends BizBaseController {
                                        @RequestParam(required = false) String description,
                                        @RequestParam String statusCd,
                                        @RequestParam(required = false) String tags,
+                                       @RequestParam(required = false) Long[] optionId,
                                        @RequestParam(required = false) String[] optionColor,
                                        @RequestParam String[] optionSize,
                                        @RequestParam Integer[] addPrice,
@@ -405,19 +428,26 @@ public class BizStoreController extends BizBaseController {
         product.setStatusCd(statusCd);
         product.setTags(tags);
 
-        bizStoreService.updateProduct(product, buildOptions(optionColor, optionSize, addPrice, stockQty), image);
+        bizStoreService.updateProduct(product, buildOptions(optionId, optionColor, optionSize, addPrice, stockQty), image);
         return "redirect:/biz/store/products";
     }
 
     //지윤 26.07.15 폼 배열(옵션당 1줄씩)을 OptionVO 리스트로 변환
     //지윤 26.07.15 수정: 배열 길이가 서로 안 맞아도(브라우저 재전송 등) 에러 안 나게 방어 코드 추가
+    //지윤 26.07.24 수정: optionId 오버로드 추가 (수정화면에서 어느 옵션인지 정확히 구분하기 위함)
     private List<OptionVO> buildOptions(String[] optionColor, String[] optionSize, Integer[] addPrice, Integer[] stockQty) {
+        return buildOptions(null, optionColor, optionSize, addPrice, stockQty);
+    }
+
+    private List<OptionVO> buildOptions(Long[] optionId, String[] optionColor, String[] optionSize, Integer[] addPrice, Integer[] stockQty) {
         List<OptionVO> options = new ArrayList<>();
         if (optionSize == null) return options;
         for (int i = 0; i < optionSize.length; i++) {
             OptionVO opt = new OptionVO();
+            opt.setOptionId(optionId != null && optionId.length > i ? optionId[i] : null);
             opt.setOptionColor(optionColor != null && optionColor.length > i ? optionColor[i] : null);
             opt.setOptionSize(optionSize[i]);
+
             opt.setAddPrice(addPrice != null && addPrice.length > i ? addPrice[i] : 0);
             opt.setStockQty(stockQty != null && stockQty.length > i ? stockQty[i] : 0);
             options.add(opt);

@@ -50,12 +50,9 @@
   <%-- 지윤 26.07.20 수정: onclick="applyFilter()" (JS로 로컬 배열 필터링) -> method="get" 폼 제출 (서버에 실제 쿼리 파라미터로 필터 요청) --%>
   <div class="biz-card" style="margin-bottom:16px">
     <form class="dlv-filter" method="get" action="${contextPath}/biz/store/delivery">
-      <select name="carrier">
+      <select name="carrier" id="filterCarrier">
         <option value="">택배사 전체</option>
-        <option value="cj"     ${selectedCarrier == 'cj' ? 'selected' : ''}>CJ대한통운</option>
-        <option value="hanjin" ${selectedCarrier == 'hanjin' ? 'selected' : ''}>한진택배</option>
-        <option value="lotte"  ${selectedCarrier == 'lotte' ? 'selected' : ''}>롯데택배</option>
-        <option value="post"   ${selectedCarrier == 'post' ? 'selected' : ''}>우체국택배</option>
+        <%-- 지윤 26.07.24 수정: 하드코딩 4개 -> JS에서 스마트택배 API로 전체 목록 채워넣음 --%>
       </select>
       <select name="statusCd">
         <option value="">배송상태 전체</option>
@@ -89,13 +86,15 @@
                 <td>#${d.orderNo}</td>
                 <td>${d.buyerName}</td>
                 <%-- 지윤 26.07.20 수정: JS carrierLabel 딕셔너리 조회 -> JSTL c:choose로 택배사코드 -> 한글명 직접 분기 --%>
+                <%-- 지윤 26.07.24 수정: 예전 영문코드값 저장 데이터도 계속 표시되게 유지, 새로 저장되는 실제 택배사명은 그대로 출력 --%>
                 <td>
                   <c:choose>
                     <c:when test="${d.courierName == 'cj'}">CJ대한통운</c:when>
                     <c:when test="${d.courierName == 'hanjin'}">한진택배</c:when>
                     <c:when test="${d.courierName == 'lotte'}">롯데택배</c:when>
                     <c:when test="${d.courierName == 'post'}">우체국택배</c:when>
-                    <c:otherwise>-</c:otherwise>
+                    <c:when test="${empty d.courierName}">-</c:when>
+                    <c:otherwise>${d.courierName}</c:otherwise>
                   </c:choose>
                 </td>
                 <td>${empty d.trackingNo ? '-' : d.trackingNo}</td>
@@ -111,7 +110,14 @@
                 <td>${empty d.shipDate ? '-' : d.shipDate}</td>
                 <%-- 지윤 26.07.20 수정: onclick="openEdit('ORD-2026-0892')" (주문번호 문자열로 로컬 배열 검색)
                      -> onclick="openEdit(25, 'ORD-2026-0892', ...)" (진짜 ORDER_ID + 현재값들을 그대로 넘겨서 모달에 채움, AJAX 재조회 없이 바로 채움) --%>
-                <td><button class="biz-btn" onclick="openEdit(${d.orderId}, '${d.orderNo}', '${d.orderStatus}', '${d.courierName}', '${d.trackingNo}')">${empty d.trackingNo ? '송장등록' : '수정'}</button></td>
+                <td>
+                  <button class="biz-btn" onclick="openEdit(${d.orderId}, '${d.orderNo}', '${d.orderStatus}', '${d.courierName}', '${d.courierCode}', '${d.trackingNo}')">${empty d.trackingNo ? '송장등록' : '수정'}</button>
+                  <%-- 지윤 26.07.24 추가: 실시간 배송조회 (송장번호+택배사코드 둘 다 있어야 조회 가능) --%>
+                  <c:if test="${not empty d.trackingNo and not empty d.courierCode}">
+                    <button class="biz-btn" onclick="trackDelivery('${d.courierCode}', '${d.trackingNo}')">배송조회</button>
+                  </c:if>
+                </td>
+
               </tr>
             </c:forEach>
           </c:otherwise>
@@ -153,10 +159,7 @@
         <div class="biz-form-row">
           <label>택배사<span class="req">*</span></label>
           <select id="eCarrier">
-            <option value="cj">CJ대한통운</option>
-            <option value="hanjin">한진택배</option>
-            <option value="lotte">롯데택배</option>
-            <option value="post">우체국택배</option>
+            <%-- 지윤 26.07.24 수정: 하드코딩 4개 -> JS에서 스마트택배 API로 전체 목록 채워넣음 --%>
           </select>
         </div>
         <div class="biz-form-row">
@@ -170,6 +173,15 @@
       </div>
     </form>
   </div>
+
+  <%-- 지윤 26.07.24 추가: 실시간 배송조회 결과 모달 --%>
+  <div class="biz-card" id="trackCard" style="display:none">
+    <div class="biz-card-head"><span>실시간 배송조회</span></div>
+    <div id="trackResultBox" style="padding:20px"></div>
+    <div class="dlv-bulk-actions" style="padding:0 20px 20px">
+      <button type="button" class="biz-btn-ghost" onclick="closeTrack()">닫기</button>
+    </div>
+  </div>
 </main>
 
 <div class="biz-toast" id="saveToast">
@@ -181,14 +193,34 @@
   var contextPath = '${contextPath}';
   var eOrderId = null;
 
-  //지윤 26.07.20 삭제: var carrierLabel = {...}, var statusLabel = {...} - 목록 표시는 이제 JSTL c:choose로 서버에서 렌더링해서 JS에서 안 씀 (수정 모달의 select 옵션 라벨은 HTML에 이미 고정 텍스트로 있어서 딕셔너리 자체가 불필요해짐)
-  //지윤 26.07.20 삭제: var deliveries = [ {...}, ... ] 하드코딩 배열 5건 통째로 삭제 (서버가 실데이터를 줌)
-  //지윤 26.07.20 삭제: var filtered = deliveries.slice() - 필터링이 서버 GET 파라미터 방식으로 바뀌면서 필요없어짐
+  //지윤 26.07.24 추가: 스마트택배 API로 전체 택배사 목록 가져와서 드롭다운 2개(필터/수정모달) 채움
+  var courierList = [];
+  fetch(contextPath + '/biz/store/delivery/companies')
+    .then(function (res) { return res.json(); })
+    .then(function (list) {
+      courierList = list || [];
+      var filterSel = document.getElementById('filterCarrier');
+      var editSel = document.getElementById('eCarrier');
+      courierList.forEach(function (c) {
+        var opt1 = document.createElement('option');
+        opt1.value = c.id; opt1.textContent = c.name;
+        if ('${selectedCarrier}' === c.id) opt1.selected = true;
+        filterSel.appendChild(opt1);
 
-  //지윤 26.07.20 삭제: function applyFilter() {...}, function resetFilter() {...}
-  //-> 필터 폼이 이제 실제 <form method="get">이라 그냥 제출/링크 이동만으로 처리, JS 함수 필요없어짐
+        var opt2 = document.createElement('option');
+        opt2.value = c.id; opt2.textContent = c.name;
+        editSel.appendChild(opt2);
+      });
+    })
+    .catch(function () {
+      var filterSel = document.getElementById('filterCarrier');
+      var editSel = document.getElementById('eCarrier');
+      var msg = '<option value="">택배사 목록을 불러올 수 없습니다</option>';
+      filterSel.insertAdjacentHTML('beforeend', msg);
+      editSel.insertAdjacentHTML('beforeend', msg);
+    });
 
-  //지윤 26.07.20 삭제: function isDelayed(d) {...} - Service(BizStoreServiceImpl.isDelayed)에서 이미 계산해서 넘겨주므로 JS에서 재계산할 필요 없어짐
+  //지윤 26.07.20 삭제: var carrierLabel = {...}
 
   function openBulk() {
     document.getElementById('bulkCard').style.display = 'block';
@@ -225,13 +257,12 @@
 
   //지윤 26.07.20 수정: function openEdit(orderNo) - deliveries.find()로 로컬 배열에서 찾던 것
   //-> 목록 렌더링 시점에 이미 값을 다 갖고 있어서(JSTL onclick 인자로 넘김) 별도 AJAX 조회 없이 바로 모달에 채움
-  function openEdit(orderId, orderNo, status, carrier, trackingNo) {
+  function openEdit(orderId, orderNo, status, carrier, courierCode, trackingNo) {
     eOrderId = orderId;
     document.getElementById('eOrderNo').value = orderNo;
     document.getElementById('eStatus').value = status;
-    document.getElementById('eCarrier').value = carrier || 'cj';
+    document.getElementById('eCarrier').value = (courierCode && courierCode !== 'null') ? courierCode : '';
     document.getElementById('eTrackingNo').value = (trackingNo === 'null' ? '' : trackingNo);
-
     document.getElementById('bulkCard').style.display = 'none';
     document.getElementById('editCard').style.display = 'block';
     document.getElementById('editCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -246,11 +277,14 @@
     var trackingNo = document.getElementById('eTrackingNo').value.trim();
     if (!trackingNo) { alert('송장번호를 입력해주세요.'); return; }
 
+    var carrierSelect = document.getElementById('eCarrier');
+    var selectedOption = carrierSelect.options[carrierSelect.selectedIndex];
+
     var formData = new URLSearchParams();
     formData.set('orderStatus', document.getElementById('eStatus').value);
-    formData.set('courierName', document.getElementById('eCarrier').value);
+    formData.set('courierName', selectedOption ? selectedOption.textContent : '');
+    formData.set('courierCode', carrierSelect.value);
     formData.set('trackingNo', trackingNo);
-
     fetch(contextPath + '/biz/store/orders/' + eOrderId + '/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -270,6 +304,46 @@
   //지윤 26.07.20 삭제: function showToast(msg) {...} - 지금은 alert + location.reload() 방식으로 대체 (필요하면 나중에 다시 연결 가능)
   //지윤 26.07.20 삭제: function render() {...} - JS로 deliveries 배열 필터링해서 <tbody>/요약카드 DOM 새로 그리던 함수. JSTL이 서버에서 다 그려줘서 필요없어짐
   //지윤 26.07.20 삭제: render(); (페이지 로드 시 초기 렌더링 호출) - 위와 같은 이유로 삭제
+
+  //지윤 26.07.24 추가: 실시간 배송조회 (스마트택배 API 호출 결과를 화면에 표시)
+  var levelLabel = { 1: '배송준비중', 2: '집화완료', 3: '배송중', 4: '지점도착', 5: '배송출발', 6: '배송완료' };
+
+  function trackDelivery(courierCode, trackingNo) {
+    document.getElementById('trackResultBox').innerHTML = '<p style="text-align:center;color:#999">조회 중...</p>';
+    document.getElementById('bulkCard').style.display = 'none';
+    document.getElementById('editCard').style.display = 'none';
+    document.getElementById('trackCard').style.display = 'block';
+    document.getElementById('trackCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    fetch(contextPath + '/biz/store/delivery/track?courierCode=' + encodeURIComponent(courierCode) + '&trackingNo=' + encodeURIComponent(trackingNo))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var box = document.getElementById('trackResultBox');
+        if (!data || data.status === false || data.result === 'N') {
+          box.innerHTML = '<p style="color:#E24B4A">배송 정보를 조회할 수 없습니다. (' + (data && data.msg ? data.msg : '알 수 없는 운송장번호') + ')</p>';
+          return;
+        }
+
+        var html = '<p style="font-weight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
+        if (data.trackingDetails && data.trackingDetails.length > 0) {
+          html += '<table class="biz-table"><thead><tr><th>시각</th><th>위치</th><th>처리내용</th></tr></thead><tbody>';
+          data.trackingDetails.forEach(function (d) {
+            html += '<tr><td>' + (d.timeString || '-') + '</td><td>' + (d.where || '-') + '</td><td>' + (d.kind || '-') + '</td></tr>';
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
+        }
+        box.innerHTML = html;
+      })
+      .catch(function () {
+        document.getElementById('trackResultBox').innerHTML = '<p style="color:#E24B4A">조회 중 오류가 발생했습니다.</p>';
+      });
+  }
+
+  function closeTrack() {
+    document.getElementById('trackCard').style.display = 'none';
+  }
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

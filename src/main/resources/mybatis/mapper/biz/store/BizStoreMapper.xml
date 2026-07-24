@@ -149,6 +149,23 @@
     VALUES (#{optionId}, #{productId}, #{optionColor}, #{optionSize}, #{addPrice}, #{stockQty})
 </insert>
 
+<!-- 지윤 26.07.24 추가: OPTION_ID로 정확히 찍어서 값 갱신 (색상/사이즈 이름을 바꿔도 같은 옵션으로 인식됨) -->
+<update id="updateProductOptionById">
+    UPDATE TB_PRODUCT_OPTION
+    SET OPTION_COLOR = #{optionColor}, OPTION_SIZE = #{optionSize}, ADD_PRICE = #{addPrice}, STOCK_QTY = #{stockQty}
+    WHERE OPTION_ID = #{optionId}
+</update>
+
+<!-- 지윤 26.07.24 추가: 이 옵션이 실제로 주문된 적 있는지 확인 (있으면 삭제 못 하게 막기 위함) -->
+<select id="selectOrderItemCountByOption" resultType="int">
+    SELECT COUNT(*) FROM TB_ORDER_ITEM WHERE OPTION_ID = #{optionId}
+</select>
+
+<!-- 지윤 26.07.24 추가: 옵션 1개만 삭제 (주문 이력 없는 것만 이걸로 지움) -->
+<delete id="deleteProductOptionById">
+    DELETE FROM TB_PRODUCT_OPTION WHERE OPTION_ID = #{optionId}
+</delete>
+
 <!-- 지윤 26.07.15 상품 옵션 전체 삭제 (수정 시 재등록 방식) -->
 <delete id="deleteProductOptions">
     DELETE FROM TB_PRODUCT_OPTION WHERE PRODUCT_ID = #{productId}
@@ -296,13 +313,13 @@
 </update>
 
 <insert id="insertOrderDelivery">
-    INSERT INTO TB_ORDER_DELIVERY (DELIVERY_ID, ORDER_ID, BIZ_NO, COURIER_NAME, TRACKING_NO, DELIVERY_STATUS, REGISTERED_AT)
-    VALUES ((SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY), #{orderId}, #{bizNo}, #{courierName}, #{trackingNo}, #{deliveryStatus}, SYSDATE)
+    INSERT INTO TB_ORDER_DELIVERY (DELIVERY_ID, ORDER_ID, BIZ_NO, COURIER_NAME, COURIER_CODE, TRACKING_NO, DELIVERY_STATUS, REGISTERED_AT)
+    VALUES ((SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY), #{orderId}, #{bizNo}, #{courierName}, #{courierCode}, #{trackingNo}, #{deliveryStatus}, SYSDATE)
 </insert>
 
 <update id="updateOrderDelivery">
     UPDATE TB_ORDER_DELIVERY
-    SET COURIER_NAME = #{courierName}, TRACKING_NO = #{trackingNo}, DELIVERY_STATUS = #{deliveryStatus}, REGISTERED_AT = SYSDATE
+    SET COURIER_NAME = #{courierName}, COURIER_CODE = #{courierCode}, TRACKING_NO = #{trackingNo}, DELIVERY_STATUS = #{deliveryStatus}, REGISTERED_AT = SYSDATE
     WHERE ORDER_ID = #{orderId}
 </update>
 
@@ -310,9 +327,10 @@
 <select id="selectDeliveryList" resultType="com.petcare.petcare.biz.store.vo.BizDeliveryVO">
     SELECT
         o.ORDER_ID, o.ORDER_NO, m.NICKNAME AS BUYER_NAME,
-        d.COURIER_NAME, d.TRACKING_NO, o.ORDER_STATUS,
+        d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO, o.ORDER_STATUS,
         TO_CHAR(d.REGISTERED_AT, 'YYYY-MM-DD') AS SHIP_DATE
     FROM TB_ORDER o
+
     JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
     WHERE o.BIZ_NO = #{bizNo}

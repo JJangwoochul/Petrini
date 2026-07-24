@@ -30,6 +30,7 @@ import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
 import com.petcare.petcare.common.external.service.TossPaymentService;
+import com.petcare.petcare.biz.store.service.OrderCancelTxService;
 
 @Service
 public class BizStoreServiceImpl implements BizStoreService {
@@ -127,8 +128,9 @@ public class BizStoreServiceImpl implements BizStoreService {
                 product.getDescription(), product.getBrandName(), statusCd, product.getTags());
         if (updated == 0) return false;
 
-        bizStoreMapper.deleteProductOptions(product.getProductId());
-        saveOptions(product.getProductId(), options);
+        //지윤 26.07.24 수정: "전체삭제 후 재생성" -> OPTION_ID 기준 upsert로 변경
+        //이유: 이미 주문된 적 있는 옵션은 TB_ORDER_ITEM이 참조 중이라 삭제하면 ORA-02292(FK위반) 에러 발생
+        saveOptionsForUpdate(product.getProductId(), options);
 
        //지윤 26.07.15 수정: 새 이미지 올릴 때 기존 이미지 먼저 삭제 (안 그러면 옛날 이미지가 계속 썸네일로 뜸)
         if (image != null && !image.isEmpty()) {
@@ -136,6 +138,37 @@ public class BizStoreServiceImpl implements BizStoreService {
             fileService.uploadFile(image, "PRODUCT", product.getProductId());
         }
         return true;
+    }
+
+    //지윤 26.07.24 추가: 상품수정 전용 옵션 저장 로직 (OPTION_ID 기준 upsert)
+    //1) optionId 있는 옵션 -> 그 OPTION_ID로 정확히 찍어서 UPDATE (지우지 않음, 색상/사이즈 이름 바꿔도 같은 옵션으로 인식)
+    //2) optionId 없는 옵션(새로 추가한 행) -> INSERT
+    //3) 원래 있었는데 이번 제출 목록에서 빠진 옵션 -> 주문 이력 없으면 진짜 DELETE, 있으면 재고 0으로만 처리 (화면엔 숨겨지되 데이터/주문이력은 보존)
+    private void saveOptionsForUpdate(Long productId, List<OptionVO> options) {
+        for (OptionVO opt : options) {
+            String color = (opt.getOptionColor() == null || opt.getOptionColor().isBlank()) ? "기본" : opt.getOptionColor();
+
+            if (opt.getOptionId() != null) {
+                bizStoreMapper.updateProductOptionById(opt.getOptionId(), color, opt.getOptionSize(), opt.getAddPrice(), opt.getStockQty());
+            } else {
+                Long optId = bizStoreMapper.selectNextOptionId();
+                bizStoreMapper.insertProductOption(optId, productId, color, opt.getOptionSize(), opt.getAddPrice(), opt.getStockQty());
+            }
+        }
+
+        List<OptionVO> existing = bizStoreMapper.selectProductOptions(productId);
+        for (OptionVO old : existing) {
+            boolean stillSubmitted = options.stream().anyMatch(o -> old.getOptionId().equals(o.getOptionId()));
+            if (!stillSubmitted) {
+                int orderCount = bizStoreMapper.selectOrderItemCountByOption(old.getOptionId());
+                if (orderCount == 0) {
+                    bizStoreMapper.deleteProductOptionById(old.getOptionId());
+                } else {
+                    //주문 이력 있어서 삭제 못 함 -> 재고 0으로 처리해서 사실상 판매목록에서 숨김
+                    bizStoreMapper.updateProductOptionById(old.getOptionId(), old.getOptionColor(), old.getOptionSize(), old.getAddPrice(), 0);
+                }
+            }
+        }
     }
 
     //지윤 26.07.15 옵션 리스트 저장 공통 처리 (등록/수정 둘 다 사용), 색상 비워두면 "기본"으로 저장
@@ -228,11 +261,10 @@ public class BizStoreServiceImpl implements BizStoreService {
     //지윤 26.07.20 추가: 주문 상태 변경 + 배송정보(택배사/송장번호) 저장
     //송장번호가 입력되면 배송상태를 자동으로 SHIPPING으로, 이미 배송정보 있으면 UPDATE 없으면 INSERT
     @Override
-    public boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo) {
+    public boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String courierCode, String trackingNo) {
         int updated = bizStoreMapper.updateOrderStatus(orderId, bizNo, orderStatus);
         if (updated == 0) return false;
 
-        //지윤 26.07.21 추가: READY/SHIPPING/DONE으로 바뀔 때마다 해당 단계 시각 자동 기록 (배송정보 타임라인용)
         String tsColumn = switch (orderStatus) {
             case "READY" -> "READY_AT";
             case "SHIPPING" -> "SHIPPING_AT";
@@ -243,19 +275,17 @@ public class BizStoreServiceImpl implements BizStoreService {
             bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, tsColumn);
         }
 
-        //택배사나 송장번호를 입력한 경우에만 배송정보 저장 (둘 다 비어있으면 배송정보 자체를 안 건드림)
         if ((courierName != null && !courierName.isBlank()) || (trackingNo != null && !trackingNo.isBlank())) {
             String deliveryStatus = (trackingNo != null && !trackingNo.isBlank()) ? "SHIPPING" : "READY";
             int exists = bizStoreMapper.selectDeliveryExists(orderId);
             if (exists > 0) {
-                bizStoreMapper.updateOrderDelivery(orderId, courierName, trackingNo, deliveryStatus);
+                bizStoreMapper.updateOrderDelivery(orderId, courierName, courierCode, trackingNo, deliveryStatus);
             } else {
-                bizStoreMapper.insertOrderDelivery(orderId, bizNo, courierName, trackingNo, deliveryStatus);
+                bizStoreMapper.insertOrderDelivery(orderId, bizNo, courierName, courierCode, trackingNo, deliveryStatus);
             }
         }
         return true;
     }
-
     //지윤 26.07.20 추가: 배송관리 목록 조회 + 지연여부(3일 이상 SHIPPING) 자바에서 계산
     @Override
     public List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword) {
@@ -323,7 +353,8 @@ public class BizStoreServiceImpl implements BizStoreService {
 
             //지윤 26.07.20 참고: 아까 주문관리(orders.jsp)용으로 만든 updateOrderStatus를 그대로 재사용
             //(택배사/송장번호 넣으면 자동으로 SHIPPING 상태 + 배송정보 upsert 처리됨)
-            boolean ok = updateOrderStatus(orderId, bizNo, "SHIPPING", carrier, trackingNo);
+            //지윤 26.07.24 수정: courierCode 파라미터 추가된 시그니처에 맞춰 null로 넘김 (일괄등록은 API 코드 없이 텍스트만 씀)
+            boolean ok = updateOrderStatus(orderId, bizNo, "SHIPPING", carrier, null, trackingNo);
             if (ok) okCount++; else failLines.add(line);
         }
 

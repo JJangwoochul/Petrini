@@ -330,8 +330,10 @@
 
 
   //지윤 26.07.15 수정: 한 줄 나열 -> 라벨 붙은 4칸 그리드로 변경, 삭제 버튼 제거
-  function optRowHtml(color, size, addPrice, stockQty) {
+  //지윤 26.07.24 수정: optionId 파라미터 추가 (기존 옵션이면 값 있음, 새로 추가한 행이면 빈 값 -> 서버에서 이걸로 UPDATE/INSERT 구분)
+  function optRowHtml(color, size, addPrice, stockQty, optionId) {
     return '<div class="opt-row" style="border:1px solid var(--biz-border);border-radius:8px;padding:14px;margin-bottom:10px">' +
+      '<input type="hidden" name="optionId" value="' + (optionId != null ? optionId : '') + '">' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">색상(선택)</label>' +
           '<input type="text" name="optionColor" placeholder="예: 블랙" style="width:100%" value="' + (color || '') + '"></div>' +
@@ -345,9 +347,9 @@
     '</div>';
   }
 
-  function addOptionRow(color, size, addPrice, stockQty) {
+  function addOptionRow(color, size, addPrice, stockQty, optionId) {
     var wrap = document.createElement('div');
-    wrap.innerHTML = optRowHtml(color, size, addPrice, stockQty);
+    wrap.innerHTML = optRowHtml(color, size, addPrice, stockQty, optionId);
     document.getElementById('optionRows').appendChild(wrap.firstChild);
   }
 
@@ -401,7 +403,7 @@
         document.getElementById('optionRows').innerHTML = '';
         if (p.optionList && p.optionList.length > 0) {
           p.optionList.forEach(function (opt) {
-            addOptionRow(opt.optionColor === '기본' ? '' : opt.optionColor, opt.optionSize, opt.addPrice, opt.stockQty);
+            addOptionRow(opt.optionColor === '기본' ? '' : opt.optionColor, opt.optionSize, opt.addPrice, opt.stockQty, opt.optionId);
           });
         } else {
           addOptionRow();
