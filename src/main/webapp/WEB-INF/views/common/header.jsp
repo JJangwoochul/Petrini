@@ -18,14 +18,13 @@
     <link rel="apple-touch-icon" href="${contextPath}/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css?v=20260723">
+    <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css?v=20260724">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
 <%-- 2026-07-22 박유정 — 정지 회원 안내 (일반 회원 화면) --%>
 <c:if test="${not empty memberInfo and memberInfo.status eq 'SUSPENDED' and memberInfo.role eq 'USER'}">
     <div class="suspended-banner">
-        <%-- 정지 회원 고객센터 이용 안내 문구 --%>
         정지된 회원입니다. 고객센터 탭만 이용 가능합니다.
     </div>
 </c:if>
@@ -34,9 +33,7 @@
     <div class="header-top">
         <div class="header-top-inner">
             <nav class="header-top-nav">
-            <%-- 2026/07/07 장우철 — 관리자 헤더 버튼
-                 변경 이유: 관리자도 유저 홈(/login)에서 로그인하므로, role=ADMIN 일 때만
-                 로그아웃 옆에 관리자 대시보드(/admin) 이동 링크 노출 (유저·사업자에게는 비표시) --%>
+            <!-- 2026/07/07 장우철: 관리자 헤더 버튼 (role=ADMIN 일 때만 /admin 링크) -->
             <c:choose>
             <c:when test="${not empty memberInfo}">
                 <c:if test="${memberInfo.role eq 'ADMIN'}">
@@ -49,7 +46,7 @@
                 <a href="${contextPath}/join">회원가입</a>
             </c:otherwise>
             </c:choose>
-            <%-- [변경 전] 로그인 시 로그아웃만 표시 (관리자 전용 링크 없음) — c:choose 없이 로그아웃/로그인·회원가입만 노출 --%>
+            <!-- [변경 전] 로그인 시 로그아웃만 표시 (관리자 전용 링크 없음) -->
                 <a href="${contextPath}/member/cs">고객센터</a>
             
             </nav>

@@ -40,8 +40,13 @@ window.refreshCartCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/store/cart/count')
     .then(function(res){ return res.text(); })
     .then(function(count){
-      document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = count; });
-    });
+      var n = parseInt(count, 10);
+      if (isNaN(n)) return;
+      document.querySelectorAll('.header-utils .cart-count').forEach(function(el){
+        el.textContent = n > 99 ? '99+' : String(n);
+      });
+    })
+    .catch(function(){ /* 비로그인·정지 회원 등 */ });
 };
 window.refreshNotiCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/mypage/notifications/count')
