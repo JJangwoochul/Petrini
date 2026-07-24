@@ -69,6 +69,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
       병원 정보 
     </a>
+    <%-- 2026/07/15 장우철 고도화작업 — 병원 스케줄 (진료유형·의사·슬롯) --%>
+    <a href="${contextPath}/biz/hospital/schedule" class="biz-nav-link ${bizPage eq 'schedule' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      병원 스케줄
+    </a>
     <a href="${contextPath}/biz/hospital/info" class="biz-nav-link ${bizPage eq 'info' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       사업자 정보

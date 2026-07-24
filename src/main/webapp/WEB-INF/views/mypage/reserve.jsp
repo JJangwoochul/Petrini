@@ -23,17 +23,31 @@
       <p style="color:#166534;font-size:14px;margin-bottom:12px"><c:out value="${msg}"/></p>
     </c:if>
 
-    <div class="order-filter" style="margin-bottom:20px">
-        <a class="filter-btn ${statusFilter eq 'all' or empty statusFilter ? 'on' : ''}"
-           href="${contextPath}/mypage/reserve?status=all">전체</a>
-        <a class="filter-btn ${statusFilter eq 'pending' ? 'on' : ''}"
-           href="${contextPath}/mypage/reserve?status=pending">예약신청</a>
-        <a class="filter-btn ${statusFilter eq 'confirmed' ? 'on' : ''}"
-           href="${contextPath}/mypage/reserve?status=confirmed">확정</a>
-        <a class="filter-btn ${statusFilter eq 'done' ? 'on' : ''}"
-           href="${contextPath}/mypage/reserve?status=done">완료</a>
-        <a class="filter-btn ${statusFilter eq 'cancel' ? 'on' : ''}"
-           href="${contextPath}/mypage/reserve?status=cancel">취소</a>
+    <%-- 2026/07/21 장우철 — 좌측 상태 필터 + 우측 유형(전체/병원/숙소) 드롭다운 --%>
+    <c:set var="curType" value="${empty typeFilter ? 'all' : typeFilter}" />
+    <c:set var="curStatus" value="${empty statusFilter ? 'all' : statusFilter}" />
+    <div class="order-filter-bar">
+      <div class="order-filter">
+        <a class="filter-btn ${curStatus eq 'all' ? 'on' : ''}"
+           href="${contextPath}/mypage/reserve?type=${curType}&status=all">전체</a>
+        <a class="filter-btn ${curStatus eq 'pending' ? 'on' : ''}"
+           href="${contextPath}/mypage/reserve?type=${curType}&status=pending">예약신청</a>
+        <a class="filter-btn ${curStatus eq 'confirmed' ? 'on' : ''}"
+           href="${contextPath}/mypage/reserve?type=${curType}&status=confirmed">확정</a>
+        <a class="filter-btn ${curStatus eq 'done' ? 'on' : ''}"
+           href="${contextPath}/mypage/reserve?type=${curType}&status=done">완료</a>
+        <a class="filter-btn ${curStatus eq 'cancel' ? 'on' : ''}"
+           href="${contextPath}/mypage/reserve?type=${curType}&status=cancel">취소</a>
+      </div>
+      <div class="reserve-type-filter">
+        <label for="typeFilterSelect" class="reserve-type-label">예약 유형</label>
+        <select id="typeFilterSelect" class="reserve-type-select"
+                onchange="location.href='${contextPath}/mypage/reserve?type=' + this.value + '&status=${curStatus}'">
+          <option value="all" ${curType eq 'all' ? 'selected' : ''}>전체</option>
+          <option value="hospital" ${curType eq 'hospital' ? 'selected' : ''}>병원</option>
+          <option value="stay" ${curType eq 'stay' ? 'selected' : ''}>숙소</option>
+        </select>
+      </div>
     </div>
 
     <c:if test="${empty reservationList}">
@@ -85,7 +99,14 @@
                   <span>
                     <fmt:formatDate value="${r.resvDate}" pattern="yyyy년 M월 d일"/>
                     <c:if test="${not empty r.resvTime}"> ${r.resvTime}</c:if>
+                    <c:if test="${not empty r.endTime}">~${r.endTime}</c:if>
                   </span>
+                  <c:if test="${r.resvType eq 'HOSPITAL' and (not empty r.doctorName or not empty r.treatTypeName)}">
+                    <span>
+                      <c:if test="${not empty r.doctorName}">담당: <c:out value="${r.doctorName}"/></c:if>
+                      <c:if test="${not empty r.treatTypeName}"> · <c:out value="${r.treatTypeName}"/></c:if>
+                    </span>
+                  </c:if>
                 </c:otherwise>
               </c:choose>
               <c:if test="${not empty r.hospitalAddr}">

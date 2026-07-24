@@ -11,9 +11,13 @@
 package com.petcare.petcare.hospital.controller;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.common.config.controller.CommonConfigController;
@@ -96,11 +101,99 @@ public class HospitalController extends CommonConfigController {
         model.addAttribute("hospitalId", hospitalId);
         model.addAttribute("hospital", hospital);
         model.addAttribute("petList", hospitalService.getPetListForReserve(member.getMemberNo()));
+        // 2026/07/16 장우철 — 예약 UI: 활성 의사·진료유형
+        model.addAttribute("doctorList", hospitalService.getActiveDoctorsForReserve(hospitalId));
+        model.addAttribute("treatTypeList", hospitalService.getActiveTreatTypesForReserve(hospitalId));
         return "hospital/reserve";
 
         /* [변경 전] 2026-07-10 장우철 — id 하드코딩·목업만
         model.addAttribute("id", id);
         */
+    }
+
+    // 2026/07/20 장우철 — 예약 날짜 정기 휴무 확인 (Ajax)
+    @GetMapping("/reserve/day-check")
+    @ResponseBody
+    public Map<String, Object> reserveDayCheck(@RequestParam("hospitalId") Long hospitalId,
+                                               @RequestParam("resvDate")
+                                               @DateTimeFormat(pattern = "yyyy-MM-dd") Date resvDate,
+                                               HttpSession session) {
+        if (session.getAttribute("memberInfo") == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+        try {
+            return apiOk(hospitalService.checkReserveDate(hospitalId, resvDate));
+        } catch (IllegalArgumentException e) {
+            return apiFail(e.getMessage());
+        } catch (Exception e) {
+            return apiFail("예약 가능 여부를 확인하지 못했습니다.");
+        }
+    }
+
+    // 2026/07/16 장우철 — 예약 가능 시간 (Ajax)
+    @GetMapping("/reserve/times")
+    @ResponseBody
+    public Map<String, Object> reserveTimes(@RequestParam("hospitalId") Long hospitalId,
+                                            @RequestParam("doctorId") Long doctorId,
+                                            @RequestParam("treatTypeId") Long treatTypeId,
+                                            @RequestParam("resvDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date resvDate,
+                                            HttpSession session) {
+        if (session.getAttribute("memberInfo") == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+        try {
+            return apiOk(hospitalService.getAvailableReserveTimes(
+                    hospitalId, doctorId, treatTypeId, resvDate));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return apiFail(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            return apiFail("예약 가능 시간을 불러오지 못했습니다: " + msg);
+        }
+    }
+
+    // 2026/07/16 장우철 — 펫 단계 이동 시 시간 선점 (Ajax)
+    @PostMapping("/reserve/hold")
+    @ResponseBody
+    public Map<String, Object> reserveHold(@RequestParam("hospitalId") Long hospitalId,
+                                           @RequestParam("doctorId") Long doctorId,
+                                           @RequestParam("treatTypeId") Long treatTypeId,
+                                           @RequestParam("resvDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date resvDate,
+                                           @RequestParam("resvTime") String resvTime,
+                                           HttpSession session) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+        try {
+            Long holdId = hospitalService.createReserveHold(
+                    hospitalId, member.getMemberNo(), doctorId, treatTypeId, resvDate, resvTime);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("holdId", holdId);
+            return apiOk(data);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return apiFail(e.getMessage());
+        } catch (Exception e) {
+            return apiFail("예약 시간 선점에 실패했습니다.");
+        }
+    }
+
+    // 2026/07/20 장우철 — 2단계 이전 클릭 시 hold 해제 (Ajax)
+    @PostMapping("/reserve/hold/release")
+    @ResponseBody
+    public Map<String, Object> releaseReserveHold(@RequestParam("hospitalId") Long hospitalId,
+                                                  HttpSession session) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+        try {
+            hospitalService.releaseMemberReserveHolds(hospitalId, member.getMemberNo());
+            return apiOk(null);
+        } catch (Exception e) {
+            return apiFail("예약 선점 해제에 실패했습니다.");
+        }
     }
 
     // 2026-07-10 장우철 — 병원 예약 저장 (F2)
@@ -118,8 +211,40 @@ public class HospitalController extends CommonConfigController {
         vo.setMemberNo(member.getMemberNo());
         vo.setTargetId(String.valueOf(hospitalId));
 
-        Long resvId = hospitalService.createHospitalReservation(vo);
-        return "redirect:/hospital/complete?resvId=" + resvId;
+        if (vo.getHoldId() == null) {
+            rttr.addFlashAttribute("errorMsg", "예약 일정이 만료되었습니다. 처음부터 다시 선택해 주세요.");
+            return "redirect:/hospital/reserve?id=" + hospitalId;
+        }
+        if (vo.getPetId() == null) {
+            rttr.addFlashAttribute("errorMsg", "반려동물을 선택해 주세요.");
+            return "redirect:/hospital/reserve?id=" + hospitalId;
+        }
+
+        try {
+            Long resvId = hospitalService.createHospitalReservation(vo);
+            if (resvId == null) {
+                rttr.addFlashAttribute("errorMsg", "예약 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+                return "redirect:/hospital/reserve?id=" + hospitalId;
+            }
+            return "redirect:/hospital/complete?resvId=" + resvId;
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/hospital/reserve?id=" + hospitalId;
+        }
+    }
+
+    private Map<String, Object> apiOk(Object data) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ok", true);
+        m.put("data", data);
+        return m;
+    }
+
+    private Map<String, Object> apiFail(String msg) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ok", false);
+        m.put("msg", msg);
+        return m;
     }
 
     // 2026-07-10 장우철 — 예약 완료 (F3)

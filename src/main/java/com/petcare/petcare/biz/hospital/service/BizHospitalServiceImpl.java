@@ -24,7 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
+import com.petcare.petcare.hospital.vo.HospitalResvExceptionVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
+import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
@@ -331,5 +334,197 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         String hospitalName = bizHospitalMapper.selectHospitalNameById(hospitalId);
         mypageNotifyService.sendHospitalReviewReplyNotification(
                 current.getMemberNo(), hospitalName, current.getResvId(), hospitalId);
+    }
+
+    // 2026/07/16 장우철 고도화작업 — 병원 스케줄 CRUD
+    @Override
+    @Transactional(readOnly = true)
+    public List<HospitalTreatTypeVO> getTreatTypeList(Long hospitalId) throws Exception {
+        if (hospitalId == null) return List.of();
+        return bizHospitalMapper.selectTreatTypeList(hospitalId);
+    }
+
+    @Override
+    @Transactional
+    public void saveTreatType(Long hospitalId, HospitalTreatTypeVO vo) throws Exception {
+        if (hospitalId == null || vo == null) {
+            throw new IllegalArgumentException("진료유형 정보가 올바르지 않습니다.");
+        }
+        if (vo.getTypeName() == null || vo.getTypeName().isBlank()) {
+            throw new IllegalArgumentException("유형명을 입력해 주세요.");
+        }
+        if (vo.getDurationMin() == null || vo.getDurationMin() <= 0) {
+            throw new IllegalArgumentException("소요 시간(분)은 1 이상으로 입력해 주세요.");
+        }
+        if (vo.getDurationMin() > 480) {
+            throw new IllegalArgumentException("소요 시간(분)은 480분(8시간) 이하로 입력해 주세요.");
+        }
+        vo.setHospitalId(hospitalId);
+        vo.setTypeName(vo.getTypeName().trim());
+        if (vo.getStatusCd() == null || vo.getStatusCd().isBlank()) {
+            vo.setStatusCd("Y");
+        }
+        if (vo.getTreatTypeId() == null) {
+            bizHospitalMapper.insertTreatType(vo);
+        } else {
+            if (bizHospitalMapper.selectTreatType(hospitalId, vo.getTreatTypeId()) == null) {
+                throw new IllegalStateException("진료유형을 찾을 수 없습니다.");
+            }
+            bizHospitalMapper.updateTreatType(vo);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteTreatType(Long hospitalId, Long treatTypeId) throws Exception {
+        if (hospitalId == null || treatTypeId == null) {
+            throw new IllegalArgumentException("삭제 대상이 올바르지 않습니다.");
+        }
+        int n = bizHospitalMapper.deleteTreatType(hospitalId, treatTypeId);
+        if (n == 0) {
+            throw new IllegalStateException("진료유형을 찾을 수 없거나 이미 삭제되었습니다.");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HospitalDoctorVO> getDoctorList(Long hospitalId) throws Exception {
+        if (hospitalId == null) return List.of();
+        return bizHospitalMapper.selectDoctorList(hospitalId);
+    }
+
+    @Override
+    @Transactional
+    public void saveDoctor(Long hospitalId, HospitalDoctorVO vo) throws Exception {
+        if (hospitalId == null || vo == null) {
+            throw new IllegalArgumentException("의사 정보가 올바르지 않습니다.");
+        }
+        if (vo.getDoctorName() == null || vo.getDoctorName().isBlank()) {
+            throw new IllegalArgumentException("의사명을 입력해 주세요.");
+        }
+        vo.setHospitalId(hospitalId);
+        vo.setDoctorName(vo.getDoctorName().trim());
+        if (vo.getSpecialty() != null) {
+            vo.setSpecialty(vo.getSpecialty().trim());
+        }
+        if (vo.getStatusCd() == null || vo.getStatusCd().isBlank()) {
+            vo.setStatusCd("Y");
+        }
+        if (vo.getDoctorId() == null) {
+            bizHospitalMapper.insertDoctor(vo);
+        } else {
+            if (bizHospitalMapper.selectDoctor(hospitalId, vo.getDoctorId()) == null) {
+                throw new IllegalStateException("의사를 찾을 수 없습니다.");
+            }
+            bizHospitalMapper.updateDoctor(vo);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteDoctor(Long hospitalId, Long doctorId) throws Exception {
+        if (hospitalId == null || doctorId == null) {
+            throw new IllegalArgumentException("삭제 대상이 올바르지 않습니다.");
+        }
+        int n = bizHospitalMapper.deleteDoctor(hospitalId, doctorId);
+        if (n == 0) {
+            throw new IllegalStateException("의사를 찾을 수 없거나 이미 삭제되었습니다.");
+        }
+    }
+
+    // 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 간격은 TB_HOSPITAL.RESV_INTERVAL_MIN
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getResvIntervalMin(Long hospitalId) throws Exception {
+        if (hospitalId == null) return 15;
+        Integer v = bizHospitalMapper.selectResvIntervalMin(hospitalId);
+        return (v == null || v <= 0) ? 15 : v;
+    }
+
+    @Override
+    @Transactional
+    public void saveResvIntervalMin(Long hospitalId, Integer intervalMin) throws Exception {
+        if (hospitalId == null) {
+            throw new IllegalArgumentException("병원 정보가 올바르지 않습니다.");
+        }
+        if (intervalMin == null || intervalMin <= 0) {
+            throw new IllegalArgumentException("예약 간격(분)을 1 이상 숫자로 입력해 주세요.");
+        }
+        if (intervalMin < 5 || intervalMin > 120) {
+            throw new IllegalArgumentException("예약 간격은 5~120분 사이로 입력해 주세요.");
+        }
+        int n = bizHospitalMapper.updateResvIntervalMin(hospitalId, intervalMin);
+        if (n == 0) {
+            throw new IllegalStateException("병원을 찾을 수 없습니다.");
+        }
+    }
+
+    private String normalizeTime(String t) {
+        String v = t.trim();
+        return v.length() >= 5 ? v.substring(0, 5) : v;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HospitalResvExceptionVO> getResvExceptionList(Long hospitalId, String fromDate, String toDate)
+            throws Exception {
+        if (hospitalId == null) return List.of();
+        return bizHospitalMapper.selectResvExceptionList(hospitalId, fromDate, toDate);
+    }
+
+    @Override
+    @Transactional
+    public void saveResvException(Long hospitalId, HospitalResvExceptionVO vo) throws Exception {
+        if (hospitalId == null || vo == null) {
+            throw new IllegalArgumentException("예외 정보가 올바르지 않습니다.");
+        }
+        if (vo.getExcDate() == null) {
+            throw new IllegalArgumentException("예외 날짜를 입력해 주세요.");
+        }
+        if (vo.getExcType() == null || vo.getExcType().isBlank()) {
+            throw new IllegalArgumentException("예외 유형을 선택해 주세요.");
+        }
+        String type = vo.getExcType().trim().toUpperCase();
+        if (!"CLOSE".equals(type) && !"REPLACE".equals(type)) {
+            throw new IllegalArgumentException("예외 유형은 CLOSE 또는 REPLACE 입니다.");
+        }
+        vo.setExcType(type);
+        if (vo.getStartTime() == null || vo.getStartTime().isBlank()
+                || vo.getEndTime() == null || vo.getEndTime().isBlank()) {
+            throw new IllegalArgumentException("시작·종료 시각을 입력해 주세요.");
+        }
+        vo.setHospitalId(hospitalId);
+        vo.setStartTime(normalizeTime(vo.getStartTime()));
+        vo.setEndTime(normalizeTime(vo.getEndTime()));
+        if (vo.getStartTime().compareTo(vo.getEndTime()) >= 0) {
+            throw new IllegalArgumentException("종료 시각은 시작 시각보다 늦어야 합니다.");
+        }
+        if (vo.getStatusCd() == null || vo.getStatusCd().isBlank()) {
+            vo.setStatusCd("Y");
+        }
+        if (vo.getDoctorId() != null
+                && bizHospitalMapper.selectDoctor(hospitalId, vo.getDoctorId()) == null) {
+            throw new IllegalArgumentException("해당 병원에 없는 의사입니다.");
+        }
+        if (vo.getExcId() == null) {
+            bizHospitalMapper.insertResvException(vo);
+        } else {
+            if (bizHospitalMapper.selectResvException(hospitalId, vo.getExcId()) == null) {
+                throw new IllegalStateException("예외를 찾을 수 없습니다.");
+            }
+            bizHospitalMapper.updateResvException(vo);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteResvException(Long hospitalId, Long excId) throws Exception {
+        if (hospitalId == null || excId == null) {
+            throw new IllegalArgumentException("삭제 대상이 올바르지 않습니다.");
+        }
+        int n = bizHospitalMapper.deleteResvException(hospitalId, excId);
+        if (n == 0) {
+            throw new IllegalStateException("예외를 찾을 수 없거나 이미 삭제되었습니다.");
+        }
     }
 }

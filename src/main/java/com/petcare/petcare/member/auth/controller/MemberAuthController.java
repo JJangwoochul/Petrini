@@ -179,7 +179,9 @@ public class MemberAuthController {
                 return "redirect:/join";
             }
             session.setAttribute("memberInfo", member);
-            
+            // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림용 — accessToken 세션 저장
+            session.setAttribute("kakaoAccessToken", accessToken);
+
             // 2026-07-22 박유정 — 정지 회원은 고객센터로
             if("SUSPENDED".equals(member.getStatus())) {
                 return "redirect:/member/cs";

@@ -40,7 +40,9 @@ window.refreshCartCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/store/cart/count')
     .then(function(res){ return res.text(); })
     .then(function(count){
-      var n = parseInt(count, 10);
+      // 2026/07/23 장우철 — 숫자만 반영 (HTML 리다이렉트 응답이 뱃지에 덤프되지 않게)
+      // 2026-07-24 박유정 — 헤더 뱃지만 갱신 (.header-utils)
+      var n = parseInt(String(count).trim(), 10);
       if (isNaN(n)) return;
       document.querySelectorAll('.header-utils .cart-count').forEach(function(el){
         el.textContent = n > 99 ? '99+' : String(n);
@@ -52,6 +54,7 @@ window.refreshNotiCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/mypage/notifications/count')
     .then(function(res){ return res.text(); })
     .then(function(count){
+      if (!/^\d+$/.test(String(count).trim())) return;
       var n = parseInt(count, 10) || 0;
       document.querySelectorAll('.noti-count').forEach(function(el){
         el.textContent = n > 99 ? '99+' : String(n);

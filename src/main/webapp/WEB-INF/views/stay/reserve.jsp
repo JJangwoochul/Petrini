@@ -44,6 +44,14 @@
   <h1 class="res-title">예약 / 결제</h1>
   <p class="res-sub">예약 정보를 확인하고 결제를 진행하세요.</p>
 
+  <%-- 에러 메시지 (서버 검증 실패 시) --%>
+  <c:if test="${not empty errorMsg}">
+    <div style="background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;
+                padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;font-weight:600">
+      ${errorMsg}
+    </div>
+  </c:if>
+
   <%-- 숙소 요약 --%>
   <div class="res-place-card">
     <c:choose>
@@ -77,7 +85,7 @@
             <c:forEach var="room" items="${stay.rooms}">
               <option value="${room.roomId}"
                       data-price="${room.pricePerNight}"
-                      ${room.roomId == selectedRoomId ? 'selected' : ''}>
+                      ${room.roomId == roomId ? 'selected' : ''}>
                 ${room.name} — <fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원/박
               </option>
             </c:forEach>
@@ -85,13 +93,17 @@
         </div>
         <div class="res-group">
           <label>체크인 <span class="req">*</span></label>
-          <input type="date" name="checkinDate" id="checkinDate" required onchange="calcPrice()">
+          <input type="date" name="checkinDate" id="checkinDate" required onchange="calcPrice()"
+                 value="${param.checkinDate}">
         </div>
         <div class="res-group">
           <label>체크아웃 <span class="req">*</span></label>
-          <input type="date" name="checkoutDate" id="checkoutDate" required onchange="calcPrice()">
+          <input type="date" name="checkoutDate" id="checkoutDate" required onchange="calcPrice()"
+                 value="${param.checkoutDate}">
         </div>
       </div>
+      <%-- 가용성 체크 결과 --%>
+      <div id="availabilityMsg"></div>
     </div>
 
     <%-- 반려동물 선택 --%>
@@ -151,12 +163,14 @@
         </c:if>
         <div class="ps-row total"><span>총 결제금액</span><span id="totalLabel">-</span></div>
       </div>
-      <button type="submit" class="btn-pay-submit" id="submitBtn" disabled>예약 신청하기</button>
+      <button type="submit" class="btn-pay-submit" id="submitBtn" disabled>결제하기</button>
     </div>
   </form>
 </div>
 
 <script>
+  var contextPath = '${contextPath}';
+
   // 오늘 날짜를 min으로 설정
   var today = new Date().toISOString().split('T')[0];
   document.getElementById('checkinDate').min = today;
@@ -172,17 +186,29 @@
     var roomSel = document.getElementById('roomSelect');
     var ci = document.getElementById('checkinDate').value;
     var co = document.getElementById('checkoutDate').value;
+    var availMsg = document.getElementById('availabilityMsg');
+    availMsg.innerHTML = '';
+
+    // 체크인 선택 시 체크아웃 min을 다음날로
+    if (ci) {
+      var nextDay = new Date(ci);
+      nextDay.setDate(nextDay.getDate() + 1);
+      document.getElementById('checkoutDate').min = nextDay.toISOString().split('T')[0];
+      if (co && co <= ci) {
+        document.getElementById('checkoutDate').value = '';
+        co = '';
+      }
+    }
 
     if (!roomSel.value || !ci || !co) {
       document.getElementById('priceLabel').textContent = '객실과 날짜를 선택하세요';
       document.getElementById('totalLabel').textContent = '-';
       document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').textContent = '예약 신청하기';
       return;
     }
 
-    var ciDate = new Date(ci);
-    var coDate = new Date(co);
-    var nights = Math.round((coDate - ciDate) / (1000 * 60 * 60 * 24));
+    var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
 
     if (nights <= 0) {
       document.getElementById('priceLabel').textContent = '체크아웃은 체크인 이후여야 합니다';
@@ -200,13 +226,52 @@
         price.toLocaleString() + '원 × ' + nights + '박';
     document.getElementById('totalLabel').textContent =
         total.toLocaleString() + '원';
-    document.getElementById('submitBtn').disabled = false;
-    document.getElementById('submitBtn').textContent =
-        total.toLocaleString() + '원 예약 신청하기';
+
+    // 가용성 AJAX 체크
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = '예약 가능 여부 확인 중...';
+    availMsg.innerHTML = '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
+        + 'background:var(--bg-page);border:1px solid var(--border);color:var(--text-muted)">확인 중...</div>';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', contextPath + '/stay/checkAvailability'
+        + '?roomId=' + roomSel.value
+        + '&checkinDate=' + ci
+        + '&checkoutDate=' + co);
+    xhr.onload = function() {
+      var res = JSON.parse(xhr.responseText);
+      if (res.available) {
+        availMsg.innerHTML = '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
+            + 'background:#F0FDF4;border:1px solid #BBF7D0;color:#16A34A;margin-top:10px">'
+            + '✓ 예약 가능한 날짜입니다.</div>';
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').textContent =
+            total.toLocaleString() + '원 예약 신청하기';
+      } else {
+        availMsg.innerHTML = '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
+            + 'background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;margin-top:10px">'
+            + '✕ ' + res.message + '</div>';
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').textContent = '예약 불가';
+      }
+    };
+    xhr.onerror = function() {
+      availMsg.innerHTML = '';
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent =
+          total.toLocaleString() + '원 예약 신청하기';
+    };
+    xhr.send();
   }
 
-  // 초기 선택값이 있으면 계산
-  if (document.getElementById('roomSelect').value) calcPrice();
+  // detail에서 넘어온 초기값이 있으면 자동 계산
+  window.addEventListener('DOMContentLoaded', function() {
+    var roomSel = document.getElementById('roomSelect');
+    var ci = document.getElementById('checkinDate').value;
+    if (roomSel.value && ci) {
+      calcPrice();
+    }
+  });
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

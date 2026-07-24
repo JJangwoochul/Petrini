@@ -72,18 +72,70 @@ public class BizStoreController extends BizBaseController {
         return "biz/store/products";
     }
 
+    //지윤 26.07.20 수정: 목업 -> 실데이터 연동 (상태 탭 필터)
     @GetMapping("/orders")
-    public String storeOrders(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
+    public String storeOrders(@RequestParam(required = false) String statusCd, HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        model.addAttribute("orderList", bizStoreService.getOrderList(bizNo, statusCd));
+        model.addAttribute("statusCounts", bizStoreService.getOrderStatusCounts(bizNo));
+        model.addAttribute("selectedStatusCd", statusCd);
         return "biz/store/orders";
     }
 
+    //지윤 26.07.20 추가: 주문 상세 조회 (모달/상세영역 프리필용 AJAX)
+    @GetMapping("/orders/{id}")
+    @ResponseBody
+    public com.petcare.petcare.biz.store.vo.BizOrderVO getOrderDetailJson(@PathVariable Long id, HttpSession session) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return null;
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        return bizStoreService.getOrderDetail(id, bizNo);
+    }
+
+    //지윤 26.07.20 추가: 주문 상태 변경 (택배사/송장번호 같이 저장)
+    @PostMapping("/orders/{id}/status")
+    @ResponseBody
+    public String updateOrderStatus(@PathVariable Long id,
+                                     @RequestParam String orderStatus,
+                                     @RequestParam(required = false) String courierName,
+                                     @RequestParam(required = false) String trackingNo,
+                                     HttpSession session) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "LOGIN_REQUIRED";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        boolean ok = bizStoreService.updateOrderStatus(id, bizNo, orderStatus, courierName, trackingNo);
+        return ok ? "OK" : "FAILED";
+    }
+    
+    //지윤 26.07.20 수정: 목업 -> 실데이터 연동 (택배사/상태/키워드 필터)
     @GetMapping("/delivery")
-    public String storeDelivery(HttpSession session) {
-        if (getBizMember(session) == null)
-            return "redirect:/login";
+    public String storeDelivery(@RequestParam(required = false) String carrier,
+                                 @RequestParam(required = false) String statusCd,
+                                 @RequestParam(required = false) String keyword,
+                                 HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        model.addAttribute("deliveryList", bizStoreService.getDeliveryList(bizNo, carrier, statusCd, keyword));
+        model.addAttribute("summary", bizStoreService.getDeliverySummary(bizNo));
+        model.addAttribute("selectedCarrier", carrier);
+        model.addAttribute("selectedStatusCd", statusCd);
+        model.addAttribute("selectedKeyword", keyword);
         return "biz/store/delivery";
+    }
+
+    //지윤 26.07.20 추가: 송장 일괄등록 (텍스트 여러 줄 파싱)
+    @PostMapping("/delivery/bulk")
+    @ResponseBody
+    public java.util.Map<String, Object> bulkDelivery(@RequestParam String bulkText, HttpSession session) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return java.util.Map.of("error", "LOGIN_REQUIRED");
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        return bizStoreService.bulkRegisterDelivery(bizNo, bulkText);
     }
 
     @GetMapping("/reviews")

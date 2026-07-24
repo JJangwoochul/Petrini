@@ -43,12 +43,23 @@ public class SuspendedMemberInterceptor implements HandlerInterceptor {
         }
 
         String uri = request.getRequestURI();
+        // context-path 포함 URI 대비 (예: /petcare/member/cs)
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isEmpty() && uri.startsWith(contextPath)) {
+            uri = uri.substring(contextPath.length());
+        }
+        if (uri.isEmpty()) {
+            uri = "/";
+        }
 
         // 2026-07-22 박유정 — 정지 회원 허용 경로 (/member/cs, 로그아웃, 정적 파일)
-        if(uri.startsWith("/member/cs")
+        // 2026/07/23 장우철 — cart/noti count Ajax 가 HTML 리다이렉트되면 헤더 뱃지에 페이지 소스가 덤프됨
+        if (uri.startsWith("/member/cs")
                 || uri.equals("/member/logout")
                 || uri.startsWith("/resources/")
-                || uri.startsWith("/upload/")) {
+                || uri.startsWith("/upload/")
+                || uri.equals("/store/cart/count")
+                || uri.equals("/mypage/notifications/count")) {
             return true;
         }
 

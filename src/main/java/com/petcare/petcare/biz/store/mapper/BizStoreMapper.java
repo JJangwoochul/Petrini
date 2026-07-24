@@ -25,9 +25,13 @@
 package com.petcare.petcare.biz.store.mapper;
 
 import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
+import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
@@ -98,4 +102,38 @@ public interface BizStoreMapper {
 
     //지윤 26.07.15 상품 옵션 전체 삭제 (수정 시 기존 옵션 지우고 새로 등록하는 방식이라 필요)
     void deleteProductOptions(@Param("productId") Long productId);
+
+    //지윤 26.07.20 추가: 사업자 주문 목록 조회
+    List<BizOrderVO> selectOrderList(@Param("bizNo") Long bizNo, @Param("statusCd") String statusCd);
+
+    //지윤 26.07.20 추가: 상태별 주문 개수 (탭 숫자 표시용)
+    List<java.util.Map<String, Object>> selectOrderStatusCounts(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 주문 상세 조회
+    BizOrderVO selectOrderDetail(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 주문 상세 - 상품 목록
+    List<BizOrderItemVO> selectOrderItems(@Param("orderId") Long orderId);
+
+    //지윤 26.07.20 추가: 주문 상태 변경 (본인 주문만, 수정된 row수 반환)
+    int updateOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("orderStatus") String orderStatus);
+
+    //지윤 26.07.20 추가: 배송정보(TB_ORDER_DELIVERY) 존재 여부 확인
+    int selectDeliveryExists(@Param("orderId") Long orderId);
+
+    //지윤 26.07.20 추가: 배송정보 신규 등록
+    void insertOrderDelivery(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo,
+                              @Param("courierName") String courierName, @Param("trackingNo") String trackingNo,
+                              @Param("deliveryStatus") String deliveryStatus);
+
+    //지윤 26.07.20 추가: 배송정보 수정
+    void updateOrderDelivery(@Param("orderId") Long orderId, @Param("courierName") String courierName,
+                              @Param("trackingNo") String trackingNo, @Param("deliveryStatus") String deliveryStatus);
+
+    //지윤 26.07.20 추가: 배송관리 목록 조회 (택배사/상태/키워드 필터)
+    List<BizDeliveryVO> selectDeliveryList(@Param("bizNo") Long bizNo, @Param("carrier") String carrier,
+                                            @Param("statusCd") String statusCd, @Param("keyword") String keyword);
+
+    //지윤 26.07.20 추가: 일괄등록 시 주문번호로 ORDER_ID 조회 (본인 사업자 주문 아니면 null)
+    Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo, @Param("bizNo") Long bizNo);                          
 }

@@ -105,6 +105,13 @@
          WHERE  HOSPITAL_ID = #{hospitalId}
     </select>
 
+    <!-- 2026/07/16 장우철 — 예약 간격(컬럼 없을 수 있어 단건 조회에서 분리) -->
+    <select id="selectResvIntervalMin" resultType="java.lang.Integer">
+        SELECT NVL(RESV_INTERVAL_MIN, 15)
+          FROM TB_HOSPITAL
+         WHERE HOSPITAL_ID = #{hospitalId}
+    </select>
+
     <!-- 2026-07-10 장우철 — 예약 폼 반려동물 목록 (F2) -->
     <select id="selectPetListByMemberNo" parameterType="long"
             resultType="com.petcare.petcare.hospital.vo.HospitalPetVO">
@@ -133,6 +140,10 @@
             TARGET_ID,
             RESV_DATE,
             RESV_TIME,
+            TREAT_TYPE_ID,
+            DURATION_MIN,
+            END_TIME,
+            DOCTOR_ID,
             SYMPTOMS,
             REQUEST_MEMO,
             STATUS_CD,
@@ -146,12 +157,269 @@
             #{targetId},
             #{resvDate},
             #{resvTime},
+            #{treatTypeId, jdbcType=NUMERIC},
+            #{durationMin, jdbcType=NUMERIC},
+            #{endTime, jdbcType=VARCHAR},
+            #{doctorId, jdbcType=NUMERIC},
             #{symptoms, jdbcType=VARCHAR},
             #{requestMemo, jdbcType=VARCHAR},
             #{statusCd},
             SYSDATE
         )
     </insert>
+
+    <!-- 2026/07/16 장우철 — 예약 제출: 진료유형 조회 -->
+    <select id="selectTreatType"
+            resultType="com.petcare.petcare.hospital.vo.HospitalTreatTypeVO">
+        SELECT TREAT_TYPE_ID AS treatTypeId,
+               HOSPITAL_ID   AS hospitalId,
+               TYPE_NAME     AS typeName,
+               DURATION_MIN  AS durationMin,
+               STATUS_CD     AS statusCd,
+               SORT_ORDR     AS sortOrdr,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_TREAT_TYPE
+         WHERE HOSPITAL_ID   = #{hospitalId}
+           AND TREAT_TYPE_ID = #{treatTypeId}
+    </select>
+
+    <!-- 2026/07/16 장우철 — 예약 제출: 의사 조회 -->
+    <select id="selectDoctor"
+            resultType="com.petcare.petcare.hospital.vo.HospitalDoctorVO">
+        SELECT DOCTOR_ID   AS doctorId,
+               HOSPITAL_ID AS hospitalId,
+               DOCTOR_NAME AS doctorName,
+               SPECIALTY   AS specialty,
+               STATUS_CD   AS statusCd,
+               SORT_ORDR   AS sortOrdr,
+               REG_DATE    AS regDate
+          FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND DOCTOR_ID   = #{doctorId}
+    </select>
+
+    <!-- 2026/07/20 장우철 — 동시예약 방지: 선점·예약 INSERT 직전 의사 행 FOR UPDATE -->
+    <select id="lockDoctorForUpdate" resultType="long">
+        SELECT DOCTOR_ID
+          FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND DOCTOR_ID   = #{doctorId}
+           FOR UPDATE
+    </select>
+
+    <!-- 2026/07/16 장우철 — 예약 제출: PENDING·CONFIRMED 겹침 (같은 의사·같은 날 [start,end)) -->
+    <select id="countOverlappingReservations" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION R
+         WHERE R.RESV_TYPE  = 'HOSPITAL'
+           AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
+           AND R.DOCTOR_ID  = #{doctorId}
+           AND R.RESV_DATE &gt;= TRUNC(#{resvDate})
+           AND R.RESV_DATE &lt;  TRUNC(#{resvDate}) + 1
+           AND R.STATUS_CD IN ('PENDING', 'CONFIRMED')
+           AND R.RESV_TIME &lt; #{endTime}
+           AND NVL(
+                   R.END_TIME,
+                   TO_CHAR(
+                       TO_DATE(R.RESV_TIME, 'HH24:MI')
+                       + NUMTODSINTERVAL(NVL(R.DURATION_MIN, 30), 'MINUTE'),
+                       'HH24:MI'
+                   )
+               ) &gt; #{resvTime}
+    </select>
+
+    <!-- 2026/07/16 장우철 — 예약 UI: 활성 진료유형·의사 -->
+    <select id="selectActiveTreatTypeList"
+            resultType="com.petcare.petcare.hospital.vo.HospitalTreatTypeVO">
+        SELECT TREAT_TYPE_ID AS treatTypeId,
+               HOSPITAL_ID   AS hospitalId,
+               TYPE_NAME     AS typeName,
+               DURATION_MIN  AS durationMin,
+               STATUS_CD     AS statusCd,
+               SORT_ORDR     AS sortOrdr,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_TREAT_TYPE
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND NVL(STATUS_CD, 'Y') = 'Y'
+         ORDER BY NVL(SORT_ORDR, 9999), TREAT_TYPE_ID
+    </select>
+
+    <select id="selectActiveDoctorList"
+            resultType="com.petcare.petcare.hospital.vo.HospitalDoctorVO">
+        SELECT DOCTOR_ID   AS doctorId,
+               HOSPITAL_ID AS hospitalId,
+               DOCTOR_NAME AS doctorName,
+               SPECIALTY   AS specialty,
+               STATUS_CD   AS statusCd,
+               SORT_ORDR   AS sortOrdr,
+               REG_DATE    AS regDate
+          FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND NVL(STATUS_CD, 'Y') = 'Y'
+         ORDER BY NVL(SORT_ORDR, 9999), DOCTOR_ID
+    </select>
+
+    <!-- 2026/07/16 장우철 — 해당일 예약예외 (병원 공통 + 의사별) -->
+    <select id="selectResvExceptionsByDate"
+            resultType="com.petcare.petcare.hospital.vo.HospitalResvExceptionVO">
+        SELECT E.EXC_ID       AS excId,
+               E.HOSPITAL_ID  AS hospitalId,
+               E.DOCTOR_ID    AS doctorId,
+               E.EXC_DATE     AS excDate,
+               E.EXC_TYPE     AS excType,
+               E.START_TIME   AS startTime,
+               E.END_TIME     AS endTime,
+               E.INTERVAL_MIN AS intervalMin,
+               E.MEMO         AS memo,
+               E.STATUS_CD    AS statusCd,
+               E.REG_DATE     AS regDate
+          FROM TB_HOSPITAL_RESV_EXCEPTION E
+         WHERE E.HOSPITAL_ID = #{hospitalId}
+           AND E.EXC_DATE &gt;= TRUNC(#{resvDate})
+           AND E.EXC_DATE &lt;  TRUNC(#{resvDate}) + 1
+           AND NVL(E.STATUS_CD, 'Y') = 'Y'
+    </select>
+
+    <!-- 2026/07/16 장우철 — PENDING·CONFIRMED 예약 점유 (의사별) -->
+    <select id="selectOccupiedReservationBlocks"
+            resultType="com.petcare.petcare.hospital.vo.HospitalTimeBlockVO">
+        SELECT R.RESV_TIME AS startTime,
+               NVL(
+                   R.END_TIME,
+                   TO_CHAR(
+                       TO_DATE(R.RESV_TIME, 'HH24:MI')
+                       + NUMTODSINTERVAL(NVL(R.DURATION_MIN, 30), 'MINUTE'),
+                       'HH24:MI'
+                   )
+               ) AS endTime,
+               NULL AS holdId
+          FROM TB_RESERVATION R
+         WHERE R.RESV_TYPE  = 'HOSPITAL'
+           AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
+           AND R.DOCTOR_ID  = #{doctorId}
+           AND R.RESV_DATE &gt;= TRUNC(#{resvDate})
+           AND R.RESV_DATE &lt;  TRUNC(#{resvDate}) + 1
+           AND R.STATUS_CD IN ('PENDING', 'CONFIRMED')
+    </select>
+
+    <!-- 2026/07/16 장우철 — 유효 선점 점유 (홀드 테이블 없으면 Service에서 무시) -->
+    <select id="selectOccupiedHoldBlocks"
+            resultType="com.petcare.petcare.hospital.vo.HospitalTimeBlockVO">
+        SELECT H.RESV_TIME AS startTime,
+               H.END_TIME  AS endTime,
+               H.HOLD_ID   AS holdId
+          FROM TB_HOSPITAL_RESV_HOLD H
+         WHERE H.HOSPITAL_ID = #{hospitalId}
+           AND H.DOCTOR_ID   = #{doctorId}
+           AND H.RESV_DATE &gt;= TRUNC(#{resvDate})
+           AND H.RESV_DATE &lt;  TRUNC(#{resvDate}) + 1
+           AND H.EXPIRE_DATE &gt; SYSDATE
+    </select>
+
+    <!-- 2026/07/16 장우철 — 예약·선점 통합 겹침 (제출·선점 시) -->
+    <select id="countOverlappingWithHolds" resultType="int">
+        SELECT (
+            SELECT COUNT(*)
+              FROM TB_RESERVATION R
+             WHERE R.RESV_TYPE  = 'HOSPITAL'
+               AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
+               AND R.DOCTOR_ID  = #{doctorId}
+               AND R.RESV_DATE &gt;= TRUNC(#{resvDate})
+               AND R.RESV_DATE &lt;  TRUNC(#{resvDate}) + 1
+               AND R.STATUS_CD IN ('PENDING', 'CONFIRMED')
+               AND R.RESV_TIME &lt; #{endTime}
+               AND NVL(
+                       R.END_TIME,
+                       TO_CHAR(
+                           TO_DATE(R.RESV_TIME, 'HH24:MI')
+                           + NUMTODSINTERVAL(NVL(R.DURATION_MIN, 30), 'MINUTE'),
+                           'HH24:MI'
+                       )
+                   ) &gt; #{resvTime}
+        ) + (
+            SELECT COUNT(*)
+              FROM TB_HOSPITAL_RESV_HOLD H
+             WHERE H.HOSPITAL_ID = #{hospitalId}
+               AND H.DOCTOR_ID   = #{doctorId}
+               AND H.RESV_DATE &gt;= TRUNC(#{resvDate})
+               AND H.RESV_DATE &lt;  TRUNC(#{resvDate}) + 1
+               AND H.EXPIRE_DATE &gt; SYSDATE
+               AND H.RESV_TIME &lt; #{endTime}
+               AND H.END_TIME &gt; #{resvTime}
+            <if test="excludeHoldId != null">
+               AND H.HOLD_ID &lt;&gt; #{excludeHoldId}
+            </if>
+        )
+          FROM DUAL
+    </select>
+
+    <delete id="deleteExpiredHolds">
+        DELETE FROM TB_HOSPITAL_RESV_HOLD
+         WHERE EXPIRE_DATE &lt;= SYSDATE
+    </delete>
+
+    <delete id="deleteHoldsByMember">
+        DELETE FROM TB_HOSPITAL_RESV_HOLD
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND MEMBER_NO   = #{memberNo}
+    </delete>
+
+    <insert id="insertResvHold"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalResvHoldVO">
+        <selectKey keyProperty="holdId" resultType="long" order="BEFORE">
+            SELECT NVL(MAX(HOLD_ID), 0) + 1 FROM TB_HOSPITAL_RESV_HOLD
+        </selectKey>
+        INSERT INTO TB_HOSPITAL_RESV_HOLD (
+            HOLD_ID, HOSPITAL_ID, DOCTOR_ID, TREAT_TYPE_ID, MEMBER_NO,
+            RESV_DATE, RESV_TIME, DURATION_MIN, END_TIME, EXPIRE_DATE, REG_DATE
+        ) VALUES (
+            #{holdId}, #{hospitalId}, #{doctorId}, #{treatTypeId}, #{memberNo},
+            #{resvDate}, #{resvTime}, #{durationMin}, #{endTime}, #{expireDate}, SYSDATE
+        )
+    </insert>
+
+    <select id="selectResvHoldById"
+            resultType="com.petcare.petcare.hospital.vo.HospitalResvHoldVO">
+        SELECT HOLD_ID       AS holdId,
+               HOSPITAL_ID   AS hospitalId,
+               DOCTOR_ID     AS doctorId,
+               TREAT_TYPE_ID AS treatTypeId,
+               MEMBER_NO     AS memberNo,
+               RESV_DATE     AS resvDate,
+               RESV_TIME     AS resvTime,
+               DURATION_MIN  AS durationMin,
+               END_TIME      AS endTime,
+               EXPIRE_DATE   AS expireDate,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_RESV_HOLD
+         WHERE HOLD_ID = #{holdId}
+           AND EXPIRE_DATE &gt; SYSDATE
+    </select>
+
+    <!-- 2026/07/20 장우철 — hold 최종 제출 시 선점 행 FOR UPDATE (중복 제출 방지) -->
+    <select id="selectResvHoldByIdForUpdate"
+            resultType="com.petcare.petcare.hospital.vo.HospitalResvHoldVO">
+        SELECT HOLD_ID       AS holdId,
+               HOSPITAL_ID   AS hospitalId,
+               DOCTOR_ID     AS doctorId,
+               TREAT_TYPE_ID AS treatTypeId,
+               MEMBER_NO     AS memberNo,
+               RESV_DATE     AS resvDate,
+               RESV_TIME     AS resvTime,
+               DURATION_MIN  AS durationMin,
+               END_TIME      AS endTime,
+               EXPIRE_DATE   AS expireDate,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_RESV_HOLD
+         WHERE HOLD_ID = #{holdId}
+           AND EXPIRE_DATE &gt; SYSDATE
+           FOR UPDATE
+    </select>
+
+    <delete id="deleteResvHoldById">
+        DELETE FROM TB_HOSPITAL_RESV_HOLD
+         WHERE HOLD_ID = #{holdId}
+    </delete>
 
     <!-- 2026-07-10 장우철 — 예약 완료 화면 조회 (F3) -->
     <select id="selectReservationById" parameterType="long"
@@ -164,6 +432,10 @@
                 R.TARGET_ID      AS targetId,
                 R.RESV_DATE      AS resvDate,
                 R.RESV_TIME      AS resvTime,
+                R.TREAT_TYPE_ID  AS treatTypeId,
+                R.DURATION_MIN   AS durationMin,
+                R.END_TIME       AS endTime,
+                R.DOCTOR_ID      AS doctorId,
                 R.SYMPTOMS       AS symptoms,
                 R.REQUEST_MEMO   AS requestMemo,
                 R.STATUS_CD      AS statusCd,
@@ -173,11 +445,15 @@
                 P.SPECIES        AS petSpecies,
                 P.BREED          AS petBreed,
                 P.AGE            AS petAge,
-                H.NAME           AS hospitalName
+                H.NAME           AS hospitalName,
+                D.DOCTOR_NAME    AS doctorName,
+                T.TYPE_NAME      AS treatTypeName
           FROM  TB_RESERVATION R
           JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
           JOIN  TB_PET P ON P.PET_ID = R.PET_ID
           LEFT JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = TO_NUMBER(R.TARGET_ID)
+          LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+          LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
          WHERE  R.RESV_ID = #{resvId}
     </select>
 

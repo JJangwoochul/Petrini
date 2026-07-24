@@ -168,15 +168,13 @@
     </delete>
 
     <!-- 2026-07-10 장우철 — 사업자 예약 목록 (F4), tab: all / wait / done / cancel -->
-    <select id="selectReservationList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+    <select id="selectReservationList" resultType="com.petcare.petcare.stay.vo.ReservationVO">
         SELECT  R.RESV_ID      AS resvId,
                 R.RESV_NO      AS resvNo,
                 R.RESV_TYPE    AS resvType,
                 R.MEMBER_NO    AS memberNo,
                 R.PET_ID       AS petId,
                 R.TARGET_ID    AS targetId,
-                R.RESV_DATE    AS resvDate,
-                R.RESV_TIME    AS resvTime,
                 R.SYMPTOMS     AS symptoms,
                 R.REQUEST_MEMO AS requestMemo,
                 R.STATUS_CD    AS statusCd,
@@ -220,15 +218,13 @@
          ORDER BY R.RESV_DATE DESC, R.RESV_TIME DESC, R.RESV_ID DESC
     </select>
 
-    <select id="selectReservationDetail" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+    <select id="selectReservationDetail" resultType="com.petcare.petcare.stay.vo.ReservationVO">
         SELECT  R.RESV_ID      AS resvId,
                 R.RESV_NO      AS resvNo,
                 R.RESV_TYPE    AS resvType,
                 R.MEMBER_NO    AS memberNo,
                 R.PET_ID       AS petId,
                 R.TARGET_ID    AS targetId,
-                R.RESV_DATE    AS resvDate,
-                R.RESV_TIME    AS resvTime,
                 R.SYMPTOMS     AS symptoms,
                 R.REQUEST_MEMO AS requestMemo,
                 R.STATUS_CD    AS statusCd,
@@ -269,24 +265,27 @@
            AND RESV_TYPE = 'STAY'
     </update>
 
-    <!-- 2026-07-10 장우철 — 사업자 예약 캘린더 (F7) -->
-    <select id="selectReservationCalendarList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
-        SELECT  R.RESV_ID      AS resvId,
-                R.RESV_NO      AS resvNo,
-                R.RESV_DATE    AS resvDate,
-                R.RESV_TIME    AS resvTime,
-                R.STATUS_CD    AS statusCd,
-                M.MEMBER_NAME  AS memberName,
-                P.PET_NAME     AS petName
+    <!-- 2026-07-20 HYJ — 숙소 예약 캘린더 (F7) -->
+    <select id="selectReservationCalendarList" resultType="com.petcare.petcare.stay.vo.ReservationVO">
+        SELECT  R.RESV_ID        AS resvId,
+                R.RESV_NO        AS resvNo,
+                R.CHECKIN_DATE   AS checkinDate,
+                R.CHECKOUT_DATE  AS checkoutDate,
+                R.NIGHT_CNT      AS nightCnt,
+                R.STATUS_CD      AS statusCd,
+                M.MEMBER_NAME    AS memberName,
+                P.PET_NAME       AS petName,
+                SR.NAME          AS serviceName
           FROM  TB_RESERVATION R
-          JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
-          JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+          JOIN  TB_MEMBER M    ON M.MEMBER_NO = R.MEMBER_NO
+          JOIN  TB_PET P       ON P.PET_ID    = R.PET_ID
+     LEFT JOIN  TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
          WHERE  R.RESV_TYPE  = 'STAY'
            AND  R.TARGET_ID  = TO_CHAR(#{stayId})
            AND  R.STATUS_CD IN ('PENDING', 'CONFIRMED', 'DONE')
-           AND  R.RESV_DATE &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
-           AND  R.RESV_DATE &lt;  TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
-         ORDER BY R.RESV_DATE, R.RESV_TIME
+           AND  R.CHECKOUT_DATE &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
+           AND  R.CHECKIN_DATE  &lt;  TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
+         ORDER BY R.CHECKIN_DATE
     </select>
 
     <!-- 2026/07/11 장우철 — 사이드바 예약관리 배지 (PENDING만) -->

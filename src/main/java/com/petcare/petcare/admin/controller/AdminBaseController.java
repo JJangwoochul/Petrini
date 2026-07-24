@@ -10,10 +10,8 @@
 package com.petcare.petcare.admin.controller;
 
 import com.petcare.petcare.member.vo.MemberVO;
+
 import jakarta.servlet.http.HttpSession;
-// import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.RequestMapping;
 
 // @Controller("adminController")
 // @RequestMapping("/admin")

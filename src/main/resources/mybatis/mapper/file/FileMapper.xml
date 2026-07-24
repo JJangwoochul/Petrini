@@ -17,7 +17,6 @@
                                 REF_ID, 
                                 FILE_URL, 
                                 DRIVE_FILE_ID,
-                                <!-- FILE_ORDER, -->
                                 ORIGIN_NAME,
                                 REG_DATE
                             )
@@ -32,12 +31,6 @@
                                 SYSDATE
                             )
     </insert>
-
-    <!-- [변경 전] 2026-07-09 장우철 — SEQ_FILE 사용 (PK 충돌 원인)
-    <insert id="insertFile" ...>
-        VALUES ( SEQ_FILE.NEXTVAL, #{refType}, ... )
-    </insert>
-    -->
 
     <select id="selectFileList" parameterType="com.petcare.petcare.file.vo.FileVO" resultType="com.petcare.petcare.file.vo.FileVO">
         SELECT      FILE_ID, 

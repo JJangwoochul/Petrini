@@ -3,7 +3,8 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="동물병원" />
-<c:set var="bizPage" value="info" />
+<%-- 2026/07/15 장우철 — 병원정보 페이지 active는 profile (info=사업자정보) --%>
+<c:set var="bizPage" value="profile" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>

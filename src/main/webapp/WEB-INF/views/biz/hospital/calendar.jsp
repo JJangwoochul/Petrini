@@ -70,6 +70,9 @@
       name: '<c:out value="${r.memberName}"/>',
       pet: '<c:out value="${r.petName}"/>',
       time: '<c:out value="${r.resvTime}"/>',
+      endTime: '<c:out value="${r.endTime}"/>',
+      doctor: '<c:out value="${r.doctorName}"/>',
+      treatType: '<c:out value="${r.treatTypeName}"/>',
       date: '<fmt:formatDate value="${r.resvDate}" pattern="yyyy-MM-dd"/>',
       status: (function(cd){
         if (cd === 'PENDING') return 'pending';
@@ -82,8 +85,14 @@
   ];
 
   var events = reservations.map(function (r) {
+    var timeLabel = r.time;
+    if (r.endTime) timeLabel += '~' + r.endTime;
+    var parts = [timeLabel];
+    if (r.doctor) parts.push(r.doctor);
+    if (r.treatType) parts.push(r.treatType);
+    parts.push(r.name);
     return {
-      title: r.time + ' ' + r.name,
+      title: parts.join(' · '),
       start: r.date + 'T' + r.time,
       color: statusColor[r.status],
       extendedProps: r
@@ -119,7 +128,10 @@
       item.className = 'cal-detail-item';
       item.innerHTML =
         '<span class="bs-badge ' + statusBadgeClass[r.status] + ' badge">' + statusLabel[r.status] + '</span>' +
-        '<div class="info"><b>' + r.time + ' · ' + r.name + '</b><small>' + r.pet + '</small></div>';
+        '<div class="info"><b>' + (r.endTime ? r.time + '~' + r.endTime : r.time)
+        + (r.doctor ? ' · ' + r.doctor : '')
+        + (r.treatType ? ' · ' + r.treatType : '')
+        + ' · ' + r.name + '</b><small>' + r.pet + '</small></div>';
       box.appendChild(item);
     });
   }

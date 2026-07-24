@@ -27,7 +27,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 

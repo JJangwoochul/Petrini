@@ -8,13 +8,10 @@
   쿼리 id 예시
   - selectReservationList
   - updateReservationStatus
-  - selectTreatmentList
-  - selectPatientList
   - selectMedicalRecords
 
   테이블
   - TB_RESERVATION
-  - TB_TREATMENT
   - TB_MEDICAL_RECORD
   - TB_REVIEW
 -->
@@ -31,7 +28,9 @@
                 H.HOURS_JSON, 
                 H.TAG_LIST,
                 H.LAT, 
-                H.LNG
+                H.LNG,
+                H.RESV_INTERVAL_MIN AS resvIntervalMin,
+                H.RESV_CAPACITY AS resvCapacity
         FROM    TB_HOSPITAL H
         JOIN    TB_BUSINESS B 
         ON      H.BIZ_NO = B.BIZ_NO
@@ -98,6 +97,10 @@
                 R.TARGET_ID    AS targetId,
                 R.RESV_DATE    AS resvDate,
                 R.RESV_TIME    AS resvTime,
+                R.TREAT_TYPE_ID AS treatTypeId,
+                R.DOCTOR_ID    AS doctorId,
+                R.DURATION_MIN AS durationMin,
+                R.END_TIME     AS endTime,
                 R.SYMPTOMS     AS symptoms,
                 R.REQUEST_MEMO AS requestMemo,
                 R.STATUS_CD    AS statusCd,
@@ -107,10 +110,14 @@
                 P.PET_NAME     AS petName,
                 P.SPECIES      AS petSpecies,
                 P.BREED        AS petBreed,
-                P.AGE          AS petAge
+                P.AGE          AS petAge,
+                D.DOCTOR_NAME  AS doctorName,
+                T.TYPE_NAME    AS treatTypeName
           FROM  TB_RESERVATION R
           JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
           JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+          LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
          WHERE  R.RESV_TYPE  = 'HOSPITAL'
            AND  R.TARGET_ID  = TO_CHAR(#{hospitalId})
         <choose>
@@ -140,6 +147,10 @@
                 R.TARGET_ID    AS targetId,
                 R.RESV_DATE    AS resvDate,
                 R.RESV_TIME    AS resvTime,
+                R.TREAT_TYPE_ID AS treatTypeId,
+                R.DOCTOR_ID    AS doctorId,
+                R.DURATION_MIN AS durationMin,
+                R.END_TIME     AS endTime,
                 R.SYMPTOMS     AS symptoms,
                 R.REQUEST_MEMO AS requestMemo,
                 R.STATUS_CD    AS statusCd,
@@ -149,10 +160,14 @@
                 P.PET_NAME     AS petName,
                 P.SPECIES      AS petSpecies,
                 P.BREED        AS petBreed,
-                P.AGE          AS petAge
+                P.AGE          AS petAge,
+                D.DOCTOR_NAME  AS doctorName,
+                T.TYPE_NAME    AS treatTypeName
           FROM  TB_RESERVATION R
           JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
           JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+          LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
          WHERE  R.RESV_ID    = #{resvId}
            AND  R.TARGET_ID  = TO_CHAR(#{hospitalId})
            AND  R.RESV_TYPE  = 'HOSPITAL'
@@ -175,12 +190,17 @@
                 R.RESV_NO      AS resvNo,
                 R.RESV_DATE    AS resvDate,
                 R.RESV_TIME    AS resvTime,
+                R.END_TIME     AS endTime,
                 R.STATUS_CD    AS statusCd,
                 M.MEMBER_NAME  AS memberName,
-                P.PET_NAME     AS petName
+                P.PET_NAME     AS petName,
+                D.DOCTOR_NAME  AS doctorName,
+                T.TYPE_NAME    AS treatTypeName
           FROM  TB_RESERVATION R
           JOIN  TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
           JOIN  TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+          LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
          WHERE  R.RESV_TYPE  = 'HOSPITAL'
            AND  R.TARGET_ID  = TO_CHAR(#{hospitalId})
            AND  R.STATUS_CD IN ('PENDING', 'CONFIRMED', 'DONE')
@@ -384,4 +404,230 @@
            AND TARGET_ID = #{hospitalId}
            AND REVIEW_ID = #{reviewId}
     </update>
+
+    <!-- =========================================================
+         2026/07/16 장우철 고도화작업 — 병원 스케줄 (유형·의사·규칙·예외)
+         ========================================================= -->
+
+    <select id="selectTreatTypeList"
+            resultType="com.petcare.petcare.hospital.vo.HospitalTreatTypeVO">
+        SELECT TREAT_TYPE_ID AS treatTypeId,
+               HOSPITAL_ID   AS hospitalId,
+               TYPE_NAME     AS typeName,
+               DURATION_MIN  AS durationMin,
+               STATUS_CD     AS statusCd,
+               SORT_ORDR     AS sortOrdr,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_TREAT_TYPE
+         WHERE HOSPITAL_ID = #{hospitalId}
+         ORDER BY NVL(SORT_ORDR, 9999), TREAT_TYPE_ID
+    </select>
+
+    <select id="selectTreatType"
+            resultType="com.petcare.petcare.hospital.vo.HospitalTreatTypeVO">
+        SELECT TREAT_TYPE_ID AS treatTypeId,
+               HOSPITAL_ID   AS hospitalId,
+               TYPE_NAME     AS typeName,
+               DURATION_MIN  AS durationMin,
+               STATUS_CD     AS statusCd,
+               SORT_ORDR     AS sortOrdr,
+               REG_DATE      AS regDate
+          FROM TB_HOSPITAL_TREAT_TYPE
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND TREAT_TYPE_ID = #{treatTypeId}
+    </select>
+
+    <insert id="insertTreatType"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalTreatTypeVO">
+        <selectKey keyProperty="treatTypeId" resultType="long" order="BEFORE">
+            SELECT NVL(MAX(TREAT_TYPE_ID), 0) + 1 FROM TB_HOSPITAL_TREAT_TYPE
+        </selectKey>
+        INSERT INTO TB_HOSPITAL_TREAT_TYPE (
+            TREAT_TYPE_ID, HOSPITAL_ID, TYPE_NAME, DURATION_MIN,
+            STATUS_CD, SORT_ORDR, REG_DATE
+        ) VALUES (
+            #{treatTypeId}, #{hospitalId}, #{typeName, jdbcType=VARCHAR}, #{durationMin, jdbcType=NUMERIC},
+            NVL(#{statusCd, jdbcType=VARCHAR}, 'Y'), #{sortOrdr, jdbcType=NUMERIC}, SYSDATE
+        )
+    </insert>
+
+    <update id="updateTreatType"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalTreatTypeVO">
+        UPDATE TB_HOSPITAL_TREAT_TYPE
+           SET TYPE_NAME    = #{typeName, jdbcType=VARCHAR},
+               DURATION_MIN = #{durationMin, jdbcType=NUMERIC},
+               STATUS_CD    = #{statusCd, jdbcType=VARCHAR},
+               SORT_ORDR    = #{sortOrdr, jdbcType=NUMERIC}
+         WHERE HOSPITAL_ID  = #{hospitalId}
+           AND TREAT_TYPE_ID = #{treatTypeId}
+    </update>
+
+    <delete id="deleteTreatType">
+        DELETE FROM TB_HOSPITAL_TREAT_TYPE
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND TREAT_TYPE_ID = #{treatTypeId}
+    </delete>
+
+    <select id="selectDoctorList"
+            resultType="com.petcare.petcare.hospital.vo.HospitalDoctorVO">
+        SELECT DOCTOR_ID   AS doctorId,
+               HOSPITAL_ID AS hospitalId,
+               DOCTOR_NAME AS doctorName,
+               SPECIALTY   AS specialty,
+               STATUS_CD   AS statusCd,
+               SORT_ORDR   AS sortOrdr,
+               REG_DATE    AS regDate
+          FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+         ORDER BY NVL(SORT_ORDR, 9999), DOCTOR_ID
+    </select>
+
+    <select id="selectDoctor"
+            resultType="com.petcare.petcare.hospital.vo.HospitalDoctorVO">
+        SELECT DOCTOR_ID   AS doctorId,
+               HOSPITAL_ID AS hospitalId,
+               DOCTOR_NAME AS doctorName,
+               SPECIALTY   AS specialty,
+               STATUS_CD   AS statusCd,
+               SORT_ORDR   AS sortOrdr,
+               REG_DATE    AS regDate
+          FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND DOCTOR_ID = #{doctorId}
+    </select>
+
+    <insert id="insertDoctor"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalDoctorVO">
+        <selectKey keyProperty="doctorId" resultType="long" order="BEFORE">
+            SELECT NVL(MAX(DOCTOR_ID), 0) + 1 FROM TB_HOSPITAL_DOCTOR
+        </selectKey>
+        INSERT INTO TB_HOSPITAL_DOCTOR (
+            DOCTOR_ID, HOSPITAL_ID, DOCTOR_NAME, SPECIALTY,
+            STATUS_CD, SORT_ORDR, REG_DATE
+        ) VALUES (
+            #{doctorId}, #{hospitalId}, #{doctorName, jdbcType=VARCHAR}, #{specialty, jdbcType=VARCHAR},
+            NVL(#{statusCd, jdbcType=VARCHAR}, 'Y'), #{sortOrdr, jdbcType=NUMERIC}, SYSDATE
+        )
+    </insert>
+
+    <update id="updateDoctor"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalDoctorVO">
+        UPDATE TB_HOSPITAL_DOCTOR
+           SET DOCTOR_NAME = #{doctorName, jdbcType=VARCHAR},
+               SPECIALTY   = #{specialty, jdbcType=VARCHAR},
+               STATUS_CD   = #{statusCd, jdbcType=VARCHAR},
+               SORT_ORDR   = #{sortOrdr, jdbcType=NUMERIC}
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND DOCTOR_ID   = #{doctorId}
+    </update>
+
+    <delete id="deleteDoctor">
+        DELETE FROM TB_HOSPITAL_DOCTOR
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND DOCTOR_ID = #{doctorId}
+    </delete>
+
+    <!-- 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 병원 시작 간격 -->
+    <select id="selectResvIntervalMin" resultType="java.lang.Integer">
+        SELECT NVL(RESV_INTERVAL_MIN, 15)
+          FROM TB_HOSPITAL
+         WHERE HOSPITAL_ID = #{hospitalId}
+    </select>
+
+    <update id="updateResvIntervalMin">
+        UPDATE TB_HOSPITAL
+           SET RESV_INTERVAL_MIN = #{intervalMin, jdbcType=NUMERIC}
+         WHERE HOSPITAL_ID = #{hospitalId}
+    </update>
+
+    <select id="selectResvExceptionList"
+            resultType="com.petcare.petcare.hospital.vo.HospitalResvExceptionVO">
+        SELECT E.EXC_ID       AS excId,
+               E.HOSPITAL_ID  AS hospitalId,
+               E.DOCTOR_ID    AS doctorId,
+               E.EXC_DATE     AS excDate,
+               TO_CHAR(E.EXC_DATE, 'YYYY-MM-DD') AS excDateStr,
+               E.EXC_TYPE     AS excType,
+               E.START_TIME   AS startTime,
+               E.END_TIME     AS endTime,
+               E.INTERVAL_MIN AS intervalMin,
+               E.MEMO         AS memo,
+               E.STATUS_CD    AS statusCd,
+               E.REG_DATE     AS regDate,
+               D.DOCTOR_NAME  AS doctorName
+          FROM TB_HOSPITAL_RESV_EXCEPTION E
+          LEFT JOIN TB_HOSPITAL_DOCTOR D
+            ON D.DOCTOR_ID = E.DOCTOR_ID
+           AND D.HOSPITAL_ID = E.HOSPITAL_ID
+         WHERE E.HOSPITAL_ID = #{hospitalId}
+        <if test="fromDate != null and fromDate != ''">
+           AND E.EXC_DATE &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="toDate != null and toDate != ''">
+           AND E.EXC_DATE &lt;= TO_DATE(#{toDate}, 'YYYY-MM-DD')
+        </if>
+         ORDER BY E.EXC_DATE, E.START_TIME, E.EXC_ID
+    </select>
+
+    <select id="selectResvException"
+            resultType="com.petcare.petcare.hospital.vo.HospitalResvExceptionVO">
+        SELECT E.EXC_ID       AS excId,
+               E.HOSPITAL_ID  AS hospitalId,
+               E.DOCTOR_ID    AS doctorId,
+               E.EXC_DATE     AS excDate,
+               TO_CHAR(E.EXC_DATE, 'YYYY-MM-DD') AS excDateStr,
+               E.EXC_TYPE     AS excType,
+               E.START_TIME   AS startTime,
+               E.END_TIME     AS endTime,
+               E.INTERVAL_MIN AS intervalMin,
+               E.MEMO         AS memo,
+               E.STATUS_CD    AS statusCd,
+               E.REG_DATE     AS regDate,
+               D.DOCTOR_NAME  AS doctorName
+          FROM TB_HOSPITAL_RESV_EXCEPTION E
+          LEFT JOIN TB_HOSPITAL_DOCTOR D
+            ON D.DOCTOR_ID = E.DOCTOR_ID
+           AND D.HOSPITAL_ID = E.HOSPITAL_ID
+         WHERE E.HOSPITAL_ID = #{hospitalId}
+           AND E.EXC_ID = #{excId}
+    </select>
+
+    <insert id="insertResvException"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalResvExceptionVO">
+        <selectKey keyProperty="excId" resultType="long" order="BEFORE">
+            SELECT NVL(MAX(EXC_ID), 0) + 1 FROM TB_HOSPITAL_RESV_EXCEPTION
+        </selectKey>
+        INSERT INTO TB_HOSPITAL_RESV_EXCEPTION (
+            EXC_ID, HOSPITAL_ID, DOCTOR_ID, EXC_DATE, EXC_TYPE,
+            START_TIME, END_TIME, INTERVAL_MIN, MEMO, STATUS_CD, REG_DATE
+        ) VALUES (
+            #{excId}, #{hospitalId}, #{doctorId, jdbcType=NUMERIC}, #{excDate, jdbcType=DATE},
+            #{excType, jdbcType=VARCHAR},
+            #{startTime, jdbcType=VARCHAR}, #{endTime, jdbcType=VARCHAR},
+            #{intervalMin, jdbcType=NUMERIC}, #{memo, jdbcType=VARCHAR},
+            NVL(#{statusCd, jdbcType=VARCHAR}, 'Y'), SYSDATE
+        )
+    </insert>
+
+    <update id="updateResvException"
+            parameterType="com.petcare.petcare.hospital.vo.HospitalResvExceptionVO">
+        UPDATE TB_HOSPITAL_RESV_EXCEPTION
+           SET DOCTOR_ID    = #{doctorId, jdbcType=NUMERIC},
+               EXC_DATE     = #{excDate, jdbcType=DATE},
+               EXC_TYPE     = #{excType, jdbcType=VARCHAR},
+               START_TIME   = #{startTime, jdbcType=VARCHAR},
+               END_TIME     = #{endTime, jdbcType=VARCHAR},
+               INTERVAL_MIN = #{intervalMin, jdbcType=NUMERIC},
+               MEMO         = #{memo, jdbcType=VARCHAR},
+               STATUS_CD    = #{statusCd, jdbcType=VARCHAR}
+         WHERE HOSPITAL_ID  = #{hospitalId}
+           AND EXC_ID       = #{excId}
+    </update>
+
+    <delete id="deleteResvException">
+        DELETE FROM TB_HOSPITAL_RESV_EXCEPTION
+         WHERE HOSPITAL_ID = #{hospitalId}
+           AND EXC_ID = #{excId}
+    </delete>
+
 </mapper>

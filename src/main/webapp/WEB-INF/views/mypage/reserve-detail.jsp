@@ -9,20 +9,20 @@
 <link rel="stylesheet" href="${contextPath}/resources/css/mypage.css">
 
 <style>
-.rd-card{background:#fff;border:1px solid #E2E8E4;border-radius:12px;padding:24px;margin-bottom:16px}
-.rd-row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #F5F6F4;font-size:14px}
-.rd-row:last-child{border-bottom:none}
-.rd-row span:first-child{color:#888;flex-shrink:0;min-width:90px}
-.rd-row span:last-child{color:#1A1A2E;font-weight:600;text-align:right}
-.rd-reason{background:#FEF2F2;border-radius:8px;padding:14px 16px;margin-top:8px;font-size:13px;color:#991B1B;line-height:1.6}
-/* 2026/07/13 장우철 — 리뷰 작성 폼 */
-.rd-review{background:#F8FFFC;border:1px solid #C6EDE0;border-radius:12px;padding:20px;margin-bottom:16px}
-.rd-review h3{font-size:16px;font-weight:800;margin:0 0 12px;color:#1A1A2E}
-.rd-stars{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.rd-stars label{cursor:pointer;font-size:14px;color:#555}
-.rd-stars input{margin-right:4px}
-.rd-review textarea{width:100%;min-height:90px;border:1px solid #E2E8E4;border-radius:8px;padding:10px 12px;font-size:14px;resize:vertical;box-sizing:border-box}
-.rd-review .btn-review{margin-top:12px;background:#2BAB82;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer}
+  .rd-card{background:#fff;border:1px solid #E2E8E4;border-radius:12px;padding:24px;margin-bottom:16px}
+  .rd-row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #F5F6F4;font-size:14px}
+  .rd-row:last-child{border-bottom:none}
+  .rd-row span:first-child{color:#888;flex-shrink:0;min-width:90px}
+  .rd-row span:last-child{color:#1A1A2E;font-weight:600;text-align:right}
+  .rd-reason{background:#FEF2F2;border-radius:8px;padding:14px 16px;margin-top:8px;font-size:13px;color:#991B1B;line-height:1.6}
+  /* 2026/07/13 장우철 — 리뷰 작성 폼 */
+  .rd-review{background:#F8FFFC;border:1px solid #C6EDE0;border-radius:12px;padding:20px;margin-bottom:16px}
+  .rd-review h3{font-size:16px;font-weight:800;margin:0 0 12px;color:#1A1A2E}
+  .rd-stars{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .rd-stars label{cursor:pointer;font-size:14px;color:#555}
+  .rd-stars input{margin-right:4px}
+  .rd-review textarea{width:100%;min-height:90px;border:1px solid #E2E8E4;border-radius:8px;padding:10px 12px;font-size:14px;resize:vertical;box-sizing:border-box}
+  .rd-review .btn-review{margin-top:12px;background:#2BAB82;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer}
 </style>
 
 <div class="mypage-wrap">
@@ -62,8 +62,19 @@
       <span>
         <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy-MM-dd"/>
         <c:if test="${not empty reservation.resvTime}"> ${reservation.resvTime}</c:if>
+        <c:if test="${not empty reservation.endTime}"> ~ ${reservation.endTime}</c:if>
       </span>
     </div>
+    <c:if test="${reservation.resvType eq 'HOSPITAL'}">
+      <div class="rd-row">
+        <span>담당 의사</span>
+        <span><c:out value="${not empty reservation.doctorName ? reservation.doctorName : '-'}"/></span>
+      </div>
+      <div class="rd-row">
+        <span>진료 유형</span>
+        <span><c:out value="${not empty reservation.treatTypeName ? reservation.treatTypeName : '-'}"/></span>
+      </div>
+    </c:if>
     <div class="rd-row">
       <span>반려동물</span>
       <span>
@@ -100,16 +111,25 @@
     <p style="color:#B91C1C;font-size:14px;margin-bottom:12px"><c:out value="${errorMsg}"/></p>
   </c:if>
 
-  <%-- 2026/07/13 장우철 — 진료완료 안내 --%>
+  <%-- 2026/07/13 장우철 — 완료 안내 / HYJ 26.07.20 숙소 분기 추가 --%>
   <c:if test="${reservation.statusCd eq 'DONE'}">
     <p style="font-size:14px;color:#1F8464;background:#E8F8F1;border-radius:8px;padding:12px 14px;margin-bottom:16px;line-height:1.5">
-      진료가 완료되었습니다. 병원·반려동물 정보를 확인하고
-      <c:if test="${reservation.reviewedYn ne 'Y'}">아래에서 리뷰를 작성해 주세요.</c:if>
-      <c:if test="${reservation.reviewedYn eq 'Y'}">작성하신 리뷰는 병원 상세에 반영됩니다.</c:if>
+      <c:choose>
+        <c:when test="${reservation.resvType eq 'STAY'}">
+          숙박이 완료되었습니다.
+          <c:if test="${reservation.reviewedYn ne 'Y'}">아래에서 리뷰를 작성해 주세요.</c:if>
+          <c:if test="${reservation.reviewedYn eq 'Y'}">작성하신 리뷰는 숙소 상세에 반영됩니다.</c:if>
+        </c:when>
+        <c:otherwise>
+          진료가 완료되었습니다. 병원·반려동물 정보를 확인하고
+          <c:if test="${reservation.reviewedYn ne 'Y'}">아래에서 리뷰를 작성해 주세요.</c:if>
+          <c:if test="${reservation.reviewedYn eq 'Y'}">작성하신 리뷰는 병원 상세에 반영됩니다.</c:if>
+        </c:otherwise>
+      </c:choose>
     </p>
   </c:if>
 
-  <c:if test="${reservation.statusCd eq 'DONE' and reservation.reviewedYn ne 'Y'}">
+  <c:if test="${reservation.resvType eq 'HOSPITAL' and reservation.statusCd eq 'DONE' and reservation.reviewedYn ne 'Y'}">
     <div class="rd-review">
       <h3>병원 리뷰 작성</h3>
       <p style="font-size:13px;color:#666;margin:0 0 12px">진료받으신 병원에 별점과 후기를 남겨 주세요.</p>
@@ -127,8 +147,36 @@
       </form>
     </div>
   </c:if>
-  <c:if test="${reservation.statusCd eq 'DONE' and reservation.reviewedYn eq 'Y'}">
+  <c:if test="${reservation.resvType eq 'HOSPITAL' and reservation.statusCd eq 'DONE' and reservation.reviewedYn eq 'Y'}">
     <p style="font-size:14px;color:#166534;margin-bottom:16px">이 예약에 대한 리뷰를 작성하셨습니다.</p>
+  </c:if>
+
+  <%-- HYJ 26.07.20 — 숙박완료 + 미작성 시 숙소 리뷰·별점 작성 --%>
+  <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'DONE' and reservation.reviewedYn ne 'Y'}">
+    <div class="rd-review">
+      <h3>숙소 리뷰 작성</h3>
+      <p style="font-size:13px;color:#666;margin:0 0 6px">숙박하신 숙소에 별점과 후기를 남겨 주세요.</p>
+      <c:if test="${not empty reservation.totalAmount and reservation.totalAmount > 0}">
+        <p style="font-size:13px;color:#2BAB82;font-weight:700;margin:0 0 12px">
+          🎉 리뷰 작성 시 결제 금액의 3% (<fmt:formatNumber value="${reservation.totalAmount * 0.03}" pattern="#,###" maxFractionDigits="0"/>P) 적립!
+        </p>
+      </c:if>
+      <form method="post" action="${contextPath}/mypage/reserve/stay-review">
+        <input type="hidden" name="resvId" value="${reservation.resvId}">
+        <div class="rd-stars">
+          <label><input type="radio" name="rating" value="5" checked> ★5</label>
+          <label><input type="radio" name="rating" value="4"> ★4</label>
+          <label><input type="radio" name="rating" value="3"> ★3</label>
+          <label><input type="radio" name="rating" value="2"> ★2</label>
+          <label><input type="radio" name="rating" value="1"> ★1</label>
+        </div>
+        <textarea name="content" maxlength="2000" placeholder="숙소 청결도, 반려동물 케어, 시설 등을 자유롭게 작성해 주세요." required></textarea>
+        <button type="submit" class="btn-review">리뷰 등록</button>
+      </form>
+    </div>
+  </c:if>
+  <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'DONE' and reservation.reviewedYn eq 'Y'}">
+    <p style="font-size:14px;color:#166534;margin-bottom:16px">이 예약에 대한 리뷰를 작성하셨습니다. (포인트 적립 완료)</p>
   </c:if>
 
   <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/reserve'">← 목록으로</button>
