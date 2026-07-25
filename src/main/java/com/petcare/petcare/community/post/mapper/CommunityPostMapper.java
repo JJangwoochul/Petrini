@@ -82,18 +82,18 @@ public interface CommunityPostMapper {
     // 2026-07-23 HYJ — 게시글 수정 (본인 글)
     int updatePost(CommunityPostVO vo);
 
-    // 2026-07-23 HYJ — LIFE 게시글 소프트 삭제 (IS_DELETED='Y')
-    int softDeletePost(@Param("postId") long postId, @Param("memberNo") long memberNo);
+    // 2026-07-23 HYJ — LIFE 유저 삭제 (STATUS_CD='DELETED', 관리자 방식 통일)
+    int softDeletePostByUser(@Param("postId") long postId, @Param("memberNo") long memberNo);
 
-    // 2026-07-23 HYJ — TOWN/SHARE 게시글 물리 삭제
-    int hardDeletePost(@Param("postId") long postId, @Param("memberNo") long memberNo);
+    // 2026-07-23 HYJ — TOWN/SHARE 유저 삭제 (즉시 물리 삭제)
+    int hardDeletePostByUser(@Param("postId") long postId, @Param("memberNo") long memberNo);
 
-    // 2026-07-23 HYJ — 게시글 연결 파일 삭제 (물리 삭제 시 함께)
+    // 2026-07-23 HYJ — 게시글 연결 파일 삭제
     int deleteFilesByPostId(long postId);
 
-    // 2026-07-23 HYJ — 7일 경과 소프트 삭제 게시글 ID 목록 (스케줄러용)
-    List<Long> selectExpiredSoftDeletedPostIds(@Param("days") int days);
+    // 2026-07-23 HYJ — 7일 경과 DELETED LIFE 게시글 ID 목록 (스케줄러용)
+    List<Long> selectExpiredDeletedPostIds(@Param("days") int days);
 
-    // 2026-07-23 HYJ — 소프트 삭제 게시글 물리 삭제 (스케줄러용)
+    // 2026-07-23 HYJ — DELETED 게시글 물리 삭제 (스케줄러용)
     int hardDeleteExpiredPost(long postId);
 }
