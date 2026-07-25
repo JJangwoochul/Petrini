@@ -46,6 +46,11 @@
               <span class="adm-nav-badge">${pendingBizApproveCount}</span>
             </c:if>
         </a>
+        <%-- 2026/07/24 장우철 — 관리자 정산 UI (더미, API 추후) --%>
+        <a href="${contextPath}/admin/settlement" class="adm-nav-link ${adminPage eq 'settlement' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            정산 관리
+        </a>
         <a href="${contextPath}/admin/biz/talent?status=PENDING" class="adm-nav-link ${adminPage eq 'biz-talent' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
             재능나눔 승인
