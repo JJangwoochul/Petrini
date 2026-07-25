@@ -41,10 +41,14 @@ window.refreshCartCount = function () {
     .then(function(res){ return res.text(); })
     .then(function(count){
       // 2026/07/23 장우철 — 숫자만 반영 (HTML 리다이렉트 응답이 뱃지에 덤프되지 않게)
-      if (!/^\d+$/.test(String(count).trim())) return;
-      document.querySelectorAll('.cart-count').forEach(function(el){ el.textContent = count.trim(); });
+      // 2026-07-24 박유정 — 헤더 뱃지만 갱신 (.header-utils)
+      var n = parseInt(String(count).trim(), 10);
+      if (isNaN(n)) return;
+      document.querySelectorAll('.header-utils .cart-count').forEach(function(el){
+        el.textContent = n > 99 ? '99+' : String(n);
+      });
     })
-    .catch(function(){ /* 비로그인·차단 등 */ });
+    .catch(function(){ /* 비로그인·정지 회원 등 */ });
 };
 window.refreshNotiCount = function () {
   fetch(window.__CONTEXT_PATH__ + '/mypage/notifications/count')
