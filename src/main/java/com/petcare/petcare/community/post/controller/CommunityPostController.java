@@ -362,6 +362,113 @@ public class CommunityPostController {
     }
 
 
+    /**
+     * [게시글 수정 화면] 2026-07-23 HYJ
+     * GET /community/edit?id=번호 → 본인 글만 edit.jsp
+     */
+    @GetMapping("/edit")
+    public String editForm(@RequestParam long id, Model model, HttpSession session) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/edit?id=" + id;
+        }
+        CommunityPostVO post = communityPostService.getPostDetail(id);
+        if (post == null) {
+            return "redirect:/community?error=notfound";
+        }
+        Long loginMemberNo = null;
+        if (member.getMemberNo() != null) {
+            loginMemberNo = member.getMemberNo();
+        } else {
+            loginMemberNo = communityCommentService.resolveLoginMemberNo(member);
+        }
+        if (loginMemberNo == null || !loginMemberNo.equals(post.getMemberNo())) {
+            return "redirect:/community/detail?id=" + id + "&error=forbidden";
+        }
+        model.addAttribute("post", post);
+        return "community/edit";
+    }
+
+    /**
+     * [게시글 수정 처리] 2026-07-23 HYJ
+     * POST /community/edit → updatePost() → 상세 redirect
+     */
+    @PostMapping("/edit")
+    public String editSubmit(
+            @RequestParam long postId,
+            @RequestParam String title,
+            @RequestParam String body,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/edit?id=" + postId;
+        }
+        try {
+            CommunityPostVO vo = new CommunityPostVO();
+            vo.setPostId(postId);
+            vo.setTitle(title);
+            vo.setBody(body);
+            communityPostService.updatePost(vo, member);
+            redirectAttributes.addFlashAttribute("successMessage", "게시글이 수정되었습니다.");
+            return "redirect:/community/detail?id=" + postId;
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=forbidden";
+            }
+            if ("MEMBER_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=member";
+            }
+            return "redirect:/community/edit?id=" + postId + "&error=save";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/community?error=notfound";
+        } catch (Exception e) {
+            log.error("community post update failed", e);
+            return "redirect:/community/edit?id=" + postId + "&error=save";
+        }
+    }
+
+    /**
+     * [게시글 삭제] 2026-07-23 HYJ
+     * POST /community/delete → deletePost() → 목록 redirect
+     */
+    @PostMapping("/delete")
+    public String deletePost(
+            @RequestParam long postId,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        MemberVO member = getMemberOrNull(session);
+        if (member == null) {
+            return "redirect:/login?redirect=/community/detail?id=" + postId;
+        }
+
+        // boardType을 미리 조회해서 삭제 후 해당 탭으로 돌아가기
+        CommunityPostVO post = communityPostService.getPostDetail(postId);
+        String boardType = (post != null) ? post.getBoardType() : "";
+
+        try {
+            communityPostService.deletePost(postId, member);
+            redirectAttributes.addFlashAttribute("successMessage", "게시글이 삭제되었습니다.");
+            if (boardType != null && !boardType.isEmpty()) {
+                return "redirect:/community?boardType=" + boardType;
+            }
+            return "redirect:/community";
+        } catch (IllegalStateException e) {
+            if ("FORBIDDEN".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=forbidden";
+            }
+            if ("MEMBER_NOT_FOUND".equals(e.getMessage())) {
+                return "redirect:/community/detail?id=" + postId + "&error=member";
+            }
+            return "redirect:/community/detail?id=" + postId + "&error=delete";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/community?error=notfound";
+        } catch (Exception e) {
+            log.error("community post delete failed", e);
+            return "redirect:/community/detail?id=" + postId + "&error=delete";
+        }
+    }
+
     /** 게시글 작성 화면 — 로그인 확인 후 write.jsp */
     @GetMapping("/write")
     public String write(HttpSession session) {

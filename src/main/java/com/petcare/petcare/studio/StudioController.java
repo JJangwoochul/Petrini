@@ -1,6 +1,5 @@
 package com.petcare.petcare.studio;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,14 +8,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.petcare.petcare.common.external.service.KakaoMapService;
 
 @Controller("userStudioController")
 @RequestMapping("/studio")
 public class StudioController {
-
-    @Autowired
-    private KakaoMapService kakaoMapService;
 
     // ── 사진관 목록 ─────────────────────────────────────────
     @GetMapping({"", "/"})

@@ -53,4 +53,10 @@ public interface CommunityCommentService {
 
     // LIFE 목록 vet-answer — 첫 일반댓글 1건 / 2026-07-10 STEP 4
     CommunityCommentVO getFirstTopComment(long postId);
+
+    // 2026-07-23 HYJ — 게시글 삭제 시 댓글 일괄 소프트 삭제 (LIFE)
+    void softDeleteCommentsByPostId(long postId);
+
+    // 2026-07-23 HYJ — 게시글 삭제 시 댓글 일괄 물리 삭제 (TOWN/SHARE)
+    void hardDeleteCommentsByPostId(long postId);
 }

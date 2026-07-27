@@ -249,5 +249,22 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         }
         return parents.get(0);
     }
+
+    /**
+     * 2026-07-23 HYJ — LIFE 게시글 삭제 시 댓글·대댓글 일괄 소프트 삭제
+     * IS_DELETED='Y', DELETED_DATE=SYSDATE
+     */
+    @Override
+    public void softDeleteCommentsByPostId(long postId) {
+        communityCommentMapper.softDeleteCommentsByPostId(postId);
+    }
+
+    /**
+     * 2026-07-23 HYJ — TOWN/SHARE 게시글 삭제 시 댓글·대댓글 일괄 물리 삭제
+     */
+    @Override
+    public void hardDeleteCommentsByPostId(long postId) {
+        communityCommentMapper.hardDeleteCommentsByPostId(postId);
+    }
 }
 

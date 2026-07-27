@@ -51,5 +51,11 @@ public interface CommunityCommentMapper {
 
     int softDeleteComment(long commentId);
 
+    // 2026-07-23 HYJ — 게시글 삭제 시 댓글 일괄 소프트 삭제 (LIFE)
+    int softDeleteCommentsByPostId(long postId);
+
+    // 2026-07-23 HYJ — 게시글 삭제 시 댓글 일괄 물리 삭제 (TOWN/SHARE)
+    int hardDeleteCommentsByPostId(long postId);
+
     int updateCommentBody(@Param("commentId") long commentId, @Param("body") String body);
 }
