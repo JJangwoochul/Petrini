@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
+<%-- 2026/07/27 장우철 — 토스 카드등록 복귀 시 Step2 부터 표시 (약관 깜빡임 방지) --%>
+<c:set var="joinFromCard" value="${param.card eq 'ok' or param.card eq 'fail'}" />
 <link rel="stylesheet" href="${contextPath}/resources/css/join.css?v=3">
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -14,11 +16,18 @@
     <!-- 스텝 인디케이터 -->
     <div class="step-wrap">
       <ul class="step-list" id="stepList">
-        <li class="step-item active" id="stepItem1">
-          <div class="step-circle" id="stepCircle1">1</div>
+        <li class="step-item ${joinFromCard ? 'done' : 'active'}" id="stepItem1">
+          <div class="step-circle" id="stepCircle1">
+            <c:choose>
+              <c:when test="${joinFromCard}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </c:when>
+              <c:otherwise>1</c:otherwise>
+            </c:choose>
+          </div>
           <span class="step-label">약관 동의</span>
         </li>
-        <li class="step-item" id="stepItem2">
+        <li class="step-item ${joinFromCard ? 'active' : ''}" id="stepItem2">
           <div class="step-circle" id="stepCircle2">2</div>
           <span class="step-label">기본 정보</span>
         </li>
@@ -37,7 +46,7 @@
         <!-- ════════════════════════════
              STEP 1 : 약관 동의
         ════════════════════════════ -->
-        <div id="step1">
+        <div id="step1" style="${joinFromCard ? 'display:none;' : ''}">
           <h2 class="join-card-title">약관 동의</h2>
           <p class="join-card-sub">서비스 이용을 위해 약관에 동의해 주세요.</p>
 
@@ -103,7 +112,7 @@
         <!-- ════════════════════════════
              STEP 2 : 기본 정보 입력
         ════════════════════════════ -->
-        <div id="step2" style="display:none;">
+        <div id="step2" style="${joinFromCard ? '' : 'display:none;'}">
           <h2 class="join-card-title">기본 정보 입력</h2>
           <p class="join-card-sub">회원 정보를 입력해 주세요.</p>
 
@@ -229,6 +238,30 @@
                      style="margin-bottom:8px;">
               <input type="text" id="addr2" name="addr2"
                      class="form-input no-icon" placeholder="상세 주소 (동, 호수 등)">
+            </div>
+
+            <%-- 2026/07/27 장우철 — 카드등록 (토스 빌링). 가입 전엔 세션 임시저장, 가입 완료 시 DB 저장 --%>
+            <div class="form-field" id="joinCardSection" style="margin-top:8px;">
+              <label class="form-label">결제 카드 등록 <span style="font-weight:500;color:#888;font-size:12px;">(선택)</span></label>
+              <%-- card=ok 복귀 시 pendingCardLabel 있으면 서버에서 오면 「등록됨」부터 표시 --%>
+              <div id="joinCardEmpty" style="border:1px dashed #C9D4CE;border-radius:10px;padding:16px;background:#FAFCFB;${not empty pendingCardLabel ? 'display:none;' : ''}">
+                <p style="margin:0 0 12px;font-size:13px;color:#666;line-height:1.5;">정산·간편결제를 위해 카드를 미리 등록할 수 있어요. 나중에 회원정보에서도 등록할 수 있습니다.</p>
+                <button type="button" class="btn-check" id="btnJoinCardRegister">카드 등록하기</button>
+              </div>
+              <div id="joinCardRegistered" style="${not empty pendingCardLabel ? '' : 'display:none;'}border:1px solid #BBF7D0;border-radius:10px;padding:16px;background:#F0FDF4;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                  <div>
+                    <div style="font-size:12px;color:#166534;font-weight:700;margin-bottom:4px;">등록된 카드 (가입 완료 시 저장)</div>
+                    <div id="joinCardLabel" style="font-size:15px;font-weight:800;color:#1A1A2E;">
+                      <c:out value="${not empty pendingCardLabel ? pendingCardLabel : '-'}"/>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn-check" id="btnJoinCardChange" style="background:#fff;color:#166534;border:1px solid #86EFAC;">다시 등록</button>
+                    <button type="button" class="btn-check" id="btnJoinCardRemove" style="background:#fff;color:#B91C1C;border:1px solid #FECACA;">해제</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </form>
@@ -463,11 +496,15 @@
      회원가입 스크립트
 ══════════════════════════════════════ -->
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<%-- 2026/07/27 장우철 — 토스 빌링 SDK + 카드등록 Ajax --%>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<script src="${contextPath}/resources/js/billing-card.js"></script>
 <script>
 (function () {
 
   /* ── 현재 스텝 상태 ── */
-  var cur = 1;
+  // 2026/07/27 장우철 — 토스 복귀면 Step2 부터
+  var cur = ${joinFromCard ? 2 : 1};
   var emailChecked = false;
   var emailVerified = false;
   var timerInterval = null;
@@ -799,6 +836,197 @@
           }
       }).open();
   });
+
+  /* 2026/07/27 장우철 — 가입 세션 임시저장 + 카드등록 (토스 왕복 시 폼 유지) */
+  (function () {
+    var empty = document.getElementById('joinCardEmpty');
+    var registered = document.getElementById('joinCardRegistered');
+    var labelEl = document.getElementById('joinCardLabel');
+    var ctx = '${contextPath}';
+
+    function showRegistered(label) {
+      if (labelEl) labelEl.textContent = label || '등록된 카드';
+      if (empty) empty.style.display = 'none';
+      if (registered) registered.style.display = 'block';
+    }
+    function showEmpty() {
+      if (empty) empty.style.display = 'block';
+      if (registered) registered.style.display = 'none';
+    }
+
+    function checked(id) {
+      var el = document.getElementById(id);
+      return !!(el && el.checked);
+    }
+    function setChecked(id, on) {
+      var el = document.getElementById(id);
+      if (el) el.checked = !!on;
+    }
+    function val(id) {
+      var el = document.getElementById(id);
+      return el ? el.value : '';
+    }
+    function setVal(id, v) {
+      var el = document.getElementById(id);
+      if (el && v != null) el.value = v;
+    }
+
+    /** 현재 화면 → JoinDraftVO JSON */
+    function collectDraft() {
+      return {
+        step: 2,
+        agreeService: checked('agreeService'),
+        agreePrivacy: checked('agreePrivacy'),
+        agreeLocation: checked('agreeLocation'),
+        agreeMarketing: checked('agreeMarketing'),
+        memberId: val('id'),
+        email: val('email'),
+        password: val('password'),
+        passwordConfirm: val('passwordConfirm'),
+        memberName: val('memberName'),
+        phone: val('phone'),
+        birthDate: val('birthDate'),
+        gender: val('gender'),
+        zipcode: val('zipcode'),
+        addr1: val('addr1'),
+        addr2: val('addr2'),
+        emailChecked: !!emailChecked,
+        emailVerified: !!emailVerified
+      };
+    }
+
+    /** JoinDraftVO → 화면 복원 */
+    function applyDraft(d) {
+      if (!d) return;
+      setChecked('agreeService', d.agreeService);
+      setChecked('agreePrivacy', d.agreePrivacy);
+      setChecked('agreeLocation', d.agreeLocation);
+      setChecked('agreeMarketing', d.agreeMarketing);
+      // 전체동의 체크 동기화
+      var all = document.getElementById('agreeAll');
+      if (all) {
+        all.checked = checked('agreeService') && checked('agreePrivacy')
+            && checked('agreeLocation') && checked('agreeMarketing');
+      }
+
+      setVal('id', d.memberId);
+      setVal('email', d.email);
+      setVal('password', d.password);
+      setVal('passwordConfirm', d.passwordConfirm);
+      setVal('memberName', d.memberName);
+      setVal('phone', d.phone);
+      setVal('birthDate', d.birthDate);
+      setVal('gender', d.gender);
+      setVal('zipcode', d.zipcode);
+      setVal('addr1', d.addr1);
+      setVal('addr2', d.addr2);
+
+      emailChecked = !!d.emailChecked;
+      emailVerified = !!d.emailVerified;
+
+      var emailEl = document.getElementById('email');
+      if (emailChecked) {
+        document.getElementById('okEmail').textContent = '사용 가능한 이메일입니다.';
+        ok('errEmail', 'okEmail');
+        if (emailEl) emailEl.classList.add('is-valid');
+      }
+      if (emailVerified) {
+        document.getElementById('emailVerifyArea').style.display = '';
+        document.getElementById('okVerify').textContent = '이메일 인증이 완료되었습니다.';
+        ok('errVerify', 'okVerify');
+        var timerEl = document.getElementById('emailTimer');
+        if (timerEl) timerEl.textContent = '';
+        if (timerInterval) clearInterval(timerInterval);
+      }
+    }
+
+    /** 서버 세션에 임시저장 */
+    async function saveDraftToServer() {
+      var res = await fetch(ctx + '/join/draft', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json;charset=UTF-8' },
+        body: JSON.stringify(collectDraft())
+      });
+      return res.json();
+    }
+
+    /** 서버 세션에서 복원 — 토스 복귀(card=)일 때만 */
+    async function loadDraftFromServer(cardParam) {
+      if (!cardParam) {
+        return { ok: true, draft: null };
+      }
+      var res = await fetch(ctx + '/join/draft?card=' + encodeURIComponent(cardParam), {
+        credentials: 'same-origin'
+      });
+      return res.json();
+    }
+
+    async function openToss() {
+      try {
+        var saved = await saveDraftToServer();
+        if (!saved.ok) {
+          alert(saved.message || '폼 임시저장에 실패했습니다. 다시 시도해 주세요.');
+          return;
+        }
+        await PetcareBilling.openRegister('/join');
+      } catch (e) {
+        console.error(e);
+        alert('카드 등록 창을 열지 못했습니다.');
+      }
+    }
+
+    async function refreshPending() {
+      try {
+        var data = await PetcareBilling.loadCards();
+        // pending 플래그 없어도 cards 있으면 등록됨 표시 (가입 중 세션 카드)
+        if (data.ok && data.cards && data.cards.length > 0) {
+          showRegistered(data.cards[0].label);
+        } else if (cardParam === 'ok') {
+          // list 실패해도 서버 렌더 라벨이 있으면 유지
+          var label = (labelEl && labelEl.textContent) ? labelEl.textContent.trim() : '';
+          if (label && label !== '-') showRegistered(label);
+          else showEmpty();
+        } else {
+          showEmpty();
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    var btnReg = document.getElementById('btnJoinCardRegister');
+    var btnChange = document.getElementById('btnJoinCardChange');
+    var btnRemove = document.getElementById('btnJoinCardRemove');
+    if (btnReg) btnReg.addEventListener('click', openToss);
+    if (btnChange) btnChange.addEventListener('click', openToss);
+    if (btnRemove) {
+      btnRemove.addEventListener('click', async function () {
+        if (!confirm('등록 예약을 해제할까요?')) return;
+        var res = await PetcareBilling.deleteCard(null, true);
+        if (res.ok) showEmpty();
+        else alert(res.message || '해제에 실패했습니다.');
+      });
+    }
+
+    // 2026/07/27 장우철 — draft 복원은 토스 복귀(card=ok|fail)일 때만
+    var cardParam = new URLSearchParams(location.search).get('card');
+    (async function initJoinDraftAndCard() {
+      if (cardParam === 'ok' || cardParam === 'fail') {
+        try {
+          var data = await loadDraftFromServer(cardParam);
+          if (data.ok && data.draft) {
+            applyDraft(data.draft);
+          }
+          if (typeof goStep === 'function') goStep(2);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (window.PetcareBilling) {
+        PetcareBilling.notifyFromQuery();
+        await refreshPending();
+      }
+    })();
+  })();
   /* Step 2 유효성 검사 */
   function validateStep2() {
     var valid = true;

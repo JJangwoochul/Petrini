@@ -16,6 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import com.petcare.petcare.common.interceptor.SuspendedMemberInterceptor;
+import com.petcare.petcare.common.interceptor.JoinDraftScopeInterceptor;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -29,6 +30,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private SuspendedMemberInterceptor suspendedMemberInterceptor; // 2026-07-22 박유정 — 정지 회원 Interceptor
+
+    // 2026/07/27 장우철 — 가입 임시저장은 join/빌링 왕복에서만 유지
+    @Autowired
+    private JoinDraftScopeInterceptor joinDraftScopeInterceptor;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -46,8 +51,17 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     // 2026-07-22 박유정 — 정지 회원 고객센터 외 접근 차단
+    // 2026/07/27 장우철 — 가입 draft 는 join·billing 외 이동 시 폐기
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(joinDraftScopeInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/resources/**",
+                        "/upload/**",
+                        "/favicon.ico"
+                );
+
         registry.addInterceptor(suspendedMemberInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(

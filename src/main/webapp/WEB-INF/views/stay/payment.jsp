@@ -25,6 +25,20 @@
   .btn-pay:disabled{background:var(--border);cursor:not-allowed}
   .agree-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-sub);margin-top:14px}
   .agree-row input{accent-color:var(--primary);width:16px;height:16px}
+  /* 2026/07/27 장우철 — 결제수단 선택 UI */
+  .pay-type-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  .pay-type-item{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);background:#fff}
+  .pay-type-item:has(input:checked){border-color:var(--primary);background:var(--primary-light)}
+  .pay-type-item input{margin-top:3px;accent-color:var(--primary);width:18px;height:18px;flex-shrink:0}
+  .pay-type-item .pay-type-text{display:flex;flex-direction:column;gap:4px}
+  .pay-type-item .pay-type-text strong{font-size:14px;color:var(--text-main)}
+  .pay-type-item .pay-type-text span{font-size:12px;color:var(--text-muted);line-height:1.4}
+  .pay-panel{display:none;margin-top:4px;padding-top:16px;border-top:1px dashed var(--border)}
+  .pay-panel.active{display:block}
+  .pay-card-preview{border:1px solid #BBF7D0;background:#F0FDF4;border-radius:var(--radius-sm);padding:16px}
+  .pay-card-preview .label{font-size:12px;font-weight:700;color:#166534;margin-bottom:6px}
+  .pay-card-preview .num{font-size:16px;font-weight:800;color:var(--text-main)}
+  .pay-card-preview .hint{font-size:12px;color:var(--text-muted);margin-top:8px}
 </style>
 
 <div class="pay-wrap">
@@ -55,14 +69,43 @@
     <div class="pay-row"><span>반려동물</span><span>${reservation.petName}</span></div>
   </div>
 
-  <%-- 결제 수단 (Toss Widget) --%>
+  <%-- 결제 수단 — 2026/07/27 장우철: 등록카드 / 계좌이체 선택 UI --%>
   <div class="pay-section" id="tossSection">
     <h3>
       <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
       결제 수단
     </h3>
-    <div id="payment-method"></div>
-    <div id="agreement"></div>
+    <div class="pay-type-list">
+      <label class="pay-type-item">
+        <input type="checkbox" name="payType" id="payTypeCard" value="CARD">
+        <span class="pay-type-text">
+          <strong>등록 카드로 결제</strong>
+          <span>마이페이지에 등록한 카드로 간편결제합니다.</span>
+        </span>
+      </label>
+      <label class="pay-type-item">
+        <input type="checkbox" name="payType" id="payTypeTransfer" value="TRANSFER" checked>
+        <span class="pay-type-text">
+          <strong>계좌이체 · 기타 결제</strong>
+          <span>토스 결제창에서 계좌이체·카드 등 수단을 선택합니다.</span>
+        </span>
+      </label>
+    </div>
+    <div id="panelCard" class="pay-panel">
+      <div class="pay-card-preview" id="payCardPreviewRegistered">
+        <div class="label">등록된 카드</div>
+        <div class="num">신한카드 ······1234</div>
+        <div class="hint">결제하기를 누르면 등록 카드로 바로 결제됩니다. (결제창 없음)</div>
+      </div>
+      <div class="pay-card-preview" id="payCardPreviewEmpty" style="display:none;border-color:var(--border);background:var(--bg-page)">
+        <div class="label" style="color:var(--text-muted)">등록된 카드 없음</div>
+        <div class="hint" style="margin-top:0">회원정보에서 카드를 먼저 등록해 주세요.</div>
+      </div>
+    </div>
+    <div id="panelTransfer" class="pay-panel active">
+      <div id="payment-method"></div>
+      <div id="agreement"></div>
+    </div>
   </div>
 
   <%-- 결제 금액 --%>
@@ -114,6 +157,7 @@
 </div>
 
 <script src="https://js.tosspayments.com/v2/standard"></script>
+<script src="${contextPath}/resources/js/billing-card.js"></script>
 <script>
   var totalAmount = ${reservation.totalAmount};
   var memberPoint = ${memberPoint != null ? memberPoint : 0};
@@ -126,11 +170,65 @@
 
   var tossPayments = TossPayments(clientKey);
   var widgets = tossPayments.widgets({ customerKey: customerKey });
+  // 2026/07/27 장우철 — 등록카드 목록 Ajax
+  var hasRegisteredCard = false;
+  var selectedBillingCardId = null;
 
   (async function() {
     await widgets.setAmount({ currency: "KRW", value: totalAmount });
     await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
     await widgets.renderAgreement({ selector: "#agreement" });
+  })();
+
+  /* 2026/07/27 장우철 — 결제수단 택1 + 등록카드 Ajax */
+  (function () {
+    var card = document.getElementById('payTypeCard');
+    var transfer = document.getElementById('payTypeTransfer');
+    var panelCard = document.getElementById('panelCard');
+    var panelTransfer = document.getElementById('panelTransfer');
+    var previewOk = document.getElementById('payCardPreviewRegistered');
+    var previewEmpty = document.getElementById('payCardPreviewEmpty');
+    var labelEl = document.getElementById('payCardLabel');
+
+    function syncPanels() {
+      var useCard = card.checked;
+      panelCard.classList.toggle('active', useCard);
+      panelTransfer.classList.toggle('active', !useCard);
+      if (useCard) {
+        previewOk.style.display = hasRegisteredCard ? 'block' : 'none';
+        previewEmpty.style.display = hasRegisteredCard ? 'none' : 'block';
+      }
+    }
+
+    async function refreshCards() {
+      try {
+        var data = await PetcareBilling.loadCards();
+        if (data.ok && data.cards && data.cards.length > 0) {
+          hasRegisteredCard = true;
+          selectedBillingCardId = data.cards[0].billingCardId;
+          if (labelEl) labelEl.textContent = data.cards[0].label;
+        } else {
+          hasRegisteredCard = false;
+          selectedBillingCardId = null;
+        }
+      } catch (e) {
+        hasRegisteredCard = false;
+        selectedBillingCardId = null;
+      }
+      syncPanels();
+    }
+
+    card.addEventListener('change', function () {
+      if (card.checked) transfer.checked = false;
+      else if (!transfer.checked) transfer.checked = true;
+      syncPanels();
+    });
+    transfer.addEventListener('change', function () {
+      if (transfer.checked) card.checked = false;
+      else if (!card.checked) card.checked = true;
+      syncPanels();
+    });
+    refreshCards();
   })();
 
   function useAllPoints() {
@@ -195,6 +293,39 @@
     // 전액 포인트 결제 — Toss 없이 서버로 직접 요청
     if (finalAmount === 0) {
       location.href = contextPath + '/stay/payment/point-only?resvId=' + resvId + '&usedPoint=' + usedPoint;
+      return;
+    }
+
+    // 2026/07/27 장우철 — 등록카드 Ajax 빌링 승인
+    if (document.getElementById('payTypeCard').checked) {
+      if (!hasRegisteredCard || !selectedBillingCardId) {
+        alert('등록된 카드가 없습니다. 회원정보에서 카드를 등록해 주세요.');
+        return;
+      }
+      if (!document.getElementById('agreePay').checked) {
+        alert('결제에 동의해 주세요.');
+        return;
+      }
+      try {
+        var body = 'billingCardId=' + encodeURIComponent(selectedBillingCardId)
+          + '&resvId=' + encodeURIComponent(resvId)
+          + '&usedPoint=' + encodeURIComponent(usedPoint);
+        var res = await fetch(contextPath + '/stay/payment/billing-card', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: body
+        });
+        var data = await res.json();
+        if (!data.ok) {
+          alert(data.message || '등록카드 결제에 실패했습니다.');
+          return;
+        }
+        location.href = contextPath + data.redirectUrl;
+      } catch (e) {
+        console.error(e);
+        alert('등록카드 결제 중 오류가 발생했습니다.');
+      }
       return;
     }
 

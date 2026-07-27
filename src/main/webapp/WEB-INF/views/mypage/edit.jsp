@@ -112,6 +112,30 @@
             </div>
         </div>
     </div>
+
+    <%-- 2026/07/27 장우철 — 카드등록 (토스 빌링 + Ajax) --%>
+    <div class="edit-section" id="editCardSection">
+        <div class="edit-section-title">
+            <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            결제 카드
+        </div>
+        <div id="editCardEmpty" class="edit-card-box">
+            <p class="edit-card-desc">등록된 카드가 없습니다. 간편결제를 위해 카드를 등록해 주세요.</p>
+            <button type="button" class="btn-verify" id="btnEditCardRegister">카드 등록하기</button>
+        </div>
+        <div id="editCardRegistered" class="edit-card-box registered" style="display:none;">
+            <div class="edit-card-info">
+                <span class="edit-card-badge">등록됨</span>
+                <strong id="editCardLabel">-</strong>
+                <span class="edit-card-sub" id="editCardSub">토스 빌링키로 등록된 카드입니다.</span>
+            </div>
+            <div class="edit-card-actions">
+                <button type="button" class="btn-sm" id="btnEditCardChange">카드 추가</button>
+                <button type="button" class="btn-sm danger" id="btnEditCardRemove">등록 해제</button>
+            </div>
+        </div>
+    </div>
+
     <div class="edit-submit-area">
         <button class="btn-primary" style="padding:13px 52px; font-size:15px;">저장하기</button>
     </div>
@@ -121,5 +145,65 @@
 
 </div><%-- /mypage-content --%>
 </div><%-- /mypage-wrap --%>
+
+<%-- 2026/07/27 장우철 — 토스 빌링 SDK + 카드등록 Ajax --%>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<script src="${contextPath}/resources/js/billing-card.js"></script>
+<script>
+/* 2026/07/27 장우철 — 회원정보 카드등록 (목록 Ajax + requestBillingAuth) */
+(function () {
+  var empty = document.getElementById('editCardEmpty');
+  var registered = document.getElementById('editCardRegistered');
+  var labelEl = document.getElementById('editCardLabel');
+  var currentCardId = null;
+
+  function showRegistered(label, cardId) {
+    currentCardId = cardId;
+    labelEl.textContent = label || '등록된 카드';
+    empty.style.display = 'none';
+    registered.style.display = 'flex';
+  }
+  function showEmpty() {
+    currentCardId = null;
+    empty.style.display = 'block';
+    registered.style.display = 'none';
+  }
+
+  async function refreshCards() {
+    try {
+      var data = await PetcareBilling.loadCards();
+      if (!data.ok || !data.cards || data.cards.length === 0) {
+        showEmpty();
+        return;
+      }
+      // 최신 카드 1장 표시 (여러 장 가능, UI는 대표 1장)
+      var c = data.cards[0];
+      showRegistered(c.label, c.billingCardId);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function openToss() {
+    PetcareBilling.openRegister('/mypage/edit').catch(function (e) {
+      console.error(e);
+      alert('카드 등록 창을 열지 못했습니다.');
+    });
+  }
+
+  document.getElementById('btnEditCardRegister').addEventListener('click', openToss);
+  document.getElementById('btnEditCardChange').addEventListener('click', openToss);
+  document.getElementById('btnEditCardRemove').addEventListener('click', async function () {
+    if (!confirm('등록된 카드를 해제할까요?')) return;
+    if (currentCardId == null) { showEmpty(); return; }
+    var res = await PetcareBilling.deleteCard(currentCardId, false);
+    if (res.ok) refreshCards();
+    else alert(res.message || '삭제에 실패했습니다.');
+  });
+
+  PetcareBilling.notifyFromQuery();
+  refreshCards();
+})();
+</script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

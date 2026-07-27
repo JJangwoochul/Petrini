@@ -28,6 +28,13 @@ import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
 import com.petcare.petcare.store.vo.OrderTempVO;
+import com.petcare.petcare.common.billing.service.BillingCardService;
+import com.petcare.petcare.common.billing.vo.BillingApproveResultVO;
+import com.petcare.petcare.common.billing.vo.BillingCardVO;
+import com.petcare.petcare.common.external.service.TossBillingService;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -42,6 +49,12 @@ public class StoreShopController {
     //지윤 26.07.06 상품목록 조회용 Service 주입
     @Autowired
     private StoreShopService storeShopService;
+
+    // 2026/07/27 장우철 — 등록카드(빌링) 결제
+    @Autowired
+    private BillingCardService billingCardService;
+    @Autowired
+    private TossBillingService tossBillingService;
 
     //지윤 26.07.09 로그인 기능 연동: 세션에서 로그인한 회원번호 가져오기 (없으면 null)
     private Long getLoginMemberNo(HttpSession session) {
@@ -308,6 +321,114 @@ public String payment(@RequestParam(required = false) Long productId,
         model.addAttribute("orderItems", orderTemp.getOrderItems());
         model.addAttribute("payAmount", orderTemp.getFinalTotal());
         model.addAttribute("payMethodLabel", "NORMAL".equals(paymentType) ? "일반결제" : paymentType);
+        return "store/order-complete";
+    }
+
+    /**
+     * 2026/07/27 장우철 — 등록카드(빌링키) Ajax 결제
+     * POST /store/payment/billing-card
+     * 1) 세션 orderTemp 금액으로 토스 자동결제 승인
+     * 2) 성공 시 completeOrder → TB_ORDER / TB_PAYMENT
+     * 3) JSON { ok, redirectUrl } 또는 { ok:false, message }
+     */
+    @PostMapping("/payment/billing-card")
+    @ResponseBody
+    public Map<String, Object> payWithBillingCard(
+            @RequestParam Long billingCardId,
+            HttpSession session) {
+
+        Map<String, Object> res = new HashMap<>();
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            res.put("ok", false);
+            res.put("message", "로그인이 필요합니다.");
+            return res;
+        }
+
+        OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
+        if (orderTemp == null || orderTemp.getFinalTotal() == null) {
+            res.put("ok", false);
+            res.put("message", "주문 정보가 없습니다. 주문서부터 다시 진행해 주세요.");
+            return res;
+        }
+        if (!member.getMemberNo().equals(orderTemp.getMemberNo())) {
+            res.put("ok", false);
+            res.put("message", "주문 소유자가 일치하지 않습니다.");
+            return res;
+        }
+
+        BillingCardVO card = billingCardService.getCard(billingCardId);
+        if (card == null || !"ACTIVE".equals(card.getStatusCd())
+                || !"MEMBER".equals(card.getOwnerType())
+                || !member.getMemberNo().equals(card.getOwnerNo())) {
+            res.put("ok", false);
+            res.put("message", "등록된 카드를 확인할 수 없습니다.");
+            return res;
+        }
+
+        int amount = orderTemp.getFinalTotal();
+        if (amount <= 0) {
+            res.put("ok", false);
+            res.put("message", "결제 금액이 올바르지 않습니다.");
+            return res;
+        }
+
+        // 토스 orderId: 영문/숫자/하이픈, 6~64자
+        String tossOrderId = "store-" + member.getMemberNo() + "-" + System.currentTimeMillis();
+        String orderName = "펫케어 스토어 주문";
+        if (orderTemp.getOrderItems() != null && !orderTemp.getOrderItems().isEmpty()) {
+            String firstName = orderTemp.getOrderItems().get(0).getProductName();
+            int extra = orderTemp.getOrderItems().size() - 1;
+            orderName = (firstName != null ? firstName : orderName)
+                    + (extra > 0 ? (" 외 " + extra + "건") : "");
+            if (orderName.length() > 100) {
+                orderName = orderName.substring(0, 100);
+            }
+        }
+
+        StringBuilder err = new StringBuilder();
+        BillingApproveResultVO approved = tossBillingService.approveBilling(
+                card.getBillingKey(), card.getCustomerKey(), amount,
+                tossOrderId, orderName, err);
+
+        if (approved == null) {
+            res.put("ok", false);
+            res.put("message", err.length() > 0 ? err.toString() : "등록카드 결제에 실패했습니다.");
+            return res;
+        }
+
+        try {
+            String paymentKey = approved.getPaymentKey() != null
+                    ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
+            String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, tossOrderId);
+            session.removeAttribute("orderTemp");
+
+            // 완료 화면은 GET order-complete 인데 세션을 이미 비움 → 전용 완료 redirect 파라미터
+            res.put("ok", true);
+            res.put("orderNo", orderNo);
+            res.put("redirectUrl", "/store/order-complete-billing?orderNo="
+                    + java.net.URLEncoder.encode(orderNo, java.nio.charset.StandardCharsets.UTF_8)
+                    + "&amount=" + amount);
+            return res;
+        } catch (Exception e) {
+            res.put("ok", false);
+            res.put("message", "결제는 승인됐으나 주문 저장 중 오류: " + e.getMessage());
+            return res;
+        }
+    }
+
+    /**
+     * 2026/07/27 장우철 — 빌링 Ajax 결제 완료 화면
+     * (세션 orderTemp 없이 orderNo·금액만 표시)
+     */
+    @GetMapping("/order-complete-billing")
+    public String orderCompleteBilling(@RequestParam String orderNo,
+                                       @RequestParam(required = false) Integer amount,
+                                       Model model) {
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("payAmount", amount);
+        model.addAttribute("payMethodLabel", "등록카드(빌링)");
+        // noOrderData 는 넣지 않음 (JSP: not empty noOrderData 이면 오류 화면)
         return "store/order-complete";
     }
 

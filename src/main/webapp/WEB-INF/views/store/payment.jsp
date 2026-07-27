@@ -44,6 +44,20 @@
 .order-nav{display:flex;justify-content:flex-start;margin-bottom:20px}
 .btn-back{padding:9px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text-sub);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px}
 .btn-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* 2026/07/27 장우철 — 결제수단 선택 (등록카드 / 계좌이체) */
+.pay-type-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.pay-type-item{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);background:#fff}
+.pay-type-item:has(input:checked){border-color:var(--primary);background:var(--primary-light)}
+.pay-type-item input{margin-top:3px;accent-color:var(--primary);width:18px;height:18px;flex-shrink:0}
+.pay-type-item .pay-type-text{display:flex;flex-direction:column;gap:4px}
+.pay-type-item .pay-type-text strong{font-size:14px;color:var(--text-main)}
+.pay-type-item .pay-type-text span{font-size:12px;color:var(--text-muted);line-height:1.4}
+.pay-panel{display:none;margin-top:4px;padding-top:16px;border-top:1px dashed var(--border)}
+.pay-panel.active{display:block}
+.pay-card-preview{border:1px solid #BBF7D0;background:#F0FDF4;border-radius:var(--radius-sm);padding:16px}
+.pay-card-preview .label{font-size:12px;font-weight:700;color:#166534;margin-bottom:6px}
+.pay-card-preview .num{font-size:16px;font-weight:800;color:var(--text-main)}
+.pay-card-preview .hint{font-size:12px;color:var(--text-muted);margin-top:8px}
 </style>
 <div class="order-wrap">
   <div class="order-nav">
@@ -70,8 +84,40 @@
 
   <div class="order-section">
     <h3>결제 수단</h3>
-    <div id="payment-method"></div>
-    <div id="agreement"></div>
+    <%-- 2026/07/27 장우철 — 등록카드 / 계좌이체 택1 (UI). API 연동 전 더미 카드정보 --%>
+    <div class="pay-type-list">
+      <label class="pay-type-item">
+        <input type="checkbox" name="payType" id="payTypeCard" value="CARD">
+        <span class="pay-type-text">
+          <strong>등록 카드로 결제</strong>
+          <span>마이페이지에 등록한 카드로 간편결제합니다.</span>
+        </span>
+      </label>
+      <label class="pay-type-item">
+        <input type="checkbox" name="payType" id="payTypeTransfer" value="TRANSFER" checked>
+        <span class="pay-type-text">
+          <strong>계좌이체 · 기타 결제</strong>
+          <span>토스 결제창에서 계좌이체·카드 등 수단을 선택합니다.</span>
+        </span>
+      </label>
+    </div>
+
+    <div id="panelCard" class="pay-panel">
+      <div class="pay-card-preview" id="payCardPreviewRegistered">
+        <div class="label">등록된 카드</div>
+        <div class="num" id="payCardLabel">신한카드 ······1234</div>
+        <div class="hint">결제하기를 누르면 등록 카드로 바로 결제됩니다. (결제창 없음)</div>
+      </div>
+      <div class="pay-card-preview" id="payCardPreviewEmpty" style="display:none;border-color:var(--border);background:var(--bg-page)">
+        <div class="label" style="color:var(--text-muted)">등록된 카드 없음</div>
+        <div class="hint" style="margin-top:0">회원정보에서 카드를 먼저 등록해 주세요.</div>
+      </div>
+    </div>
+
+    <div id="panelTransfer" class="pay-panel active">
+      <div id="payment-method"></div>
+      <div id="agreement"></div>
+    </div>
   </div>
 
   <div class="order-section">
@@ -105,16 +151,22 @@
   </div>
 </div>
 <script src="https://js.tosspayments.com/v2/standard"></script>
+<script src="${contextPath}/resources/js/billing-card.js"></script>
 
 <script>
   const amount = ${finalTotal};
-  const clientKey = "${tossApiKey}"; // 토스 공개 테스트 키
+  const clientKey = "${tossApiKey}"; // 토스 공개 테스트 키 (위젯용)
   const customerKey = "petcare_user_${memberInfo.memberId}";
   const tossPayments = TossPayments(clientKey);
   const widgets = tossPayments.widgets({ customerKey });
+  const ctx = "${contextPath}";
 
   //지윤 26.07.13 추가: 필수약관 동의 상태 저장용 변수 (기본 false, 위젯 이벤트로 갱신됨)
   let agreedRequiredTerms = true;
+  // 2026/07/27 장우철 — 등록카드 목록 (Ajax)
+  let hasRegisteredCard = false;
+  let selectedBillingCardId = null;
+
   (async () => {
     await widgets.setAmount({ currency: "KRW", value: amount });
     await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
@@ -125,7 +177,89 @@
       agreedRequiredTerms = agreementStatus.agreedRequiredTerms;
     });
   })();
+
+  /* 2026/07/27 장우철 — 결제수단 택1 + 등록카드 목록 Ajax */
+  (function () {
+    var card = document.getElementById('payTypeCard');
+    var transfer = document.getElementById('payTypeTransfer');
+    var panelCard = document.getElementById('panelCard');
+    var panelTransfer = document.getElementById('panelTransfer');
+    var previewOk = document.getElementById('payCardPreviewRegistered');
+    var previewEmpty = document.getElementById('payCardPreviewEmpty');
+    var labelEl = document.getElementById('payCardLabel');
+
+    function syncPanels() {
+      var useCard = card.checked;
+      panelCard.classList.toggle('active', useCard);
+      panelTransfer.classList.toggle('active', !useCard);
+      if (useCard) {
+        previewOk.style.display = hasRegisteredCard ? 'block' : 'none';
+        previewEmpty.style.display = hasRegisteredCard ? 'none' : 'block';
+      }
+    }
+
+    async function refreshCards() {
+      try {
+        var data = await PetcareBilling.loadCards();
+        if (data.ok && data.cards && data.cards.length > 0) {
+          hasRegisteredCard = true;
+          selectedBillingCardId = data.cards[0].billingCardId;
+          if (labelEl) labelEl.textContent = data.cards[0].label;
+        } else {
+          hasRegisteredCard = false;
+          selectedBillingCardId = null;
+        }
+      } catch (e) {
+        hasRegisteredCard = false;
+        selectedBillingCardId = null;
+      }
+      syncPanels();
+    }
+
+    card.addEventListener('change', function () {
+      if (card.checked) transfer.checked = false;
+      else if (!transfer.checked) transfer.checked = true;
+      syncPanels();
+    });
+    transfer.addEventListener('change', function () {
+      if (transfer.checked) card.checked = false;
+      else if (!card.checked) card.checked = true;
+      syncPanels();
+    });
+    refreshCards();
+  })();
+
   async function requestPayment() {
+    // 2026/07/27 장우철 — 등록카드: 토스 창 없이 Ajax 빌링 승인
+    if (document.getElementById('payTypeCard').checked) {
+      if (!hasRegisteredCard || !selectedBillingCardId) {
+        alert('등록된 카드가 없습니다. 회원정보에서 카드를 등록해 주세요.');
+        return;
+      }
+      if (!document.getElementById('agreePay').checked) {
+        alert('결제에 동의해 주세요.');
+        return;
+      }
+      try {
+        var body = 'billingCardId=' + encodeURIComponent(selectedBillingCardId);
+        var res = await fetch(ctx + '/store/payment/billing-card', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: body
+        });
+        var data = await res.json();
+        if (!data.ok) {
+          alert(data.message || '등록카드 결제에 실패했습니다.');
+          return;
+        }
+        location.href = ctx + data.redirectUrl;
+      } catch (e) {
+        console.error(e);
+        alert('등록카드 결제 중 오류가 발생했습니다.');
+      }
+      return;
+    }
     //지윤 26.07.13 추가: 필수약관 미동의 상태면 안내 팝업 띄우고 결제 요청 자체를 안 보냄
     if (!agreedRequiredTerms) {
       alert('결제 서비스 이용약관, 개인정보 처리 동의는 필수입니다.');

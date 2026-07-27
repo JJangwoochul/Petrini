@@ -28,7 +28,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.petcare.petcare.common.billing.service.BillingCardService;
+import com.petcare.petcare.common.billing.vo.BillingApproveResultVO;
+import com.petcare.petcare.common.billing.vo.BillingCardVO;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.common.external.service.TossBillingService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
@@ -52,6 +56,12 @@ public class StayController {
     private StayServiceImpl stayService;
     @Autowired
     private FileService fileService;
+
+    // 2026/07/27 장우철 — 등록카드(빌링) 결제
+    @Autowired
+    private BillingCardService billingCardService;
+    @Autowired
+    private TossBillingService tossBillingService;
 
     @GetMapping({"", "/"})
     public String list(@ModelAttribute("search") StayVO searchVO, Model model) throws Exception {
@@ -202,6 +212,105 @@ public class StayController {
         } catch (RuntimeException e) {
             model.addAttribute("errorMsg", e.getMessage());
             return "redirect:/stay";
+        }
+    }
+
+    /**
+     * 2026/07/27 장우철 — 등록카드(빌링키) Ajax 결제
+     * POST /stay/payment/billing-card
+     */
+    @PostMapping("/payment/billing-card")
+    @ResponseBody
+    public Map<String, Object> payWithBillingCard(
+            @RequestParam Long billingCardId,
+            @RequestParam Long resvId,
+            @RequestParam(defaultValue = "0") long usedPoint,
+            HttpSession session) {
+
+        Map<String, Object> res = new HashMap<>();
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            res.put("ok", false);
+            res.put("message", "로그인이 필요합니다.");
+            return res;
+        }
+
+        ReservationVO reservation;
+        try {
+            reservation = stayService.getReservationById(resvId);
+        } catch (Exception e) {
+            res.put("ok", false);
+            res.put("message", "예약 정보를 불러오지 못했습니다.");
+            return res;
+        }
+        if (reservation == null || !member.getMemberNo().equals(reservation.getMemberNo())) {
+            res.put("ok", false);
+            res.put("message", "예약 정보를 확인할 수 없습니다.");
+            return res;
+        }
+
+        BillingCardVO card = billingCardService.getCard(billingCardId);
+        if (card == null || !"ACTIVE".equals(card.getStatusCd())
+                || !"MEMBER".equals(card.getOwnerType())
+                || !member.getMemberNo().equals(card.getOwnerNo())) {
+            res.put("ok", false);
+            res.put("message", "등록된 카드를 확인할 수 없습니다.");
+            return res;
+        }
+
+        long total = reservation.getTotalAmount() != null ? reservation.getTotalAmount() : 0L;
+        if (usedPoint < 0) usedPoint = 0;
+        if (usedPoint > total) usedPoint = total;
+        int chargeAmount = (int) (total - usedPoint);
+        if (chargeAmount <= 0) {
+            res.put("ok", false);
+            res.put("message", "결제 금액이 없습니다. 포인트 전액 결제를 이용해 주세요.");
+            return res;
+        }
+
+        String tossOrderId = "stay-" + resvId + "-" + usedPoint + "-" + System.currentTimeMillis();
+        String orderName = "펫케어 숙소 예약";
+        if (reservation.getStayName() != null) {
+            orderName = reservation.getStayName();
+            if (reservation.getServiceName() != null) {
+                orderName = orderName + " - " + reservation.getServiceName();
+            }
+            if (orderName.length() > 100) {
+                orderName = orderName.substring(0, 100);
+            }
+        }
+
+        StringBuilder err = new StringBuilder();
+        BillingApproveResultVO approved = tossBillingService.approveBilling(
+                card.getBillingKey(), card.getCustomerKey(), chargeAmount,
+                tossOrderId, orderName, err);
+
+        if (approved == null) {
+            res.put("ok", false);
+            res.put("message", err.length() > 0 ? err.toString() : "등록카드 결제에 실패했습니다.");
+            return res;
+        }
+
+        try {
+            String paymentKey = approved.getPaymentKey() != null
+                    ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
+            String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
+            stayService.confirmPayment(resvId, paymentKey, tossOrderId, "BILLING",
+                    kakaoToken, member.getMemberNo(), usedPoint);
+
+            if (usedPoint > 0) {
+                long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
+                member.setPointBalance(currentBalance - usedPoint);
+                session.setAttribute("memberInfo", member);
+            }
+
+            res.put("ok", true);
+            res.put("redirectUrl", "/stay/complete?resvId=" + resvId);
+            return res;
+        } catch (Exception e) {
+            res.put("ok", false);
+            res.put("message", "결제는 승인됐으나 예약 확정 중 오류: " + e.getMessage());
+            return res;
         }
     }
 
