@@ -36,6 +36,11 @@
             <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
             주문 관리
         </a>
+        <%-- 지윤 26.07.21 추가: 사업자 리뷰 삭제요청 승인/반려 화면 --%>
+        <a href="${contextPath}/admin/store/review-report" class="adm-nav-link ${adminPage eq 'review-report' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            리뷰 관리
+        </a>
 
         <div class="adm-nav-group">사업자 · 커뮤니티</div>
         <a href="${contextPath}/admin/biz/list" class="adm-nav-link ${adminPage eq 'biz-list' ? 'active' : ''}">

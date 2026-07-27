@@ -31,4 +31,5 @@ public class BizProductVO {
     private String brandName;
     private String regDate;
     private List<OptionVO> optionList;
+    private String tags; //지윤 26.07.21 추가: 상품 특징 태그, 쉼표 구분 문자열 그대로 저장 (예: "무료배송,중형견 적합")
 }

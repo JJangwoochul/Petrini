@@ -75,6 +75,8 @@
 .reviewer { font-size:14px; font-weight:700; color:var(--text-main); }
 .review-date { font-size:12px; color:var(--text-muted); }
 .review-text { font-size:14px; color:var(--text-sub); line-height:1.6; }
+.review-report-btn { margin-top:10px; background:none; border:none; color:var(--text-muted); font-size:12px; text-decoration:underline; cursor:pointer; padding:0; }
+.review-report-btn:hover { color:var(--accent); }
 </style>
 
 <div class="detail-wrap">
@@ -126,12 +128,16 @@
      </c:if>
     </div>
 
-      <div class="detail-tags">
-        <span class="detail-tag">무료배송</span>
-        <span class="detail-tag">중형견 적합</span>
-        <span class="detail-tag">글루텐 프리</span>
-        <span class="detail-tag">오메가3 함유</span>
-      </div>
+      <%-- 지윤 26.07.21 수정: 하드코딩된 뱃지 4개 -> TB_PRODUCT.TAGS(쉼표 구분)를 split해서 실제 태그로 렌더링. 태그 없으면 영역 자체 숨김 --%>
+      <c:if test="${not empty product.tags}">
+        <div class="detail-tags">
+          <c:forEach var="tag" items="${fn:split(product.tags, ',')}">
+            <c:if test="${not empty fn:trim(tag)}">
+              <span class="detail-tag">${fn:trim(tag)}</span>
+            </c:if>
+          </c:forEach>
+        </div>
+      </c:if>
 
       <%-- 지윤 26.07.07 수정: 용량 하드코딩 -> TB_PRODUCT_OPTION 실데이터로 변경
      색상이 없거나 '기본'이면 색상 표시 생략, 사이즈만 표시 --%>
@@ -256,23 +262,66 @@
     <c:if test="${empty product.reviewList}">
       <div style="text-align:center;padding:60px 0;color:var(--text-muted)">아직 등록된 리뷰가 없습니다.</div>
     </c:if>
+
+    <div id="reviewList">
     <c:forEach var="rv" items="${product.reviewList}">
-      <div class="review-card">
+      <div class="review-card" data-review-id="${rv.reviewId}">
         <div class="review-card-head">
           <span class="reviewer">${rv.nickname} <c:forEach begin="1" end="${rv.rating}">⭐</c:forEach></span>
-          <span class="review-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
+          <span style="display:flex; align-items:center; gap:10px;">
+            <span class="review-date"><fmt:formatDate value="${rv.regDate}" pattern="yyyy.MM.dd"/></span>
+            <%-- 지윤 26.07.21 추가: 본인 리뷰 삭제 --%>
+            <c:if test="${not empty sessionScope.memberInfo && sessionScope.memberInfo.memberNo == rv.memberNo}">
+              <button type="button" class="btnDeleteReview" data-review-id="${rv.reviewId}" style="border:none; background:none; color:var(--text-muted); font-size:12px; cursor:pointer; text-decoration:underline;">삭제</button>
+            </c:if>
+          </span>
         </div>
-        <div class="review-text">${rv.content}</div>
+        <c:choose>
+          <c:when test="${rv.blinded}">
+            <div class="review-text" style="color:var(--text-muted);font-style:italic">삭제 검토 중인 리뷰입니다.</div>
+          </c:when>
+          <c:otherwise>
+            <div class="review-text">${rv.content}</div>
+            <%-- 지윤 26.07.23 추가: 리뷰 첨부 이미지 --%>
+            <c:if test="${not empty rv.imageUrls}">
+              <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                <c:forEach var="imgUrl" items="${rv.imageUrls}">
+                  <img src="${contextPath}/upload/${imgUrl}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;" onclick="window.open('${contextPath}/upload/${imgUrl}', '_blank')">
+                </c:forEach>
+              </div>
+            </c:if>
+            <c:if test="${not empty rv.bizReply}">
+              <div class="review-text" style="margin-top:10px;padding:12px 14px;background:#EAF7F2;border-left:3px solid #2BAB82;border-radius:8px">
+                <b style="color:#1F8464">사장님 답글</b><br>${rv.bizReply}
+              </div>
+            </c:if>
+            <%-- 지윤 26.07.21 추가: 리뷰 신고 - 로그인했고 본인 리뷰가 아닐 때만 노출 --%>
+            <c:if test="${not empty sessionScope.memberInfo && sessionScope.memberInfo.memberNo != rv.memberNo}">
+              <button type="button" class="review-report-btn" onclick="reportReview(${rv.reviewId})">신고</button>
+            </c:if>
+          </c:otherwise>
+        </c:choose>
       </div>
     </c:forEach>
+    </div>
+    
   </div>
 
  <%-- 지윤 26.07.10 수정: 문의 등록(AJAX) 기능 추가 --%>
 <div class="tab-section" id="tab-qna">
     <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <c:if test="${not empty product.optionList}">
+        <select id="qnaOptionSelect" style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:13px; color:var(--text-sub); max-width:160px;">
+          <option value="">옵션 선택(선택)</option>
+          <c:forEach var="opt" items="${product.optionList}">
+            <option value="${opt.optionId}"><c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}</option>
+          </c:forEach>
+        </select>
+      </c:if>
       <input type="text" id="qnaInput" maxlength="500" placeholder="상품에 대해 궁금한 점을 문의해보세요" style="flex:1; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; font-size:14px; outline:none;">
       <button type="button" id="btnAddQna" style="padding:10px 20px; border:1px solid var(--primary); border-radius:var(--radius-sm); background:#fff; color:var(--primary); font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;">문의하기</button>
     </div>
+
     <div id="qnaEmptyMsg" style="text-align:center;padding:60px 0;color:var(--text-muted); ${empty product.qnaList ? '' : 'display:none;'}">아직 등록된 문의가 없습니다.</div>
     <div id="qnaList">
     <c:forEach var="qna" items="${product.qnaList}">
@@ -396,6 +445,54 @@ function showTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('on');
   btn.classList.add('on');
 }
+
+//지윤 26.07.21 추가: 리뷰 신고 (AJAX) - 신고 사유는 선택 입력, 이미 신고했으면 안내만
+function reportReview(reviewId) {
+  if (!confirm('이 리뷰를 신고하시겠습니까?')) return;
+  var reason = prompt('신고 사유를 입력해주세요 (선택)') || '';
+  fetch('${contextPath}/store/review/report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'reviewId=' + encodeURIComponent(reviewId) + '&reason=' + encodeURIComponent(reason)
+  })
+    .then(function (res) { return res.text(); })
+    .then(function (result) {
+      if (result === 'LOGIN_REQUIRED') {
+        if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?')) {
+          location.href = '${contextPath}/login';
+        }
+      } else if (result === 'ALREADY') {
+        alert('이미 신고한 리뷰입니다.');
+      } else {
+        alert('신고가 접수되었습니다.');
+      }
+    });
+}
+
+//지윤 26.07.21 추가: 본인 리뷰 삭제 (평점 요약 갱신을 위해 성공 시 새로고침)
+document.getElementById('reviewList').addEventListener('click', function (e) {
+  var btn = e.target.closest('.btnDeleteReview');
+  if (!btn) return;
+  if (!confirm('작성한 리뷰를 삭제하시겠습니까?')) return;
+  var reviewId = btn.dataset.reviewId;
+  fetch('${contextPath}/store/review/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'reviewId=' + encodeURIComponent(reviewId)
+  })
+    .then(function (res) { return res.text(); })
+    .then(function (result) {
+      if (result === 'OK') {
+        location.reload();
+      } else if (result === 'LOGIN_REQUIRED') {
+        alert('로그인이 필요합니다.');
+        location.href = '${contextPath}/login';
+      } else {
+        alert('리뷰 삭제에 실패했습니다.');
+      }
+    });
+});
+
 //지윤 26.07.09 수정: 로그인 안 했으면 AJAX 요청 전에 confirm으로 로그인페이지 이동 여부부터 물어봄
 document.getElementById('btnAddCart').addEventListener('click', function () {
   var isLoggedIn = ${not empty sessionScope.memberInfo};
@@ -466,10 +563,12 @@ document.getElementById('btnAddQna').addEventListener('click', function () {
     alert('문의 내용을 입력해주세요.');
     return;
   }
+  var optionSelectEl = document.getElementById('qnaOptionSelect');
+  var qnaOptionId = optionSelectEl ? optionSelectEl.value : '';
   fetch('${contextPath}/store/qna/add', {
     method: 'POST',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    body: 'productId=${product.productId}&question=' + encodeURIComponent(question)
+    body: 'productId=${product.productId}&question=' + encodeURIComponent(question) + '&optionId=' + encodeURIComponent(qnaOptionId)
   }).then(function(res){ return res.text(); })
     .then(function(result){
       if (result.indexOf('OK:') === 0) {

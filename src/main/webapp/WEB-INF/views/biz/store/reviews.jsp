@@ -8,6 +8,7 @@
 <%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
 
 <%-- 7/3, 사업자(쇼핑몰) 리뷰 관리 UI 구성 — 병원 reviews.jsp와 동일 구조로 재작성 --%>
+<%-- 지윤 26.07.20 수정: 목업 -> 실데이터 연동. "신고관리" 탭을 "삭제요청" 탭으로 변경 (신고관리는 제외하기로 결정, 대신 사업자 삭제요청/관리자 승인 플로우로 대체) --%>
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">리뷰 관리</h1>
@@ -18,7 +19,7 @@
     <div style="padding:20px 20px 0">
       <div class="biz-tabs">
         <button type="button" class="biz-tab active" data-tab="all" onclick="switchTab('all')">전체<span class="biz-tab-count" id="cntAll"></span></button>
-        <button type="button" class="biz-tab" data-tab="reported" onclick="switchTab('reported')">신고관리<span class="biz-tab-count" id="cntReported"></span></button>
+        <button type="button" class="biz-tab" data-tab="reported" onclick="switchTab('reported')">삭제요청<span class="biz-tab-count" id="cntReported"></span></button>
         <div class="biz-tabs-right">
           <select class="biz-select-sm" id="sortSelect" onchange="renderList()">
             <option value="latest">최신순</option>
@@ -38,15 +39,21 @@
   답글이 등록되었습니다.
 </div>
 
+<%-- 지윤 26.07.20 추가: 답글/삭제요청은 실제 서버로 POST해야 해서 숨김 폼 2개로 처리 (fetch/AJAX 대신 그냥 submit) --%>
+<form id="replyForm" method="post" action="${contextPath}/biz/store/reviews/reply" style="display:none">
+  <input type="hidden" name="reviewId" id="replyFormReviewId">
+  <textarea name="bizReply" id="replyFormText"></textarea>
+</form>
+<form id="deleteReqForm" method="post" action="${contextPath}/biz/store/reviews/delete-request" style="display:none">
+  <input type="hidden" name="reviewId" id="delFormReviewId">
+  <input type="hidden" name="reason" id="delFormReason">
+</form>
+
 <script>
-  // 목업 리뷰 데이터 (실 연동 전 화면 확인용)
-  var reviews = [
-    { id: 1, author: '김민지', date: '2026-06-29', rating: 5, product: '로얄캐닌 인도어 사료', content: '배송도 빠르고 포장도 꼼꼼했어요. 아이가 잘 먹어서 만족합니다.', reported: false, reply: '소중한 후기 감사합니다 :) 앞으로도 좋은 상품으로 보답하겠습니다!' },
-    { id: 2, author: '이서준', date: '2026-06-26', rating: 4, product: '수제 닭가슴살 져키', content: '기호성이 좋아요. 다만 양이 조금 더 많았으면 좋겠습니다.', reported: false, reply: null },
-    { id: 3, author: '박하은', date: '2026-06-23', rating: 2, product: '노즈워크 매트 오렌지', content: '상품은 괜찮은데 배송이 예상보다 늦었습니다.', reported: true, reply: null },
-    { id: 4, author: '최도윤', date: '2026-06-20', rating: 5, product: 'H형 하네스 블루', content: '사이즈도 잘 맞고 착용감도 좋아 보여요. 산책할 때 편합니다.', reported: false, reply: '만족해주셔서 감사합니다. 즐거운 산책 되세요!' },
-    { id: 5, author: '한지우', date: '2026-06-17', rating: 1, product: '고양이 모래', content: '포장이 찢어져서 왔습니다. 개선 부탁드려요.', reported: true, reply: null }
-  ];
+  //지윤 26.07.22 추가: 썸네일 경로 조합용 (detail.jsp와 동일 패턴)
+  var contextPath = '${contextPath}';
+  //지윤 26.07.20 수정: 목업 배열 -> 컨트롤러가 내려주는 실데이터 JSON 그대로 사용
+  var reviews = ${empty reviewListJson ? '[]' : reviewListJson};
 
   var currentTab = 'all';
   var openReplyId = null;
@@ -66,13 +73,20 @@
     renderList();
   }
 
-  function toggleReply(id) {
+ function toggleReply(id) {
     openReplyId = (openReplyId === id) ? null : id;
     renderList();
   }
 
+  //지윤 26.07.22 추가: "신고접수 N건" 뱃지 클릭 시에만 신고자 목록 보여주기 (renderList 다시 안 타므로 DOM에서 바로 토글)
+  function toggleReporters(id) {
+    var el = document.getElementById('reporters-' + id);
+    if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+  }
+
+  //지윤 26.07.20 수정: 신고(r.reported) 기준 -> 삭제요청(r.deleteRequested) 기준으로 필터 변경
   function renderList() {
-    var list = reviews.filter(function (r) { return currentTab === 'all' || r.reported; });
+    var list = reviews.filter(function (r) { return currentTab === 'all' || r.deleteRequested; });
 
     var sort = document.getElementById('sortSelect').value;
     if (sort === 'high') list = list.slice().sort(function (a, b) { return b.rating - a.rating; });
@@ -80,7 +94,7 @@
     else list = list.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
 
     document.getElementById('cntAll').textContent = reviews.length;
-    document.getElementById('cntReported').textContent = reviews.filter(function (r) { return r.reported; }).length;
+    document.getElementById('cntReported').textContent = reviews.filter(function (r) { return r.deleteRequested; }).length;
 
     var box = document.getElementById('reviewList');
     box.innerHTML = '';
@@ -98,6 +112,7 @@
       if (openReplyId === r.id) {
         replyBoxHtml =
           '<div class="biz-reply-box">' +
+            '<div class="biz-reply-box-label"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>답글 작성</div>' +
             '<textarea id="replyInput-' + r.id + '" placeholder="답글 내용을 입력해주세요">' + (r.reply || '') + '</textarea>' +
             '<div class="biz-reply-box-actions">' +
               '<button class="btn-cancel" onclick="toggleReply(' + r.id + ')">취소</button>' +
@@ -106,37 +121,53 @@
           '</div>';
       }
 
-      item.innerHTML =
+      //지윤 26.07.22 수정: 네이버 리뷰 스타일 참고해서 카드 레이아웃 재구성 - 썸네일+상품정보 상단 블록, 답글은 회색 박스로 정리
+    item.innerHTML =
         '<div class="biz-review-main">' +
-          '<div class="biz-review-stars">' + starsHtml(r.rating) + '</div>' +
-          '<div class="biz-review-top">' +
-            '<span class="biz-review-author">' + r.author + '</span>' +
-            '<span class="biz-review-date">' + r.date + '</span>' +
-            (r.reported ? '<span class="biz-review-reported">신고접수</span>' : '') +
+          '<div class="biz-review-product-row">' +
+    (r.thumbnail ? '<img class="biz-review-thumb" src="' + (r.thumbnail.indexOf('http') === 0 ? r.thumbnail : contextPath + '/upload/' + r.thumbnail) + '">' : '<div class="biz-review-thumb biz-review-thumb-empty"></div>') +
+            '<div class="biz-review-product-info">' +
+              '<div class="biz-review-product-name">' + r.product + '</div>' +
+              (r.option ? '<div class="biz-review-option">옵션: ' + r.option + '</div>' : '') +
+            '</div>' +
           '</div>' +
-          '<div class="biz-review-content"><b>상품명</b> ' + r.product + '</div>' +
-          '<div class="biz-review-content" style="margin-top:6px">' + r.content + '</div>' +
-          (r.reply && openReplyId !== r.id ? '<div class="biz-review-reply"><b>답글</b>' + r.reply + '</div>' : '') +
+          '<div class="biz-review-top">' +
+            '<div class="biz-review-stars">' + starsHtml(r.rating) + '<span class="biz-review-score">' + r.rating + '</span></div>' +
+            (r.deleteRequested ? '<span class="biz-review-reported">삭제요청됨</span>' : '') +
+            (r.deleteRejected ? '<span class="biz-review-rejected">삭제요청 반려됨</span>' : '') +
+            (r.reportCount > 0 ? '<button type="button" class="biz-review-flagged" onclick="toggleReporters(' + r.id + ')">신고접수 ' + r.reportCount + '건</button>' : '') +
+          '</div>' +
+          '<div class="biz-review-meta"><span class="biz-review-author">' + r.author + '</span><span class="biz-review-date">' + r.date + '</span></div>' +
+          (r.reportCount > 0 ? '<div class="biz-review-reporters" id="reporters-' + r.id + '" style="display:none">신고자: ' + (r.reporterNames || '-') + '</div>' : '') +
+          '<div class="biz-review-content">' + r.content + '</div>' +
+          (r.reply && openReplyId !== r.id ? '<div class="biz-review-reply"><span class="biz-review-reply-label">판매자</span><span class="biz-review-reply-date">' + r.date + '</span><div class="biz-review-reply-text">' + r.reply + '</div></div>' : '') +
           replyBoxHtml +
         '</div>' +
         '<div class="biz-review-actions">' +
           '<button class="biz-btn" onclick="toggleReply(' + r.id + ')">' + (r.reply ? '답글수정' : '답글쓰기') + '</button>' +
+          (r.deleteRequested ? '' : '<button class="biz-btn" onclick="requestDelete(' + r.id + ')">삭제요청</button>') +
         '</div>';
+
       box.appendChild(item);
     });
   }
 
+  //지윤 26.07.20 수정: 클라이언트에서 배열만 바꾸던 것 -> 실제 서버(TB_REVIEW.BIZ_REPLY) 저장하도록 폼 submit으로 변경
   function submitReply(id) {
     var text = document.getElementById('replyInput-' + id).value.trim();
     if (!text) { alert('답글 내용을 입력해주세요.'); return; }
-    var r = reviews.find(function (x) { return x.id === id; });
-    r.reply = text;
-    openReplyId = null;
-    renderList();
+    document.getElementById('replyFormReviewId').value = id;
+    document.getElementById('replyFormText').value = text;
+    document.getElementById('replyForm').submit();
+  }
 
-    var toast = document.getElementById('saveToast');
-    toast.classList.add('on');
-    setTimeout(function () { toast.classList.remove('on'); }, 2000);
+  //지윤 26.07.20 추가: 삭제요청 - 즉시 삭제 X, 서버에 사유와 함께 등록만 함 (TB_REVIEW_REPORT, 관리자 승인 후 실제 삭제됨)
+  function requestDelete(id) {
+    var reason = prompt('삭제 사유를 입력해주세요 (관리자 승인 후 삭제됩니다)');
+    if (reason === null) return;
+    document.getElementById('delFormReviewId').value = id;
+    document.getElementById('delFormReason').value = reason;
+    document.getElementById('deleteReqForm').submit();
   }
 
   renderList();

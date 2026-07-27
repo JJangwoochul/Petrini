@@ -70,6 +70,9 @@ public interface StoreShopMapper {
    //지윤 26.07.07 상품 리뷰 목록 조회
    List<ReviewVO> selectProductReviews(@Param("productId") Long productId);
 
+   //지윤 26.07.23 추가: 리뷰 첨부 이미지 목록
+   List<String> selectReviewImages(@Param("reviewId") Long reviewId);
+
    //지윤 26.07.07 상품 Q&A 목록 조회
    List<QnaVO> selectProductQna(@Param("productId") Long productId);
 
@@ -114,18 +117,21 @@ public interface StoreShopMapper {
    List<CartItemVO> selectCartItemsByIds(@Param("cartItemIds") java.util.List<Long> cartItemIds);
 
    //지윤 26.07.10 상품 Q&A 문의 등록
-   void insertProductQna(@Param("productId") Long productId, @Param("memberNo") Long memberNo, @Param("question") String question);
+   void insertProductQna(@Param("productId") Long productId, @Param("memberNo") Long memberNo, @Param("question") String question, @Param("optionId") Long optionId);
 
    //지윤 26.07.12 상품 Q&A 삭제 (본인 글 + 답변 미완료 건만). 삭제된 row수 반환 (0이면 실패 원인 구분용)
    int deleteProductQna(@Param("qnaId") Long qnaId, @Param("memberNo") Long memberNo);
 
    //지윤 26.07.13 주문 저장 (결제 완료 시)
+   //지윤 26.07.21 수정: 배송 요청사항(deliveryMemo) 파라미터 추가
+   //지윤 26.07.23 수정: 사용한 회원쿠폰(memberCouponId) 파라미터 추가 (취소 시 복구용)
    void insertOrder(@Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
                       @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
                       @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
                       @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
                       @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
-                      @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo);
+                      @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo,
+                      @Param("deliveryMemo") String deliveryMemo, @Param("memberCouponId") Long memberCouponId);
 
     //지윤 26.07.13 방금 저장한 주문의 ORDER_ID 조회 (ORDER_NO는 UNIQUE라 이걸로 되짚어 조회)
     Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo);
@@ -161,4 +167,21 @@ public interface StoreShopMapper {
 
     //지윤 26.07.16 추가: 품절 알림 보낼 사업자 회원번호 조회
     Long selectBizMemberNoByBizNo(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.21 추가: 유저가 리뷰 신고 (TB_REVIEW_REPORT, REPORTER_TYPE='USER')
+    //본인이 같은 리뷰를 이미 신고했으면 조용히 0건 처리 (SQL에서 중복 검증)
+    void insertUserReviewReport(@Param("reviewId") Long reviewId, @Param("reporterNo") Long reporterNo,
+                                 @Param("bizNo") Long bizNo, @Param("reason") String reason);
+
+    //지윤 26.07.21 추가: 같은 유저가 같은 리뷰를 이미 신고했는지 확인
+    int selectUserReportExists(@Param("reviewId") Long reviewId, @Param("reporterNo") Long reporterNo);
+
+    //지윤 26.07.21 추가: 신고할 리뷰가 속한 상품의 BIZ_NO 조회
+    Long selectBizNoByReviewId(@Param("reviewId") Long reviewId);
+
+    //지윤 26.07.21 추가: 리뷰 삭제 전 TB_REVIEW_REPORT FK 참조 해제
+    void clearReviewReportsByReviewId(@Param("reviewId") Long reviewId);
+
+    //지윤 26.07.21 추가: 본인이 작성한 상품 리뷰 삭제 (삭제 row 수)
+    int deleteProductReview(@Param("reviewId") Long reviewId, @Param("memberNo") Long memberNo);
 }

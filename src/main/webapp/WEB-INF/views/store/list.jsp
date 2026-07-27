@@ -189,7 +189,7 @@
 
       <%--<div class="store-result-count">총 <strong>248</strong>개 상품</div>
       26.07.06 지윤. 하드코딩된 숫자 -> productList.size()로 실제 조회된 상품 개수 자동 표시하도록 변경 --%>
-      <div class="store-result-count">총 <strong>${productList.size()}</strong>개 상품</div>
+      <div class="store-result-count">총 <strong>${totalCount}</strong>개 상품</div>
       <%-- 지윤 26.07.06 정렬 기능 추가: 버튼 -> 링크로 변경, 카테고리/검색어 유지한 채 정렬만 바뀌게 처리 --%>
 <%--<c:url var="sortBaseUrl" value="/store">
   <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>

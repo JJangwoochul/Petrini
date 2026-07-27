@@ -11,17 +11,60 @@
 
 package com.petcare.petcare.admin.store.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.admin.controller.AdminBaseController;
+import com.petcare.petcare.admin.store.service.AdminStoreService;
+import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
 
 @Controller("adminStoreController")
 @RequestMapping("/admin/store")
 public class AdminStoreController extends AdminBaseController {
+
+    @Autowired
+    private AdminStoreService adminStoreService;
+
+    //지윤 26.07.21 추가: 사업자 리뷰 삭제요청 목록 - 사이드바 "리뷰 관리"
+    @GetMapping("/review-report")
+    public String reviewReport(HttpSession session, Model model) {
+        if (getAdmin(session) == null) return redirectToLogin();
+
+        model.addAttribute("reportList", adminStoreService.getPendingReviewReports());
+        return "admin/store/review-report";
+    }
+
+    //지윤 26.07.21 추가: 삭제요청 승인 - 리뷰 실제 삭제
+    @PostMapping("/review-report/{reportId}/approve")
+    public String approveReviewReport(@PathVariable Long reportId, @RequestParam Long reviewId,
+                                       HttpSession session, RedirectAttributes rttr) {
+        MemberVO admin = getAdmin(session);
+        if (admin == null) return redirectToLogin();
+
+        adminStoreService.approveReviewReport(reportId, reviewId, admin.getMemberNo());
+        rttr.addFlashAttribute("msg", "삭제 요청을 승인했습니다.");
+        return "redirect:/admin/store/review-report";
+    }
+
+    //지윤 26.07.21 추가: 삭제요청 반려 - 리뷰는 그대로 유지
+    @PostMapping("/review-report/{reportId}/reject")
+    public String rejectReviewReport(@PathVariable Long reportId, HttpSession session, RedirectAttributes rttr) {
+        MemberVO admin = getAdmin(session);
+        if (admin == null) return redirectToLogin();
+
+        adminStoreService.rejectReviewReport(reportId, admin.getMemberNo());
+        rttr.addFlashAttribute("msg", "삭제 요청을 반려했습니다.");
+        return "redirect:/admin/store/review-report";
+    }
 
     // ── ADMIN-02 상품 관리 ─────────────────────────────────
     @GetMapping("/product-list")

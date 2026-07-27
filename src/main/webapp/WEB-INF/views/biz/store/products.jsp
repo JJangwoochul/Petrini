@@ -208,15 +208,21 @@
           </select>
           <small id="soldoutHint" style="display:none;color:#E24B4A">옵션 재고 합계가 0이라 품절로 고정됩니다.</small>
         </div>
+        
         <div class="biz-form-row">
           <label>옵션(색상/사이즈)<span class="req">*</span></label>
           <div id="optionRows"></div>
           <button type="button" class="biz-btn-ghost" onclick="addOptionRow()">+ 옵션추가</button>
         </div>
         <div class="biz-form-row">
+          <label>특징 태그 <span style="color:#888;font-weight:400;font-size:12px">(쉼표로 구분, 상품 상세페이지에 뱃지로 표시됨)</span></label>
+          <input type="text" name="tags" id="pTags" placeholder="예: 무료배송,중형견 적합,글루텐 프리">
+        </div>
+        <div class="biz-form-row">
           <label>상품설명</label>
           <textarea name="description" id="pDesc"></textarea>
         </div>
+
         <div class="biz-form-row">
           <label>상품이미지</label>
           <div style="display:flex;gap:10px;align-items:center">
@@ -324,8 +330,10 @@
 
 
   //지윤 26.07.15 수정: 한 줄 나열 -> 라벨 붙은 4칸 그리드로 변경, 삭제 버튼 제거
-  function optRowHtml(color, size, addPrice, stockQty) {
+  //지윤 26.07.24 수정: optionId 파라미터 추가 (기존 옵션이면 값 있음, 새로 추가한 행이면 빈 값 -> 서버에서 이걸로 UPDATE/INSERT 구분)
+  function optRowHtml(color, size, addPrice, stockQty, optionId) {
     return '<div class="opt-row" style="border:1px solid var(--biz-border);border-radius:8px;padding:14px;margin-bottom:10px">' +
+      '<input type="hidden" name="optionId" value="' + (optionId != null ? optionId : '') + '">' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">색상(선택)</label>' +
           '<input type="text" name="optionColor" placeholder="예: 블랙" style="width:100%" value="' + (color || '') + '"></div>' +
@@ -339,9 +347,9 @@
     '</div>';
   }
 
-  function addOptionRow(color, size, addPrice, stockQty) {
+  function addOptionRow(color, size, addPrice, stockQty, optionId) {
     var wrap = document.createElement('div');
-    wrap.innerHTML = optRowHtml(color, size, addPrice, stockQty);
+    wrap.innerHTML = optRowHtml(color, size, addPrice, stockQty, optionId);
     document.getElementById('optionRows').appendChild(wrap.firstChild);
   }
 
@@ -389,12 +397,13 @@
         document.getElementById('pPrice').value = p.price;
         document.getElementById('pSalePrice').value = p.salePrice;
         document.getElementById('pDesc').value = p.description || '';
+        document.getElementById('pTags').value = p.tags || '';
         document.getElementById('pStatus').value = p.statusCd;
 
         document.getElementById('optionRows').innerHTML = '';
         if (p.optionList && p.optionList.length > 0) {
           p.optionList.forEach(function (opt) {
-            addOptionRow(opt.optionColor === '기본' ? '' : opt.optionColor, opt.optionSize, opt.addPrice, opt.stockQty);
+            addOptionRow(opt.optionColor === '기본' ? '' : opt.optionColor, opt.optionSize, opt.addPrice, opt.stockQty, opt.optionId);
           });
         } else {
           addOptionRow();

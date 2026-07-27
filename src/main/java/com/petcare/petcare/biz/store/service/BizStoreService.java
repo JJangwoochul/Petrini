@@ -77,8 +77,15 @@ public interface BizStoreService {
     //지윤 26.07.20 추가: 주문 상세 조회 (상품목록까지 같이 채워서 반환)
     BizOrderVO getOrderDetail(Long orderId, Long bizNo);
 
+    //지윤 26.07.22 추가: 취소신청 승인 (토스취소+재고/포인트/쿠폰 복구). null=성공, 실패면 에러메시지
+    String approveOrderCancel(Long orderId, Long bizNo);
+
+    //지윤 26.07.22 추가: 취소신청 반려
+    boolean rejectOrderCancel(Long orderId, Long bizNo);
+
     //지윤 26.07.20 추가: 주문 상태 + 배송정보(택배사/송장번호) 한번에 저장. 본인 주문 아니면 false
-    boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String trackingNo);
+    //지윤 26.07.24 수정: courierCode 파라미터 추가 (택배사 API 연동용, null 허용 - orders.jsp는 아직 안 보냄)
+    boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String courierCode, String trackingNo);
 
     //지윤 26.07.20 추가: 배송관리 목록 조회 (필터 적용됨, 지연여부 계산 포함)
     List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword);
@@ -88,4 +95,31 @@ public interface BizStoreService {
 
     //지윤 26.07.20 추가: 송장 일괄등록 (한 줄당 "주문번호,택배사코드,송장번호"). 성공건수/실패라인 반환
     java.util.Map<String, Object> bulkRegisterDelivery(Long bizNo, String bulkText);
+
+    //지윤 26.07.20 추가: 리뷰관리 목록 조회 (내 상품 리뷰 + 삭제요청 상태 포함)
+    List<com.petcare.petcare.biz.store.vo.BizReviewVO> getBizReviewList(Long bizNo);
+
+    //지윤 26.07.20 추가: 답글 작성/수정. 본인 상품 리뷰 아니면 false
+    boolean saveReviewBizReply(Long bizNo, Long reviewId, String bizReply);
+
+    //지윤 26.07.20 추가: 리뷰 삭제요청 (관리자 승인 대기 등록). 본인 리뷰 아니거나 이미 요청중이면 실패 사유 반환
+    void requestReviewDelete(Long bizNo, Long reviewId, String reason);
+
+    //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수
+    int getPaidOrderCount(Long bizNo);
+
+    //지윤 26.07.23 추가: 오늘 신규 주문 건수 (홈 대시보드용)
+    int getTodayNewOrderCount(Long bizNo);
+    
+    //지윤 26.07.21 추가: Q&A관리 목록 조회
+    java.util.List<com.petcare.petcare.biz.store.vo.BizQnaVO> getBizQnaList(Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A 답변 등록/수정. 본인 상품 질문 아니면 false
+    boolean saveQnaAnswer(Long bizNo, Long qnaId, String answer);
+
+    //지윤 26.07.23 추가: 사업자 정보 조회
+    com.petcare.petcare.biz.store.vo.BizInfoVO getBusinessInfo(Long bizNo);
+
+    //지윤 26.07.23 추가: 사업자 정보 수정 (등록증 새로 올리면 기존 것 교체)
+    void updateBusinessInfo(Long bizNo, com.petcare.petcare.biz.store.vo.BizInfoVO info, org.springframework.web.multipart.MultipartFile certFile) throws Exception;
 }

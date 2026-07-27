@@ -13,4 +13,53 @@
 
 package com.petcare.petcare.mypage.order.vo;
 
-public class MypageOrderVO {}
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.NoArgsConstructor;
+
+//지윤 26.07.20 마이페이지 주문내역 조회용 VO
+@Getter @Setter
+@ToString
+@NoArgsConstructor
+public class MypageOrderVO {
+    private Long orderId;
+    private String orderNo;
+    private String orderDate;
+    private String orderStatus;   //PAID/READY/SHIPPING/DONE/CANCEL
+    private Integer payAmount;
+    private List<MypageOrderItemVO> itemList;
+    private String ordererName; //지윤 26.07.21 추가: 주문정보 섹션의 "주문자" (TB_MEMBER.NICKNAME)
+
+   //지윤 26.07.20 추가: 주문상세보기(/mypage/orders/detail) 결제내역/배송지 표시용
+    private Integer totalAmount;
+    private Integer deliveryFee;
+    private Integer discountAmount;
+    private Integer pointUsed;
+    private String recvName;
+    private String recvPhone;
+    private String zipCode;
+    private String addr1;
+    private String addr2;
+
+    //지윤 26.07.20 추가: 배송정보 (TB_ORDER_DELIVERY, 등록 전이면 둘 다 null)
+    private String courierName;
+    private String trackingNo;
+
+    private String deliveryMemo;
+
+    //지윤 26.07.21 추가: 배송 단계별 시각 (타임라인용)
+    private java.util.Date readyAt;
+    private java.util.Date shippingAt;
+    private java.util.Date deliveredAt;
+
+    //지윤 26.07.22 추가: 주문취소 신청/처리 상태 (TB_ORDER 클레임 컬럼)
+    private String claimStatus;         // PENDING/DONE/REJECTED (신청 안 했으면 null)
+    private String cancelReason;        // 유저가 신청 시 입력한 사유
+    private Integer refundAmount;       // 실제 환불된 금액 (DONE일 때만 값 있음)
+    private java.util.Date requestedAt; // 취소 신청일시
+
+    //지윤 26.07.23 추가: 구매확정 여부 (Y=적립금 지급완료)
+    private String confirmYn;
+}

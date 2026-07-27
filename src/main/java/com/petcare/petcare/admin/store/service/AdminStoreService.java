@@ -28,4 +28,18 @@
 
 package com.petcare.petcare.admin.store.service;
 
-public interface AdminStoreService {}
+import java.util.List;
+
+import com.petcare.petcare.admin.store.vo.AdminReviewReportVO;
+
+public interface AdminStoreService {
+
+    //지윤 26.07.21 추가: 대기중인 리뷰 삭제요청 목록
+    List<AdminReviewReportVO> getPendingReviewReports();
+
+    //지윤 26.07.21 추가: 승인 - 리뷰 실제 삭제 + 요청 DONE 처리
+    void approveReviewReport(Long reportId, Long reviewId, Long adminNo);
+
+    //지윤 26.07.21 추가: 반려 - 리뷰는 그대로 두고 요청만 DONE 처리 (블라인드 자동 해제됨)
+    void rejectReviewReport(Long reportId, Long adminNo);
+}

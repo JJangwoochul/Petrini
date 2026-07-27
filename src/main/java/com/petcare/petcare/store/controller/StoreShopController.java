@@ -43,6 +43,10 @@ public class StoreShopController {
     @Autowired
     private StoreShopService storeShopService;
 
+    //지윤 26.07.23 추가: 결제승인(confirm) API 호출용
+    @Autowired
+    private com.petcare.petcare.common.external.service.TossPaymentService tossPaymentService;
+
     //지윤 26.07.09 로그인 기능 연동: 세션에서 로그인한 회원번호 가져오기 (없으면 null)
     private Long getLoginMemberNo(HttpSession session) {
     MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
@@ -90,6 +94,7 @@ public class StoreShopController {
         model.addAttribute("selectedSort", sort);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
+        model.addAttribute("totalCount", storeShopService.getTotalCount(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
         return "store/list";
     }
     
@@ -301,8 +306,29 @@ public String payment(@RequestParam(required = false) Long productId,
             return "store/order-complete";
         }
 
+        //지윤 26.07.23 추가: DB에 저장하기 전에 토스 승인(confirm) API 먼저 호출
+        //이걸 안 하면 토스 쪽에선 이 결제가 "완료"된 적이 없어서, 나중에 취소하려 해도 계속 거절당함
+        String confirmError = tossPaymentService.confirmPayment(paymentKey, orderId, orderTemp.getFinalTotal());
+        if (confirmError != null) {
+            session.removeAttribute("orderTemp");
+            model.addAttribute("noOrderData", true);
+            model.addAttribute("confirmError", confirmError);
+            return "store/order-complete";
+        }
+
         String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, orderId);
         session.removeAttribute("orderTemp"); // 새로고침해도 중복저장 안 되게 바로 비움
+
+        //지윤 26.07.23 추가: 주문 시 포인트를 썼으면, 화면이 옛날 세션 값을 계속 보여주던 문제 수정
+        //DB는 이미 정상 차감됐지만 세션의 memberInfo.pointBalance는 로그인 시점 값 그대로라 여기서 같이 갱신해줌
+        if (orderTemp.getPointUsed() != null && orderTemp.getPointUsed() > 0) {
+            MemberVO sessionMember = (MemberVO) session.getAttribute("memberInfo");
+            if (sessionMember != null) {
+                long current = sessionMember.getPointBalance() != null ? sessionMember.getPointBalance() : 0L;
+                sessionMember.setPointBalance(current - orderTemp.getPointUsed());
+                session.setAttribute("memberInfo", sessionMember);
+            }
+        }
 
         model.addAttribute("orderNo", orderNo);
         model.addAttribute("orderItems", orderTemp.getOrderItems());
@@ -351,7 +377,8 @@ model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() !=
 //지윤 26.07.12 수정: 응답을 "OK:qnaId" 형식으로 변경 (등록 직후 삭제버튼 붙이기 위함)
 @PostMapping("/qna/add")
 @ResponseBody
-public String addQna(@RequestParam Long productId, @RequestParam String question, HttpSession session) {
+public String addQna(@RequestParam Long productId, @RequestParam String question,
+                      @RequestParam(required = false) Long optionId, HttpSession session) {
     Long memberNo = getLoginMemberNo(session);
     if (memberNo == null) {
         return "LOGIN_REQUIRED";
@@ -359,7 +386,7 @@ public String addQna(@RequestParam Long productId, @RequestParam String question
     if (question == null || question.isBlank()) {
         return "EMPTY";
     }
-    Long qnaId = storeShopService.addProductQna(productId, memberNo, question.trim());
+    Long qnaId = storeShopService.addProductQna(productId, memberNo, question.trim(), optionId);
     return "OK:" + qnaId;
 }
 
@@ -372,6 +399,30 @@ public String deleteQna(@RequestParam Long qnaId, HttpSession session) {
         return "LOGIN_REQUIRED";
     }
     boolean deleted = storeShopService.deleteProductQna(qnaId, memberNo);
+    return deleted ? "OK" : "FAILED";
+}
+
+//지윤 26.07.21 추가: 유저 리뷰 신고 (AJAX). 이미 신고한 리뷰면 ALREADY 반환
+@PostMapping("/review/report")
+@ResponseBody
+public String reportReview(@RequestParam Long reviewId, @RequestParam(required = false) String reason, HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "LOGIN_REQUIRED";
+    }
+    boolean ok = storeShopService.reportReview(reviewId, memberNo, reason);
+    return ok ? "OK" : "ALREADY";
+}
+
+//지윤 26.07.21 추가: 본인이 작성한 상품 리뷰 삭제 (AJAX)
+@PostMapping("/review/delete")
+@ResponseBody
+public String deleteReview(@RequestParam Long reviewId, HttpSession session) {
+    Long memberNo = getLoginMemberNo(session);
+    if (memberNo == null) {
+        return "LOGIN_REQUIRED";
+    }
+    boolean deleted = storeShopService.deleteProductReview(reviewId, memberNo);
     return deleted ? "OK" : "FAILED";
 }
 }

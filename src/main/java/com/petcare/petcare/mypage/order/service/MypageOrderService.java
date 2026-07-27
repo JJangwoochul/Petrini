@@ -20,4 +20,26 @@
 
 package com.petcare.petcare.mypage.order.service;
 
-public interface MypageOrderService {}
+import java.util.List;
+
+import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
+
+public interface MypageOrderService {
+
+    //지윤 26.07.20 추가: 회원 본인 주문 목록 조회 (상태 필터, 상품목록까지 채워서 반환)
+    List<MypageOrderVO> getOrderList(Long memberNo, String statusCd);
+
+    //지윤 26.07.20 수정: 사진 첨부(images) 파라미터 추가. 본인 주문 아니거나 이미 작성했으면 false
+    //지윤 26.07.23 수정: 반환타입 boolean -> Integer (null=실패, 아니면 적립된 포인트)
+    Integer writeReview(Long memberNo, Long orderItemId, Double rating, String content,
+                         java.util.List<org.springframework.web.multipart.MultipartFile> images) throws Exception;
+
+    //지윤 26.07.20 추가: 주문상세보기 1건 조회 (상품목록 포함, 본인 주문 아니면 null)
+    MypageOrderVO getOrderDetail(Long memberNo, Long orderId);
+
+    //지윤 26.07.22 추가: 주문취소 신청 (성공하면 true, 조건 안 맞으면 false)
+    boolean requestCancel(Long memberNo, Long orderId, String reason);
+
+    //지윤 26.07.23 추가: 구매확정 처리. 반환값: null=실패, 아니면 적립된 포인트
+    Integer confirmPurchase(Long memberNo, Long orderId);
+}

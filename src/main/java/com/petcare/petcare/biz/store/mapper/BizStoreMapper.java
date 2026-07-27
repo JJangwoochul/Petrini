@@ -29,12 +29,13 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
-import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
 import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
+import com.petcare.petcare.biz.store.vo.BizReviewVO;
+import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
+import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
 
 @Mapper
 public interface BizStoreMapper {
@@ -65,7 +66,7 @@ public interface BizStoreMapper {
                         @Param("categoryId") Long categoryId, @Param("price") Integer price,
                         @Param("salePrice") Integer salePrice,
                         @Param("description") String description, @Param("brandName") String brandName,
-                        @Param("statusCd") String statusCd);
+                        @Param("statusCd") String statusCd, @Param("tags") String tags);
 
     //지윤 26.07.14 상품 등록 시 이미지 URL도 같이 저장 (TB_FILE에 REF_TYPE='PRODUCT'로 저장)
     void insertProductImage(@Param("productId") Long productId, @Param("fileUrl") String fileUrl,
@@ -79,11 +80,11 @@ public interface BizStoreMapper {
     //WHERE절에 bizNo도 같이 걸어서 본인이 등록한 상품만 수정되게 함 (다른 사업자 상품 ID로 요청 보내도 0건 수정되고 조용히 끝남)
     //statusCd도 같이 받아서 판매중/품절/입고대기/판매중지 상태를 강제로 바꿀 수 있게 함
     //지윤 26.07.16 수정: STOCK_QTY 컬럼 삭제
-        int updateProduct(@Param("productId") Long productId, @Param("bizNo") Long bizNo,
-        @Param("productName") String productName, @Param("categoryId") Long categoryId,
-        @Param("price") Integer price, @Param("salePrice") Integer salePrice,
-        @Param("description") String description,
-        @Param("brandName") String brandName, @Param("statusCd") String statusCd);
+    int updateProduct(@Param("productId") Long productId, @Param("bizNo") Long bizNo,
+    @Param("productName") String productName, @Param("categoryId") Long categoryId,
+    @Param("price") Integer price, @Param("salePrice") Integer salePrice,
+    @Param("description") String description,
+    @Param("brandName") String brandName, @Param("statusCd") String statusCd, @Param("tags") String tags);
 
     //지윤 26.07.14 상품 등록/수정 폼의 카테고리 드롭다운용
     //최하위(4단계) 카테고리만 조회 (TB_PRODUCT.CATEGORY_ID가 실제로 참조하는 단계라서 그것만 골라옴)
@@ -99,6 +100,14 @@ public interface BizStoreMapper {
     void insertProductOption(@Param("optionId") Long optionId, @Param("productId") Long productId,
                               @Param("optionColor") String optionColor, @Param("optionSize") String optionSize,
                               @Param("addPrice") Integer addPrice, @Param("stockQty") Integer stockQty);
+
+    //지윤 26.07.24 추가: 상품수정 시 OPTION_ID 기준 옵션 upsert 처리용
+    void updateProductOptionById(@Param("optionId") Long optionId, @Param("optionColor") String optionColor,
+                                  @Param("optionSize") String optionSize, @Param("addPrice") Integer addPrice,
+                                  @Param("stockQty") Integer stockQty);
+    int selectOrderItemCountByOption(@Param("optionId") Long optionId);
+    void deleteProductOptionById(@Param("optionId") Long optionId);
+    
 
     //지윤 26.07.15 상품 옵션 전체 삭제 (수정 시 기존 옵션 지우고 새로 등록하는 방식이라 필요)
     void deleteProductOptions(@Param("productId") Long productId);
@@ -118,16 +127,42 @@ public interface BizStoreMapper {
     //지윤 26.07.20 추가: 주문 상태 변경 (본인 주문만, 수정된 row수 반환)
     int updateOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("orderStatus") String orderStatus);
 
+    //지윤 26.07.22 추가: 취소신청 대기중 건수 (탭 숫자용)
+    int selectClaimPendingCount(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.23 추가: 오늘 신규 주문 건수 (홈 대시보드용)
+    int selectTodayNewOrderCount(@Param("bizNo") Long bizNo);
+    
+    //지윤 26.07.22 추가: 취소신청 승인/반려
+    int updateClaimApprove(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("refundAmount") Integer refundAmount);
+    int updateClaimReject(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.22 추가: 취소승인 후속처리 (결제상태/재고/포인트/쿠폰)
+    int updatePaymentCancelStatus(@Param("orderId") Long orderId);
+    int restoreStock(@Param("optionId") Long optionId, @Param("qty") Integer qty);
+    int restoreProductStatusIfNeeded(@Param("productId") Long productId);
+    int selectMemberPointBalance(@Param("memberNo") Long memberNo);
+    int restoreMemberPoint(@Param("memberNo") Long memberNo, @Param("newBalance") Integer newBalance);
+    int insertPointRefundHistory(@Param("memberNo") Long memberNo, @Param("pointAmount") Integer pointAmount,
+                                  @Param("balanceAfter") Integer balanceAfter, @Param("orderId") Long orderId);
+    int restoreCoupon(@Param("memberCouponId") Long memberCouponId);
+
+    //지윤 26.07.21 추가: 배송 단계(READY_AT/SHIPPING_AT/DELIVERED_AT)별 시각 자동 기록 - 타임라인용
+    void updateDeliveryTimestamp(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("column") String column);
+
     //지윤 26.07.20 추가: 배송정보(TB_ORDER_DELIVERY) 존재 여부 확인
     int selectDeliveryExists(@Param("orderId") Long orderId);
 
     //지윤 26.07.20 추가: 배송정보 신규 등록
+    //지윤 26.07.24 수정: courierCode 파라미터 추가 (택배사 API 연동용)
     void insertOrderDelivery(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo,
-                              @Param("courierName") String courierName, @Param("trackingNo") String trackingNo,
-                              @Param("deliveryStatus") String deliveryStatus);
+                              @Param("courierName") String courierName, @Param("courierCode") String courierCode,
+                              @Param("trackingNo") String trackingNo, @Param("deliveryStatus") String deliveryStatus);
 
     //지윤 26.07.20 추가: 배송정보 수정
+    //지윤 26.07.24 수정: courierCode 파라미터 추가
     void updateOrderDelivery(@Param("orderId") Long orderId, @Param("courierName") String courierName,
+                              @Param("courierCode") String courierCode,
                               @Param("trackingNo") String trackingNo, @Param("deliveryStatus") String deliveryStatus);
 
     //지윤 26.07.20 추가: 배송관리 목록 조회 (택배사/상태/키워드 필터)
@@ -135,5 +170,53 @@ public interface BizStoreMapper {
                                             @Param("statusCd") String statusCd, @Param("keyword") String keyword);
 
     //지윤 26.07.20 추가: 일괄등록 시 주문번호로 ORDER_ID 조회 (본인 사업자 주문 아니면 null)
-    Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo, @Param("bizNo") Long bizNo);                          
+    Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 리뷰관리 목록 (내 상품에 달린 리뷰 + 삭제요청 상태)
+    List<BizReviewVO> selectBizReviewList(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 답글 저장 (본인 상품 리뷰만 수정되게 상품 BIZ_NO까지 조건에 포함)
+    int updateReviewBizReply(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo, @Param("bizReply") String bizReply);
+
+    //지윤 26.07.20 추가: 삭제요청 대상 리뷰가 본인 상품 리뷰인지 확인
+    int selectReviewOwnedByBiz(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.20 추가: 이미 대기중인 삭제요청이 있는지 확인 (중복 요청 방지)
+    int selectPendingReportExists(@Param("reviewId") Long reviewId);
+
+    //지윤 26.07.20 추가: 리뷰 삭제요청 등록 (TB_REVIEW_REPORT, REPORTER_TYPE='BIZ')
+    void insertReviewDeleteRequest(@Param("reviewId") Long reviewId, @Param("bizNo") Long bizNo, @Param("reason") String reason);
+
+    //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지용 - 결제완료(PAID) 상태 주문 개수
+    int selectPaidOrderCount(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A관리 목록 (내 상품에 달린 질문 전체, 미답변 우선)
+    java.util.List<com.petcare.petcare.biz.store.vo.BizQnaVO> selectBizQnaList(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.21 추가: Q&A 답변 등록/수정 (본인 상품 질문만 수정되게 상품 BIZ_NO까지 조건에 포함)
+    int updateQnaAnswer(@Param("qnaId") Long qnaId, @Param("bizNo") Long bizNo, @Param("answer") String answer);
+
+    //지윤 26.07.23 추가: 사업자 정보 조회
+    com.petcare.petcare.biz.store.vo.BizInfoVO selectBusinessInfo(@Param("bizNo") Long bizNo);
+
+    //지윤 26.07.23 추가: 사업자 정보 수정
+    void updateBusinessInfo(@Param("bizNo") Long bizNo, @Param("shopName") String shopName, @Param("ceoName") String ceoName,
+                             @Param("bizRegNo") String bizRegNo, @Param("bizType") String bizType,
+                             @Param("addr") String addr, @Param("addrDetail") String addrDetail,
+                             @Param("phone") String phone);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

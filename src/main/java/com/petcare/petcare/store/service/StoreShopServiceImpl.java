@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
+import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.store.mapper.StoreShopMapper;
 import com.petcare.petcare.store.vo.BrandVO;
 import com.petcare.petcare.store.vo.CartItemVO;
@@ -36,6 +37,9 @@ public class StoreShopServiceImpl implements StoreShopService {
 
     @Autowired
     private StoreShopMapper storeShopMapper;
+
+    @Autowired
+    private FileService fileService;
 
     @Autowired
     private MypageNotifyService mypageNotifyService;
@@ -61,11 +65,17 @@ public class StoreShopServiceImpl implements StoreShopService {
 
 //지윤 26.07.06 총 페이지 수 계산 (전체개수 / 12, 나머지 있으면 올림)
 //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
-  @Override
-  public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand) {
-      int totalCount = storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
-      return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
-  }
+@Override
+public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand) {
+    int totalCount = storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
+    return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
+}
+
+//지윤 26.07.21 추가: 전체 상품 개수 (getTotalPages와 같은 count 쿼리 재사용, 화면 표시용으로 그대로 반환)
+@Override
+public int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand) {
+    return storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
+}
 
 //지윤 26.07.12 사이드바 브랜드별 상품 수 조회 (브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능)
   @Override
@@ -96,6 +106,10 @@ public StoreShopVO getProductDetail(Long productId) {
 
 //지윤 26.07.07 리뷰 목록 조회 + 별점별 비율(%) 계산 (별점 막대그래프용)
 List<ReviewVO> reviews = storeShopMapper.selectProductReviews(productId);
+//지윤 26.07.23 추가: 리뷰마다 첨부 이미지 목록도 같이 채워넣음
+for (ReviewVO r : reviews) {
+    r.setImageUrls(storeShopMapper.selectReviewImages(r.getReviewId()));
+}
 product.setReviewList(reviews);
 int[] count = new int[6]; // index 1~5 사용
 for (ReviewVO r : reviews) {
@@ -186,8 +200,8 @@ public List<CartItemVO> getCartOrderItems(java.util.List<Long> cartItemIds) {
 //지윤 26.07.10 상품 Q&A 문의 등록
 //지윤 26.07.12 수정: 등록 직후 QNA_ID 조회해서 반환하도록 변경 (프론트에서 삭제버튼 바로 붙이기 위함)
 @Override
-public Long addProductQna(Long productId, Long memberNo, String question) {
-    storeShopMapper.insertProductQna(productId, memberNo, question);
+public Long addProductQna(Long productId, Long memberNo, String question, Long optionId) {
+    storeShopMapper.insertProductQna(productId, memberNo, question, optionId);
     return storeShopMapper.selectLatestQnaId(productId, memberNo);
 }
 
@@ -208,10 +222,16 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
     Long bizNo = p.getOrderItems().get(0).getBizNo();
 
     storeShopMapper.insertOrder(orderNo, p.getMemberNo(), p.getProductTotal(), p.getDeliveryFee(),
-            p.getTotalDiscount(), p.getPointUsed(), p.getFinalTotal(),
-            p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo);
+    p.getCouponDiscount(), p.getPointUsed(), p.getFinalTotal(),
+    p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo,
+    p.getDeliveryMemo(), p.getCouponMemberCouponId());
 
     Long orderId = storeShopMapper.selectOrderIdByOrderNo(orderNo);
+
+    //지윤 26.07.21 추가: 주문 접수 즉시 사업자에게 알림 (알림함 "주문" 탭). 대표 상품명은 첫 상품 기준, 나머지는 "외 N건"으로 표시
+    Long bizMemberNoForOrder = storeShopMapper.selectBizMemberNoByBizNo(bizNo);
+    mypageNotifyService.sendNewOrderNotification(bizMemberNoForOrder, orderNo,
+            p.getOrderItems().get(0).getProductName(), p.getOrderItems().size());
 
     for (CartItemVO item : p.getOrderItems()) {
         storeShopMapper.insertOrderItem(orderId, item.getProductId(), item.getOptionId(),
@@ -249,5 +269,29 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
     }
 
     return orderNo;
+}
+
+//지윤 26.07.21 추가: 유저 리뷰 신고 - 같은 유저가 같은 리뷰 중복 신고 못 하게 막음
+@Override
+public boolean reportReview(Long reviewId, Long reporterNo, String reason) {
+    if (storeShopMapper.selectUserReportExists(reviewId, reporterNo) > 0) {
+        return false;
+    }
+    Long bizNo = storeShopMapper.selectBizNoByReviewId(reviewId);
+    storeShopMapper.insertUserReviewReport(reviewId, reporterNo, bizNo, reason);
+    return true;
+}
+
+//지윤 26.07.21 추가: 본인 상품 리뷰 삭제 (신고 FK 해제 + 첨부 사진 + TB_REVIEW)
+@Override
+@Transactional
+public boolean deleteProductReview(Long reviewId, Long memberNo) {
+    storeShopMapper.clearReviewReportsByReviewId(reviewId);
+    try {
+        fileService.deleteFilesByRef("REVIEW", reviewId);
+    } catch (Exception e) {
+        throw new RuntimeException("리뷰 첨부 파일 삭제 실패", e);
+    }
+    return storeShopMapper.deleteProductReview(reviewId, memberNo) > 0;
 }
 }

@@ -25,8 +25,17 @@
 <%-- 지윤 26.07.13 수정: 하드코딩 -> 세션 정보로 실제 저장된 orderNo/orderItems/payAmount 표시. 세션 만료 시 안내문구로 대체 --%>
 <c:choose>
   <c:when test="${not empty noOrderData}">
-    <div class="complete-title">주문 정보를 찾을 수 없습니다.</div>
-    <div class="complete-desc">이 페이지는 결제 직후에만 확인할 수 있어요.<br>주문 내역은 마이페이지에서 확인해주세요.</div>
+    <%-- 지윤 26.07.23 추가: confirmError 있으면(승인 실패) 그 이유를, 없으면(세션만료 등) 기존 문구를 보여줌 --%>
+    <c:choose>
+      <c:when test="${not empty confirmError}">
+        <div class="complete-title">결제 승인에 실패했습니다.</div>
+        <div class="complete-desc" style="color:#E2445C;">${confirmError}</div>
+      </c:when>
+      <c:otherwise>
+        <div class="complete-title">주문 정보를 찾을 수 없습니다.</div>
+        <div class="complete-desc">이 페이지는 결제 직후에만 확인할 수 있어요.<br>주문 내역은 마이페이지에서 확인해주세요.</div>
+      </c:otherwise>
+    </c:choose>
     <div class="complete-btns">
       <button class="btn-complete-store" onclick="location.href='${contextPath}/store'">쇼핑 계속하기</button>
     </div>
