@@ -28,6 +28,13 @@ import com.petcare.petcare.store.service.StoreShopService;
 import com.petcare.petcare.store.vo.CartItemVO;
 import com.petcare.petcare.store.vo.CouponVO;
 import com.petcare.petcare.store.vo.OrderTempVO;
+import com.petcare.petcare.common.billing.service.BillingCardService;
+import com.petcare.petcare.common.billing.vo.BillingApproveResultVO;
+import com.petcare.petcare.common.billing.vo.BillingCardVO;
+import com.petcare.petcare.common.external.service.TossBillingService;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -46,6 +53,12 @@ public class StoreShopController {
     //지윤 26.07.23 추가: 결제승인(confirm) API 호출용
     @Autowired
     private com.petcare.petcare.common.external.service.TossPaymentService tossPaymentService;
+
+    // 2026/07/27 장우철 — 등록카드(빌링) 결제
+    @Autowired
+    private BillingCardService billingCardService;
+    @Autowired
+    private TossBillingService tossBillingService;
 
     //지윤 26.07.09 로그인 기능 연동: 세션에서 로그인한 회원번호 가져오기 (없으면 null)
     private Long getLoginMemberNo(HttpSession session) {
@@ -227,9 +240,10 @@ public String payment(@RequestParam(required = false) Long productId,
     }
 
     // 지윤 26.07.10 포인트 재검증: 보유 포인트, 결제금액 넘게 사용 못 하도록 제한
-    long memberPoint = (memberInfo != null && memberInfo.getPointBalance() != null)
-            ? memberInfo.getPointBalance() : 0L;
-    long maxUsable = Math.max(0, Math.min(memberPoint, productTotal + deliveryFee - couponDiscount));
+    // 2026/07/27 장우철 — 세션이 아니라 DB 실제 잔액 기준으로 상한
+    Long dbPoint = storeShopService.getMemberPointBalance(memberNo);
+    long memberPoint = Math.max(0L, dbPoint != null ? dbPoint : 0L);
+    long maxUsable = Math.min(memberPoint, Math.max(0, productTotal + deliveryFee - couponDiscount));
     long pointUsed = Math.max(0, Math.min(point == null ? 0 : point, maxUsable));
 
     int totalDiscount = couponDiscount + (int) pointUsed;
@@ -320,20 +334,124 @@ public String payment(@RequestParam(required = false) Long productId,
         session.removeAttribute("orderTemp"); // 새로고침해도 중복저장 안 되게 바로 비움
 
         //지윤 26.07.23 추가: 주문 시 포인트를 썼으면, 화면이 옛날 세션 값을 계속 보여주던 문제 수정
-        //DB는 이미 정상 차감됐지만 세션의 memberInfo.pointBalance는 로그인 시점 값 그대로라 여기서 같이 갱신해줌
-        if (orderTemp.getPointUsed() != null && orderTemp.getPointUsed() > 0) {
-            MemberVO sessionMember = (MemberVO) session.getAttribute("memberInfo");
-            if (sessionMember != null) {
-                long current = sessionMember.getPointBalance() != null ? sessionMember.getPointBalance() : 0L;
-                sessionMember.setPointBalance(current - orderTemp.getPointUsed());
-                session.setAttribute("memberInfo", sessionMember);
-            }
-        }
+        // 2026/07/27 장우철 — 계산 차감 대신 DB 잔액을 다시 읽어 세션 동기화
+        syncSessionPointBalance(session);
 
         model.addAttribute("orderNo", orderNo);
         model.addAttribute("orderItems", orderTemp.getOrderItems());
         model.addAttribute("payAmount", orderTemp.getFinalTotal());
         model.addAttribute("payMethodLabel", "NORMAL".equals(paymentType) ? "일반결제" : paymentType);
+        return "store/order-complete";
+    }
+
+    /**
+     * 2026/07/27 장우철 — 등록카드(빌링키) Ajax 결제
+     * POST /store/payment/billing-card
+     * 1) 세션 orderTemp 금액으로 토스 자동결제 승인
+     * 2) 성공 시 completeOrder → TB_ORDER / TB_PAYMENT
+     * 3) JSON { ok, redirectUrl } 또는 { ok:false, message }
+     */
+    @PostMapping("/payment/billing-card")
+    @ResponseBody
+    public Map<String, Object> payWithBillingCard(
+            @RequestParam Long billingCardId,
+            HttpSession session) {
+
+        Map<String, Object> res = new HashMap<>();
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            res.put("ok", false);
+            res.put("message", "로그인이 필요합니다.");
+            return res;
+        }
+
+        OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
+        if (orderTemp == null || orderTemp.getFinalTotal() == null) {
+            res.put("ok", false);
+            res.put("message", "주문 정보가 없습니다. 주문서부터 다시 진행해 주세요.");
+            return res;
+        }
+        if (!member.getMemberNo().equals(orderTemp.getMemberNo())) {
+            res.put("ok", false);
+            res.put("message", "주문 소유자가 일치하지 않습니다.");
+            return res;
+        }
+
+        BillingCardVO card = billingCardService.getCard(billingCardId);
+        if (card == null || !"ACTIVE".equals(card.getStatusCd())
+                || !"MEMBER".equals(card.getOwnerType())
+                || !member.getMemberNo().equals(card.getOwnerNo())) {
+            res.put("ok", false);
+            res.put("message", "등록된 카드를 확인할 수 없습니다.");
+            return res;
+        }
+
+        int amount = orderTemp.getFinalTotal();
+        if (amount <= 0) {
+            res.put("ok", false);
+            res.put("message", "결제 금액이 올바르지 않습니다.");
+            return res;
+        }
+
+        // 토스 orderId: 영문/숫자/하이픈, 6~64자
+        String tossOrderId = "store-" + member.getMemberNo() + "-" + System.currentTimeMillis();
+        String orderName = "펫케어 스토어 주문";
+        if (orderTemp.getOrderItems() != null && !orderTemp.getOrderItems().isEmpty()) {
+            String firstName = orderTemp.getOrderItems().get(0).getProductName();
+            int extra = orderTemp.getOrderItems().size() - 1;
+            orderName = (firstName != null ? firstName : orderName)
+                    + (extra > 0 ? (" 외 " + extra + "건") : "");
+            if (orderName.length() > 100) {
+                orderName = orderName.substring(0, 100);
+            }
+        }
+
+        StringBuilder err = new StringBuilder();
+        BillingApproveResultVO approved = tossBillingService.approveBilling(
+                card.getBillingKey(), card.getCustomerKey(), amount,
+                tossOrderId, orderName, err);
+
+        if (approved == null) {
+            res.put("ok", false);
+            res.put("message", err.length() > 0 ? err.toString() : "등록카드 결제에 실패했습니다.");
+            return res;
+        }
+
+        try {
+            String paymentKey = approved.getPaymentKey() != null
+                    ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
+            String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, tossOrderId);
+            session.removeAttribute("orderTemp");
+
+            // 2026/07/27 장우철 — 등록카드 결제도 DB 잔액으로 세션 동기화
+            syncSessionPointBalance(session);
+
+            // 완료 화면은 GET order-complete 인데 세션을 이미 비움 → 전용 완료 redirect 파라미터
+            res.put("ok", true);
+            res.put("orderNo", orderNo);
+            res.put("redirectUrl", "/store/order-complete-billing?orderNo="
+                    + java.net.URLEncoder.encode(orderNo, java.nio.charset.StandardCharsets.UTF_8)
+                    + "&amount=" + amount);
+            return res;
+        } catch (Exception e) {
+            res.put("ok", false);
+            res.put("message", "결제는 승인됐으나 주문 저장 중 오류: " + e.getMessage());
+            return res;
+        }
+    }
+
+    /**
+     * 2026/07/27 장우철 — 빌링 Ajax 결제 완료 화면
+     * (세션 orderTemp 없이 orderNo·금액만 표시)
+     */
+    @GetMapping("/order-complete-billing")
+    public String orderCompleteBilling(@RequestParam String orderNo,
+                                       @RequestParam(required = false) Integer amount,
+                                       Model model) {
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("payAmount", amount);
+        model.addAttribute("payMethodLabel", "등록카드(빌링)");
+        // noOrderData 는 넣지 않음 (JSP: not empty noOrderData 이면 오류 화면)
         return "store/order-complete";
     }
 
@@ -350,9 +468,16 @@ public String order(@RequestParam(required = false) Long productId,
         return "redirect:/login";
     }
 
-//지윤 26.07.10 보유 포인트 + 기본 배송지 실데이터 연동 (세션의 memberInfo에서 그대로 가져옴)
+//지윤 26.07.10 보유 포인트 + 기본 배송지 실데이터 연동
+// 2026/07/27 장우철 — 주문서 보유포인트는 DB 실잔액 (세션도 맞춤)
 MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
-model.addAttribute("memberPoint", memberInfo != null && memberInfo.getPointBalance() != null ? memberInfo.getPointBalance() : 0L);
+Long dbPoint = storeShopService.getMemberPointBalance(memberNo);
+long heldPoint = dbPoint != null ? dbPoint : 0L;
+if (memberInfo != null) {
+    memberInfo.setPointBalance(heldPoint);
+    session.setAttribute("memberInfo", memberInfo);
+}
+model.addAttribute("memberPoint", heldPoint);
 model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
 model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
 model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
@@ -424,5 +549,18 @@ public String deleteReview(@RequestParam Long reviewId, HttpSession session) {
     }
     boolean deleted = storeShopService.deleteProductReview(reviewId, memberNo);
     return deleted ? "OK" : "FAILED";
+}
+
+/**
+ * 2026/07/27 장우철 — 결제 후 세션 포인트를 DB 실잔액과 맞춤
+ */
+private void syncSessionPointBalance(HttpSession session) {
+    MemberVO sessionMember = (MemberVO) session.getAttribute("memberInfo");
+    if (sessionMember == null || sessionMember.getMemberNo() == null) {
+        return;
+    }
+    Long bal = storeShopService.getMemberPointBalance(sessionMember.getMemberNo());
+    sessionMember.setPointBalance(bal != null ? bal : 0L);
+    session.setAttribute("memberInfo", sessionMember);
 }
 }

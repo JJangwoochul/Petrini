@@ -125,6 +125,24 @@
                 <div class="bds-row"><label>PetCare 계정</label><span>${biz.bizId}</span></div>
             </div>
 
+            <%-- 2026/07/24 장우철 — 정산 계좌 UI (DB·API 연동 전 표시 영역) --%>
+            <c:if test="${biz.bizType eq 'STAY' or biz.bizType eq 'STORE'}">
+            <div class="bds">
+                <div class="bds-title">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    정산 계좌
+                    <span style="font-size:12px;font-weight:500;color:#999;margin-left:6px">UI · 연동 후 신청값 표시</span>
+                </div>
+                <div class="bds-row"><label>은행</label><span style="color:#999">—</span></div>
+                <div class="bds-row"><label>계좌번호</label><span style="color:#999">—</span></div>
+                <div class="bds-row"><label>예금주</label><span style="color:#999">—</span></div>
+                <p style="font-size:12px;color:#999;margin:8px 0 0;line-height:1.5">
+                    숙소·쇼핑몰 신청 시 계좌 인증값이 저장되면 이곳에 표시됩니다.
+                    승인 전 사업자번호 가운데 자리로 개인/법인을 구분하고, 예금주(대표자명·법인명)를 확인하세요.
+                </p>
+            </div>
+            </c:if>
+
             <%-- 2026-07-09 장우철 — TB_FILE 제출 서류 (BIZ_AUTH / BIZ_LICENSE) --%>
             <div class="bds">
                 <div class="bds-title">

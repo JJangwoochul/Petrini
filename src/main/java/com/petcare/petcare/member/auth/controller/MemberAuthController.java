@@ -14,8 +14,10 @@ package com.petcare.petcare.member.auth.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -24,9 +26,16 @@ import com.petcare.petcare.member.auth.service.EmailService;
 import com.petcare.petcare.member.auth.service.KakaoOAuthService;
 import com.petcare.petcare.member.auth.service.MemberAuthService;
 import com.petcare.petcare.member.auth.vo.EmailCheckResultVO;
+import com.petcare.petcare.member.auth.vo.JoinDraftVO;
 import com.petcare.petcare.member.auth.vo.KakaoUserVO;
 import com.petcare.petcare.member.auth.vo.MemberRegisterVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.common.billing.controller.BillingCardController;
+import com.petcare.petcare.common.billing.service.BillingCardService;
+import com.petcare.petcare.common.billing.vo.BillingIssueResultVO;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -43,11 +52,16 @@ public class MemberAuthController {
 
     private final MemberAuthService memberAuthService;
 
+    // 2026/07/27 장우철 — 가입 중 등록한 pending 카드를 가입 완료 시 DB 저장
+    private final BillingCardService billingCardService;
+
 	//HYJ 26.07.15 카카오 로그인 추가
     public MemberAuthController(MemberAuthService memberAuthService,
-                                KakaoOAuthService kakaoOAuthService) {
+                                KakaoOAuthService kakaoOAuthService,
+                                BillingCardService billingCardService) {
         this.memberAuthService = memberAuthService;
         this.kakaoOAuthService = kakaoOAuthService;
+        this.billingCardService = billingCardService;
     }
 
     // 2026/07/06 장우철 — login(로그인)
@@ -193,10 +207,87 @@ public class MemberAuthController {
         }
     }
     
-    /** join — 화면 (GET /join) */
+    /**
+     * join — 화면 (GET /join)
+     * 2026/07/27 장우철 — card=ok|fail(토스 복귀)가 아니면 임시저장·pending 카드 폐기
+     * → 다른 페이지 갔다가 다시 들어오면 처음부터
+     * card=ok 이면 pending 카드 라벨을 모델에 넣어 JSP가 바로 「등록됨」 표시
+     */
     @GetMapping("/join")
-    public String join() {
+    public String join(@RequestParam(required = false) String card,
+                       HttpSession session,
+                       Model model) {
+        boolean fromTossCard = "ok".equals(card) || "fail".equals(card);
+        if (!fromTossCard) {
+            session.removeAttribute(SESSION_JOIN_DRAFT);
+            session.removeAttribute(BillingCardController.SESSION_PENDING_CARD);
+        } else if ("ok".equals(card)) {
+            // 2026/07/27 장우철 — Ajax race 전에 화면에 카드정보 표시
+            BillingIssueResultVO pending = (BillingIssueResultVO) session.getAttribute(
+                    BillingCardController.SESSION_PENDING_CARD);
+            if (pending != null) {
+                String company = pending.getCardCompany() != null ? pending.getCardCompany() : "카드";
+                String number = pending.getCardNumber() != null ? pending.getCardNumber() : "····";
+                model.addAttribute("pendingCardLabel", company + " " + number);
+            }
+        }
         return "member/join";
+    }
+
+    // =========================================================================
+    // 2026/07/27 장우철 — join 세션 임시저장 (토스 카드등록 왕복용)
+    // =========================================================================
+
+    /** 세션 키 — JoinDraftVO */
+    public static final String SESSION_JOIN_DRAFT = "joinDraft";
+
+    /**
+     * join — 폼 임시저장 (POST /join/draft)
+     * join.jsp 가 토스 창 열기 직전 Ajax 로 호출
+     */
+    @PostMapping("/join/draft")
+    @ResponseBody
+    public Map<String, Object> saveJoinDraft(@RequestBody JoinDraftVO draft, HttpSession session) {
+        Map<String, Object> res = new HashMap<>();
+        if (draft == null) {
+            res.put("ok", false);
+            res.put("message", "임시저장 데이터가 없습니다.");
+            return res;
+        }
+        if (draft.getStep() == null) {
+            draft.setStep(2);
+        }
+        session.setAttribute(SESSION_JOIN_DRAFT, draft);
+
+        // 이메일 인증 완료 상태도 서버 세션에 맞춰 복원 (가입 검증·재진입용)
+        if (Boolean.TRUE.equals(draft.getEmailVerified())
+                && draft.getEmail() != null && !draft.getEmail().isBlank()) {
+            session.setAttribute("emailVerified", true);
+            session.setAttribute("emailVerifiedAddr", draft.getEmail().trim());
+        }
+
+        res.put("ok", true);
+        return res;
+    }
+
+    /**
+     * join — 폼 임시저장 조회 (GET /join/draft)
+     * 2026/07/27 장우철 — 토스 복귀(card=ok|fail)일 때만 draft 반환, 그 외 null
+     */
+    @GetMapping("/join/draft")
+    @ResponseBody
+    public Map<String, Object> getJoinDraft(
+            @RequestParam(required = false) String card,
+            HttpSession session) {
+        Map<String, Object> res = new HashMap<>();
+        boolean fromTossCard = "ok".equals(card) || "fail".equals(card);
+        JoinDraftVO draft = null;
+        if (fromTossCard) {
+            draft = (JoinDraftVO) session.getAttribute(SESSION_JOIN_DRAFT);
+        }
+        res.put("ok", true);
+        res.put("draft", draft);
+        return res;
     }
 
     // 2026/07/07 장우철 — join(회원가입)
@@ -311,12 +402,25 @@ public class MemberAuthController {
         if (kakaoUser != null) {
             vo.setSocialId(kakaoUser.getKakaoId());
         }
-
         String error = memberAuthService.register(vo);
         if (error != null) {
             return "ERROR:" + error;
         }
-
+        BillingIssueResultVO pending = (BillingIssueResultVO) session.getAttribute(
+                BillingCardController.SESSION_PENDING_CARD);
+        if (pending != null && vo.getMemberNo() != null) {
+            try {
+                billingCardService.registerCard("MEMBER", vo.getMemberNo(), pending);
+            } catch (Exception e) {
+                // 가입 자체는 성공 — 카드만 실패 시 마이페이지에서 재등록 가능
+                e.printStackTrace();
+            }
+            session.removeAttribute(BillingCardController.SESSION_PENDING_CARD);
+        }
+        // 2026/07/27 장우철 — 가입 성공 시 임시저장·이메일인증 세션 정리
+        session.removeAttribute(SESSION_JOIN_DRAFT);
+        session.removeAttribute("emailVerified");
+        session.removeAttribute("emailVerifiedAddr");
         // 세션 정리
         if (kakaoUser != null) {
             session.removeAttribute("kakaoUserInfo");

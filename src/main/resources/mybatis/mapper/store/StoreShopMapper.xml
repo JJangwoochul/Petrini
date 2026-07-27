@@ -441,8 +441,17 @@ SELECT
 </update>
 
 <update id="updateMemberPointBalance">
-    UPDATE TB_MEMBER SET POINT_BALANCE = NVL(POINT_BALANCE, 0) - #{pointUsed} WHERE MEMBER_NO = #{memberNo}
+    <!-- 2026/07/27 장우철 — 보유분 이상 차감 불가 (음수 잔액 방지) -->
+    UPDATE TB_MEMBER
+       SET POINT_BALANCE = NVL(POINT_BALANCE, 0) - #{pointUsed}
+     WHERE MEMBER_NO = #{memberNo}
+       AND NVL(POINT_BALANCE, 0) >= #{pointUsed}
 </update>
+
+<!-- 2026/07/27 장우철 — 실제 보유 포인트 조회 (세션 대신 DB 기준 검증용) -->
+<select id="selectMemberPointBalance" resultType="long">
+    SELECT NVL(POINT_BALANCE, 0) FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}
+</select>
 
 <insert id="insertPointHistory">
     INSERT INTO TB_POINT (POINT_ID, MEMBER_NO, POINT_TYPE, POINT_AMOUNT, BALANCE_AFTER, REASON_CD, REF_TYPE, REF_ID, REG_DATE)

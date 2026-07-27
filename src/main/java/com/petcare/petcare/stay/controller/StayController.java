@@ -28,7 +28,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.petcare.petcare.common.billing.service.BillingCardService;
+import com.petcare.petcare.common.billing.vo.BillingApproveResultVO;
+import com.petcare.petcare.common.billing.vo.BillingCardVO;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.common.external.service.TossBillingService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
@@ -52,6 +56,12 @@ public class StayController {
     private StayServiceImpl stayService;
     @Autowired
     private FileService fileService;
+
+    // 2026/07/27 장우철 — 등록카드(빌링) 결제
+    @Autowired
+    private BillingCardService billingCardService;
+    @Autowired
+    private TossBillingService tossBillingService;
 
     @GetMapping({"", "/"})
     public String list(@ModelAttribute("search") StayVO searchVO, Model model) throws Exception {
@@ -168,6 +178,12 @@ public class StayController {
 
         model.addAttribute("reservation", reservation);
         model.addAttribute("tossApiKey", tossApiKey);
+        // 2026/07/27 장우철 — 결제 화면 보유포인트 = DB 실잔액 (세션 동기화)
+        Long dbPoint = stayService.getMemberPointBalance(member.getMemberNo());
+        long held = dbPoint != null ? dbPoint : 0L;
+        member.setPointBalance(held);
+        session.setAttribute("memberInfo", member);
+        model.addAttribute("memberPoint", held);
         return "stay/payment";
     }
 
@@ -191,17 +207,113 @@ public class StayController {
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
             stayService.confirmPayment(resvId, paymentKey, orderId, null, kakaoToken, member.getMemberNo(), usedPoint);
 
-            // 세션 포인트 갱신
-            if (usedPoint > 0) {
-                long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
-                member.setPointBalance(currentBalance - usedPoint);
-                session.setAttribute("memberInfo", member);
-            }
+            // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
+            syncSessionPointBalance(session, member);
 
             return "redirect:/stay/complete?resvId=" + resvId;
         } catch (RuntimeException e) {
             model.addAttribute("errorMsg", e.getMessage());
             return "redirect:/stay";
+        }
+    }
+
+    /**
+     * 2026/07/27 장우철 — 등록카드(빌링키) Ajax 결제
+     * POST /stay/payment/billing-card
+     */
+    @PostMapping("/payment/billing-card")
+    @ResponseBody
+    public Map<String, Object> payWithBillingCard(
+            @RequestParam Long billingCardId,
+            @RequestParam Long resvId,
+            @RequestParam(defaultValue = "0") long usedPoint,
+            HttpSession session) {
+
+        Map<String, Object> res = new HashMap<>();
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            res.put("ok", false);
+            res.put("message", "로그인이 필요합니다.");
+            return res;
+        }
+
+        ReservationVO reservation;
+        try {
+            reservation = stayService.getReservationById(resvId);
+        } catch (Exception e) {
+            res.put("ok", false);
+            res.put("message", "예약 정보를 불러오지 못했습니다.");
+            return res;
+        }
+        if (reservation == null || !member.getMemberNo().equals(reservation.getMemberNo())) {
+            res.put("ok", false);
+            res.put("message", "예약 정보를 확인할 수 없습니다.");
+            return res;
+        }
+
+        BillingCardVO card = billingCardService.getCard(billingCardId);
+        if (card == null || !"ACTIVE".equals(card.getStatusCd())
+                || !"MEMBER".equals(card.getOwnerType())
+                || !member.getMemberNo().equals(card.getOwnerNo())) {
+            res.put("ok", false);
+            res.put("message", "등록된 카드를 확인할 수 없습니다.");
+            return res;
+        }
+
+        long total = reservation.getTotalAmount() != null ? reservation.getTotalAmount() : 0L;
+        if (usedPoint < 0) usedPoint = 0;
+        if (usedPoint > total) usedPoint = total;
+        // 2026/07/27 장우철 — 보유 포인트 초과 사용 불가
+        Long heldBal = stayService.getMemberPointBalance(member.getMemberNo());
+        long held = heldBal != null ? Math.max(0L, heldBal) : 0L;
+        if (usedPoint > held) usedPoint = held;
+        int chargeAmount = (int) (total - usedPoint);
+        if (chargeAmount <= 0) {
+            res.put("ok", false);
+            res.put("message", "결제 금액이 없습니다. 포인트 전액 결제를 이용해 주세요.");
+            return res;
+        }
+
+        String tossOrderId = "stay-" + resvId + "-" + usedPoint + "-" + System.currentTimeMillis();
+        String orderName = "펫케어 숙소 예약";
+        if (reservation.getStayName() != null) {
+            orderName = reservation.getStayName();
+            if (reservation.getServiceName() != null) {
+                orderName = orderName + " - " + reservation.getServiceName();
+            }
+            if (orderName.length() > 100) {
+                orderName = orderName.substring(0, 100);
+            }
+        }
+
+        StringBuilder err = new StringBuilder();
+        BillingApproveResultVO approved = tossBillingService.approveBilling(
+                card.getBillingKey(), card.getCustomerKey(), chargeAmount,
+                tossOrderId, orderName, err);
+
+        if (approved == null) {
+            res.put("ok", false);
+            res.put("message", err.length() > 0 ? err.toString() : "등록카드 결제에 실패했습니다.");
+            return res;
+        }
+
+        try {
+            String paymentKey = approved.getPaymentKey() != null
+                    ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
+            String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
+            stayService.confirmPayment(resvId, paymentKey, tossOrderId, "BILLING",
+                    kakaoToken, member.getMemberNo(), usedPoint);
+
+            // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
+            syncSessionPointBalance(session, member);
+
+            res.put("ok", true);
+            res.put("redirectUrl", "/stay/complete?resvId=" + resvId);
+            return res;
+        } catch (Exception e) {
+            res.put("ok", false);
+            res.put("message", "결제는 승인됐으나 예약 확정 중 오류: " + e.getMessage());
+            return res;
         }
     }
 
@@ -220,10 +332,8 @@ public class StayController {
             stayService.confirmPayment(resvId, "POINT_ONLY", "point-" + resvId + "-" + System.currentTimeMillis(),
                     "POINT", kakaoToken, member.getMemberNo(), usedPoint);
 
-            // 세션 포인트 갱신
-            long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
-            member.setPointBalance(currentBalance - usedPoint);
-            session.setAttribute("memberInfo", member);
+            // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
+            syncSessionPointBalance(session, member);
 
             return "redirect:/stay/complete?resvId=" + resvId;
         } catch (RuntimeException e) {
@@ -249,5 +359,17 @@ public class StayController {
             model.addAttribute("reservation", reservation);
         }
         return "stay/complete";
+    }
+
+    /**
+     * 2026/07/27 장우철 — 결제 후 세션 포인트를 DB 실잔액과 맞춤
+     */
+    private void syncSessionPointBalance(HttpSession session, MemberVO member) {
+        if (member == null || member.getMemberNo() == null) {
+            return;
+        }
+        Long bal = stayService.getMemberPointBalance(member.getMemberNo());
+        member.setPointBalance(bal != null ? bal : 0L);
+        session.setAttribute("memberInfo", member);
     }
 }

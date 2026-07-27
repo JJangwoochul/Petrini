@@ -260,7 +260,11 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
     }
 
     if (p.getPointUsed() != null && p.getPointUsed() > 0) {
-        storeShopMapper.updateMemberPointBalance(p.getMemberNo(), p.getPointUsed());
+        // 2026/07/27 장우철 — DB 잔액 부족이면 차감 실패 → 트랜잭션 롤백
+        int updated = storeShopMapper.updateMemberPointBalance(p.getMemberNo(), p.getPointUsed());
+        if (updated != 1) {
+            throw new RuntimeException("보유 포인트가 부족합니다.");
+        }
         storeShopMapper.insertPointHistory(p.getMemberNo(), p.getPointUsed(), orderId);
     }
 
@@ -269,6 +273,13 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
     }
 
     return orderNo;
+}
+
+// 2026/07/27 장우철 — DB 실제 보유 포인트
+@Override
+public Long getMemberPointBalance(Long memberNo) {
+    Long bal = storeShopMapper.selectMemberPointBalance(memberNo);
+    return bal != null ? bal : 0L;
 }
 
 //지윤 26.07.21 추가: 유저 리뷰 신고 - 같은 유저가 같은 리뷰 중복 신고 못 하게 막음

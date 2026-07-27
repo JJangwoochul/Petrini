@@ -217,7 +217,7 @@
 
 //지윤 26.07.09 추가: 쿠폰/포인트 선택 시 결제 예정 금액 실시간 계산
 var PRODUCT_TOTAL = ${productTotal};
-var MEMBER_POINT = ${memberPoint};
+var MEMBER_POINT = ${memberPoint != null ? memberPoint : 0};
 function won(n){ return n.toLocaleString('ko-KR') + '원'; }
 
 
@@ -246,7 +246,9 @@ function updateOrderTotal() {
   var pointUsed = parseInt(pointInput.value) || 0;
   if (pointUsed < 0) pointUsed = 0;
   //지윤 26.07.10 추가: 보유포인트와 결제금액(상품+배송비) 중 작은 값 넘지 못하게 제한
-  var maxUsablePoint = Math.min(MEMBER_POINT, PRODUCT_TOTAL + deliveryFee);
+  // 2026/07/27 장우철 — 사용량은 보유분·결제액 이내만 (보유가 음수면 0까지만)
+  var held = Math.max(0, MEMBER_POINT || 0);
+  var maxUsablePoint = Math.min(held, PRODUCT_TOTAL + deliveryFee);
   if (pointUsed > maxUsablePoint) {
     pointUsed = maxUsablePoint;
     pointInput.value = pointUsed;
@@ -269,7 +271,8 @@ document.getElementById('btnUseAllPoint').addEventListener('click', function () 
   if (btn.textContent === '최대사용') {
     var deliveryFee = (PRODUCT_TOTAL === 0 || PRODUCT_TOTAL >= 50000) ? 0 : 3000;
     var paymentAmount = PRODUCT_TOTAL + deliveryFee;
-    var maxUsable = Math.min(MEMBER_POINT, paymentAmount);
+    // 2026/07/27 장우철 — 최대사용도 보유분 초과 불가
+    var maxUsable = Math.min(Math.max(0, MEMBER_POINT || 0), paymentAmount);
     pointInput.value = maxUsable;
     btn.textContent = '사용취소';
   } else {

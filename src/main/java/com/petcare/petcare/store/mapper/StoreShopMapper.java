@@ -151,7 +151,11 @@ public interface StoreShopMapper {
     void updateCouponUsed(@Param("memberCouponId") Long memberCouponId);
 
     //지윤 26.07.13 포인트 차감
-    void updateMemberPointBalance(@Param("memberNo") Long memberNo, @Param("pointUsed") Integer pointUsed);
+    // 2026/07/27 장우철 — 잔액 부족이면 0건 (음수 방지). 반환값: 성공 1 / 실패 0
+    int updateMemberPointBalance(@Param("memberNo") Long memberNo, @Param("pointUsed") Integer pointUsed);
+
+    // 2026/07/27 장우철 — 주문·결제 시 DB 실제 보유 포인트 조회
+    Long selectMemberPointBalance(@Param("memberNo") Long memberNo);
 
     //지윤 26.07.13 포인트 사용 이력 저장
     void insertPointHistory(@Param("memberNo") Long memberNo, @Param("pointUsed") Integer pointUsed, @Param("orderId") Long orderId);

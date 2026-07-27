@@ -48,4 +48,7 @@ public interface StayService {
 
     // HYJ 26.07.20 결제 확정 (+ 포인트 사용)
     public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken, Long memberNo, long usedPoint);
+
+    // 2026/07/27 장우철 — DB 실제 보유 포인트
+    Long getMemberPointBalance(Long memberNo);
 }

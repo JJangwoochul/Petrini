@@ -306,10 +306,12 @@
     </select>
 
     <!-- HYJ 26.07.21 회원 포인트 차감 -->
+    <!-- 2026/07/27 장우철 — 보유분 이상 차감 불가 -->
     <update id="deductMemberPointBalance" parameterType="map">
         UPDATE TB_MEMBER
            SET POINT_BALANCE = NVL(POINT_BALANCE, 0) - #{pointAmount}
          WHERE MEMBER_NO = #{memberNo}
+           AND NVL(POINT_BALANCE, 0) >= #{pointAmount}
     </update>
 
     <!-- HYJ 26.07.21 포인트 사용 이력 INSERT -->

@@ -64,7 +64,8 @@ public interface StayMapper {
 
     // HYJ 26.07.21 포인트 사용
     Long selectMemberPointBalance(Long memberNo);
-    void deductMemberPointBalance(Map<String, Object> param);
+    // 2026/07/27 장우철 — 잔액 부족이면 0건
+    int deductMemberPointBalance(Map<String, Object> param);
     void insertPointHistory(Map<String, Object> param);
 
     // HYJ 26.07.20 스케줄러 — 체크아웃 지난 CONFIRMED → DONE 일괄 변경

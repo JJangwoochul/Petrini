@@ -152,7 +152,11 @@ public class StayServiceImpl implements StayService {
             Map<String, Object> deductParam = new HashMap<>();
             deductParam.put("memberNo", memberNo);
             deductParam.put("pointAmount", usedPoint);
-            stayMapper.deductMemberPointBalance(deductParam);
+            // 2026/07/27 장우철 — SQL 가드 실패 시 롤백
+            int updated = stayMapper.deductMemberPointBalance(deductParam);
+            if (updated != 1) {
+                throw new RuntimeException("보유 포인트가 부족합니다.");
+            }
 
             // 차감 후 잔액 조회
             Long balanceAfter = stayMapper.selectMemberPointBalance(memberNo);
@@ -217,5 +221,12 @@ public class StayServiceImpl implements StayService {
     @Override
     public ReservationVO getReservationById(Long resvId) {
         return stayMapper.selectReservationById(resvId);
+    }
+
+    // 2026/07/27 장우철 — DB 실제 보유 포인트
+    @Override
+    public Long getMemberPointBalance(Long memberNo) {
+        Long bal = stayMapper.selectMemberPointBalance(memberNo);
+        return bal != null ? bal : 0L;
     }
 }

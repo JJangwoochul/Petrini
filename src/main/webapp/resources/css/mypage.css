@@ -679,3 +679,21 @@
 .review-modal-photo-plus { font-size:16px; font-weight:800; color:var(--primary); }
 .review-modal-photo-preview { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .review-modal-photo-preview img { width:56px; height:56px; border-radius:8px; object-fit:cover; border:1px solid #E2E8E4; }
+/* 2026/07/27 장우철 — 회원정보 카드등록 UI */
+.edit-card-box {
+    border:1px dashed var(--border); border-radius:var(--radius-md);
+    padding:18px; background:var(--bg-page);
+}
+.edit-card-box.registered {
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    border-style:solid; border-color:#BBF7D0; background:#F0FDF4;
+}
+.edit-card-desc { margin:0 0 12px; font-size:13px; color:var(--text-sub); line-height:1.5; }
+.edit-card-info { display:flex; flex-direction:column; gap:4px; }
+.edit-card-badge {
+    display:inline-block; width:fit-content; font-size:11px; font-weight:700;
+    color:#166534; background:#DCFCE7; padding:2px 8px; border-radius:999px;
+}
+.edit-card-info strong { font-size:16px; color:var(--text-main); }
+.edit-card-sub { font-size:12px; color:var(--text-muted); }
+.edit-card-actions { display:flex; gap:8px; }
