@@ -31,6 +31,7 @@ import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
 @Service
@@ -334,6 +335,53 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         String hospitalName = bizHospitalMapper.selectHospitalNameById(hospitalId);
         mypageNotifyService.sendHospitalReviewReplyNotification(
                 current.getMemberNo(), hospitalName, current.getResvId(), hospitalId);
+    }
+
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 INSERT (PENDING 중복 체크 → TB_REVIEW_DELETE_REQUEST)
+    @Override
+    @Transactional
+    public void requestReviewDelete(Long hospitalId, Long bizNo, Long reviewId, String requestReason) throws Exception {
+        if (hospitalId == null || bizNo == null || reviewId == null) {
+            throw new IllegalArgumentException("요청 정보가 올바르지 않습니다.");
+        }
+        if (requestReason == null || requestReason.isBlank()) {
+            throw new IllegalArgumentException("삭제 요청 사유를 입력해 주세요.");
+        }
+        String reason = requestReason.trim();
+        if (reason.length() > 500) {
+            reason = reason.substring(0, 500);
+        }
+
+        HospitalReviewVO current = bizHospitalMapper.selectBizHospitalReview(hospitalId, reviewId);
+        if (current == null) {
+            throw new IllegalStateException("리뷰를 찾을 수 없거나 권한이 없습니다.");
+        }
+
+        if (bizHospitalMapper.countPendingReviewDeleteRequest(reviewId, bizNo) > 0) {
+            throw new IllegalStateException("이미 삭제 요청이 접수된 리뷰입니다.");
+        }
+
+        ReviewDeleteRequestVO vo = new ReviewDeleteRequestVO();
+        vo.setReviewId(reviewId);
+        vo.setReviewType("HOSPITAL");
+        vo.setTargetId(hospitalId);
+        vo.setBizNo(bizNo);
+        vo.setRequestReason(reason);
+        vo.setStatusCd("PENDING");
+        int inserted = bizHospitalMapper.insertReviewDeleteRequest(vo);
+        if (inserted == 0) {
+            throw new IllegalStateException("삭제 요청 접수에 실패했습니다.");
+        }
+    }
+
+    // 2026-07-24 박유정 — 사업자 리뷰관리 삭제요청 탭 목록
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewDeleteRequestVO> getBizReviewDeleteRequests(Long hospitalId, Long bizNo) throws Exception {
+        if (hospitalId == null || bizNo == null) {
+            return List.of();
+        }
+        return bizHospitalMapper.selectBizReviewDeleteRequests(hospitalId, bizNo);
     }
 
     // 2026/07/16 장우철 고도화작업 — 병원 스케줄 CRUD

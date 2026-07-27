@@ -15,9 +15,11 @@ package com.petcare.petcare.biz.hospital.controller;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -46,6 +48,7 @@ import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
@@ -56,7 +59,7 @@ public class BizHospitalController extends BizBaseController {
 
     @Autowired
     private BizHospitalService bizHospitalService;
-    // 2026-07-14 박유정 STEP 4 — 재능나눔 신청·이력 (biz/hospital/talent.jsp)
+    // 2026-07-14 諛뺤쑀??STEP 4 ???щ뒫?섎닎 ?좎껌쨌?대젰 (biz/hospital/talent.jsp)
     @Autowired
     private GiveTalentService giveTalentService;
     @Autowired
@@ -64,8 +67,8 @@ public class BizHospitalController extends BizBaseController {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // 2026/07/11 장우철 — 모든 병원 사업자 화면에 PENDING 배지 건수 전달
-    // [변경 전] sidebar_hospital.jsp 에 더미 5 고정
+    // 2026/07/11 ?μ슦泥???紐⑤뱺 蹂묒썝 ?ъ뾽???붾㈃??PENDING 諛곗? 嫄댁닔 ?꾨떖
+    // [蹂寃??? sidebar_hospital.jsp ???붾? 5 怨좎젙
     @ModelAttribute("pendingReserveCount")
     public int pendingReserveCount(HttpSession session) {
         try {
@@ -83,7 +86,7 @@ public class BizHospitalController extends BizBaseController {
         }
     }
 
-    // 2026/07/11 장우철 — 캘린더 메뉴: 오늘 예약확정(CONFIRMED) 건수
+    // 2026/07/11 ?μ슦泥???罹섎┛??硫붾돱: ?ㅻ뒛 ?덉빟?뺤젙(CONFIRMED) 嫄댁닔
     @ModelAttribute("todayConfirmedCount")
     public int todayConfirmedCount(HttpSession session) {
         try {
@@ -101,7 +104,7 @@ public class BizHospitalController extends BizBaseController {
         }
     }
 
-    // ── 병원 (HOSPITAL) ──────────────────────────────────────
+    // ?? 蹂묒썝 (HOSPITAL) ??????????????????????????????????????
     @GetMapping({"", "/"})
     public String hospitalDashboard(HttpSession session, Model model) {
 
@@ -115,7 +118,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/dashboard";
     }
 
-    // 2026-07-10 장우철 — 사업자 예약 관리 (F4)
+    // 2026-07-10 ?μ슦泥????ъ뾽???덉빟 愿由?(F4)
     @GetMapping("/reserve")
     public String hospitalReserve(HttpSession session, Model model) throws Exception {
         MemberVO member = getBizMember(session);
@@ -134,8 +137,8 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/reserve";
     }
 
-    // 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5)
-    // 2026/07/11 장우철 — cancelReason: CANCEL 시 필수
+    // 2026-07-10 ?μ슦泥????ъ뾽???덉빟 ?곹깭 蹂寃?(F5)
+    // 2026/07/11 ?μ슦泥???cancelReason: CANCEL ???꾩닔
     @PostMapping("/reserve/status")
     public String updateReservationStatus(@RequestParam("resvId") Long resvId,
                                           @RequestParam("statusCd") String statusCd,
@@ -155,14 +158,14 @@ public class BizHospitalController extends BizBaseController {
         try {
             bizHospitalService.updateReservationStatus(
                     hospital.getHospitalId(), resvId, statusCd, cancelReason);
-            rttr.addFlashAttribute("msg", "예약 상태가 변경되었습니다.");
+            rttr.addFlashAttribute("msg", "?덉빟 ?곹깭媛 蹂寃쎈릺?덉뒿?덈떎.");
         } catch (IllegalStateException | IllegalArgumentException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
         }
         return "redirect:/biz/hospital/reserve";
     }
 
-    // 2026-07-10 장우철 — 사업자 예약 상세 모달 API (F6)
+    // 2026-07-10 ?μ슦泥????ъ뾽???덉빟 ?곸꽭 紐⑤떖 API (F6)
     @GetMapping("/reserve/detail")
     @ResponseBody
     public ReservationVO reservationDetail(@RequestParam("resvId") Long resvId,
@@ -180,7 +183,7 @@ public class BizHospitalController extends BizBaseController {
         return bizHospitalService.getReservationDetail(hospital.getHospitalId(), resvId);
     }
 
-    // 2026-07-10 장우철 — 사업자 예약 캘린더 (F7)
+    // 2026-07-10 ?μ슦泥????ъ뾽???덉빟 罹섎┛??(F7)
     @GetMapping("/calendar")
     public String hospitalCalendar(@RequestParam(value = "from", required = false) String fromDate,
                                    @RequestParam(value = "to", required = false) String toDate,
@@ -209,7 +212,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/calendar";
     }
 
-    // 2026/07/16 장우철 고도화작업 — 병원 스케줄 화면
+    // 2026/07/16 ?μ슦泥?怨좊룄?붿옉????蹂묒썝 ?ㅼ?以??붾㈃
     @GetMapping("/schedule")
     public String hospitalSchedule(HttpSession session) {
         if (getBizMember(session) == null)
@@ -217,7 +220,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/schedule";
     }
 
-    // 2026/07/16 장우철 고도화작업 — 스케줄 API 공통: 로그인·병원 해석
+    // 2026/07/16 ?μ슦泥?怨좊룄?붿옉?????ㅼ?以?API 怨듯넻: 濡쒓렇?맞룸퀝???댁꽍
     private HospitalVO requireScheduleHospital(HttpSession session) throws Exception {
         MemberVO member = getBizMember(session);
         if (member == null || member.getMemberId() == null) {
@@ -245,7 +248,7 @@ public class BizHospitalController extends BizBaseController {
     public Map<String, Object> listTreatTypes(HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         return scheduleOk(bizHospitalService.getTreatTypeList(hospital.getHospitalId()));
     }
@@ -256,7 +259,7 @@ public class BizHospitalController extends BizBaseController {
                                              HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             bizHospitalService.saveTreatType(hospital.getHospitalId(), vo);
@@ -272,7 +275,7 @@ public class BizHospitalController extends BizBaseController {
                                                HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             bizHospitalService.deleteTreatType(hospital.getHospitalId(), treatTypeId);
@@ -287,7 +290,7 @@ public class BizHospitalController extends BizBaseController {
     public Map<String, Object> listDoctors(HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         return scheduleOk(bizHospitalService.getDoctorList(hospital.getHospitalId()));
     }
@@ -298,7 +301,7 @@ public class BizHospitalController extends BizBaseController {
                                           HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             bizHospitalService.saveDoctor(hospital.getHospitalId(), vo);
@@ -314,7 +317,7 @@ public class BizHospitalController extends BizBaseController {
                                             HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             bizHospitalService.deleteDoctor(hospital.getHospitalId(), doctorId);
@@ -324,13 +327,13 @@ public class BizHospitalController extends BizBaseController {
         }
     }
 
-    // 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 예약 시작 간격만 병원 컬럼으로
+    // 2026/07/16 ?μ슦泥?怨좊룄?붿옉????RESV_RULE ?쒓굅, ?덉빟 ?쒖옉 媛꾧꺽留?蹂묒썝 而щ읆?쇰줈
     @GetMapping("/schedule/interval")
     @ResponseBody
     public Map<String, Object> getInterval(HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("resvIntervalMin", bizHospitalService.getResvIntervalMin(hospital.getHospitalId()));
@@ -343,7 +346,7 @@ public class BizHospitalController extends BizBaseController {
                                             HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             Integer intervalMin = null;
@@ -367,7 +370,7 @@ public class BizHospitalController extends BizBaseController {
             HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         return scheduleOk(bizHospitalService.getResvExceptionList(hospital.getHospitalId(), fromDate, toDate));
     }
@@ -378,7 +381,7 @@ public class BizHospitalController extends BizBaseController {
                                              HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             HospitalResvExceptionVO vo = new HospitalResvExceptionVO();
@@ -414,7 +417,7 @@ public class BizHospitalController extends BizBaseController {
                                                HttpSession session) throws Exception {
         HospitalVO hospital = requireScheduleHospital(session);
         if (hospital == null || hospital.getHospitalId() == null) {
-            return scheduleFail("로그인이 필요합니다.");
+            return scheduleFail("濡쒓렇?몄씠 ?꾩슂?⑸땲??");
         }
         try {
             bizHospitalService.deleteResvException(hospital.getHospitalId(), excId);
@@ -429,7 +432,7 @@ public class BizHospitalController extends BizBaseController {
                                   @RequestParam(value = "period", required = false) Integer period,
                                   HttpSession session,
                                   Model model) throws Exception {
-        // 2026/07/13 장우철 — 진료기록 목록 DB 연동
+        // 2026/07/13 ?μ슦泥???吏꾨즺湲곕줉 紐⑸줉 DB ?곕룞
         MemberVO member = getBizMember(session);
         if (member == null) {
             return "redirect:/login";
@@ -443,13 +446,13 @@ public class BizHospitalController extends BizBaseController {
         model.addAttribute("period", period);
         model.addAttribute("recordList",
                 bizHospitalService.getMedicalRecords(hospital.getHospitalId(), keyword, period));
-        // 2026/07/13 장우철 — 작성 모달: 확정·미기록 예약 선택
+        // 2026/07/13 ?μ슦泥????묒꽦 紐⑤떖: ?뺤젙쨌誘멸린濡??덉빟 ?좏깮
         model.addAttribute("writableReserves",
                 bizHospitalService.getConfirmedWithoutRecord(hospital.getHospitalId()));
         return "biz/hospital/records";
     }
 
-    // 2026/07/13 장우철 — 예약확정 → 진료기록 저장 + DONE
+    // 2026/07/13 ?μ슦泥????덉빟?뺤젙 ??吏꾨즺湲곕줉 ???+ DONE
     @PostMapping("/records/complete")
     public String completeWithRecord(@RequestParam("resvId") Long resvId,
                                      @RequestParam("symptoms") String symptoms,
@@ -493,19 +496,19 @@ public class BizHospitalController extends BizBaseController {
 
         try {
             bizHospitalService.completeReservationWithRecord(hospital.getHospitalId(), record);
-            rttr.addFlashAttribute("msg", "진료완료 및 진료기록이 저장되었습니다.");
+            rttr.addFlashAttribute("msg", "吏꾨즺?꾨즺 諛?吏꾨즺湲곕줉????λ릺?덉뒿?덈떎.");
         } catch (IllegalArgumentException | IllegalStateException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
         }
-        // 2026/07/13 장우철 — 기록관리에서 작성 시 기록 목록으로, 아니면 예약관리로
+        // 2026/07/13 ?μ슦泥???湲곕줉愿由ъ뿉???묒꽦 ??湲곕줉 紐⑸줉?쇰줈, ?꾨땲硫??덉빟愿由щ줈
         if ("records".equals(redirect)) {
             return "redirect:/biz/hospital/records";
         }
         return "redirect:/biz/hospital/reserve";
     }
 
-    // 2026-07-14 박유정 STEP 4 — 재능나눔 신청 (병원만 실제 DB 연동)
-    // 이유: 팀 방향 — 미용 등 다른 사업자는 더미 화면 유지, 병원만 TB_TALENT INSERT
+    // 2026-07-14 諛뺤쑀??STEP 4 ???щ뒫?섎닎 ?좎껌 (蹂묒썝留??ㅼ젣 DB ?곕룞)
+    // ?댁쑀: ? 諛⑺뼢 ??誘몄슜 ???ㅻⅨ ?ъ뾽?먮뒗 ?붾? ?붾㈃ ?좎?, 蹂묒썝留?TB_TALENT INSERT
     @GetMapping("/talent")
     public String hospitalTalent(HttpSession session, Model model) {
         MemberVO member = getBizMember(session);
@@ -517,7 +520,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/talent";
     }
 
-    // 2026-07-14 박유정 STEP 4 — 재능나눔 신청서 POST → GiveTalentService.applyTalent (PENDING)
+    // 2026-07-14 諛뺤쑀??STEP 4 ???щ뒫?섎닎 ?좎껌??POST ??GiveTalentService.applyTalent (PENDING)
     @PostMapping("/talent")
     public String hospitalTalentSubmit(@RequestParam String title,
                                        @RequestParam int capacity,
@@ -544,13 +547,13 @@ public class BizHospitalController extends BizBaseController {
 
         try {
             giveTalentService.applyTalent(member.getMemberId(), vo);
-            rttr.addFlashAttribute("msg", "재능나눔 신청이 완료되었습니다.");
+            rttr.addFlashAttribute("msg", "?щ뒫?섎닎 ?좎껌???꾨즺?섏뿀?듬땲??");
         } catch (IllegalStateException e) {
-            String err = "신청할 수 없습니다.";
+            String err = "?좎껌?????놁뒿?덈떎.";
             if ("BIZ_NOT_APPROVED".equals(e.getMessage())) {
-                err = "사업자 승인이 완료된 후 재능나눔을 신청할 수 있습니다.";
+                err = "?ъ뾽???뱀씤???꾨즺?????щ뒫?섎닎???좎껌?????덉뒿?덈떎.";
             } else if ("BIZ_NOT_FOUND".equals(e.getMessage())) {
-                err = "등록된 사업자 정보를 찾을 수 없습니다.";
+                err = "?깅줉???ъ뾽???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.";
             }
             rttr.addFlashAttribute("errorMsg", err);
         } catch (IllegalArgumentException e) {
@@ -573,7 +576,20 @@ public class BizHospitalController extends BizBaseController {
 
         List<HospitalReviewVO> reviewList =
                 bizHospitalService.getBizHospitalReviews(hospital.getHospitalId());
-        // JS 렌더용 JSON (날짜 문자열·신고 플래그는 2단계에서 연동)
+
+        // 2026-07-24 박유정 — 삭제요청 탭 + PENDING 뱃지용
+        List<ReviewDeleteRequestVO> deleteRequests = List.of();
+        if (hospital.getBizNo() != null) {
+            deleteRequests = bizHospitalService.getBizReviewDeleteRequests(
+                    hospital.getHospitalId(), hospital.getBizNo());
+        }
+        Set<Long> pendingReviewIds = new HashSet<>();
+        for (ReviewDeleteRequestVO dr : deleteRequests) {
+            if ("PENDING".equals(dr.getStatusCd()) && dr.getReviewId() != null) {
+                pendingReviewIds.add(dr.getReviewId());
+            }
+        }
+
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         List<Map<String, Object>> rows = new ArrayList<>();
         for (HospitalReviewVO r : reviewList) {
@@ -585,12 +601,30 @@ public class BizHospitalController extends BizBaseController {
             row.put("rating", r.getRating() != null ? r.getRating() : 0);
             row.put("content", r.getContent() != null ? r.getContent() : "");
             row.put("reply", r.getBizReply());
-            row.put("reported", false);
+            row.put("deleteRequestPending", pendingReviewIds.contains(r.getReviewId()));
             rows.add(row);
+        }
+
+        List<Map<String, Object>> deleteRows = new ArrayList<>();
+        for (ReviewDeleteRequestVO dr : deleteRequests) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("requestId", dr.getRequestId());
+            row.put("reviewId", dr.getReviewId());
+            row.put("author", (dr.getReviewerNickname() != null && !dr.getReviewerNickname().isBlank())
+                    ? dr.getReviewerNickname() : "회원");
+            row.put("rating", dr.getReviewRating() != null ? dr.getReviewRating() : 0);
+            row.put("content", dr.getReviewContent() != null ? dr.getReviewContent() : "(삭제된 리뷰)");
+            row.put("requestReason", dr.getRequestReason() != null ? dr.getRequestReason() : "");
+            row.put("rejectReason", dr.getRejectReason());
+            row.put("statusCd", dr.getStatusCd());
+            row.put("reqDate", dr.getReqDate() != null ? df.format(dr.getReqDate()) : "");
+            row.put("processDate", dr.getProcessDate() != null ? df.format(dr.getProcessDate()) : "");
+            deleteRows.add(row);
         }
 
         model.addAttribute("hospital", hospital);
         model.addAttribute("reviewListJson", objectMapper.writeValueAsString(rows));
+        model.addAttribute("deleteRequestListJson", objectMapper.writeValueAsString(deleteRows));
         return "biz/hospital/reviews";
     }
 
@@ -616,7 +650,35 @@ public class BizHospitalController extends BizBaseController {
         }
         return "redirect:/biz/hospital/reviews";
     }
+    
 
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 (사유 입력 → TB_REVIEW_DELETE_REQUEST)
+    @PostMapping("/reviews/delete-request")
+    public String requestReviewDelete(@RequestParam("reviewId") Long reviewId,
+                                      @RequestParam("requestReason") String requestReason,
+                                      HttpSession session,
+                                      RedirectAttributes rttr) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            return "redirect:/login";
+        }
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        if (hospital == null || hospital.getHospitalId() == null || hospital.getBizNo() == null) {
+            return "redirect:/mypage/biz";
+        }
+        try {
+            bizHospitalService.requestReviewDelete(
+                    hospital.getHospitalId(),
+                    hospital.getBizNo(),
+                    reviewId,
+                    requestReason);
+            rttr.addFlashAttribute("msg", "삭제 요청이 접수되었습니다. 관리자 검토 후 처리됩니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/biz/hospital/reviews";
+    }
+    
     @GetMapping("/contract")
     public String hospitalContract(HttpSession session) {
         if (getBizMember(session) == null)
@@ -624,7 +686,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/contract";
     }
 
-    // 2026-07-10 장우철+yeju merge — 사업자 정보 조회 (info.jsp, yeju 간소 화면)
+    // 2026-07-10 ?μ슦泥?yeju merge ???ъ뾽???뺣낫 議고쉶 (info.jsp, yeju 媛꾩냼 ?붾㈃)
     @GetMapping("/info")
     public String hospitalInfo(HttpSession session, Model model) throws Exception {
         MemberVO member = getBizMember(session);
@@ -640,7 +702,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/info";
     }
 
-    // 2026-07-10 장우철+yeju merge — 병원 정보 등록/수정 (profile.jsp, yeju DB 폼)
+    // 2026-07-10 ?μ슦泥?yeju merge ??蹂묒썝 ?뺣낫 ?깅줉/?섏젙 (profile.jsp, yeju DB ??
     @GetMapping("/profile")
     public String hospitalProfile(HttpSession session, Model model) throws Exception {
         MemberVO member = getBizMember(session);
@@ -659,7 +721,7 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/profile";
     }
 
-    // 2026-07-10 장우철+yeju merge — yeju profile.jsp → POST /profile + resolveHospital
+    // 2026-07-10 ?μ슦泥?yeju merge ??yeju profile.jsp ??POST /profile + resolveHospital
     @PostMapping("/profile")
     public String saveProfile(HospitalVO vo,
                               @RequestParam(value = "tagList", required = false) String[] tagList,
@@ -675,12 +737,12 @@ public class BizHospitalController extends BizBaseController {
 
         HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
         if (hospital == null || hospital.getHospitalId() == null) {
-            rttr.addFlashAttribute("errorMsg", "병원 정보를 불러올 수 없습니다.");
+            rttr.addFlashAttribute("errorMsg", "蹂묒썝 ?뺣낫瑜?遺덈윭?????놁뒿?덈떎.");
             return "redirect:/biz/hospital/profile";
         }
         vo.setHospitalId(hospital.getHospitalId());
 
-        // 2026-07-10 장우철 — 폼 미전송 필드만 기존값 유지 (주소 있으면 Service에서 지오코딩)
+        // 2026-07-10 ?μ슦泥?????誘몄쟾???꾨뱶留?湲곗〈媛??좎? (二쇱냼 ?덉쑝硫?Service?먯꽌 吏?ㅼ퐫??
         if (vo.getName() == null || vo.getName().isBlank()) {
             vo.setName(hospital.getName());
         }
@@ -700,7 +762,7 @@ public class BizHospitalController extends BizBaseController {
             vo.setAddrDetail(hospital.getAddrDetail());
         }
 
-        // 체크 없으면 빈 문자열로 저장 (미선택 = 태그 없음)
+        // 泥댄겕 ?놁쑝硫?鍮?臾몄옄?대줈 ???(誘몄꽑??= ?쒓렇 ?놁쓬)
         vo.setTagList(tagList != null ? String.join(",", tagList) : "");
 
         if (deleteFileIds != null) {
@@ -720,7 +782,7 @@ public class BizHospitalController extends BizBaseController {
 
         bizHospitalService.updateHospitalInfo(vo);
 
-        rttr.addFlashAttribute("msg", "저장되었습니다.");
+        rttr.addFlashAttribute("msg", "??λ릺?덉뒿?덈떎.");
         return "redirect:/biz/hospital/profile";
     }
 }

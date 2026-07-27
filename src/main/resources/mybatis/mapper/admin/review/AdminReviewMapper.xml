@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petcare.petcare.admin.review.mapper.AdminReviewMapper">
+
+  <!-- 2026-07-24 박유정 — 공통 WHERE (목록·건수 동일 조건) -->
+  <sql id="reviewDeleteRequestWhere">
+    FROM TB_REVIEW_DELETE_REQUEST DR
+    LEFT JOIN TB_REVIEW R
+      ON R.REVIEW_ID = DR.REVIEW_ID
+     AND R.REVIEW_TYPE = DR.REVIEW_TYPE
+    LEFT JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+    JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = DR.TARGET_ID
+    JOIN TB_BUSINESS B ON B.BIZ_NO = DR.BIZ_NO
+   WHERE DR.REVIEW_TYPE = 'HOSPITAL'
+    <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
+     AND DR.STATUS_CD = #{statusCd}
+    </if>
+    <if test="keyword != null and keyword != ''">
+     AND (
+           H.NAME LIKE '%' || #{keyword} || '%'
+        OR B.BIZ_NAME LIKE '%' || #{keyword} || '%'
+        OR M.NICKNAME LIKE '%' || #{keyword} || '%'
+        OR DR.REQUEST_REASON LIKE '%' || #{keyword} || '%'
+     )
+    </if>
+  </sql>
+
+  <!-- 2026-07-24 박유정 — 관리자 삭제 요청 목록 -->
+  <select id="selectAdminReviewDeleteRequestList"
+          resultType="com.petcare.petcare.admin.review.vo.AdminReviewDeleteRequestVO">
+    SELECT *
+      FROM (
+        SELECT
+          DR.REQUEST_ID     AS requestId,
+          DR.REVIEW_ID      AS reviewId,
+          DR.REVIEW_TYPE    AS reviewType,
+          DR.TARGET_ID      AS targetId,
+          DR.BIZ_NO         AS bizNo,
+          DR.REQUEST_REASON AS requestReason,
+          DR.REJECT_REASON  AS rejectReason,
+          DR.STATUS_CD      AS statusCd,
+          DR.REQ_DATE       AS reqDate,
+          DR.ADMIN_NO       AS adminNo,
+          DR.PROCESS_DATE   AS processDate,
+          H.NAME            AS hospitalName,
+          B.BIZ_NAME        AS bizName,
+          R.RATING          AS reviewRating,
+          R.CONTENT         AS reviewContent,
+          M.NICKNAME        AS reviewerNickname,
+          R.REG_DATE        AS reviewRegDate,
+          ROW_NUMBER() OVER (ORDER BY DR.REQ_DATE DESC, DR.REQUEST_ID DESC) AS rn
+        <include refid="reviewDeleteRequestWhere"/>
+      )
+     WHERE rn BETWEEN #{offset} + 1 AND #{offset} + #{limit}
+  </select>
+
+  <select id="selectAdminReviewDeleteRequestCount" resultType="int">
+    SELECT COUNT(*)
+    <include refid="reviewDeleteRequestWhere"/>
+  </select>
+
+  <!-- 2026-07-24 박유정 — sidebar PENDING 배지용 -->
+  <select id="countPendingReviewDeleteRequest" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_REVIEW_DELETE_REQUEST
+     WHERE STATUS_CD = 'PENDING'
+       AND REVIEW_TYPE = 'HOSPITAL'
+  </select>
+
+  <!-- 2026-07-24 박유정 — 삭제 요청 단건 (승인/반려 시 검증) -->
+  <select id="selectAdminReviewDeleteRequestDetail"
+          resultType="com.petcare.petcare.admin.review.vo.AdminReviewDeleteRequestVO">
+    SELECT
+      DR.REQUEST_ID     AS requestId,
+      DR.REVIEW_ID      AS reviewId,
+      DR.REVIEW_TYPE    AS reviewType,
+      DR.TARGET_ID      AS targetId,
+      DR.BIZ_NO         AS bizNo,
+      DR.REQUEST_REASON AS requestReason,
+      DR.REJECT_REASON  AS rejectReason,
+      DR.STATUS_CD      AS statusCd,
+      DR.REQ_DATE       AS reqDate,
+      DR.ADMIN_NO       AS adminNo,
+      DR.PROCESS_DATE   AS processDate,
+      H.NAME            AS hospitalName,
+      B.BIZ_NAME        AS bizName,
+      R.RATING          AS reviewRating,
+      R.CONTENT         AS reviewContent,
+      M.NICKNAME        AS reviewerNickname,
+      R.REG_DATE        AS reviewRegDate
+    FROM TB_REVIEW_DELETE_REQUEST DR
+    LEFT JOIN TB_REVIEW R
+      ON R.REVIEW_ID = DR.REVIEW_ID
+     AND R.REVIEW_TYPE = DR.REVIEW_TYPE
+    LEFT JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+    JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = DR.TARGET_ID
+    JOIN TB_BUSINESS B ON B.BIZ_NO = DR.BIZ_NO
+   WHERE DR.REQUEST_ID = #{requestId}
+  </select>
+
+  <!-- 2026-07-24 박유정 — 삭제 요청 승인 (STATUS_CD=APPROVED) -->
+  <update id="updateReviewDeleteRequestApproved">
+    UPDATE TB_REVIEW_DELETE_REQUEST
+       SET STATUS_CD = 'APPROVED',
+           ADMIN_NO = #{adminNo},
+           PROCESS_DATE = SYSDATE
+     WHERE REQUEST_ID = #{requestId}
+       AND STATUS_CD = 'PENDING'
+  </update>
+
+  <!-- 2026-07-24 박유정 — 삭제 요청 반려 (REJECT_REASON 저장) -->
+  <update id="updateReviewDeleteRequestRejected">
+    UPDATE TB_REVIEW_DELETE_REQUEST
+       SET STATUS_CD = 'REJECTED',
+           REJECT_REASON = #{rejectReason, jdbcType=VARCHAR},
+           ADMIN_NO = #{adminNo},
+           PROCESS_DATE = SYSDATE
+     WHERE REQUEST_ID = #{requestId}
+       AND STATUS_CD = 'PENDING'
+  </update>
+
+  <!-- 2026-07-24 박유정 — 승인 시 TB_REVIEW 삭제 -->
+  <delete id="deleteReviewById">
+    DELETE FROM TB_REVIEW
+     WHERE REVIEW_ID = #{reviewId}
+       AND REVIEW_TYPE = 'HOSPITAL'
+  </delete>
+
+  <!-- 2026-07-24 박유정 — 반려 알림 수신 사업자 회원번호 -->
+  <select id="selectBizMemberNoByBizNo" resultType="long">
+    SELECT M.MEMBER_NO
+      FROM TB_BUSINESS B
+      JOIN TB_MEMBER M ON M.MEMBER_ID = B.BIZ_ID OR M.EMAIL = B.BIZ_ID
+     WHERE B.BIZ_NO = #{bizNo}
+     FETCH FIRST 1 ROW ONLY
+  </select>
+
+</mapper>

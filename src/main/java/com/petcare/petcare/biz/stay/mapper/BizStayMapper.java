@@ -27,7 +27,9 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -71,5 +73,23 @@ public interface BizStayMapper {
 
     String selectStayNameById(@Param("stayId") Long stayId) throws Exception;
 
-    void updateStayProfile(StayVO vo);     
+    void updateStayProfile(StayVO vo);
+
+    // 2026-07-27 박유정 — 사업자 숙소 리뷰 관리
+    List<StayReviewVO> selectBizStayReviews(@Param("stayId") Long stayId) throws Exception;
+
+    StayReviewVO selectBizStayReview(@Param("stayId") Long stayId,
+                                     @Param("reviewId") Long reviewId) throws Exception;
+
+    int updateReviewBizReply(@Param("stayId") Long stayId,
+                             @Param("reviewId") Long reviewId,
+                             @Param("bizReply") String bizReply) throws Exception;
+
+    int insertReviewDeleteRequest(ReviewDeleteRequestVO vo) throws Exception;
+
+    int countPendingReviewDeleteRequest(@Param("reviewId") Long reviewId,
+                                        @Param("bizNo") Long bizNo) throws Exception;
+
+    List<ReviewDeleteRequestVO> selectBizReviewDeleteRequests(@Param("stayId") Long stayId,
+                                                              @Param("bizNo") Long bizNo) throws Exception;
 }

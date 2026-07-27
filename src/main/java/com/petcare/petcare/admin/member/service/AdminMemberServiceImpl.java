@@ -39,6 +39,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -300,15 +301,15 @@ public class AdminMemberServiceImpl implements AdminMemberService {
         };
     }
 
-    // 2026-07-21 박유정 STEP ② — 정지 기간 → SUSPEND_END_DATE (영구=null)
+    // 2026-07-21 박유정 STEP ② — 정지 기간 → SUSPEND_END_DATE (영구=null, 해제일 00:00)
     private LocalDateTime resolveSuspendEndDate(String suspendType) {
         if (suspendType == null || suspendType.isBlank()) {
             throw new IllegalArgumentException("INVALID_SUSPEND_TYPE");
         }
         String type = suspendType.trim().toUpperCase();
         return switch (type) {
-            case "DAY3" -> LocalDateTime.now().plusDays(3);
-            case "DAY7" -> LocalDateTime.now().plusDays(7);
+            case "DAY3" -> LocalDate.now().plusDays(3).atStartOfDay();
+            case "DAY7" -> LocalDate.now().plusDays(7).atStartOfDay();
             case "PERMANENT" -> null;
             default -> throw new IllegalArgumentException("INVALID_SUSPEND_TYPE");
         };

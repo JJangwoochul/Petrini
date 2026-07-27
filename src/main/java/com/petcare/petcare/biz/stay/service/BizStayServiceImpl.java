@@ -24,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
-import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
+import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -211,5 +213,92 @@ public class BizStayServiceImpl implements BizStayService {
             return 0;
         }
         return bizStayMapper.countTodayConfirmedReservations(stayId);
+    }
+
+    // 2026-07-27 박유정 — 사업자 숙소 리뷰 목록
+    @Override
+    @Transactional(readOnly = true)
+    public List<StayReviewVO> getBizStayReviews(Long stayId) throws Exception {
+        if (stayId == null) {
+            return List.of();
+        }
+        return bizStayMapper.selectBizStayReviews(stayId);
+    }
+
+    // 2026-07-27 박유정 — 숙소 답글 + 회원 알림
+    @Override
+    @Transactional
+    public void saveReviewBizReply(Long stayId, Long reviewId, String bizReply) throws Exception {
+        if (stayId == null || reviewId == null) {
+            throw new IllegalArgumentException("리뷰 정보가 올바르지 않습니다.");
+        }
+        if (bizReply == null || bizReply.isBlank()) {
+            throw new IllegalArgumentException("답글 내용을 입력해 주세요.");
+        }
+        String reply = bizReply.trim();
+        if (reply.length() > 2000) {
+            reply = reply.substring(0, 2000);
+        }
+
+        StayReviewVO current = bizStayMapper.selectBizStayReview(stayId, reviewId);
+        if (current == null) {
+            throw new IllegalStateException("리뷰를 찾을 수 없거나 권한이 없습니다.");
+        }
+
+        int updated = bizStayMapper.updateReviewBizReply(stayId, reviewId, reply);
+        if (updated == 0) {
+            throw new IllegalStateException("답글 저장에 실패했습니다.");
+        }
+
+        String stayName = bizStayMapper.selectStayNameById(stayId);
+        mypageNotifyService.sendStayReviewReplyNotification(
+                current.getMemberNo(), stayName, current.getResvId(), stayId);
+    }
+
+    // 2026-07-27 박유정 — 리뷰 삭제 요청
+    @Override
+    @Transactional
+    public void requestReviewDelete(Long stayId, Long bizNo, Long reviewId, String requestReason) throws Exception {
+        if (stayId == null || bizNo == null || reviewId == null) {
+            throw new IllegalArgumentException("요청 정보가 올바르지 않습니다.");
+        }
+        if (requestReason == null || requestReason.isBlank()) {
+            throw new IllegalArgumentException("삭제 요청 사유를 입력해 주세요.");
+        }
+        String reason = requestReason.trim();
+        if (reason.length() > 500) {
+            reason = reason.substring(0, 500);
+        }
+
+        StayReviewVO current = bizStayMapper.selectBizStayReview(stayId, reviewId);
+        if (current == null) {
+            throw new IllegalStateException("리뷰를 찾을 수 없거나 권한이 없습니다.");
+        }
+
+        if (bizStayMapper.countPendingReviewDeleteRequest(reviewId, bizNo) > 0) {
+            throw new IllegalStateException("이미 삭제 요청이 접수된 리뷰입니다.");
+        }
+
+        ReviewDeleteRequestVO vo = new ReviewDeleteRequestVO();
+        vo.setReviewId(reviewId);
+        vo.setReviewType("STAY");
+        vo.setTargetId(stayId);
+        vo.setBizNo(bizNo);
+        vo.setRequestReason(reason);
+        vo.setStatusCd("PENDING");
+        int inserted = bizStayMapper.insertReviewDeleteRequest(vo);
+        if (inserted == 0) {
+            throw new IllegalStateException("삭제 요청 접수에 실패했습니다.");
+        }
+    }
+
+    // 2026-07-27 박유정 — 삭제요청 탭 목록
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewDeleteRequestVO> getBizReviewDeleteRequests(Long stayId, Long bizNo) throws Exception {
+        if (stayId == null || bizNo == null) {
+            return List.of();
+        }
+        return bizStayMapper.selectBizReviewDeleteRequests(stayId, bizNo);
     }
 }

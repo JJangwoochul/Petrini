@@ -224,6 +224,47 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 반려 알림 (사업자)
+    @Override
+    @Transactional
+    public void sendReviewDeleteRejectNotification(Long bizMemberNo, String hospitalName, String rejectReason) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String safeReason = (rejectReason != null && !rejectReason.isBlank()) ? rejectReason.trim() : "사유 없음";
+        String content = "[" + safeName + "] 리뷰 삭제 요청이 반려되었습니다. 반려 사유: " + safeReason;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("BIZ");
+        vo.setTitle("리뷰 삭제 요청이 반려되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/hospital/reviews");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 승인 알림 (사업자)
+    @Override
+    @Transactional
+    public void sendReviewDeleteApproveNotification(Long bizMemberNo, String hospitalName, Long reviewId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = hospitalName != null ? hospitalName : "병원";
+        String content = "[" + safeName + "] 리뷰 삭제 요청이 승인되어 리뷰가 삭제되었습니다.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("BIZ");
+        vo.setTitle("리뷰 삭제 요청이 승인되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/hospital/reviews");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     private String formatResvWhen(java.util.Date resvDate, String resvTime) {
         String datePart = "-";
         if (resvDate != null) {

@@ -14,8 +14,11 @@ import lombok.NoArgsConstructor;
 public class ReviewVO {
     private Long reviewId;
     private Long memberNo;
+    private Long targetId;
     private String nickname;
     private Double rating;
     private String content;
+    private String bizReply;
+    private String productName;
     private Date regDate;
 }

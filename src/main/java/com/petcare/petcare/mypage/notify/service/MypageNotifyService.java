@@ -66,4 +66,10 @@ public interface MypageNotifyService {
 
     // 2026/07/11 장우철 — 헤더 미읽음 알림 배지
     int countUnreadNotifications(Long memberNo);
+
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 반려 알림 (사업자)
+    void sendReviewDeleteRejectNotification(Long bizMemberNo, String hospitalName, String rejectReason);
+
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 승인 알림 (사업자)
+    void sendReviewDeleteApproveNotification(Long bizMemberNo, String hospitalName, Long reviewId);
 }

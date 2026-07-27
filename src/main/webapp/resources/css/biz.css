@@ -619,10 +619,10 @@
    7/2, [지윤] — reviews.jsp 리뷰 카드 리스트 (별점/작성자/내용/답글 표시)
    "답글쓰기" 눌렀을 때 펼쳐지는 입력창(.biz-reply-box)은 이미 파일에 있음
 ================================================================ */
-.biz-review-list { display: flex; flex-direction: column; }
+.biz-review-list { display: flex; flex-direction: column; padding: 0 20px 20px; }
 .biz-review-item {
     display: flex; justify-content: space-between; gap: 20px;
-    padding: 22px 4px; border-bottom: 1px solid #E2E8E4;
+    padding: 22px 0; border-bottom: 1px solid #E2E8E4;
 }
 .biz-review-item:last-child { border-bottom: none; }
 .biz-review-main { flex: 1; min-width: 0; }
@@ -637,6 +637,16 @@
     font-size: 11px; font-weight: 700; color: #DC2626;
     background: #FEE2E2; padding: 2px 8px; border-radius: 20px;
 }
+/* 2026-07-24 박유정 — 삭제요청 승인(삭제) 완료 뱃지 */
+.biz-review-status-done {
+    font-size: 11px; font-weight: 700; color: #1A1A2E;
+    background: #F1F5F4; padding: 2px 8px; border-radius: 20px;
+}
+/* 2026-07-24 박유정 — 삭제요청 반려 뱃지 */
+.biz-review-status-rejected {
+    font-size: 11px; font-weight: 700; color: #6B7280;
+    background: #F3F4F6; padding: 2px 8px; border-radius: 20px;
+}
 .biz-review-content { font-size: 14px; color: #555; line-height: 1.55; }
 .biz-review-reply {
     background: #FAFBFA; border: 1px solid #E2E8E4; border-radius: 8px;
@@ -646,3 +656,5 @@
 .biz-review-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 .biz-review-actions .biz-btn { width: 84px; text-align: center; }
 .biz-review-empty { text-align: center; padding: 60px 20px; color: #aaa; font-size: 14px; }
+.biz-review-section-title { padding: 0 0 8px; font-size: 13px; font-weight: 700; color: #555; }
+.biz-review-section-title.spaced { padding-top: 16px; }

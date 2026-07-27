@@ -11,7 +11,13 @@
 
 package com.petcare.petcare.biz.stay.controller;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -25,11 +31,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.stay.service.BizStayService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
@@ -43,6 +52,8 @@ public class BizStayController extends BizBaseController {
     private BizStayService bizStayService;
     @Autowired
     private FileService fileService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // 2026-07-14 — 사이드바 예약관리 배지: PENDING 건수
     @ModelAttribute("pendingReserveCount")
@@ -171,11 +182,115 @@ public class BizStayController extends BizBaseController {
         return "biz/stay/calendar";
     }
 
+    // 2026-07-27 박유정 — 사업자 숙소 리뷰관리 (DB 목록 + 삭제요청 탭)
     @GetMapping("/reviews")
-    public String stayReviews(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String stayReviews(HttpSession session, Model model) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
             return "redirect:/login";
+        }
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getStayId() == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        List<StayReviewVO> reviewList = bizStayService.getBizStayReviews(stay.getStayId());
+
+        List<ReviewDeleteRequestVO> deleteRequests = List.of();
+        if (stay.getBizNo() != null) {
+            deleteRequests = bizStayService.getBizReviewDeleteRequests(
+                    stay.getStayId(), stay.getBizNo());
+        }
+        Set<Long> pendingReviewIds = new HashSet<>();
+        for (ReviewDeleteRequestVO dr : deleteRequests) {
+            if ("PENDING".equals(dr.getStatusCd()) && dr.getReviewId() != null) {
+                pendingReviewIds.add(dr.getReviewId());
+            }
+        }
+
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (StayReviewVO r : reviewList) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", r.getReviewId());
+            row.put("author", (r.getNickname() != null && !r.getNickname().isBlank())
+                    ? r.getNickname() : "회원");
+            row.put("date", r.getRegDate() != null ? df.format(r.getRegDate()) : "");
+            row.put("rating", r.getRating() != null ? r.getRating() : 0);
+            row.put("content", r.getContent() != null ? r.getContent() : "");
+            row.put("reply", r.getBizReply());
+            row.put("deleteRequestPending", pendingReviewIds.contains(r.getReviewId()));
+            rows.add(row);
+        }
+
+        List<Map<String, Object>> deleteRows = new ArrayList<>();
+        for (ReviewDeleteRequestVO dr : deleteRequests) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("requestId", dr.getRequestId());
+            row.put("reviewId", dr.getReviewId());
+            row.put("author", (dr.getReviewerNickname() != null && !dr.getReviewerNickname().isBlank())
+                    ? dr.getReviewerNickname() : "회원");
+            row.put("rating", dr.getReviewRating() != null ? dr.getReviewRating() : 0);
+            row.put("content", dr.getReviewContent() != null ? dr.getReviewContent() : "(삭제된 리뷰)");
+            row.put("requestReason", dr.getRequestReason() != null ? dr.getRequestReason() : "");
+            row.put("rejectReason", dr.getRejectReason());
+            row.put("statusCd", dr.getStatusCd());
+            row.put("reqDate", dr.getReqDate() != null ? df.format(dr.getReqDate()) : "");
+            row.put("processDate", dr.getProcessDate() != null ? df.format(dr.getProcessDate()) : "");
+            deleteRows.add(row);
+        }
+
+        model.addAttribute("stay", stay);
+        model.addAttribute("reviewListJson", objectMapper.writeValueAsString(rows));
+        model.addAttribute("deleteRequestListJson", objectMapper.writeValueAsString(deleteRows));
         return "biz/stay/reviews";
+    }
+
+    // 2026-07-27 박유정 — 숙소 리뷰 답글
+    @PostMapping("/reviews/reply")
+    public String saveReviewReply(@RequestParam("reviewId") Long reviewId,
+                                  @RequestParam("bizReply") String bizReply,
+                                  HttpSession session,
+                                  RedirectAttributes rttr) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            return "redirect:/login";
+        }
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getStayId() == null) {
+            return "redirect:/mypage/biz";
+        }
+        try {
+            bizStayService.saveReviewBizReply(stay.getStayId(), reviewId, bizReply);
+            rttr.addFlashAttribute("msg", "답글이 저장되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/biz/stay/reviews";
+    }
+
+    // 2026-07-27 박유정 — 숙소 리뷰 삭제 요청
+    @PostMapping("/reviews/delete-request")
+    public String requestReviewDelete(@RequestParam("reviewId") Long reviewId,
+                                      @RequestParam("requestReason") String requestReason,
+                                      HttpSession session,
+                                      RedirectAttributes rttr) throws Exception {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            return "redirect:/login";
+        }
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getStayId() == null || stay.getBizNo() == null) {
+            return "redirect:/mypage/biz";
+        }
+        try {
+            bizStayService.requestReviewDelete(
+                    stay.getStayId(), stay.getBizNo(), reviewId, requestReason);
+            rttr.addFlashAttribute("msg", "삭제 요청이 접수되었습니다. 관리자 검토 후 처리됩니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/biz/stay/reviews";
     }
 
     @GetMapping("/contract")
