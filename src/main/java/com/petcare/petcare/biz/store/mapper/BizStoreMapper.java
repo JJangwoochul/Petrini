@@ -127,6 +127,13 @@ public interface BizStoreMapper {
     //지윤 26.07.20 추가: 주문 상태 변경 (본인 주문만, 수정된 row수 반환)
     int updateOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo, @Param("orderStatus") String orderStatus);
 
+    //지윤 26.07.27 추가: 배송조회(스마트택배 API) 시점에 실제 배송완료(level=6) 확인되면 자동 DONE 처리
+    //이미 DONE이면 WHERE절에서 걸러져서 0건 UPDATE됨 -> DELIVERED_AT 중복 갱신 방지용 가드
+    int autoCompleteOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.27 추가: TB_ORDER_DELIVERY.DELIVERY_STATUS만 갱신 (courier/tracking 값은 안 건드림)
+    int updateDeliveryStatusOnly(@Param("orderId") Long orderId, @Param("deliveryStatus") String deliveryStatus);
+
     //지윤 26.07.22 추가: 취소신청 대기중 건수 (탭 숫자용)
     int selectClaimPendingCount(@Param("bizNo") Long bizNo);
 

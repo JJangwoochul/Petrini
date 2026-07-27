@@ -158,15 +158,29 @@ public class BizStoreController extends BizBaseController {
     }
 
     //지윤 26.07.22 추가: 취소신청 반려
-    @PostMapping("/orders/{id}/cancel/reject")
-    @ResponseBody
-    public String rejectOrderCancel(@PathVariable Long id, HttpSession session) {
-        MemberVO biz = getBizMember(session);
-        if (biz == null) return "LOGIN_REQUIRED";
-        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
-        boolean ok = bizStoreService.rejectOrderCancel(id, bizNo);
-        return ok ? "OK" : "FAILED";
-    }
+@PostMapping("/orders/{id}/cancel/reject")
+@ResponseBody
+public String rejectOrderCancel(@PathVariable Long id, HttpSession session) {
+    MemberVO biz = getBizMember(session);
+    if (biz == null) return "LOGIN_REQUIRED";
+    Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+    boolean ok = bizStoreService.rejectOrderCancel(id, bizNo);
+    return ok ? "OK" : "FAILED";
+}
+
+//지윤 26.07.27 추가: 배송완료 수동 강제처리
+//원칙적으로 "배송완료"는 스마트택배 API(level==6) 확인 시에만 자동으로 전환되고, 드롭다운에선 선택 불가하게 뺐음.
+//단, 스마트택배 미지원 특수배송(퀵서비스/직접전달 등) 예외 케이스 대비용으로 별도 버튼+확인창을 통해서만 가능하게 함
+//autoCompleteDeliveryIfDone 그대로 재사용: 이미 DONE이면 스킵되는 가드도 동일하게 적용됨
+@PostMapping("/orders/{id}/force-complete")
+@ResponseBody
+public String forceCompleteDelivery(@PathVariable Long id, HttpSession session) {
+    MemberVO biz = getBizMember(session);
+    if (biz == null) return "LOGIN_REQUIRED";
+    Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+    boolean ok = bizStoreService.autoCompleteDeliveryIfDone(id, bizNo);
+    return ok ? "OK" : "FAILED";
+}
     
     @GetMapping("/delivery")
     public String storeDelivery(@RequestParam(required = false) String carrier,
@@ -186,20 +200,35 @@ public class BizStoreController extends BizBaseController {
     }
 
     //지윤 26.07.24 추가: 택배사 전체목록 조회 (드롭다운 채우기용, AJAX)
-    @GetMapping("/delivery/companies")
-    @ResponseBody
-    public java.util.List<java.util.Map<String, String>> getCompanyList(HttpSession session) {
-        if (getBizMember(session) == null) return java.util.List.of();
-        return smartTrackerService.getCompanyList();
-    }
+//지윤 26.07.27 수정: BIZ 세션 체크 제거 - 택배사 목록은 민감정보 아니고 admin 화면(order-detail.jsp)에서도 같이 씀
+@GetMapping("/delivery/companies")
+@ResponseBody
+public java.util.List<java.util.Map<String, String>> getCompanyList(HttpSession session) {
+    return smartTrackerService.getCompanyList();
+}
 
     //지윤 26.07.24 추가: 실시간 배송조회 (AJAX, 원본 JSON 그대로 화면에 넘김)
-    @GetMapping("/delivery/track")
-    @ResponseBody
-    public String trackDelivery(@RequestParam String courierCode, @RequestParam String trackingNo, HttpSession session) {
-        if (getBizMember(session) == null) return "{\"status\":false,\"msg\":\"로그인이 필요합니다.\"}";
-        return smartTrackerService.getTrackingInfo(courierCode, trackingNo);
+//지윤 26.07.27 수정: orderId 추가 - 조회 결과 level==6(배송완료)이면 그 시점에 주문상태 자동 DONE 처리
+//(스마트택배 무료플랜 월 100건 제한이라 별도 스케줄러 폴링은 안 함, 사람이 조회 버튼 누르는 시점에만 동기화)
+@GetMapping("/delivery/track")
+@ResponseBody
+public String trackDelivery(@RequestParam Long orderId, @RequestParam String courierCode,
+                             @RequestParam String trackingNo, HttpSession session) {
+    MemberVO biz = getBizMember(session);
+    if (biz == null) return "{\"status\":false,\"msg\":\"로그인이 필요합니다.\"}";
+
+    String json = smartTrackerService.getTrackingInfo(courierCode, trackingNo);
+    try {
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        com.fasterxml.jackson.databind.JsonNode node = new ObjectMapper().readTree(json);
+        if (node.path("level").asInt(-1) == 6) {
+            bizStoreService.autoCompleteDeliveryIfDone(orderId, bizNo);
+        }
+    } catch (Exception e) {
+        //파싱 실패해도 배송조회 결과 자체는 그대로 반환하고, 자동 상태갱신만 스킵
     }
+    return json;
+}
     
 
     //지윤 26.07.20 추가: 송장 일괄등록 (텍스트 여러 줄 파싱)

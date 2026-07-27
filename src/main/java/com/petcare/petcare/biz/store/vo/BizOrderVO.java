@@ -30,6 +30,7 @@ public class BizOrderVO {
     private String addr2;
     private String payMethod;
     private String courierName;
+    private String courierCode;   //지윤 26.07.27 추가: 스마트택배 API 코드 (orders.jsp 배송조회/드롭다운 API 연동용)
     private String trackingNo;
     private String deliveryStatus;
     private List<BizOrderItemVO> itemList;

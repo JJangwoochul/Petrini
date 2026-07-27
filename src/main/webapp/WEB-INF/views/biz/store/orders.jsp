@@ -118,23 +118,21 @@
           <div>
             <label>주문상태</label>
             <%-- 지윤 26.07.20 수정: value="paid" 등 소문자 임의값 -> value="PAID" 등 실제 DB(TB_ORDER.ORDER_STATUS) 코드값으로 통일 --%>
+            <%-- 지윤 26.07.27 수정: DONE(배송완료) 옵션 제거 - 사람이 실수로 미리 눌러버리면 실제 배송상태(스마트택배 API)와 어긋나는 문제가 있어서
+            배송완료는 이제 자동완료(level==6) 또는 아래 별도 "배송완료 수동처리" 버튼(확인창 있음)으로만 가능하게 분리함 --%>
             <select id="dStatusSelect">
-              <option value="PAID">결제완료</option>
-              <option value="READY">배송준비</option>
-              <option value="SHIPPING">배송중</option>
-              <option value="DONE">배송완료</option>
-              <option value="CANCEL">취소/반품</option>
+            <option value="PAID">결제완료</option>
+            <option value="READY">배송준비</option>
+            <option value="SHIPPING">배송중</option>
+            <option value="CANCEL">취소/반품</option>
             </select>
           </div>
           <div>
             <label>택배사</label>
-            <select id="dCarrier">
-              <option value="">선택 안 함</option>
-              <option value="cj">CJ대한통운</option>
-              <option value="hanjin">한진택배</option>
-              <option value="lotte">롯데택배</option>
-              <option value="post">우체국택배</option>
-            </select>
+            <%-- 지윤 26.07.27 수정: 하드코딩 4개 -> delivery.jsp와 동일하게 스마트택배 API로 전체 목록 채워넣음 --%>
+         <select id="dCarrier">
+         <option value="">선택 안 함</option>
+         </select>
           </div>
           <div>
             <label>송장번호</label>
@@ -162,11 +160,13 @@
     </div>
 
     <div class="order-detail-actions">
-      <button type="button" class="biz-btn-ghost" onclick="closeDetail()">이전 목록으로</button>
-      <button type="button" class="biz-btn-primary" id="saveBtn" onclick="saveStatus()">상태변경</button>
-      <button type="button" class="biz-btn-primary" id="rejectBtn" style="display:none; background:#999;" onclick="rejectCancel()">취소반려</button>
-      <button type="button" class="biz-btn-primary" id="approveBtn" style="display:none; background:#E2445C;" onclick="approveCancel()">취소승인</button>
-    </div>
+  <button type="button" class="biz-btn-ghost" onclick="closeDetail()">이전 목록으로</button>
+  <button type="button" class="biz-btn-primary" id="saveBtn" onclick="saveStatus()">상태변경</button>
+  <%-- 지윤 26.07.27 추가: 배송완료 수동처리 (SHIPPING 상태일 때만 노출, 확인창 거쳐야 실행됨) --%>
+  <button type="button" class="biz-btn-primary" id="forceCompleteBtn" style="display:none; background:#2BAB82;" onclick="forceComplete()">배송완료 수동처리</button>
+  <button type="button" class="biz-btn-primary" id="rejectBtn" style="display:none; background:#999;" onclick="rejectCancel()">취소반려</button>
+  <button type="button" class="biz-btn-primary" id="approveBtn" style="display:none; background:#E2445C;" onclick="approveCancel()">취소승인</button>
+</div>
   </div>
 </main>
 
@@ -189,7 +189,25 @@
   //지윤 26.07.20 삭제: var currentTab = 'all' - 탭 필터링이 서버 GET 파라미터 방식으로 바뀌면서 필요없어짐
   var currentOrderId = null;
 
-  function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
+//지윤 26.07.27 추가: delivery.jsp와 동일 - 스마트택배 API로 전체 택배사 목록 가져와서 드롭다운 채움
+//courierList는 openDetail()에서 courierCode -> 옵션 매칭할 때도 재사용
+var courierList = [];
+fetch(contextPath + '/biz/store/delivery/companies')
+  .then(function (res) { return res.json(); })
+  .then(function (list) {
+    courierList = list || [];
+    var editSel = document.getElementById('dCarrier');
+    courierList.forEach(function (c) {
+      var opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      editSel.appendChild(opt);
+    });
+  })
+  .catch(function () {
+    document.getElementById('dCarrier').insertAdjacentHTML('beforeend', '<option value="">택배사 목록을 불러올 수 없습니다</option>');
+  });
+
+function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
 
   //지윤 26.07.20 삭제: function switchTab(tab) {...} - JS로 탭 active 토글 + orders 배열 필터링하던 함수.
   //탭이 이제 실제 <a href="?statusCd=...">라 페이지 이동만으로 처리, JS 함수 자체가 필요없어져서 삭제
@@ -219,10 +237,22 @@
         //지윤 26.07.20 수정: 배송지 - 원본은 o.address 문자열 하나, 지금은 ZIP_CODE+ADDR1+ADDR2를 조합해서 표시
         document.getElementById('dAddress').textContent       = (o.zipCode ? '[' + o.zipCode + '] ' : '') + o.addr1 + ' ' + (o.addr2 || '');
 
-        document.getElementById('dStatusSelect').value = o.orderStatus;
-        //지윤 26.07.20 수정: 택배사/송장번호 - 원본은 o.carrier/o.trackingNo(주문 객체 안 하드코딩), 지금은 TB_ORDER_DELIVERY 조인값(courierName/trackingNo)
-        document.getElementById('dCarrier').value       = o.courierName || '';
-        document.getElementById('dTrackingNo').value    = o.trackingNo || '';
+        //지윤 26.07.27 수정: select에 DONE 옵션을 뺐기 때문에, 이미 DONE인 주문은 표시용 임시 옵션을 하나 끼워넣어서 값이 정확히 보이게 함
+        //(선택 불가능하게 disabled 처리는 아래에서 별도로 함, 이건 순수 표시 보정용)
+var dSelect = document.getElementById('dStatusSelect');
+var doneOpt = dSelect.querySelector('option[value="DONE"]');
+if (o.orderStatus === 'DONE' && !doneOpt) {
+  doneOpt = document.createElement('option');
+  doneOpt.value = 'DONE'; doneOpt.textContent = '배송완료';
+  dSelect.appendChild(doneOpt);
+}
+dSelect.value = o.orderStatus;
+
+//지윤 26.07.20 수정: 택배사/송장번호 - 원본은 o.carrier/o.trackingNo(주문 객체 안 하드코딩), 지금은 TB_ORDER_DELIVERY 조인값(courierName/trackingNo)
+//지윤 26.07.27 수정: select value로 courierCode(예: "04") 우선 사용 -> API 목록의 실제 옵션과 매칭됨.
+//courierCode가 없는 예전 데이터(하드코딩 시절 저장된 cj/hanjin 등)는 courierName 값을 그대로 넣어 폴백(못 찾으면 "선택 안 함"으로 보임)
+document.getElementById('dCarrier').value       = o.courierCode || o.courierName || '';
+document.getElementById('dTrackingNo').value    = o.trackingNo || '';
 
         //지윤 26.07.20 수정: o.items(목업 배열) forEach -> o.itemList(TB_ORDER_ITEM 실데이터) forEach로 교체
         var itemsBody = document.getElementById('orderItemsBody');
@@ -244,14 +274,21 @@
         document.getElementById('dTotalAmount').textContent = fmtWon(o.payAmount);
 
         var isPending = (o.claimStatus === 'PENDING');
-        document.getElementById('claimInfoBox').style.display = isPending ? 'block' : 'none';
-        document.getElementById('approveBtn').style.display = isPending ? 'inline-block' : 'none';
-        document.getElementById('rejectBtn').style.display = isPending ? 'inline-block' : 'none';
-        document.getElementById('saveBtn').style.display = isPending ? 'none' : 'inline-block';
-        if (isPending) {
-          document.getElementById('dCancelReason').textContent = o.cancelReason || '-';
-          document.getElementById('dRequestedAt').textContent = o.requestedAt || '-';
-        }
+document.getElementById('claimInfoBox').style.display = isPending ? 'block' : 'none';
+document.getElementById('approveBtn').style.display = isPending ? 'inline-block' : 'none';
+document.getElementById('rejectBtn').style.display = isPending ? 'inline-block' : 'none';
+//지윤 26.07.27 수정: 이미 DONE이면 상태변경 저장 자체를 막음 (DONE 옵션이 select에 없어서 실수로 다른 값 저장되는 것 방지)
+var isDone = (o.orderStatus === 'DONE');
+document.getElementById('saveBtn').style.display = (isPending || isDone) ? 'none' : 'inline-block';
+document.getElementById('dStatusSelect').disabled = isDone;
+document.getElementById('dCarrier').disabled = isDone;
+document.getElementById('dTrackingNo').disabled = isDone;
+//지윤 26.07.27 추가: 배송완료 수동처리 버튼은 SHIPPING 상태일 때만 노출 (READY/PAID면 아직 발송 전이라 의미없고, 이미 DONE이면 중복처리 방지)
+document.getElementById('forceCompleteBtn').style.display = (o.orderStatus === 'SHIPPING') ? 'inline-block' : 'none';
+if (isPending) {
+  document.getElementById('dCancelReason').textContent = o.cancelReason || '-';
+  document.getElementById('dRequestedAt').textContent = o.requestedAt || '-';
+}
 
         document.getElementById('detailCard').style.display = 'block';
         document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -297,12 +334,34 @@
 
   //지윤 26.07.20 수정: function saveStatus() - orders.find()로 로컬 배열 값만 바꾸고 render() 다시 그리던 것(진짜 저장 안 됨)
   //-> fetch()로 서버(/biz/store/orders/{id}/status)에 실제 POST, 성공하면 location.reload()로 최신 데이터 다시 불러옴
-  function saveStatus() {
-    if (!currentOrderId) return;
-    var formData = new URLSearchParams();
-    formData.set('orderStatus', document.getElementById('dStatusSelect').value);
-    formData.set('courierName', document.getElementById('dCarrier').value);
-    formData.set('trackingNo', document.getElementById('dTrackingNo').value.trim());
+  //지윤 26.07.27 추가: 배송완료 수동처리 (확인창 필수 - 실수로 누르는 것 방지, 서버는 autoCompleteDeliveryIfDone 재사용)
+function forceComplete() {
+  if (!currentOrderId) return;
+  if (!confirm('이 처리는 보통 스마트택배 API로 자동으로 이뤄집니다.\n실제로 배송이 완료된 것이 맞습니까?')) return;
+
+  fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/force-complete', { method: 'POST' })
+    .then(function (res) { return res.text(); })
+    .then(function (result) {
+      if (result === 'OK') {
+        alert('배송완료로 처리되었습니다.');
+        location.reload();
+      } else {
+        alert('처리에 실패했습니다.');
+      }
+    });
+}
+
+function saveStatus() {
+  if (!currentOrderId) return;
+  //지윤 26.07.27 수정: delivery.jsp와 동일 패턴 - courierName은 선택된 옵션의 실제 택배사명(텍스트), courierCode는 API 코드(value)로 분리해서 전송
+  var carrierSelect = document.getElementById('dCarrier');
+  var selectedOption = carrierSelect.options[carrierSelect.selectedIndex];
+
+  var formData = new URLSearchParams();
+  formData.set('orderStatus', document.getElementById('dStatusSelect').value);
+  formData.set('courierName', selectedOption ? selectedOption.textContent : '');
+  formData.set('courierCode', carrierSelect.value);
+  formData.set('trackingNo', document.getElementById('dTrackingNo').value.trim());
 
     fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/status', {
       method: 'POST',

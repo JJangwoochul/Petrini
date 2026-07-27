@@ -285,6 +285,17 @@ public class BizStoreServiceImpl implements BizStoreService {
         }
         return true;
     }
+
+    //지윤 26.07.27 추가: 배송조회 API 호출 시점에만 동기화 (스마트택배 무료플랜 월 100건 제한이라 스케줄러 폴링 대신 이 방식 선택)
+    //autoCompleteOrderStatus가 이미 DONE인 건은 0건 UPDATE하므로 그 경우 false 반환 -> DELIVERED_AT 중복갱신 안 됨
+    @Override
+    public boolean autoCompleteDeliveryIfDone(Long orderId, Long bizNo) {
+        int updated = bizStoreMapper.autoCompleteOrderStatus(orderId, bizNo);
+        if (updated == 0) return false;
+        bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, "DELIVERED_AT");
+        bizStoreMapper.updateDeliveryStatusOnly(orderId, "DELIVERED");
+        return true;
+    }
     //지윤 26.07.20 추가: 배송관리 목록 조회 + 지연여부(3일 이상 SHIPPING) 자바에서 계산
     @Override
     public List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword) {

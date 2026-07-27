@@ -218,7 +218,7 @@
         m.NICKNAME AS BUYER_NAME, m.PHONE AS BUYER_PHONE, m.EMAIL AS BUYER_EMAIL,
         o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2,
         p.PAY_METHOD, p.TOSS_PAYMENT_KEY,
-        d.COURIER_NAME, d.TRACKING_NO, d.DELIVERY_STATUS,
+        d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO, d.DELIVERY_STATUS,
         o.CLAIM_STATUS, o.CANCEL_REASON, o.REQUESTED_AT, o.REFUND_AMOUNT,
         o.MEMBER_NO, o.POINT_USED, o.MEMBER_COUPON_ID
     FROM TB_ORDER o
@@ -242,6 +242,20 @@
     UPDATE TB_ORDER
     SET ORDER_STATUS = #{orderStatus}
     WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo}
+</update>
+
+<!-- 지윤 26.07.27 추가: 배송조회 자동완료 - 이미 DONE인 주문은 WHERE절에서 걸려서 0건 -->
+<update id="autoCompleteOrderStatus">
+    UPDATE TB_ORDER
+    SET ORDER_STATUS = 'DONE'
+    WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND ORDER_STATUS != 'DONE'
+</update>
+
+<!-- 지윤 26.07.27 추가: 배송조회 자동완료 시 TB_ORDER_DELIVERY 상태만 같이 맞춰줌 -->
+<update id="updateDeliveryStatusOnly">
+    UPDATE TB_ORDER_DELIVERY
+    SET DELIVERY_STATUS = #{deliveryStatus}
+    WHERE ORDER_ID = #{orderId}
 </update>
 
 <!-- 지윤 26.07.22 추가: 취소신청 승인 (토스취소 성공 후 호출, ORDER_STATUS까지 CANCEL로 확정) -->
