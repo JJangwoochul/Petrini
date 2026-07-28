@@ -39,6 +39,8 @@ public interface CommunityPostMapper {
 
     // 글 등록 (SEQ_TB_POST)
     int insertPost(CommunityPostVO vo);
+    //HYJ 26.07.28 게시글작성회수 반영
+    int updateMemberPostCount(String memberId);
 
     // 목록 (boardType: 빈값=전체, TOWN/SHARE/LIFE=탭별, 페이징·검색·LIFE 필터)
     List<CommunityPostVO> selectPostList(

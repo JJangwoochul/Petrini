@@ -166,6 +166,26 @@
       <button type="submit" class="btn-pay-submit" id="submitBtn" disabled>결제하기</button>
     </div>
   </form>
+
+  <%-- HYJ 26.07.28 예약 확인 모달 --%>
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-box">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h3>예약을 진행하시겠습니까?</h3>
+      <p>예약 신청 후 결제 페이지로 이동합니다.</p>
+      <div class="timer-notice">
+        ⏱ 예약 후 <strong>15분 이내</strong>에 결제를 완료해야 합니다.<br>
+        미결제 시 예약이 자동 취소됩니다.
+      </div>
+      <p style="font-size:13px;color:#888;margin:0 0 16px" id="confirmSummary"></p>
+      <div class="btn-group">
+        <button class="btn-cancel" onclick="closeConfirmModal()">취소</button>
+        <button class="btn-confirm" onclick="submitReservation()">예약하기</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -271,6 +291,34 @@
     if (roomSel.value && ci) {
       calcPrice();
     }
+  });
+
+  // HYJ 26.07.28 예약 확인 모달
+  function showConfirmModal() {
+    var roomSel = document.getElementById('roomSelect');
+    var roomName = roomSel.options[roomSel.selectedIndex].text.split(' — ')[0];
+    var ci = document.getElementById('checkinDate').value;
+    var co = document.getElementById('checkoutDate').value;
+    var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+    var total = document.getElementById('totalLabel').textContent;
+
+    document.getElementById('confirmSummary').textContent =
+        roomName + ' · ' + ci + ' ~ ' + co + ' (' + nights + '박) · ' + total;
+    document.getElementById('confirmModal').classList.add('show');
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+  }
+
+  function submitReservation() {
+    closeConfirmModal();
+    document.getElementById('reserveForm').submit();
+  }
+
+  // 모달 바깥 클릭 시 닫기
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
   });
 </script>
 

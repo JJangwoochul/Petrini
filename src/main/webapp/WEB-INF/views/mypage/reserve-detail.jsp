@@ -41,7 +41,10 @@
         <c:choose>
           <c:when test="${reservation.statusCd eq 'PENDING'}"><span class="badge-status badge-wait">예약신청</span></c:when>
           <c:when test="${reservation.statusCd eq 'CONFIRMED'}"><span class="badge-status badge-ready">예약확정</span></c:when>
-          <c:when test="${reservation.statusCd eq 'DONE'}"><span class="badge-status badge-done">진료완료</span></c:when>
+          <c:when test="${reservation.statusCd eq 'DONE'}">
+            <c:if test='${reservation.resvType eq 'HOSPITAL'}'><span class="badge-status badge-done">진료완료</span></c:if>
+            <c:if test='${reservation.resvType eq 'STAY'}'><span class="badge-status badge-done">이용완료</span></c:if>
+          </c:when>
           <c:otherwise><span class="badge-status badge-cancel">취소</span></c:otherwise>
         </c:choose>
       </span>
@@ -60,6 +63,7 @@
     <div class="rd-row">
       <span>예약일시</span>
       <span>
+        <!--HYJ 26.07.28 사업장에 따라 처리-->
         <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy-MM-dd"/>
         <c:if test="${not empty reservation.resvTime}"> ${reservation.resvTime}</c:if>
         <c:if test="${not empty reservation.endTime}"> ~ ${reservation.endTime}</c:if>

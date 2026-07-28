@@ -131,13 +131,13 @@
                     <div class="biz-grid">
                         <div class="biz-group">
                             <label>업체명 <span class="req">*</span></label>
-                            <input type="text" name="bizName" placeholder="예) 행복 펫 병원" value="행복펫병원">
+                            <input type="text" name="bizName" placeholder="예) 행복 펫 병원">
                         </div>
                         <div class="biz-group">
                             <label>업종 <span class="req">*</span></label>
                             <select name="bizType">
-                                <option value="">업종을 선택하세요</option>
-                                <option value="HOSPITAL" selected>동물병원</option>
+                                <option value="" selected>업종을 선택하세요</option>
+                                <option value="HOSPITAL">동물병원</option>
                                 <option value="GROOMING">반려동물 미용</option>
                                 <option value="STAY">펫 호텔·유치원</option>
                                 <option value="STORE">반려동물 용품점</option>
@@ -147,18 +147,18 @@
                         <div class="biz-group full">
                             <label>사업자 등록번호 <span class="req">*</span></label>
                             <div class="biz-input-row">
-                                <input type="text" name="bizRegNo" placeholder="000-00-00000" maxlength="12" value="012-34-56789">
+                                <input type="text" name="bizRegNo" placeholder="000-00-00000" maxlength="12">
                                 <button class="btn-verify" id="btnCheckBizNo" type="button">국세청 인증</button>
                             </div>
                             <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px; margin-left: 5px;" id="checkResult"></p>
                         </div>
                         <div class="biz-group">
                             <label>대표자명 <span class="req">*</span></label>
-                            <input type="text" name="ceoName" placeholder="홍길동" value="홍길동">
+                            <input type="text" name="ceoName" placeholder="홍길동">
                         </div>
                         <div class="biz-group">
                             <label>사업장 전화번호 <span class="req">*</span></label>
-                            <input type="tel" name="phone" placeholder="02-0000-0000" value="02-123-4567">
+                            <input type="tel" name="phone" placeholder="02-0000-0000">
                         </div>
                         <div class="biz-group full">
                             <label>사업장 주소 <span class="req">*</span></label>
@@ -167,7 +167,7 @@
                                 <input type="text" name="zipCode" placeholder="우편번호" style="max-width:120px" readonly>
                                 <button class="btn-verify" id="btnAddr" type="button">주소 검색</button>
                             </div>
-                            <input type="text" name="addr" placeholder="기본 주소" style="margin-top:8px" value="판교역로 166" readonly>
+                            <input type="text" name="addr" placeholder="기본 주소" style="margin-top:8px" readonly>
                             <input type="text" name="addrDetail" placeholder="상세 주소" style="margin-top:8px">
                         </div>
                     </div>

@@ -138,7 +138,9 @@
   </div>
 
   <%-- 2026-07-23 HYJ — 본인 글일 때 수정/삭제 버튼 --%>
-  <c:if test="${loginMemberNo != null && loginMemberNo == post.memberNo}">
+  <%-- <c:if test="${loginMemberNo != null && loginMemberNo == post.memberNo}"> --%>
+  <%-- 2026-07-28 HYJ — 관리자 권한 수정/삭제 버튼 --%>
+  <c:if test="${(loginMemberNo != null && loginMemberNo == post.memberNo) || loginMemberRole eq 'ADMIN'}">
     <div class="cdetail-author-actions">
       <a href="${contextPath}/community/edit?id=${post.postId}" class="cdetail-edit-btn">수정</a>
       <form method="post" action="${contextPath}/community/delete" style="display:inline;margin:0;padding:0">
@@ -270,7 +272,9 @@
                 <c:otherwise>-</c:otherwise>
               </c:choose>
             </span>
-            <c:if test="${loginMemberNo != null && loginMemberNo == cmt.memberNo}">
+            <%-- 2026-07-28 HYJ — 관리자 권한 수정/삭제 버튼 --%>
+            <%-- <c:if test="${loginMemberNo != null && loginMemberNo == cmt.memberNo}"> --%>
+            <c:if test="${(loginMemberNo != null && loginMemberNo == cmt.memberNo) || loginMemberRole eq 'ADMIN'}">
               <span class="comment-meta-sep" style="color:#999">·</span>
               <button type="button" class="comment-edit-btn"
                       onclick="toggleEditForm(${cmt.commentId})">수정</button>
@@ -333,7 +337,9 @@
                   <c:otherwise>-</c:otherwise>
                 </c:choose>
               </span>
-              <c:if test="${loginMemberNo != null && loginMemberNo == reply.memberNo}">
+              <%-- 2026-07-28 HYJ — 관리자 권한 수정/삭제 버튼 --%>
+              <%-- <c:if test="${loginMemberNo != null && loginMemberNo == reply.memberNo}"> --%>
+              <c:if test="${(loginMemberNo != null && loginMemberNo == reply.memberNo) || loginMemberRole eq 'ADMIN'}">
                 <span class="comment-meta-sep" style="color:#999">·</span>
                 <button type="button" class="comment-edit-btn"
                         onclick="toggleEditForm(${reply.commentId})">수정</button>

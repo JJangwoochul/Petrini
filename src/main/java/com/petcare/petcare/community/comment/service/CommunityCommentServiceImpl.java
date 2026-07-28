@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.petcare.petcare.admin.community.mapper.AdminCommunityMapper;
 import com.petcare.petcare.community.comment.mapper.CommunityCommentMapper;
 import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.community.post.mapper.CommunityPostMapper;
@@ -45,12 +47,15 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
 
     private final CommunityCommentMapper communityCommentMapper;
     private final CommunityPostMapper communityPostMapper;
+    private final AdminCommunityMapper adminCommunityMapper;
 
     public CommunityCommentServiceImpl(
             CommunityCommentMapper communityCommentMapper,
-            CommunityPostMapper communityPostMapper) {
+            CommunityPostMapper communityPostMapper,
+            AdminCommunityMapper adminCommunityMapper) {
         this.communityCommentMapper = communityCommentMapper;
         this.communityPostMapper = communityPostMapper;
+        this.adminCommunityMapper = adminCommunityMapper;
     }
 
     @Override
@@ -90,11 +95,13 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     }
 
     @Override
+    @Transactional
     public void insertComment(long postId, String body, MemberVO loginMember) {
         insertComment(postId, body, loginMember, null);
     }
 
     @Override
+    @Transactional
     public void insertComment(long postId, String body, MemberVO loginMember, Long parentId) {
         if (loginMember == null) {
             throw new IllegalStateException("LOGIN_REQUIRED");
@@ -122,7 +129,12 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         vo.setMemberNo(memberNo);
         vo.setBody(body.trim());
 
-        communityCommentMapper.insertComment(vo);
+        int result = communityCommentMapper.insertComment(vo);
+        
+        //HYJ 26.07.28 댓글작성회수 반영
+        if (result > 0) {
+            communityCommentMapper.updateMemberCommentCount(loginMember.getMemberId());
+        }
     }
 
     /**
@@ -191,6 +203,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
     }
 
     @Override
+    @Transactional
     public void deleteComment(long commentId, long postId, MemberVO loginMember) {
         if (loginMember == null) {
             throw new IllegalStateException("LOGIN_REQUIRED");
@@ -203,10 +216,32 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
 
         Long loginMemberNo = lookupMemberNo(loginMember);
         if (loginMemberNo == null || !loginMemberNo.equals(comment.getMemberNo())) {
-            throw new IllegalStateException("FORBIDDEN");
+            //HYJ 26.07.28 관리자권한 통과
+            if (!"ADMIN".equals(loginMember.getRole())){
+                throw new IllegalStateException("FORBIDDEN");
+            }
         }
 
-        communityCommentMapper.softDeleteComment(commentId);
+        //HYJ 26.07.28 수의사상담 댓글 soft삭제
+        // communityCommentMapper.softDeleteComment(commentId);
+        CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
+        boolean isLife = "LIFE".equalsIgnoreCase(existing.getBoardType());
+        int result;
+        if (isLife) {
+            // LIFE — STATUS_CD='DELETED' (관리자와 동일, 7일 후 스케줄러가 물리 삭제)
+            result = communityCommentMapper.softDeleteComment(commentId);
+        } else {
+            // TOWN, SHARE — 즉시 물리 삭제
+            result = communityCommentMapper.hardDeleteComment(commentId);
+        }
+
+        if (result == 0) {
+            throw new IllegalStateException("DELETE_FAILED");
+        }
+
+        if ("ADMIN".equals(loginMember.getRole())) {
+            adminCommunityMapper.updateMemberAdminCommentDelCount(existing.getMemberNo());
+        }
     }
 
     // 2026-07-14 박유정 — 댓글 수정 (community/detail.jsp, give/report/detail.jsp)

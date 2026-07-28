@@ -43,6 +43,9 @@ public interface AdminCommunityService {
     // 2026-07-15 박유정 STEP 7 — 삭제 (STATUS_CD = DELETED, 소프트 삭제)
     void deletePost(long postId);
 
+    //HYJ 26.07.28 관리자 게시글 삭제회수 반영하기 위해 작성자 정보 전달
+    void deletePost(long postId, long memberNo);
+
     // 2026-07-15 박유정 — 복구 (STATUS_CD = ACTIVE)
     void restorePost(long postId);
 }
