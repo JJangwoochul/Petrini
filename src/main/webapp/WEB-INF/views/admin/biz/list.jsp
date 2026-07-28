@@ -124,6 +124,8 @@
                 <form method="post" action="${contextPath}/admin/biz/approve" style="display:inline"
                       onsubmit="return confirm('${item.bizName} 신청을 승인하시겠습니까?')">
                     <input type="hidden" name="bizNo" value="${item.bizNo}">
+                    <!--HYJ 26.07.28 메일조회-->
+                    <input type="hidden" name="bizId" value="${item.bizId}">
                     <button type="submit" class="adm-btn green">승인</button>
                 </form>
                 </c:if>

@@ -86,6 +86,8 @@
                     BIZ_REG_NO  AS bizRegNo,
                     BIZ_NAME    AS bizName,
                     CEO_NAME    AS ceoName,
+                    <!--HYJ 26.07.28 사업자신청 결과 이메일 안내-->
+                    EMAIL       AS mail,
                     PHONE       AS phone,
                     ZIP_CODE    AS zipCode,
                     ADDR        AS addr,

@@ -24,12 +24,16 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.admin.biz.service.AdminBizService;
 import com.petcare.petcare.admin.controller.AdminBaseController;
+import com.petcare.petcare.biz.vo.BusinessVO;
 
 import jakarta.servlet.http.HttpSession;
 
 import com.petcare.petcare.give.talent.service.GiveTalentService;
-
+import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
+import com.petcare.petcare.member.auth.service.EmailService;
+import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.mypage.biz.mapper.MypageBizMapper;
 
 @Controller("adminBizController")
 @RequestMapping("/admin/biz")
@@ -43,6 +47,15 @@ public class AdminBizController extends AdminBaseController {
     // 2026-07-13 박유정 — 재능나눔 승인 Service (admin/biz/talent.jsp)
     @Autowired
     private GiveTalentService giveTalentService;
+
+    // HYJ 26.07.28 사업자승인 이메일 안내발송
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private MypageBizMapper mypageBizMapper;
+    @Autowired
+    private MemberAuthMapper memberAuthMapper;
+
 
     // ── ADMIN-03 사업자 승인 ───────────────────────────────
     @GetMapping("/list")
@@ -105,12 +118,26 @@ public class AdminBizController extends AdminBaseController {
     @PostMapping("/approve")
     public String approveBiz(HttpSession session,
                              @RequestParam Long bizNo,
+                             @RequestParam String bizId,
                              RedirectAttributes redirectAttr) {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
         try {
             adminBizService.approveBiz(bizNo);
+
+            //HYJ 26.07.28 이메일 안내
+            BusinessVO existing = mypageBizMapper.selectBusinessByBizId(bizId);
+            String email = existing.getEmail();
+            if (email == null || email.isEmpty()) {
+                MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(existing.getBizId());
+                if (found != null) {
+                    email = found.getEmail();
+                }
+            }
+
+            emailService.sendApproveNotice(email, existing.getBizName());
+
             redirectAttr.addFlashAttribute("successMsg", "사업자 신청이 승인되었습니다.");
             return "redirect:/admin/biz/list?status=APPROVED";
         } catch (IllegalStateException e) {
