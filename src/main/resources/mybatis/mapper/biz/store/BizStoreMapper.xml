@@ -251,6 +251,23 @@
     WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND ORDER_STATUS != 'DONE'
 </update>
 
+<!-- 지윤 26.07.28 추가: PAID/READY인 주문만 SHIPPING으로 승격 (이미 SHIPPING 이상이면 0건, 역행 방지) -->
+<update id="autoElevateToShipping">
+    UPDATE TB_ORDER
+    SET ORDER_STATUS = 'SHIPPING'
+    WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND ORDER_STATUS IN ('PAID','READY')
+</update>
+
+<!-- 지윤 26.07.28 추가: 자동동기화 스케줄러(DeliveryAutoSyncScheduler, 기본 비활성화)가 순회할 대상 -->
+<select id="selectOrdersNeedingSync" resultType="map">
+    SELECT o.ORDER_ID AS ORDER_ID, o.BIZ_NO AS BIZ_NO, d.COURIER_CODE AS COURIER_CODE, d.TRACKING_NO AS TRACKING_NO
+    FROM TB_ORDER o
+    JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+    WHERE o.ORDER_STATUS NOT IN ('DONE','CANCEL')
+      AND d.COURIER_CODE IS NOT NULL
+      AND d.TRACKING_NO IS NOT NULL
+</select>
+
 <!-- 지윤 26.07.27 추가: 배송조회 자동완료 시 TB_ORDER_DELIVERY 상태만 같이 맞춰줌 -->
 <update id="updateDeliveryStatusOnly">
     UPDATE TB_ORDER_DELIVERY

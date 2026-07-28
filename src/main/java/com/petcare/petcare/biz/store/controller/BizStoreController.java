@@ -218,16 +218,21 @@ public String trackDelivery(@RequestParam Long orderId, @RequestParam String cou
     if (biz == null) return "{\"status\":false,\"msg\":\"로그인이 필요합니다.\"}";
 
     String json = smartTrackerService.getTrackingInfo(courierCode, trackingNo);
-    try {
-        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
-        com.fasterxml.jackson.databind.JsonNode node = new ObjectMapper().readTree(json);
-        if (node.path("level").asInt(-1) == 6) {
-            bizStoreService.autoCompleteDeliveryIfDone(orderId, bizNo);
-        }
-    } catch (Exception e) {
-        //파싱 실패해도 배송조회 결과 자체는 그대로 반환하고, 자동 상태갱신만 스킵
+try {
+    Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+    com.fasterxml.jackson.databind.JsonNode node = new ObjectMapper().readTree(json);
+    int level = node.path("level").asInt(-1);
+    //지윤 26.07.28 수정: level==6(완료)일 때만 반응하던 것 -> level 2~5(이미 이동중)일 때도 반응하도록 확장
+    //PAID/READY에 머물러있는 주문이면 SHIPPING으로 자동승격 (이미 SHIPPING 이상이면 내부에서 자동 스킵)
+    if (level == 6) {
+        bizStoreService.autoCompleteDeliveryIfDone(orderId, bizNo);
+    } else if (level >= 2) {
+        bizStoreService.autoElevateToShippingIfNeeded(orderId, bizNo);
     }
-    return json;
+} catch (Exception e) {
+    //파싱 실패해도 배송조회 결과 자체는 그대로 반환하고, 자동 상태갱신만 스킵
+}
+return json;
 }
     
 

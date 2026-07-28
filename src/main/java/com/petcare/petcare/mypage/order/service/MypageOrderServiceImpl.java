@@ -51,12 +51,16 @@ public class MypageOrderServiceImpl implements MypageOrderService {
     }
 
    //지윤 26.07.20 수정: 사진 첨부 처리 추가. 리뷰 등록 성공하면 REVIEW_ID 재조회해서 이미지마다 FileService로 저장
-    //지윤 26.07.23 수정: 50자 미만 리뷰는 등록 자체를 막음 + 등록 성공 시 텍스트/포토 적립금 지급
+    //지윤 26.07.28 수정: 50자 미만이라고 등록 자체를 막던 것 -> 절대 최소치(10자)만 등록 차단하도록 완화.
+    //10자 이상~REVIEW_MIN_LENGTH(정책값, 기본 50) 미만이면 등록은 허용하되 포인트는 지급 안 함(0 반환).
+    //정상적으로 등록됐는데 포인트가 0인 경우와, 아예 등록 실패(null)를 구분해야 해서 반환값 의미가 달라짐:
+    //null = 등록 자체 실패(10자 미만/본인주문아님/중복작성), 0 이상 숫자 = 등록 성공(지급 포인트, 0일 수도 있음)
     @Override
     public Integer writeReview(Long memberNo, Long orderItemId, Double rating, String content,
                                 List<MultipartFile> images) throws Exception {
-        int minLength = Integer.parseInt(mypageOrderMapper.selectPolicyValue("REVIEW_MIN_LENGTH"));
-        if (content == null || content.trim().length() < minLength) {
+        final int ABSOLUTE_MIN_LENGTH = 10; //지윤 26.07.28 추가: 이 밑으로는 포인트 여부와 무관하게 등록 자체를 차단하는 절대 최소치
+        int pointMinLength = Integer.parseInt(mypageOrderMapper.selectPolicyValue("REVIEW_MIN_LENGTH"));
+        if (content == null || content.trim().length() < ABSOLUTE_MIN_LENGTH) {
             return null;
         }
 
@@ -72,6 +76,11 @@ public class MypageOrderServiceImpl implements MypageOrderService {
                     hasImage = true;
                 }
             }
+        }
+
+        //지윤 26.07.28 추가: 포인트 지급 최소 글자수(정책값)를 못 채웠으면 등록은 되지만 포인트는 0으로 처리
+        if (content.trim().length() < pointMinLength) {
+            return 0;
         }
 
         String policyKey = hasImage ? "REVIEW_PHOTO" : "REVIEW_TEXT";

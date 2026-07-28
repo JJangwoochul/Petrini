@@ -160,9 +160,11 @@
     <input type="hidden" name="rating" id="reviewFormRating">
 
     <textarea name="content" id="reviewModalContent" maxlength="500"
-              placeholder="상품은 어떠셨나요? 다른 분들에게 도움이 되는 후기를 남겨주세요."
-              oninput="document.getElementById('reviewCharCount').textContent = this.value.length"></textarea>
-    <div class="review-modal-counter"><span id="reviewCharCount">0</span>/500 <small style="color:var(--text-muted)">(50자 이상 작성 시 500P, 사진 첨부 시 1000P 적립)</small></div>
+          placeholder="상품은 어떠셨나요? 다른 분들에게 도움이 되는 후기를 남겨주세요."
+          oninput="onReviewContentInput(this)"></textarea>
+<div class="review-modal-counter"><span id="reviewCharCount">0</span>/500 <small style="color:var(--text-muted)">(50자 이상 작성 시 500P, 사진 첨부 시 1000P 적립)</small></div>
+<%-- 지윤 26.07.28 추가: 10자 미만일 때만 뜨는 실시간 경고 문구 --%>
+<div id="reviewMinLengthWarn" style="display:none; color:#E24B4A; font-size:12px; margin-top:4px;">최소 10자 이상 입력해 주세요.</div>
 
     <div class="review-modal-photo-section">
       <p class="review-modal-photo-label">사진 첨부 <span>(선택, 최대 5장)</span></p>
@@ -202,6 +204,7 @@
 
     document.getElementById('reviewModalContent').value = '';
     document.getElementById('reviewCharCount').textContent = '0';
+    document.getElementById('reviewMinLengthWarn').style.display = 'none';
     document.getElementById('reviewPhotoInput').value = '';
     document.getElementById('reviewPhotoPreview').innerHTML = '';
     document.getElementById('reviewPhotoHint').textContent = '사진 선택';
@@ -247,12 +250,22 @@
     });
   }
 
+  function onReviewContentInput(el) {
+    document.getElementById('reviewCharCount').textContent = el.value.length;
+    //지윤 26.07.28 추가: 10자 미만일 때만 실시간으로 빨간 경고문구 표시
+    document.getElementById('reviewMinLengthWarn').style.display = (el.value.trim().length < 10) ? 'block' : 'none';
+  }
+
   function validateReviewForm() {
     if (reviewRating === 0) { alert('별점을 선택해주세요.'); return false; }
     var content = document.getElementById('reviewModalContent').value.trim();
     if (!content) { alert('리뷰 내용을 입력해주세요.'); return false; }
-    //지윤 26.07.23 추가: 50자 미만이면 등록 안 되게 미리 막음 (서버에서도 이중 체크함)
-    if (content.length < 50) { alert('리뷰는 50자 이상 작성해야 적립금이 지급됩니다.\n(현재 ' + content.length + '자)'); return false; }
+    //지윤 26.07.28 수정: 10자 미만이면 제출 자체를 막음 (이미 입력창 아래 빨간 문구로 안내되고 있어서 별도 alert 없음)
+    if (content.length < 10) { return false; }
+    //지윤 26.07.28 추가: 10~49자면 포인트 미지급 대상임을 confirm 팝업으로 안내, 확인해야만 제출 진행
+    if (content.length < 50) {
+      return confirm('50자 미만이라 포인트 지급 대상이 아닙니다.\n이대로 진행하시겠습니까?');
+    }
     return true;
   }
 </script>

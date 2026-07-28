@@ -131,6 +131,14 @@ public interface BizStoreMapper {
     //이미 DONE이면 WHERE절에서 걸러져서 0건 UPDATE됨 -> DELIVERED_AT 중복 갱신 방지용 가드
     int autoCompleteOrderStatus(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
 
+    //지윤 26.07.28 추가: 배송조회 시 level 2~5(이동중)인데 아직 PAID/READY인 주문을 SHIPPING으로 자동승격
+    //이미 SHIPPING/DONE/CANCEL이면 WHERE절에서 0건 (역행 방지)
+    int autoElevateToShipping(@Param("orderId") Long orderId, @Param("bizNo") Long bizNo);
+
+    //지윤 26.07.28 추가: 자동동기화 스케줄러(DeliveryAutoSyncScheduler, 기본 비활성화)가 순회할 대상 목록
+    //조건: DONE/CANCEL 아니고, 송장번호+택배사코드 둘 다 등록된 주문 (전체 사업자 대상)
+    List<java.util.Map<String, Object>> selectOrdersNeedingSync();
+
     //지윤 26.07.27 추가: TB_ORDER_DELIVERY.DELIVERY_STATUS만 갱신 (courier/tracking 값은 안 건드림)
     int updateDeliveryStatusOnly(@Param("orderId") Long orderId, @Param("deliveryStatus") String deliveryStatus);
 

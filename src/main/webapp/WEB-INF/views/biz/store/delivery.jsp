@@ -329,8 +329,11 @@
       }
 
       var html = '<p style="font-sweight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
+//지윤 26.07.28 수정: level==6일 때만 안내문구 뜨던 것 -> level 2~5(이동중)일 때도 자동승격 안내 추가
 if (data.level === 6) {
   html += '<p style="color:#2BAB82;font-size:13px;margin-bottom:12px">✓ 실제 배송완료가 확인되어 주문상태가 자동으로 "배송완료"로 갱신되었습니다.</p>';
+} else if (data.level >= 2) {
+  html += '<p style="color:#2B7FE0;font-size:13px;margin-bottom:12px">✓ 배송 진행이 확인되어 주문상태가 자동으로 "배송중"으로 갱신되었을 수 있습니다.</p>';
 }
 if (data.trackingDetails && data.trackingDetails.length > 0) {
   html += '<table class="biz-table"><thead><tr><th>시각</th><th>위치</th><th>처리내용</th></tr></thead><tbody>';
@@ -341,8 +344,8 @@ if (data.trackingDetails && data.trackingDetails.length > 0) {
 } else {
   html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
 }
-//지윤 26.07.27 수정: 자동 3초 새로고침 제거 -> 배송완료 확인됐을 때만 사용자가 직접 누르는 새로고침 버튼 표시 (내용 다 읽을 시간 확보)
-if (data.level === 6) {
+//지윤 26.07.28 수정: 새로고침 버튼도 level 2 이상이면(자동승격 가능성 있으면) 노출되도록 조건 확장
+if (data.level >= 2) {
  html += '<button type="button" class="biz-btn-primary" onclick="refreshDeliveryList(this)" style="margin-top:8px">목록 새로고침</button>';
 }
 box.innerHTML = html;
@@ -381,13 +384,24 @@ function refreshDeliveryList(btn) {
     })
     .catch(function () {
       if (btn) { btn.textContent = '목록 새로고침'; }
-      alert('목록 갱신 중 오류가 발생했습니다.');
+      //지윤 26.07.28 수정: 서버가 꺼져있으면 15초 자동타이머가 계속 실패해서 alert가 반복적으로 뜨는 문제
+      //-> 사람이 버튼(btn 존재)을 직접 눌렀을 때만 alert, 자동 타이머(btn 없음)일 땐 콘솔에만 조용히 로그
+      if (btn) {
+        alert('목록 갱신 중 오류가 발생했습니다.');
+      } else {
+        console.log('자동 새로고침 실패 (서버 연결 안 됨) - 15초 후 재시도');
+      }
     });
 }
 
 function closeTrack() {
   document.getElementById('trackCard').style.display = 'none';
 }
+
+//지윤 26.07.28 추가: 15초마다 자동으로 요약카드+목록 새로고침 (스케줄러가 DB 바꾼 걸 화면에도 자동 반영)    --> 자동새로고침api 불러오는거 
+//setInterval(function () {
+  //refreshDeliveryList();
+ //}, 15000);
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

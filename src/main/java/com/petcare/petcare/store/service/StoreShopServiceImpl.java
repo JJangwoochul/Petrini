@@ -216,7 +216,13 @@ public boolean deleteProductQna(Long qnaId, Long memberNo) {
 @Override
 @Transactional
 public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrderId) {
-    String orderNo = "ORD-" + System.currentTimeMillis();
+//지윤 26.07.28 수정: "ORD-" + 밀리초 전체(예: ORD-1785219481269, 사람이 못 읽음)
+//-> "ORD" + 날짜(yyyyMMdd) + "-" + 밀리초 뒷 4자리(예: ORD20260728-4572)
+long ts = System.currentTimeMillis();
+String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date(ts));
+String suffix = String.format("%04d", ts % 10000);
+String orderNo = "ORD" + datePart + "-" + suffix;
+
 
     // 상품이 전부 같은 사업자(BIZ_NO)라고 가정 (현재 테스트데이터가 단일 셀러 구조라 첫 상품 기준으로 넣음)
     Long bizNo = p.getOrderItems().get(0).getBizNo();

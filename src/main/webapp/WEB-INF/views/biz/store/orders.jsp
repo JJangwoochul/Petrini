@@ -120,12 +120,13 @@
             <%-- 지윤 26.07.20 수정: value="paid" 등 소문자 임의값 -> value="PAID" 등 실제 DB(TB_ORDER.ORDER_STATUS) 코드값으로 통일 --%>
             <%-- 지윤 26.07.27 수정: DONE(배송완료) 옵션 제거 - 사람이 실수로 미리 눌러버리면 실제 배송상태(스마트택배 API)와 어긋나는 문제가 있어서
             배송완료는 이제 자동완료(level==6) 또는 아래 별도 "배송완료 수동처리" 버튼(확인창 있음)으로만 가능하게 분리함 --%>
-            <select id="dStatusSelect">
-            <option value="PAID">결제완료</option>
-            <option value="READY">배송준비</option>
-            <option value="SHIPPING">배송중</option>
-            <option value="CANCEL">취소/반품</option>
-            </select>
+            <%-- 지윤 26.07.28 수정: SHIPPING/CANCEL 옵션도 제거
+     - SHIPPING: 송장번호 입력 시 서버가 자동으로 전환해주므로 수동 선택 불필요
+     - CANCEL: 취소신청(배송전취소 탭) -> [취소승인]/[취소반려] 버튼으로 이미 별도 플로우 있음, 여기서 중복으로 안 둠 --%>
+<select id="dStatusSelect">
+<option value="PAID">결제완료</option>
+<option value="READY">배송준비</option>
+</select>
           </div>
           <div>
             <label>택배사</label>
@@ -237,14 +238,14 @@ function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
         //지윤 26.07.20 수정: 배송지 - 원본은 o.address 문자열 하나, 지금은 ZIP_CODE+ADDR1+ADDR2를 조합해서 표시
         document.getElementById('dAddress').textContent       = (o.zipCode ? '[' + o.zipCode + '] ' : '') + o.addr1 + ' ' + (o.addr2 || '');
 
-        //지윤 26.07.27 수정: select에 DONE 옵션을 뺐기 때문에, 이미 DONE인 주문은 표시용 임시 옵션을 하나 끼워넣어서 값이 정확히 보이게 함
-        //(선택 불가능하게 disabled 처리는 아래에서 별도로 함, 이건 순수 표시 보정용)
+        //지윤 26.07.28 수정: select에 이제 PAID/READY만 남음. SHIPPING/DONE/CANCEL 상태인 주문을 열면
+//표시용 임시 옵션을 하나 끼워넣어서 값이 정확히 보이게 함 (선택 불가 disabled 처리는 아래 별도)
 var dSelect = document.getElementById('dStatusSelect');
-var doneOpt = dSelect.querySelector('option[value="DONE"]');
-if (o.orderStatus === 'DONE' && !doneOpt) {
-  doneOpt = document.createElement('option');
-  doneOpt.value = 'DONE'; doneOpt.textContent = '배송완료';
-  dSelect.appendChild(doneOpt);
+var extraLabels = { SHIPPING: '배송중', DONE: '배송완료', CANCEL: '취소/반품' };
+if (extraLabels[o.orderStatus] && !dSelect.querySelector('option[value="' + o.orderStatus + '"]')) {
+  var extraOpt = document.createElement('option');
+  extraOpt.value = o.orderStatus; extraOpt.textContent = extraLabels[o.orderStatus];
+  dSelect.appendChild(extraOpt);
 }
 dSelect.value = o.orderStatus;
 
@@ -277,12 +278,13 @@ document.getElementById('dTrackingNo').value    = o.trackingNo || '';
 document.getElementById('claimInfoBox').style.display = isPending ? 'block' : 'none';
 document.getElementById('approveBtn').style.display = isPending ? 'inline-block' : 'none';
 document.getElementById('rejectBtn').style.display = isPending ? 'inline-block' : 'none';
-//지윤 26.07.27 수정: 이미 DONE이면 상태변경 저장 자체를 막음 (DONE 옵션이 select에 없어서 실수로 다른 값 저장되는 것 방지)
-var isDone = (o.orderStatus === 'DONE');
-document.getElementById('saveBtn').style.display = (isPending || isDone) ? 'none' : 'inline-block';
-document.getElementById('dStatusSelect').disabled = isDone;
-document.getElementById('dCarrier').disabled = isDone;
-document.getElementById('dTrackingNo').disabled = isDone;
+//지윤 26.07.28 수정: isDone -> isLocked로 확장. PAID/READY가 아니면(SHIPPING/DONE/CANCEL) 전부 읽기전용으로 잠금
+var isLocked = !(o.orderStatus === 'PAID' || o.orderStatus === 'READY');
+document.getElementById('saveBtn').style.display = (isPending || isLocked) ? 'none' : 'inline-block';
+document.getElementById('dStatusSelect').disabled = isLocked;
+document.getElementById('dCarrier').disabled = isLocked;
+document.getElementById('dTrackingNo').disabled = isLocked;
+
 //지윤 26.07.27 추가: 배송완료 수동처리 버튼은 SHIPPING 상태일 때만 노출 (READY/PAID면 아직 발송 전이라 의미없고, 이미 DONE이면 중복처리 방지)
 document.getElementById('forceCompleteBtn').style.display = (o.orderStatus === 'SHIPPING') ? 'inline-block' : 'none';
 if (isPending) {

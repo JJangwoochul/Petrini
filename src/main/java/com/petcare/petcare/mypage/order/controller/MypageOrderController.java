@@ -44,9 +44,9 @@ public class MypageOrderController {
      MemberVO member = (MemberVO) session.getAttribute("memberInfo");
      if (member == null) return "redirect:/login";
 
-     //지윤 26.07.23 수정: 반환타입 변경에 맞춰 처리. earnPoint가 null이면 실패(50자 미만/중복작성/본인주문아님)
+     //지윤 26.07.28 수정: earnPoint == 0(등록은 성공했지만 50자 미만이라 포인트만 미지급)과 null(등록 자체 실패)을 구분해서 안내
      Integer earnPoint = mypageOrderService.writeReview(member.getMemberNo(), orderItemId, rating, content, images);
-     if (earnPoint != null) {
+     if (earnPoint != null && earnPoint > 0) {
          rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다. " + earnPoint + "P가 적립되었습니다.");
          //지윤 26.07.23 추가: 세션의 포인트 잔액도 즉시 갱신 (로그아웃 안 해도 마이홈에 바로 반영되게)
          MemberVO sessionMember = (MemberVO) session.getAttribute("memberInfo");
@@ -55,8 +55,12 @@ public class MypageOrderController {
              sessionMember.setPointBalance(current + earnPoint);
              session.setAttribute("memberInfo", sessionMember);
          }
+     } else if (earnPoint != null) {
+         //지윤 26.07.28 추가: earnPoint == 0인 경우 (10자 이상이지만 50자 미만이라 포인트 미지급, 등록 자체는 성공)
+         rttr.addFlashAttribute("msg", "리뷰가 등록되었습니다. (50자 미만으로 작성되어 포인트는 지급되지 않았습니다.)");
      } else {
-         rttr.addFlashAttribute("errorMsg", "리뷰는 50자 이상 작성해야 하며, 이미 작성했거나 본인 주문이 아니면 등록할 수 없습니다.");
+         //지윤 26.07.28 수정: 절대 최소치가 10자로 완화됨에 따라 문구 수정
+         rttr.addFlashAttribute("errorMsg", "리뷰는 최소 10자 이상 작성해야 하며, 이미 작성했거나 본인 주문이 아니면 등록할 수 없습니다.");
      }
      return "redirect:/mypage/orders?statusCd=DONE";
  }
