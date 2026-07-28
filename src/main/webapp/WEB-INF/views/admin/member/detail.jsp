@@ -16,84 +16,84 @@
 <%@ include file="/WEB-INF/views/admin/common/sidebar.jsp" %>
 
 <style>
-/* ── 회원 상세 전용 ── */
-.mem-profile-card {
-    background:#fff; border:1px solid #E4E6ED; border-radius:12px;
-    padding:28px; display:flex; gap:24px; align-items:flex-start;
-    margin-bottom:20px;
-}
-.mem-avatar {
-    width:88px; height:88px; border-radius:50%;
-    object-fit:cover; border:3px solid #E4E6ED; flex-shrink:0;
-}
-.mem-profile-info { flex:1; }
-.mem-name   { font-size:22px; font-weight:800; color:#1A1A2E; margin-bottom:6px; }
-.mem-email  { font-size:14px; color:#999; margin-bottom:12px; }
-.mem-badges { display:flex; gap:8px; flex-wrap:wrap; }
-.mem-badge  { font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; }
-.mb-role-user  { background:#EEF2FF; color:#3B5BDB; }
-.mb-role-biz   { background:#EAF7F2; color:#1F8464; }
-.mb-role-admin { background:#FEE2E2; color:#DC2626; }
-.mb-active  { background:#DCFCE7; color:#16A34A; }
-.mb-banned  { background:#FEE2E2; color:#DC2626; }
-.mem-profile-actions { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+    /* ── 회원 상세 전용 ── */
+    .mem-profile-card {
+        background:#fff; border:1px solid #E4E6ED; border-radius:12px;
+        padding:28px; display:flex; gap:24px; align-items:flex-start;
+        margin-bottom:20px;
+    }
+    .mem-avatar {
+        width:88px; height:88px; border-radius:50%;
+        object-fit:cover; border:3px solid #E4E6ED; flex-shrink:0;
+    }
+    .mem-profile-info { flex:1; }
+    .mem-name   { font-size:22px; font-weight:800; color:#1A1A2E; margin-bottom:6px; }
+    .mem-email  { font-size:14px; color:#999; margin-bottom:12px; }
+    .mem-badges { display:flex; gap:8px; flex-wrap:wrap; }
+    .mem-badge  { font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; }
+    .mb-role-user  { background:#EEF2FF; color:#3B5BDB; }
+    .mb-role-biz   { background:#EAF7F2; color:#1F8464; }
+    .mb-role-admin { background:#FEE2E2; color:#DC2626; }
+    .mb-active  { background:#DCFCE7; color:#16A34A; }
+    .mb-banned  { background:#FEE2E2; color:#DC2626; }
+    .mem-profile-actions { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
 
-/* 섹션 그리드 */
-.mem-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
-.mem-info-section { background:#fff; border:1px solid #E4E6ED; border-radius:12px; padding:22px; }
-.mem-info-section.full { grid-column:1/-1; }
-.mis-title {
-    font-size:14px; font-weight:800; color:#1A1A2E;
-    margin:0 0 16px; padding-bottom:12px;
-    border-bottom:1px solid #E4E6ED;
-    display:flex; align-items:center; gap:8px;
-}
-.mis-title svg { width:16px; height:16px; stroke:#3B5BDB; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-.mis-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #F5F5F5; font-size:14px; }
-.mis-row:last-child { border-bottom:none; }
-.mis-row label { color:#999; font-size:13px; }
-.mis-row span  { color:#1A1A2E; font-weight:600; }
+    /* 섹션 그리드 */
+    .mem-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+    .mem-info-section { background:#fff; border:1px solid #E4E6ED; border-radius:12px; padding:22px; }
+    .mem-info-section.full { grid-column:1/-1; }
+    .mis-title {
+        font-size:14px; font-weight:800; color:#1A1A2E;
+        margin:0 0 16px; padding-bottom:12px;
+        border-bottom:1px solid #E4E6ED;
+        display:flex; align-items:center; gap:8px;
+    }
+    .mis-title svg { width:16px; height:16px; stroke:#3B5BDB; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .mis-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #F5F5F5; font-size:14px; }
+    .mis-row:last-child { border-bottom:none; }
+    .mis-row label { color:#999; font-size:13px; }
+    .mis-row span  { color:#1A1A2E; font-weight:600; }
 
-/* 포인트 관리 */
-.point-summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
-.point-box { background:#F8F9FF; border:1px solid #E4E6ED; border-radius:8px; padding:16px; text-align:center; }
-.point-box .pb-label { font-size:12px; color:#999; margin-bottom:6px; }
-.point-box .pb-val   { font-size:20px; font-weight:800; color:#3B5BDB; }
-.point-box .pb-unit  { font-size:12px; color:#888; }
-.point-input-row { display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
-.point-input-group { display:flex; flex-direction:column; gap:5px; flex:1; }
-.point-input-group label { font-size:12px; font-weight:600; color:#555; }
-.point-input-group select,
-.point-input-group input {
-    border:1px solid #E4E6ED; border-radius:8px;
-    padding:9px 12px; font-size:14px; color:#1A1A2E;
-    outline:none; font-family:inherit;
-}
-.point-input-group select:focus,
-.point-input-group input:focus { border-color:#3B5BDB; }
-.point-input-group input { width:100%; box-sizing:border-box; }
-.btn-point-apply {
-    padding:9px 20px; border:none; border-radius:8px;
-    background:#3B5BDB; color:#fff;
-    font-size:13px; font-weight:700; cursor:pointer;
-    white-space:nowrap; flex-shrink:0;
-    transition:background .15s;
-}
-.btn-point-apply:hover { background:#2F4AC7; }
-.point-history { border:1px solid #E4E6ED; border-radius:8px; overflow:hidden; }
+    /* 포인트 관리 */
+    .point-summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+    .point-box { background:#F8F9FF; border:1px solid #E4E6ED; border-radius:8px; padding:16px; text-align:center; }
+    .point-box .pb-label { font-size:12px; color:#999; margin-bottom:6px; }
+    .point-box .pb-val   { font-size:20px; font-weight:800; color:#3B5BDB; }
+    .point-box .pb-unit  { font-size:12px; color:#888; }
+    .point-input-row { display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; }
+    .point-input-group { display:flex; flex-direction:column; gap:5px; flex:1; }
+    .point-input-group label { font-size:12px; font-weight:600; color:#555; }
+    .point-input-group select,
+    .point-input-group input {
+        border:1px solid #E4E6ED; border-radius:8px;
+        padding:9px 12px; font-size:14px; color:#1A1A2E;
+        outline:none; font-family:inherit;
+    }
+    .point-input-group select:focus,
+    .point-input-group input:focus { border-color:#3B5BDB; }
+    .point-input-group input { width:100%; box-sizing:border-box; }
+    .btn-point-apply {
+        padding:9px 20px; border:none; border-radius:8px;
+        background:#3B5BDB; color:#fff;
+        font-size:13px; font-weight:700; cursor:pointer;
+        white-space:nowrap; flex-shrink:0;
+        transition:background .15s;
+    }
+    .btn-point-apply:hover { background:#2F4AC7; }
+    .point-history { border:1px solid #E4E6ED; border-radius:8px; overflow:hidden; }
 
-/* 등급 변경 셀렉트 */
-.grade-select-row { display:flex; gap:10px; align-items:center; }
-.grade-select-row select {
-    flex:1; border:1px solid #E4E6ED; border-radius:8px;
-    padding:9px 12px; font-size:14px; color:#1A1A2E; outline:none;
-}
-.grade-select-row select:focus { border-color:#3B5BDB; }
+    /* 등급 변경 셀렉트 */
+    .grade-select-row { display:flex; gap:10px; align-items:center; }
+    .grade-select-row select {
+        flex:1; border:1px solid #E4E6ED; border-radius:8px;
+        padding:9px 12px; font-size:14px; color:#1A1A2E; outline:none;
+    }
+    .grade-select-row select:focus { border-color:#3B5BDB; }
 
-/* 위험 영역 */
-.danger-zone { border:1px solid #FCA5A5; border-radius:8px; padding:18px; background:#FFF5F5; }
-.danger-zone p { font-size:13px; color:#DC2626; margin:0 0 12px; line-height:1.6; }
-.danger-btns { display:flex; gap:10px; }
+    /* 위험 영역 */
+    .danger-zone { border:1px solid #FCA5A5; border-radius:8px; padding:18px; background:#FFF5F5; }
+    .danger-zone p { font-size:13px; color:#DC2626; margin:0 0 12px; line-height:1.6; }
+    .danger-btns { display:flex; gap:10px; }
 </style>
 
 <main class="adm-main">
@@ -235,7 +235,8 @@
         </div>
         <%-- 등급 변경 — 2026-07-21 박유정 STEP 9 DB 연동 --%>
         <div class="mem-info-section">
-            <div class="mis-title">
+            <!--HYJ 26.07.28 임시주석 후 활동이력으로 대체-->
+            <%-- <div class="mis-title">
                 <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 등급 변경
             </div>
@@ -264,7 +265,15 @@
                 · 브론즈: 기본 등급<br>
                 · 실버: 1만 포인트 이상<br>
                 · 골드: 5만 포인트 이상
+            </div> --%>
+            <div class="mis-title">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                활동 이력
             </div>
+            <div class="mis-row"><label>게시글 누적</label><span>${member.posts != null ? member.posts : 0}건</span></div>
+            <div class="mis-row"><label>댓글 누적</label><span>${member.comments != null ? member.comments : 0}건</span></div>
+            <div class="mis-row"><label>관리자 게시글 삭제 누적</label><span>${member.adminPostDelCount != null ? member.adminPostDelCount : 0}건</span></div>
+            <div class="mis-row"><label>관리자 댓글 삭제 누적</label><span>${member.adminCommentDelCount != null ? member.adminCommentDelCount : 0}건</span></div>
         </div>
         <%-- 포인트 관리 — 2026-07-21 박유정 STEP 10 DB 연동 --%>
         <div class="mem-info-section">

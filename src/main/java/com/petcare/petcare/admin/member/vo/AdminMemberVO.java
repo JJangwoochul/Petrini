@@ -57,5 +57,10 @@ public class AdminMemberVO {
     // ── 관리자 상세 포인트 요약 / 2026-07-21 STEP 10 ──
     private Integer totalEarnPoint;  // 총 적립 (TB_POINT EARN 합계)
     private Integer totalUsePoint;   // 총 사용 (TB_POINT USE 합계)
-    
+
+    //HYJ 26.07.28 활동누적
+    private int posts;                  //— TB_MEMBER.POST_COUNT
+    private int comments;               //— TB_MEMBER.COMMENT_COUNT
+    private int adminPostDelCount;      //— TB_MEMBER.ADMIN_POST_DEL_COUNT
+    private int adminCommentDelCount;   //— TB_MEMBER.ADMIN_COMMENT_DEL_COUNT
 }

@@ -127,6 +127,11 @@
       M.JOIN_DATE       AS joinDate,
       M.LAST_LOGIN_DATE AS lastLoginDate,
       M.SUSPEND_END_DATE AS suspendEndDate,
+      <!--HYJ 26.07.28 활동 이력-->
+      M.POST_COUNT       AS posts,
+      M.COMMENT_COUNT    AS comments,
+      M.ADMIN_POST_DEL_COUNT,
+      M.ADMIN_COMMENT_DEL_COUNT,
       CASE
         WHEN EXISTS (
           SELECT 1 FROM TB_BUSINESS B
