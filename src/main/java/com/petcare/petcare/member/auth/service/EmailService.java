@@ -88,12 +88,33 @@ public class EmailService {
      * HYJ 26.07.28 사업자 승인 알림
      */
     public void sendApproveNotice(String to, String bizName) throws MessagingException {
+
         String subject = "[PetCare] 사업자 승인 완료";
         String body = ""
             + "<div style='max-width:480px; margin:0 auto; padding:32px;'>"
             + "  <h2 style='color:#2BAB82;'>사업자 승인 완료</h2>"
             + "  <p>" + bizName + " 업체가 승인되었습니다.</p>"
             + "  <p>지금부터 사업자 페이지에서 업체를 관리할 수 있습니다.</p>"
+            + "</div>";
+
+        send(to, subject, body);
+    }
+
+    /**
+     * HYJ 26.07.28 사업자 반려 알림
+     */
+    public void sendRejectNotice(String to, String bizName, String reason) throws MessagingException {
+        String subject = "[PetCare] 사업자 등록 반려 안내";
+        String body = ""
+            + "<div style='max-width:480px; margin:0 auto; padding:32px;'>"
+            + "  <h2 style='color:#DC2626;'>사업자 등록 반려</h2>"
+            + "  <p><b>" + bizName + "</b> 업체 등록이 반려되었습니다.</p>"
+            + "  <div style='background:#FEF2F2; border:1px solid #FECACA; border-radius:8px;"
+            + "  padding:16px; margin:16px 0;'>"
+            + "    <p style='color:#DC2626; font-weight:600; margin:0 0 4px;'>반려 사유</p>"
+            + "    <p style='color:#555; margin:0;'>" + reason + "</p>"
+            + "  </div>"
+            + "  <p style='color:#999; font-size:13px;'>수정 후 다시 신청하실 수 있습니다.</p>"
             + "</div>";
 
         send(to, subject, body);

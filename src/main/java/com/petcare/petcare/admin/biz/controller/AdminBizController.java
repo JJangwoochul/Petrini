@@ -156,13 +156,27 @@ public class AdminBizController extends AdminBaseController {
     @PostMapping("/reject")
     public String rejectBiz(HttpSession session,
                             @RequestParam Long bizNo,
-                            @RequestParam String rejectReason,
+                             @RequestParam String bizId,
+                             @RequestParam String rejectReason,
                             RedirectAttributes redirectAttr) {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
         try {
             adminBizService.rejectBiz(bizNo, rejectReason);
+
+            //HYJ 26.07.28 이메일 안내
+            BusinessVO existing = mypageBizMapper.selectBusinessByBizId(bizId);
+            String email = existing.getEmail();
+            if (email == null || email.isEmpty()) {
+                MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(existing.getBizId());
+                if (found != null) {
+                    email = found.getEmail();
+                }
+            }
+
+            emailService.sendRejectNotice(email, existing.getBizName(), rejectReason);
+
             redirectAttr.addFlashAttribute("successMsg", "사업자 신청이 반려되었습니다.");
             return "redirect:/admin/biz/list?status=REJECTED";
         } catch (IllegalArgumentException e) {

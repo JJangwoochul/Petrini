@@ -179,6 +179,8 @@
                 <form method="post" action="${contextPath}/admin/biz/approve" class="approve-btn-row"
                       onsubmit="return confirm('${biz.bizName} 신청을 승인하시겠습니까?')">
                     <input type="hidden" name="bizNo" value="${biz.bizNo}">
+                    <!--HYJ 26.07.28 메일조회-->
+                    <input type="hidden" name="bizId" value="${biz.bizId}">
                     <button type="submit" class="btn-approve">
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                         승인하기
@@ -187,6 +189,8 @@
                 <form method="post" action="${contextPath}/admin/biz/reject" class="approve-btn-row" style="margin-top:8px"
                       onsubmit="return confirm('반려 처리하시겠습니까?')">
                     <input type="hidden" name="bizNo" value="${biz.bizNo}">
+                    <!--HYJ 26.07.28 메일조회-->
+                    <input type="hidden" name="bizId" value="${biz.bizId}">
                     <div class="approve-reject-area">
                         <label>반려 사유 (필수)</label>
                         <textarea name="rejectReason" required placeholder="반려 사유를 입력하세요"></textarea>
