@@ -290,6 +290,8 @@
 .bs-badge.bs-done  { background: #DCFCE7; color: #16A34A; }
 .bs-badge.bs-cancel{ background: #FEE2E2; color: #DC2626; }
 .bs-badge.bs-empty { background: #F5F5F5; color: #aaa; border: 1px solid #E2E8E4; }
+/* 지윤 26.07.29 추가: 배송준비(READY) 전용 - 기존 4색(결제완료/배송중/배송완료/취소)과 안 겹치는 보라색 */
+.bs-badge.bs-prep  { background: #F3E8FF; color: #9333EA; }
 
 /* 버튼 */
 .biz-btn {

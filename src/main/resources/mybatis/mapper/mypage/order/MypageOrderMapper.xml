@@ -20,15 +20,17 @@
   테이블: TB_ORDER, TB_ORDER_ITEM, TB_FILE
 -->
 
-<!-- 지윤 26.07.20 추가: 회원 본인 주문 목록 (상태 필터 옵션) -->
+<!-- 지윤 26.07.29 수정: 배송조회(스마트택배 API) 버튼용으로 TB_ORDER_DELIVERY 조인해서 택배사코드/송장번호 추가 -->
 <select id="selectOrderList" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderVO">
-    SELECT ORDER_ID, ORDER_NO, ORDER_DATE, ORDER_STATUS, PAY_AMOUNT, CONFIRM_YN
-    FROM TB_ORDER
-    WHERE MEMBER_NO = #{memberNo}
+    SELECT o.ORDER_ID, o.ORDER_NO, o.ORDER_DATE, o.ORDER_STATUS, o.PAY_AMOUNT, o.CONFIRM_YN,
+           d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO
+    FROM TB_ORDER o
+    LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+    WHERE o.MEMBER_NO = #{memberNo}
     <if test="statusCd != null and statusCd != ''">
-        AND ORDER_STATUS = #{statusCd}
+        AND o.ORDER_STATUS = #{statusCd}
     </if>
-    ORDER BY ORDER_ID DESC
+    ORDER BY o.ORDER_ID DESC
 </select>
 
 <!-- 지윤 26.07.23 추가: 정책값 조회 (포인트 적립률/적립금 등, TB_POLICY.POLICY_TYPE='POINT' 고정) -->
@@ -62,14 +64,13 @@
     VALUES ((SELECT NVL(MAX(POINT_ID),0)+1 FROM TB_POINT), #{memberNo}, 'EARN', #{pointAmount}, #{balanceAfter}, #{reasonCd}, #{refType}, #{refId}, SYSDATE)
 </insert>
 
-<!-- 지윤 26.07.20 추가: 주문상세보기 1건 (결제내역/배송지 포함, 본인 주문 아니면 조회 자체가 안 됨) -->
-<!-- 지윤 26.07.20 수정: TB_ORDER_DELIVERY LEFT JOIN 추가 (택배사/송장번호, 등록 전이면 NULL) -->
+<!-- 지윤 26.07.29 수정: 배송조회(스마트택배 API) 버튼용 COURIER_CODE 추가 -->
 <select id="selectOrderDetail" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderVO">
     SELECT o.ORDER_ID, o.ORDER_NO, o.ORDER_DATE, o.ORDER_STATUS, o.PAY_AMOUNT,
            o.TOTAL_AMOUNT, o.DELIVERY_FEE, o.DISCOUNT_AMOUNT, o.POINT_USED,
            o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2, o.DELIVERY_MEMO,
            m.NICKNAME AS ORDERER_NAME,
-           d.COURIER_NAME, d.TRACKING_NO, d.READY_AT, d.SHIPPING_AT, d.DELIVERED_AT,
+           d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO, d.READY_AT, d.SHIPPING_AT, d.DELIVERED_AT,
            o.CLAIM_STATUS, o.CANCEL_REASON, o.REFUND_AMOUNT, o.REQUESTED_AT
 
     FROM TB_ORDER o

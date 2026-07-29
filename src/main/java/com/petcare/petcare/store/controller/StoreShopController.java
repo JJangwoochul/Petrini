@@ -43,6 +43,10 @@ public class StoreShopController {
     @Autowired
     private StoreShopService storeShopService;
 
+    //지윤 26.07.29 추가: 배송지록 기본배송지 조회용
+    @Autowired
+    private com.petcare.petcare.mypage.address.service.MypageAddressService mypageAddressService;
+
     //지윤 26.07.23 추가: 결제승인(confirm) API 호출용
     @Autowired
     private com.petcare.petcare.common.external.service.TossPaymentService tossPaymentService;
@@ -353,10 +357,22 @@ public String order(@RequestParam(required = false) Long productId,
 //지윤 26.07.10 보유 포인트 + 기본 배송지 실데이터 연동 (세션의 memberInfo에서 그대로 가져옴)
 MemberVO memberInfo = (MemberVO) session.getAttribute("memberInfo");
 model.addAttribute("memberPoint", memberInfo != null && memberInfo.getPointBalance() != null ? memberInfo.getPointBalance() : 0L);
-model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
-model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
-model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
-model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
+
+//지윤 26.07.29 수정: 배송지록(TB_MEMBER_ADDRESS)에 기본배송지가 있으면 그걸 우선 사용, 없으면 기존처럼 회원정보(TB_MEMBER) 주소로 fallback
+com.petcare.petcare.mypage.address.vo.MypageAddressVO defaultAddr = mypageAddressService.getDefaultAddress(memberNo);
+if (defaultAddr != null) {
+    model.addAttribute("memberRecvName", defaultAddr.getRecvName());
+    model.addAttribute("memberPhone", defaultAddr.getRecvPhone());
+    model.addAttribute("memberZipCode", defaultAddr.getZipCode());
+    model.addAttribute("memberAddr1", defaultAddr.getAddr1());
+    model.addAttribute("memberAddr2", defaultAddr.getAddr2());
+} else {
+    model.addAttribute("memberRecvName", memberInfo != null ? memberInfo.getMemberName() : "");
+    model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
+    model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
+    model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
+    model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
+}
 
     // 바로구매로 들어온 경우: 상품 1개만 주문서에 넘김
     if (productId != null) {

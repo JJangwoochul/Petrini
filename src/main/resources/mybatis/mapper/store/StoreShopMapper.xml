@@ -404,12 +404,17 @@ SELECT
         DISCOUNT_AMOUNT, POINT_USED, PAY_AMOUNT, ORDER_DATE,
         RECV_NAME, RECV_PHONE, ZIP_CODE, ADDR1, ADDR2, DELIVERY_MEMO, BIZ_NO, MEMBER_COUPON_ID
     ) VALUES (
-        (SELECT NVL(MAX(ORDER_ID), 0) + 1 FROM TB_ORDER), #{orderNo}, #{memberNo}, 'PAID',
+        #{orderId}, #{orderNo}, #{memberNo}, 'PAID',
         #{totalAmount}, #{deliveryFee}, #{discountAmount}, #{pointUsed}, #{payAmount},
         TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI'),
        #{recvName}, #{recvPhone}, #{zipCode}, #{addr1}, #{addr2}, #{deliveryMemo}, #{bizNo}, #{memberCouponId, jdbcType=NUMERIC}
     )
 </insert>
+
+<!-- 지윤 26.07.29 추가: 주문번호 뒷자리로 쓸 다음 ORDER_ID 미리 조회 (프로젝트 공통 PK 채번 규칙 재사용) -->
+<select id="selectNextOrderId" resultType="Long">
+    SELECT NVL(MAX(ORDER_ID), 0) + 1 FROM TB_ORDER
+</select>
 
 <select id="selectOrderIdByOrderNo" resultType="Long">
     SELECT ORDER_ID FROM TB_ORDER WHERE ORDER_NO = #{orderNo}

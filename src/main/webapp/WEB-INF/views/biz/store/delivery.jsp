@@ -100,9 +100,10 @@
                 <td>${empty d.trackingNo ? '-' : d.trackingNo}</td>
                 <td>
                   <c:choose>
-                    <c:when test="${d.orderStatus == 'READY'}"><span class="bs-badge bs-empty">배송준비</span></c:when>
-                    <c:when test="${d.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-empty">배송중</span></c:when>
-                    <c:when test="${d.orderStatus == 'DONE'}"><span class="bs-badge bs-empty">배송완료</span></c:when>
+                    <%-- 지윤 26.07.29 수정: 전부 bs-empty(회색)였던 것 -> orders.jsp와 색상 완전히 통일 (READY=보라, SHIPPING=파랑, DONE=초록) --%>
+                    <c:when test="${d.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
+                    <c:when test="${d.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
+                    <c:when test="${d.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
                   </c:choose>
                   <%-- 지윤 26.07.20 수정: isDelayed(d) JS 함수 계산 -> Service에서 이미 계산해서 넣어준 d.delayed(boolean) 그대로 사용 --%>
                   <c:if test="${d.delayed}"><span class="bs-badge bs-cancel" style="margin-left:4px">지연</span></c:if>

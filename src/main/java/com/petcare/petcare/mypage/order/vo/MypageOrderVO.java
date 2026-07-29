@@ -43,11 +43,11 @@ public class MypageOrderVO {
     private String addr1;
     private String addr2;
 
-    //지윤 26.07.20 추가: 배송정보 (TB_ORDER_DELIVERY, 등록 전이면 둘 다 null)
-    private String courierName;
-    private String trackingNo;
-
-    private String deliveryMemo;
+   //지윤 26.07.20 추가: 배송정보 (TB_ORDER_DELIVERY, 등록 전이면 둘 다 null)
+   private String courierName;
+   private String courierCode;   //지윤 26.07.29 추가: 마이페이지 배송조회(스마트택배 API 호출)용
+   private String trackingNo;
+   private String deliveryMemo;
 
     //지윤 26.07.21 추가: 배송 단계별 시각 (타임라인용)
     private java.util.Date readyAt;

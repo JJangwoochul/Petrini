@@ -11,18 +11,34 @@
 package com.petcare.petcare.mypage.point.controller;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.mypage.point.service.MypagePointService;
+import com.petcare.petcare.mypage.home.service.MypageHomeService;
 
 @Controller
 @RequestMapping("/mypage")
 public class MypagePointController {
 
+    @Autowired
+    private MypagePointService mypagePointService;
+
+    @Autowired
+    private MypageHomeService mypageHomeService;
+
     @GetMapping("/points")
-    public String points(HttpSession session) {
-        if (session.getAttribute("memberInfo") == null)
-            return "redirect:/login";
+    public String points(HttpSession session, Model model) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        model.addAttribute("pointBalance", mypagePointService.getPointBalance(member.getMemberNo()));
+        model.addAttribute("thisMonthEarned", mypagePointService.getThisMonthEarnedPoint(member.getMemberNo()));
+        model.addAttribute("pointHistory", mypagePointService.getPointHistory(member.getMemberNo()));
+        model.addAttribute("couponCount", mypageHomeService.countUsableCoupon(member.getMemberNo()));
         return "mypage/points";
     }
 }

@@ -125,13 +125,16 @@ public interface StoreShopMapper {
    //지윤 26.07.13 주문 저장 (결제 완료 시)
    //지윤 26.07.21 수정: 배송 요청사항(deliveryMemo) 파라미터 추가
    //지윤 26.07.23 수정: 사용한 회원쿠폰(memberCouponId) 파라미터 추가 (취소 시 복구용)
-   void insertOrder(@Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
-                      @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
-                      @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
-                      @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
-                      @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
-                      @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo,
-                      @Param("deliveryMemo") String deliveryMemo, @Param("memberCouponId") Long memberCouponId);
+   void insertOrder(@Param("orderId") Long orderId, @Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
+                  @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
+                  @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
+                  @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
+                  @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
+                  @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo,
+                  @Param("deliveryMemo") String deliveryMemo, @Param("memberCouponId") Long memberCouponId);
+
+//지윤 26.07.29 추가: 주문번호(ORDER_NO) 뒷자리로 쓸 다음 ORDER_ID를 미리 조회 (PK라 절대 안 겹침)
+Long selectNextOrderId();
 
     //지윤 26.07.13 방금 저장한 주문의 ORDER_ID 조회 (ORDER_NO는 UNIQUE라 이걸로 되짚어 조회)
     Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo);

@@ -94,9 +94,15 @@
   </div>
 
   <div class="order-section">
-    <h3>배송지 입력</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0">배송지 입력</h3>
+      <%-- 지윤 26.07.29 추가: 저장된 배송지 목록 모달 여는 버튼 (네이버페이 스타일) --%>
+      <button type="button" onclick="openAddressModal()" style="font-size:13px;color:var(--primary,#2BAB82);background:none;border:none;text-decoration:underline;cursor:pointer;">배송지 목록 &gt;</button>
+    </div>
     <div class="order-form-grid">
-      <div class="order-form-group"><label>받는 분</label><input type="text" id="recvName" value="${memberInfo.memberName}" placeholder="이름"></div>
+      
+    <%-- 지윤 26.07.29 수정: memberInfo.memberName 직접참조 -> Controller에서 배송지록 우선순위 계산해서 넘겨준 memberRecvName 사용 --%>
+  <div class="order-form-group"><label>받는 분</label><input type="text" id="recvName" value="${memberRecvName}" placeholder="이름"></div>
       <div class="order-form-group">
         <label>연락처</label>
         <div style="display:flex; gap:6px; align-items:center;">
@@ -128,6 +134,7 @@
       <div class="order-form-group full">
         <label>주소</label>
         <div class="addr-row">
+       <%-- 지윤 26.07.29 수정: memberInfo 직접참조 -> Controller에서 배송지록 우선순위 계산해서 넘겨준 값으로 원복 --%>
         <input type="text" id="orderZipcode" name="orderZipcode" value="${memberZipCode}" placeholder="우편번호" style="max-width:120px" readonly>
         <button type="button" class="addr-btn" id="btnSearchAddr">주소 검색</button>
         </div>
@@ -211,9 +218,43 @@
 </form>
 </div>
 
+<%-- 지윤 26.07.29 추가: 배송지 목록 모달 (네이버페이 스타일 - 목록조회 + 선택 + 신규등록) --%>
+<div id="addressModalBg" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:24px; max-width:480px; width:90%; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <strong style="font-size:16px;">배송지 목록</strong>
+      <button type="button" onclick="closeAddressModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#999;">&times;</button>
+    </div>
+
+    <button type="button" onclick="toggleNewAddressForm()"
+            style="width:100%; padding:12px; border:1.5px dashed #D8DEDA; border-radius:10px; background:#fff; color:#666; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:14px;">
+      + 배송지 신규입력
+    </button>
+
+    <%-- 지윤 26.07.29 추가: 신규 배송지 등록 폼 (평소엔 숨김) --%>
+    <div id="newAddressForm" style="display:none; border:1px solid #E2E8E4; border-radius:10px; padding:16px; margin-bottom:14px;">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input type="text" id="newRecvName" placeholder="받는 분" style="flex:1; border:1px solid #E2E8E4; border-radius:8px; padding:8px 10px; font-size:13px;">
+        <input type="text" id="newRecvPhone" placeholder="연락처 (010-0000-0000)" style="flex:1; border:1px solid #E2E8E4; border-radius:8px; padding:8px 10px; font-size:13px;">
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input type="text" id="newZipcode" placeholder="우편번호" readonly style="width:110px; border:1px solid #E2E8E4; border-radius:8px; padding:8px 10px; font-size:13px;">
+        <button type="button" onclick="searchNewAddress()" style="border:1px solid var(--primary,#2BAB82); color:var(--primary,#2BAB82); background:#fff; border-radius:8px; padding:8px 12px; font-size:13px; cursor:pointer;">주소 검색</button>
+      </div>
+      <input type="text" id="newAddr1" placeholder="기본 주소" readonly style="width:100%; box-sizing:border-box; border:1px solid #E2E8E4; border-radius:8px; padding:8px 10px; font-size:13px; margin-bottom:8px;">
+      <input type="text" id="newAddr2" placeholder="상세 주소" style="width:100%; box-sizing:border-box; border:1px solid #E2E8E4; border-radius:8px; padding:8px 10px; font-size:13px; margin-bottom:10px;">
+      <button type="button" onclick="saveNewAddress()" style="width:100%; padding:10px; background:var(--primary,#2BAB82); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">이 배송지 저장</button>
+    </div>
+
+    <div id="addressListBox"></div>
+  </div>
+</div>
+
 <!-- 카카오 우편번호 API -->
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
+//지윤 26.07.29 추가: 배송지 목록 모달 fetch 호출에 필요한 contextPath 선언 (누락되어 있었음)
+var contextPath = '${contextPath}';
 
 //지윤 26.07.09 추가: 쿠폰/포인트 선택 시 결제 예정 금액 실시간 계산
 var PRODUCT_TOTAL = ${productTotal};
@@ -375,5 +416,214 @@ document.getElementById('btnSearchAddr').addEventListener('click', function () {
     }
   }).open();
 });
+
+//지윤 26.07.29 추가: 배송지 목록 모달
+function openAddressModal() {
+  document.getElementById('newAddressForm').style.display = 'none';
+  document.getElementById('addressModalBg').style.display = 'flex';
+  loadAddressList();
+}
+function closeAddressModal() {
+  document.getElementById('addressModalBg').style.display = 'none';
+}
+
+//지윤 26.07.29 수정: 네이버페이 스타일로 재구성 - 이름 옆에 "기본배송지"+"✓ 선택됨" 표시, 우측에 수정/삭제/선택 버튼
+function loadAddressList() {
+  var box = document.getElementById('addressListBox');
+  box.innerHTML = '<p style="text-align:center;color:#999;padding:16px 0">불러오는 중...</p>';
+
+  fetch(contextPath + '/mypage/address/list')
+    .then(function (res) { return res.json(); })
+    .then(function (list) {
+      if (!list || list.length === 0) {
+        box.innerHTML = '<p style="text-align:center;color:#999;padding:16px 0">등록된 배송지가 없습니다.<br>위 "배송지 신규입력"으로 추가해보세요.</p>';
+        return;
+      }
+      var html = '';
+      list.forEach(function (a) {
+        var isDefault = a.isDefault === 'Y';
+        var esc = function (s) { return (s || '').replace(/'/g, "\\'"); };
+        var argStr = a.addrId + ", '" + esc(a.recvName) + "', '" + esc(a.recvPhone) + "', '" + esc(a.zipCode) + "', '" + esc(a.addr1) + "', '" + esc(a.addr2) + "'";
+
+        html += '<div style="border:1px solid #E2E8E4; border-radius:10px; padding:14px 16px; margin-bottom:10px;">';
+        html += '  <div style="display:flex; justify-content:space-between; align-items:flex-start;">';
+        html += '    <div>';
+        html += '      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">';
+        html += '        <b style="font-size:14px; color:' + (isDefault ? 'var(--primary,#2BAB82)' : '#333') + ';">' + a.recvName + '</b>';
+        if (isDefault) {
+          html += '        <span style="font-size:11px; background:var(--primary-light,#EAF7F2); color:var(--primary,#2BAB82); padding:2px 8px; border-radius:20px; font-weight:700;">기본배송지</span>';
+          html += '        <span style="font-size:12px; color:var(--primary,#2BAB82); font-weight:700;">✓ 선택됨</span>';
+        }
+        html += '      </div>';
+        html += '      <p style="font-size:13px; color:#666; margin:0 0 4px;">' + a.recvPhone + '</p>';
+        html += '      <p style="font-size:13px; color:#666; margin:0;">(' + a.zipCode + ') ' + a.addr1 + ' ' + (a.addr2 || '') + '</p>';
+        html += '    </div>';
+        html += '    <div style="display:flex; gap:6px; flex-shrink:0;">';
+        html += '      <button type="button" onclick="editAddress(' + argStr + ')" style="border:1px solid #D8DEDA; background:#fff; color:#666; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;">수정</button>';
+        html += '      <button type="button" onclick="removeAddress(' + a.addrId + ')" style="border:1px solid #D8DEDA; background:#fff; color:#666; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;">삭제</button>';
+        if (!isDefault) {
+          html += '      <button type="button" onclick="selectAddress(' + argStr + ')" style="border:1px solid var(--primary,#2BAB82); background:#fff; color:var(--primary,#2BAB82); font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:700;">선택</button>';
+        }
+        html += '    </div>';
+        html += '  </div>';
+        html += '</div>';
+      });
+      box.innerHTML = html;
+    })
+    .catch(function () {
+      box.innerHTML = '<p style="text-align:center;color:#E24B4A;padding:16px 0">목록을 불러오지 못했습니다.</p>';
+    });
+}
+
+//지윤 26.07.29 수정: "폼에 값 채우기"와 "서버에 기본배송지로 저장"을 분리
+//기존엔 새 배송지 저장 시 selectAddress(null, ...)을 불러서 addrId 없이 /select를 또 호출 -> 항상 실패하는 불필요한 API 호출이 있었음
+function fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2) {
+  document.getElementById('recvName').value = recvName;
+  var phoneParts = recvPhone.split('-');
+  if (phoneParts.length === 3) {
+    document.getElementById('phonePrefix').value = phoneParts[0];
+    document.getElementById('phoneMid').value = phoneParts[1];
+    document.getElementById('phoneEnd').value = phoneParts[2];
+  }
+  document.getElementById('orderZipcode').value = zipCode;
+  document.getElementById('orderAddr1').value = addr1;
+  document.getElementById('orderAddr2').value = addr2;
+}
+
+//지윤 26.07.29 수정: 목록에서 기존 배송지를 선택할 때만 호출 (진짜 addrId가 있을 때만 /select 호출)
+function selectAddress(addrId, recvName, recvPhone, zipCode, addr1, addr2) {
+  fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2);
+
+  fetch(contextPath + '/mypage/address/select', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'addrId=' + addrId
+  });
+
+  closeAddressModal();
+}
+
+//지윤 26.07.29 추가: 지금 수정 중인 배송지 ID (null이면 "신규 등록" 모드, 값 있으면 "수정" 모드)
+var editingAddrId = null;
+
+//지윤 26.07.29 수정: 신규 배송지 입력폼 토글 (신규 버튼으로 열 때는 수정모드 해제)
+function toggleNewAddressForm() {
+  editingAddrId = null;
+  document.getElementById('newRecvName').value = '';
+  document.getElementById('newRecvPhone').value = '';
+  document.getElementById('newZipcode').value = '';
+  document.getElementById('newAddr1').value = '';
+  document.getElementById('newAddr2').value = '';
+  var form = document.getElementById('newAddressForm');
+  form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+}
+
+//지윤 26.07.29 추가: "수정" 버튼 클릭 -> 같은 폼에 기존 값 채워서 열고, 수정모드로 전환
+function editAddress(addrId, recvName, recvPhone, zipCode, addr1, addr2) {
+  editingAddrId = addrId;
+  document.getElementById('newRecvName').value = recvName;
+  document.getElementById('newRecvPhone').value = recvPhone;
+  document.getElementById('newZipcode').value = zipCode;
+  document.getElementById('newAddr1').value = addr1;
+  document.getElementById('newAddr2').value = addr2;
+  document.getElementById('newAddressForm').style.display = 'block';
+}
+
+//지윤 26.07.29 추가: "삭제" 버튼 클릭 -> 확인창 거쳐서 삭제 후 목록 새로고침
+function removeAddress(addrId) {
+  if (!confirm('이 배송지를 삭제하시겠습니까?')) return;
+
+  fetch(contextPath + '/mypage/address/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'addrId=' + addrId
+  })
+    .then(function (res) { return res.text(); })
+    .then(function (result) {
+      if (result === 'OK') {
+        loadAddressList();
+      } else {
+        alert('삭제에 실패했습니다.');
+      }
+    });
+}
+
+//지윤 26.07.29 추가: 신규 배송지용 우편번호 검색 (기존 daum.Postcode 재사용, 대상만 다름)
+function searchNewAddress() {
+  if (typeof daum === 'undefined' || !daum.Postcode) {
+    alert('주소 검색 API를 불러오지 못했습니다.');
+    return;
+  }
+  new daum.Postcode({
+    oncomplete: function (data) {
+      var addr = (data.userSelectedType === 'R') ? data.roadAddress : data.jibunAddress;
+      document.getElementById('newZipcode').value = data.zonecode;
+      document.getElementById('newAddr1').value = addr;
+      document.getElementById('newAddr2').focus();
+    }
+  }).open();
+}
+
+//지윤 26.07.29 추가: 신규 배송지 저장 (항상 기본배송지로 등록 - 방금 입력한 게 앞으로 계속 쓰일 주소라는 의도)
+function saveNewAddress() {
+  var recvName = document.getElementById('newRecvName').value.trim();
+  var recvPhone = document.getElementById('newRecvPhone').value.trim();
+  var zipCode = document.getElementById('newZipcode').value.trim();
+  var addr1 = document.getElementById('newAddr1').value.trim();
+  var addr2 = document.getElementById('newAddr2').value.trim();
+
+  if (!recvName || !recvPhone || !zipCode || !addr1) {
+    alert('받는 분 / 연락처 / 주소를 모두 입력해주세요.');
+    return;
+  }
+
+  var formData = new URLSearchParams();
+  formData.set('recvName', recvName);
+  formData.set('recvPhone', recvPhone);
+  formData.set('zipCode', zipCode);
+  formData.set('addr1', addr1);
+  formData.set('addr2', addr2);
+  formData.set('setDefault', 'true');
+
+  fetch(contextPath + '/mypage/address/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formData.toString()
+  })
+   .then(function (res) {
+  return res.text();
+})
+.then(function (result) {
+
+  console.log('배송지 저장 결과:', result);
+
+  if (result === 'OK') {
+
+    fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2);
+    closeAddressModal();
+
+    document.getElementById('newRecvName').value = '';
+    document.getElementById('newRecvPhone').value = '';
+    document.getElementById('newZipcode').value = '';
+    document.getElementById('newAddr1').value = '';
+    document.getElementById('newAddr2').value = '';
+
+  } else if (result === 'LOGIN_REQUIRED') {
+
+    alert('로그인 세션이 없습니다.');
+
+  } else {
+
+    alert('저장 실패: ' + result);
+
+  }
+})
+.catch(function(error) {
+
+  console.error('배송지 저장 오류:', error);
+  alert('배송지 저장 중 오류가 발생했습니다.');
+
+});
+}
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

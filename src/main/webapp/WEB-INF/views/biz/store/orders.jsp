@@ -71,7 +71,7 @@
                 <td>
                   <c:choose>
                     <c:when test="${o.orderStatus == 'PAID'}"><span class="bs-badge bs-wait">결제완료</span></c:when>
-                    <c:when test="${o.orderStatus == 'READY'}"><span class="bs-badge bs-empty">배송준비</span></c:when>
+                    <c:when test="${o.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
                     <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
                     <c:when test="${o.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
                     <c:when test="${o.orderStatus == 'CANCEL'}"><span class="bs-badge bs-cancel">취소/반품</span></c:when>

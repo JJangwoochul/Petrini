@@ -86,10 +86,13 @@
                                 <fmt:formatNumber value="${it.totalPrice}" pattern="#,###"/>원
                             </div>
                         </div>
-                        <%-- 지윤 26.07.20 추가: 상품별 액션 버튼 (교환/반품, 리뷰작성, 재구매). "배송조회"/"환불내역"은 주문 전체에 대한 거라 카드 하단에 그대로 둠 --%>
-                        <div class="order-item-actions" style="display:flex;justify-content:flex-end;gap:8px;padding:0 0 14px">
-                            <c:if test="${o.orderStatus == 'DONE'}">
-                                <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
+                       <div class="order-item-actions" style="display:flex;justify-content:flex-end;gap:8px;padding:0 0 14px">
+                       <%-- 지윤 26.07.29 수정: 카드 하단(order-card-foot)에 있던 배송조회 버튼을 교환/반품·재구매랑 같은 줄로 이동 --%>
+                       <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'DONE'}">
+                       <button class="btn-sm" onclick="trackDelivery(${o.orderId}, '${o.courierCode}', '${o.trackingNo}')">배송조회</button>
+                        </c:if>
+                       <c:if test="${o.orderStatus == 'DONE'}">
+                           <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
                                 <c:choose>
                                     <c:when test="${it.reviewed}">
                                         <button class="btn-sm" disabled>리뷰완료</button>
@@ -107,9 +110,7 @@
                          "교환/반품"/"리뷰작성"/"재구매"는 위 상품 줄 안으로 옮김 --%>
                     <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'CANCEL' || o.orderStatus == 'DONE'}">
                         <div class="order-card-foot">
-                            <c:if test="${o.orderStatus == 'SHIPPING'}">
-                                <button class="btn-sm" onclick="alert('배송조회 기능은 준비 중입니다.')">배송조회</button>
-                            </c:if>
+                        <%-- 지윤 26.07.29 수정: 배송조회 버튼은 order-item-actions(상품 줄)로 이동함, 여기선 제거 --%>
                             <c:if test="${o.orderStatus == 'CANCEL'}">
                                 <button class="btn-sm" onclick="alert('환불내역 기능은 준비 중입니다.')">환불내역</button>
                             </c:if>
@@ -183,7 +184,21 @@
   </form>
 </div>
 
+<%-- 지윤 26.07.29 추가: 배송조회 결과 모달 (사업자센터 배송관리와 동일한 방식, 화면만 구매자용으로 간단하게) --%>
+<div id="trackModalBg" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:24px; max-width:480px; width:90%; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <strong style="font-size:16px;">실시간 배송조회</strong>
+      <button type="button" onclick="closeTrackModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#999;">&times;</button>
+    </div>
+    <div id="trackModalBody"></div>
+  </div>
+</div>
+
 <script>
+  //지윤 26.07.29 추가: 배송조회 fetch 호출에 필요한 contextPath JS 변수 선언 (누락되어 있었음)
+  var contextPath = '${contextPath}';
+
   //지윤 26.07.20 수정: 모달이 곧 form이라 hidden form 복사 로직 삭제, submit 직전 검증만 남김
   var reviewRating = 0;
 
@@ -267,6 +282,43 @@
       return confirm('50자 미만이라 포인트 지급 대상이 아닙니다.\n이대로 진행하시겠습니까?');
     }
     return true;
+  }
+
+  //지윤 26.07.29 추가: 마이페이지 배송조회 - 사업자센터 delivery.jsp와 동일한 패턴 (levelLabel 매핑, 조회결과 표시)
+  var levelLabel = { 1: '배송준비중', 2: '집화완료', 3: '배송중', 4: '지점도착', 5: '배송출발', 6: '배송완료' };
+
+  function trackDelivery(orderId, courierCode, trackingNo) {
+    document.getElementById('trackModalBody').innerHTML = '<p style="text-align:center;color:#999;padding:20px 0">조회 중...</p>';
+    document.getElementById('trackModalBg').style.display = 'flex';
+
+    fetch(contextPath + '/mypage/orders/track?orderId=' + orderId + '&courierCode=' + encodeURIComponent(courierCode) + '&trackingNo=' + encodeURIComponent(trackingNo))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var box = document.getElementById('trackModalBody');
+        if (!data || data.status === false || data.result === 'N') {
+          box.innerHTML = '<p style="color:#E24B4A">배송 정보를 조회할 수 없습니다. (' + (data && data.msg ? data.msg : '알 수 없는 운송장번호') + ')</p>';
+          return;
+        }
+
+        var html = '<p style="font-weight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
+        if (data.trackingDetails && data.trackingDetails.length > 0) {
+          html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="border-bottom:1px solid #E4E6ED"><th style="text-align:left;padding:8px 4px">시각</th><th style="text-align:left;padding:8px 4px">위치</th><th style="text-align:left;padding:8px 4px">처리내용</th></tr></thead><tbody>';
+          data.trackingDetails.forEach(function (d) {
+            html += '<tr style="border-bottom:1px solid #F0F2F0"><td style="padding:8px 4px">' + (d.timeString || '-') + '</td><td style="padding:8px 4px">' + (d.where || '-') + '</td><td style="padding:8px 4px">' + (d.kind || '-') + '</td></tr>';
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
+        }
+        box.innerHTML = html;
+      })
+      .catch(function () {
+        document.getElementById('trackModalBody').innerHTML = '<p style="color:#E24B4A">조회 중 오류가 발생했습니다.</p>';
+      });
+  }
+
+  function closeTrackModal() {
+    document.getElementById('trackModalBg').style.display = 'none';
   }
 </script>
 

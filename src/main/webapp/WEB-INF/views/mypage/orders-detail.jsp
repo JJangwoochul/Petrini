@@ -85,8 +85,16 @@
   </div>
 
   <%-- 지윤 26.07.20 추가: 배송정보(택배사/송장번호) - 기존엔 아예 없던 섹션. TB_ORDER_DELIVERY 미등록이면 안내문구만 --%>
-  <div class="od-section">
-    <p class="od-section-title">🚚 배송정보</p>
+<div class="od-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <p class="od-section-title" style="margin-bottom:0">🚚 배송정보</p>
+      <%-- 지윤 26.07.29 추가: 배송조회 상세보기 버튼 - 송장번호 있을 때만, 목록 페이지의 trackDelivery() 그대로 재사용 --%>
+      <%-- 지윤 26.07.29 수정: 알약형 버튼 -> "주문상세보기 >" 링크와 동일한 심플 텍스트링크 스타일로 통일 --%>
+<c:if test="${not empty order.trackingNo}">
+    <a href="javascript:void(0)" onclick="trackDelivery(${order.orderId}, '${order.courierCode}', '${order.trackingNo}')"
+       style="font-size:13px;color:var(--text-muted);text-decoration:none"> 📦실시간 배송조회 &gt;</a>
+</c:if>
+    </div>
     <c:if test="${not empty order.courierName}">
       <div class="od-tracking">
         <span><b>${order.courierName}</b></span>
@@ -227,9 +235,59 @@
   </div>
 </div>
 
+<%-- 지윤 26.07.29 추가: 배송조회 결과 모달 (주문목록 orders.jsp와 동일 로직) --%>
+<div id="trackModalBg" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:24px; max-width:480px; width:90%; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <strong style="font-size:16px;">📦 실시간 배송조회</strong>
+      <button type="button" onclick="closeTrackModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#999;">&times;</button>
+    </div>
+    <div id="trackModalBody"></div>
+  </div>
+</div>
+
 <script>
+var contextPath = '${contextPath}';
+
 function openCancelModal() { document.getElementById('cancelModal').style.display = 'flex'; }
 function closeCancelModal() { document.getElementById('cancelModal').style.display = 'none'; }
+
+//지윤 26.07.29 추가: 배송조회 - orders.jsp와 동일 패턴 (levelLabel 매핑, 조회결과 표시)
+var levelLabel = { 1: '배송준비중', 2: '집화완료', 3: '배송중', 4: '지점도착', 5: '배송출발', 6: '배송완료' };
+
+function trackDelivery(orderId, courierCode, trackingNo) {
+  document.getElementById('trackModalBody').innerHTML = '<p style="text-align:center;color:#999;padding:20px 0">조회 중...</p>';
+  document.getElementById('trackModalBg').style.display = 'flex';
+
+  fetch(contextPath + '/mypage/orders/track?orderId=' + orderId + '&courierCode=' + encodeURIComponent(courierCode) + '&trackingNo=' + encodeURIComponent(trackingNo))
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      var box = document.getElementById('trackModalBody');
+      if (!data || data.status === false || data.result === 'N') {
+        box.innerHTML = '<p style="color:#E24B4A">배송 정보를 조회할 수 없습니다. (' + (data && data.msg ? data.msg : '알 수 없는 운송장번호') + ')</p>';
+        return;
+      }
+
+      var html = '<p style="font-weight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
+      if (data.trackingDetails && data.trackingDetails.length > 0) {
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="border-bottom:1px solid #E4E6ED"><th style="text-align:left;padding:8px 4px">시각</th><th style="text-align:left;padding:8px 4px">위치</th><th style="text-align:left;padding:8px 4px">처리내용</th></tr></thead><tbody>';
+        data.trackingDetails.forEach(function (d) {
+          html += '<tr style="border-bottom:1px solid #F0F2F0"><td style="padding:8px 4px">' + (d.timeString || '-') + '</td><td style="padding:8px 4px">' + (d.where || '-') + '</td><td style="padding:8px 4px">' + (d.kind || '-') + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      } else {
+        html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
+      }
+      box.innerHTML = html;
+    })
+    .catch(function () {
+      document.getElementById('trackModalBody').innerHTML = '<p style="color:#E24B4A">조회 중 오류가 발생했습니다.</p>';
+    });
+}
+
+function closeTrackModal() {
+  document.getElementById('trackModalBg').style.display = 'none';
+}
 </script>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

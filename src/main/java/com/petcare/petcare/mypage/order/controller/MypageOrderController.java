@@ -13,8 +13,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.mypage.order.service.MypageOrderService;
+import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
+import com.petcare.petcare.common.external.service.SmartTrackerService;
 
 @Controller
 @RequestMapping("/mypage")
@@ -22,6 +26,10 @@ public class MypageOrderController {
 
     @Autowired
     private MypageOrderService mypageOrderService;
+
+    //지윤 26.07.29 추가: 배송조회(스마트택배 API) 호출용
+    @Autowired
+    private SmartTrackerService smartTrackerService;
 
     //지윤 26.07.20 수정: 하드코딩 -> 실데이터 연동 (상태 탭 필터)
     @GetMapping("/orders")
@@ -32,6 +40,21 @@ public class MypageOrderController {
         model.addAttribute("orderList", mypageOrderService.getOrderList(member.getMemberNo(), statusCd));
         model.addAttribute("selectedStatusCd", statusCd);
         return "mypage/orders";
+    }
+
+    //지윤 26.07.29 추가: 마이페이지 배송조회 (AJAX, 원본 JSON 그대로 화면에 넘김)
+    //본인 주문이 맞는지 getOrderDetail(memberNo, orderId)로 먼저 확인 (null이면 남의 주문번호로 조작 시도한 것 -> 거부)
+    @GetMapping("/orders/track")
+    @ResponseBody
+    public String trackDelivery(@RequestParam Long orderId, @RequestParam String courierCode,
+                                 @RequestParam String trackingNo, HttpSession session) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "{\"status\":false,\"msg\":\"로그인이 필요합니다.\"}";
+
+        MypageOrderVO order = mypageOrderService.getOrderDetail(member.getMemberNo(), orderId);
+        if (order == null) return "{\"status\":false,\"msg\":\"본인 주문만 조회할 수 있습니다.\"}";
+
+        return smartTrackerService.getTrackingInfo(courierCode, trackingNo);
     }
 
  //지윤 26.07.20 수정: 리뷰작성 모달에서 폼 submit + 사진 첨부(최대 5장, 선택). 배송완료 상품만 대상, 중복작성은 서비스에서 막음

@@ -216,23 +216,20 @@ public boolean deleteProductQna(Long qnaId, Long memberNo) {
 @Override
 @Transactional
 public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrderId) {
-//지윤 26.07.28 수정: "ORD-" + 밀리초 전체(예: ORD-1785219481269, 사람이 못 읽음)
-//-> "ORD" + 날짜(yyyyMMdd) + "-" + 밀리초 뒷 4자리(예: ORD20260728-4572)
-long ts = System.currentTimeMillis();
-String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date(ts));
-String suffix = String.format("%04d", ts % 10000);
-String orderNo = "ORD" + datePart + "-" + suffix;
-
+    //지윤 26.07.29 수정: 밀리초 나머지(ts % 10000) 방식은 10초마다 값이 반복되어 ORDER_NO(UNIQUE 제약)가 겹칠 위험이 있었음
+    //-> 뒷자리를 "실제 PK가 될 ORDER_ID"로 교체 (MAX+1 방식, 이 프로젝트 공통 채번 규칙이라 절대 안 겹침)
+    //orderId를 미리 뽑아서 1) 주문번호 뒷자리로도 쓰고 2) insertOrder에도 그대로 넘겨서 두 값이 항상 일치하게 함
+    Long orderId = storeShopMapper.selectNextOrderId();
+    String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+    String orderNo = "ORD" + datePart + "-" + String.format("%06d", orderId);
 
     // 상품이 전부 같은 사업자(BIZ_NO)라고 가정 (현재 테스트데이터가 단일 셀러 구조라 첫 상품 기준으로 넣음)
     Long bizNo = p.getOrderItems().get(0).getBizNo();
 
-    storeShopMapper.insertOrder(orderNo, p.getMemberNo(), p.getProductTotal(), p.getDeliveryFee(),
+    storeShopMapper.insertOrder(orderId, orderNo, p.getMemberNo(), p.getProductTotal(), p.getDeliveryFee(),
     p.getCouponDiscount(), p.getPointUsed(), p.getFinalTotal(),
     p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo,
     p.getDeliveryMemo(), p.getCouponMemberCouponId());
-
-    Long orderId = storeShopMapper.selectOrderIdByOrderNo(orderNo);
 
     //지윤 26.07.21 추가: 주문 접수 즉시 사업자에게 알림 (알림함 "주문" 탭). 대표 상품명은 첫 상품 기준, 나머지는 "외 N건"으로 표시
     Long bizMemberNoForOrder = storeShopMapper.selectBizMemberNoByBizNo(bizNo);
