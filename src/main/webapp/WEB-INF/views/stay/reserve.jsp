@@ -38,6 +38,22 @@
   .ps-row.total span:last-child{color:var(--primary-dark)}
   .btn-pay-submit{width:100%;padding:16px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:17px;font-weight:800;cursor:pointer;margin-top:16px;transition:.15s}
   .btn-pay-submit:hover{background:var(--primary-dark)}
+  .btn-pay-submit:disabled{background:var(--border);cursor:not-allowed}
+
+  /* 예약 확인 모달 */
+  .confirm-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:9999;justify-content:center;align-items:center}
+  .confirm-overlay.show{display:flex}
+  .confirm-box{background:#fff;border-radius:16px;padding:28px 24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center}
+  .confirm-box .icon{width:56px;height:56px;border-radius:50%;background:#FEF3C7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .confirm-box .icon svg{width:28px;height:28px;stroke:#D97706;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .confirm-box h3{font-size:18px;font-weight:800;color:var(--text-main);margin:0 0 10px}
+  .confirm-box p{font-size:14px;color:var(--text-sub);line-height:1.7;margin:0 0 8px}
+  .confirm-box .timer-notice{background:#FEF2F2;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:#DC2626;margin:12px 0 20px;line-height:1.5}
+  .confirm-box .btn-group{display:flex;gap:10px}
+  .confirm-box .btn-cancel{flex:1;padding:12px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text-sub);font-size:14px;font-weight:600;cursor:pointer}
+  .confirm-box .btn-cancel:hover{background:var(--bg-page)}
+  .confirm-box .btn-confirm{flex:1;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:14px;font-weight:800;cursor:pointer}
+  .confirm-box .btn-confirm:hover{background:var(--primary-dark)}
 </style>
 
 <div class="res-wrap">
@@ -163,11 +179,11 @@
         </c:if>
         <div class="ps-row total"><span>총 결제금액</span><span id="totalLabel">-</span></div>
       </div>
-      <button type="submit" class="btn-pay-submit" id="submitBtn" disabled>결제하기</button>
+      <button type="button" class="btn-pay-submit" id="submitBtn" disabled onclick="showConfirmModal()">예약 신청하기</button>
     </div>
   </form>
 
-  <%-- HYJ 26.07.28 예약 확인 모달 --%>
+  <%-- 예약 확인 모달 --%>
   <div class="confirm-overlay" id="confirmModal">
     <div class="confirm-box">
       <div class="icon">
@@ -293,7 +309,7 @@
     }
   });
 
-  // HYJ 26.07.28 예약 확인 모달
+  // 예약 확인 모달
   function showConfirmModal() {
     var roomSel = document.getElementById('roomSelect');
     var roomName = roomSel.options[roomSel.selectedIndex].text.split(' — ')[0];
