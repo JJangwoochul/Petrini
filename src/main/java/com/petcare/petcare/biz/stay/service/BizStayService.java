@@ -31,7 +31,9 @@ package com.petcare.petcare.biz.stay.service;
 
 import java.util.List;
 
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
+import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -63,7 +65,17 @@ public interface BizStayService {
 
     List<ReservationVO> getCalendarReservations(Long stayId, String fromDate, String toDate) throws Exception;
 
+    // 2026-07-28 박유정 — 사이드바 예약관리 배지 (PENDING + CONFIRMED)
     int countPendingReservations(Long stayId) throws Exception;
 
     int countTodayConfirmedReservations(Long stayId) throws Exception;
+
+    // 2026-07-27 박유정 STEP 2 — 사업자 숙소 리뷰 관리
+    List<StayReviewVO> getBizStayReviews(Long stayId) throws Exception;
+
+    void saveReviewBizReply(Long stayId, Long reviewId, String bizReply) throws Exception;
+
+    void requestReviewDelete(Long stayId, Long bizNo, Long reviewId, String requestReason) throws Exception;
+
+    List<ReviewDeleteRequestVO> getBizReviewDeleteRequests(Long stayId, Long bizNo) throws Exception;
 }

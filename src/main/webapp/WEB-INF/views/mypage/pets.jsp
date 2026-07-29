@@ -227,37 +227,39 @@
           <label>체중 (kg)</label>
           <input type="number" id="pm-weight" placeholder="예) 3.5" step="0.1" min="0" max="200">
         </div>
-        <%-- TB_PET 에 컬럼 없음 — UI만 유지, 저장 안 함 --%>
+
+        <%-- 2026-07-28 박유정 — TB_PET FUR_COLOR/NEUTER_YN/TRAITS/MEMO 폼 연동 --%>
         <div class="pm-group">
           <label>털 색상</label>
-          <input type="text" id="pm-color" placeholder="예) 황갈색, 검은색" disabled title="DB 컬럼 추가 후 연동 예정">
+          <input type="text" id="pm-color" placeholder="예) 황갈색, 검은색" maxlength="50">
         </div>
         <div class="pm-group full">
-          <label>중성화 여부 <span class="pm-hint">(추후 연동)</span></label>
+          <label>중성화 여부</label>
+          <input type="hidden" id="pm-neuter" value="U">
           <div class="pm-neuter-row">
-            <button type="button" class="pm-neuter-btn" id="neuter-Y" onclick="selNeuter('Y')" disabled>
+            <button type="button" class="pm-neuter-btn" id="neuter-Y" onclick="selNeuter('Y')">
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 완료
             </button>
-            <button type="button" class="pm-neuter-btn" id="neuter-N" onclick="selNeuter('N')" disabled>
+            <button type="button" class="pm-neuter-btn" id="neuter-N" onclick="selNeuter('N')">
               <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> 미완료
             </button>
-            <button type="button" class="pm-neuter-btn on" id="neuter-U" onclick="selNeuter('U')" disabled>
+            <button type="button" class="pm-neuter-btn on" id="neuter-U" onclick="selNeuter('U')">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 모름
             </button>
           </div>
         </div>
         <div class="pm-group full">
-          <label>성격 / 특징 <span class="pm-hint">(추후 연동)</span></label>
-          <div class="pm-trait-wrap">
-            <span class="pm-trait" style="opacity:.5;cursor:default">활발해요</span>
-            <span class="pm-trait" style="opacity:.5;cursor:default">얌전해요</span>
-            <span class="pm-trait" style="opacity:.5;cursor:default">낯가림 있어요</span>
-            <span class="pm-trait" style="opacity:.5;cursor:default">사람 좋아해요</span>
+          <label>성격 / 특징</label>
+          <div class="pm-trait-wrap" id="pm-trait-wrap">
+            <span class="pm-trait" data-value="활발해요" onclick="toggleTrait(this)">활발해요</span>
+            <span class="pm-trait" data-value="얌전해요" onclick="toggleTrait(this)">얌전해요</span>
+            <span class="pm-trait" data-value="낯가림 있어요" onclick="toggleTrait(this)">낯가림 있어요</span>
+            <span class="pm-trait" data-value="사람 좋아해요" onclick="toggleTrait(this)">사람 좋아해요</span>
           </div>
         </div>
         <div class="pm-group full">
           <label>메모</label>
-          <input type="text" id="pm-memo" placeholder="특이사항 등 (추후 연동)" disabled>
+          <input type="text" id="pm-memo" placeholder="특이사항, 알레르기 등" maxlength="500">
         </div>
       </div>
     </div>
@@ -307,9 +309,51 @@ function updateBreed(selected) {
     if (selected) sel.value = selected;
 }
 
+// 2026-07-28 박유정 — 중성화 선택 + hidden(pm-neuter) 동기화
 function selNeuter(v) {
-    ['Y','N','U'].forEach(k => document.getElementById('neuter-'+k).classList.remove('on'));
-    document.getElementById('neuter-'+v).classList.add('on');
+    ['Y','N','U'].forEach(function(k) {
+        document.getElementById('neuter-' + k).classList.remove('on');
+    });
+    document.getElementById('neuter-' + v).classList.add('on');
+    document.getElementById('pm-neuter').value = v;
+}
+
+// 2026-07-28 박유정 — 성격/특징 태그 토글
+function toggleTrait(el) {
+    el.classList.toggle('on');
+}
+
+// 2026-07-28 박유정 — 선택된 성격/특징 → 쉼표 문자열
+function getSelectedTraits() {
+    var tags = document.querySelectorAll('#pm-trait-wrap .pm-trait.on');
+    var list = [];
+    tags.forEach(function(el) {
+        list.push(el.getAttribute('data-value'));
+    });
+    return list.join(',');
+}
+
+// 2026-07-28 박유정 — 성격/특징 태그 초기화 후 선택 반영
+function setTraitSelection(traitsStr) {
+    document.querySelectorAll('#pm-trait-wrap .pm-trait').forEach(function(el) {
+        el.classList.remove('on');
+    });
+    if (!traitsStr) return;
+    var selected = traitsStr.split(',');
+    document.querySelectorAll('#pm-trait-wrap .pm-trait').forEach(function(el) {
+        var val = el.getAttribute('data-value');
+        if (selected.indexOf(val) >= 0) {
+            el.classList.add('on');
+        }
+    });
+}
+
+// 2026-07-28 박유정 — 신규 등록 시 폼 초기화
+function resetExtraFields() {
+    document.getElementById('pm-color').value = '';
+    document.getElementById('pm-memo').value = '';
+    selNeuter('U');
+    setTraitSelection('');
 }
 
 function openPetModal(petId) {
@@ -325,9 +369,15 @@ function openPetModal(petId) {
         const kind = speciesToKind(petData.species);
         document.getElementById('pm-kind').value = kind;
         updateBreed(petData.breed || '');
+        // 2026-07-28 박유정 — 추가 필드 불러오기
+        document.getElementById('pm-color').value = petData.furColor || '';
+        document.getElementById('pm-memo').value = petData.memo || '';
+        selNeuter(petData.neuterYn || 'U');
+        setTraitSelection(petData.traits || '');
     } else {
         document.getElementById('pm-kind').value = '';
         document.getElementById('pm-breed').innerHTML = '<option value="">종류를 먼저 선택하세요</option>';
+        resetExtraFields();
     }
 
     document.getElementById('petModalBg').classList.add('open');
@@ -360,6 +410,19 @@ async function savePet() {
     if (birth) fd.append('birthDate', birth);
     const weight = document.getElementById('pm-weight').value;
     if (weight) fd.append('weight', weight);
+
+    // 2026-07-28 박유정 — 털색상·중성화·성격/특징·메모 저장
+    const color = document.getElementById('pm-color').value.trim();
+    if (color) fd.append('furColor', color);
+
+    const neuter = document.getElementById('pm-neuter').value || 'U';
+    fd.append('neuterYn', neuter);
+
+    const traits = getSelectedTraits();
+    if (traits) fd.append('traits', traits);
+
+    const memo = document.getElementById('pm-memo').value.trim();
+    if (memo) fd.append('memo', memo);
 
     const btn = document.getElementById('pm-save-btn');
     btn.disabled = true;

@@ -17,6 +17,7 @@ package com.petcare.petcare.member.auth.service;
 
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -28,9 +29,12 @@ import jakarta.mail.internet.MimeMessage;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final String mailUsername;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(JavaMailSender mailSender,
+                        @Value("${spring.mail.username}") String mailUsername) {
         this.mailSender = mailSender;
+        this.mailUsername = mailUsername;
     }
 
     /**
@@ -57,7 +61,8 @@ public class EmailService {
         }
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-        helper.setFrom("j.yeah110@gmail.com");
+        // 2026-07-28 박유정 — 발신 주소 = spring.mail.username (Gmail 인증 계정과 동일해야 함)
+        helper.setFrom(mailUsername);
         helper.setTo(toEmail);
         helper.setSubject("[PetCare] 이메일 인증번호 안내");
 

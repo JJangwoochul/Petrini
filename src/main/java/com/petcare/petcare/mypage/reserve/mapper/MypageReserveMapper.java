@@ -44,6 +44,9 @@ public interface MypageReserveMapper {
     // 2026/07/13 장우철 — TB_HOSPITAL 평균별점·리뷰수 갱신
     int updateHospitalRatingSummary(@Param("hospitalId") Long hospitalId);
 
+    // 2026-07-28 박유정 — TB_STAY 평균별점·리뷰수 갱신
+    int updateStayRatingSummary(@Param("stayId") Long stayId);
+
     // HYJ 26.07.20 — 숙소 리뷰 중복 확인
     int countStayReviewByResvId(@Param("resvId") Long resvId,
     @Param("memberNo") Long memberNo);

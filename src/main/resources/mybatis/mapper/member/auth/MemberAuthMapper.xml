@@ -132,6 +132,7 @@
     </select>
 
     <!-- 회원 INSERT (join — register 1단계) -->
+    <!-- 2026-07-28 박유정 — BIRTH_DATE, GENDER 컬럼 저장 추가 -->
     <insert id="insertMember" parameterType="com.petcare.petcare.member.auth.vo.MemberRegisterVO">
         <selectKey keyProperty="memberNo" resultType="long" order="BEFORE">
             SELECT SEQ_MEMBER.NEXTVAL FROM DUAL
@@ -147,6 +148,8 @@
             ZIP_CODE,
             ADDR1,
             ADDR2,
+            BIRTH_DATE,
+            GENDER,
             GRADE_CD,
             POINT_BALANCE,
             STATUS_CD,
@@ -163,6 +166,8 @@
             #{zipcode, jdbcType=VARCHAR},
             #{addr1, jdbcType=VARCHAR},
             #{addr2, jdbcType=VARCHAR},
+            TO_DATE(#{birthDate}, 'YYYY-MM-DD'),
+            #{gender, jdbcType=CHAR},
             'BRONZE',
             0,
             'NORMAL',

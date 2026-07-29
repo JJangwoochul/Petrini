@@ -334,7 +334,8 @@
             </div>
             <div class="rec-head-right">
                 <span class="rec-date"><fmt:formatDate value="${rec.visitDate}" pattern="yyyy.MM.dd"/></span>
-                <span class="rec-type rec-treat">진료기록</span>
+                <%-- 2026-07-28 박유정 — MEMO 파싱된 진료 유형 표시 --%>
+                <span class="rec-type rec-treat"><c:out value="${empty rec.treatType ? '진료기록' : rec.treatType}"/></span>
             </div>
         </div>
         <div class="rec-card-body">
@@ -349,14 +350,22 @@
                 <c:out value="${empty rec.vetName ? '담당 수의사 미입력' : rec.vetName}"/>
             </span>
             <div class="rec-action-btns">
+                <%-- 2026-07-28 박유정 — 상세보기: 파싱된 유형·신체계측 data-* 전달 --%>
                 <button type="button" class="biz-btn"
                         data-name="<c:out value='${rec.petName}'/>"
                         data-meta="<c:out value='${rec.petBreed}'/> · 보호자: <c:out value='${rec.memberName}'/>"
                         data-date="<fmt:formatDate value='${rec.visitDate}' pattern='yyyy.MM.dd'/>"
+                        data-type="<c:out value='${rec.treatType}'/>"
                         data-symptom="<c:out value='${rec.symptoms}'/>"
                         data-diagnosis="<c:out value='${rec.diagnosis}'/>"
+                        data-exam="<c:out value='${rec.examItems}'/>"
                         data-prescription="<c:out value='${rec.prescription}'/>"
+                        data-weight="<c:out value='${rec.weight}'/>"
+                        data-temp="<c:out value='${rec.temperature}'/>"
+                        data-heart-rate="<c:out value='${rec.heartRate}'/>"
+                        data-breath="<c:out value='${rec.breathRate}'/>"
                         data-memo="<c:out value='${rec.memo}'/>"
+                        data-next-visit="<c:out value='${rec.nextVisit}'/>"
                         data-vet="<c:out value='${rec.vetName}'/>"
                         onclick="openRecordFromBtn(this)">상세보기</button>
             </div>
@@ -504,16 +513,23 @@
 
 <script>
     // 2026/07/13 장우철 — DB 카드 data-* 로 상세 모달 오픈
+    // 2026-07-28 박유정 — 유형·신체계측·다음방문 필드 분리 전달 (MEMO 통째 표시 오류 수정)
     function openRecordFromBtn(btn) {
         openRecordModal({
             name: btn.dataset.name || '',
             meta: btn.dataset.meta || '',
             date: btn.dataset.date || '',
-            type: '진료',
+            type: btn.dataset.type || '진료',
             symptom: btn.dataset.symptom || '',
             diagnosis: btn.dataset.diagnosis || '',
+            exam: btn.dataset.exam || '',
             prescription: btn.dataset.prescription || '',
+            weight: btn.dataset.weight || '',
+            temp: btn.dataset.temp || '',
+            heartRate: btn.dataset.heartRate || '',
+            breath: btn.dataset.breath || '',
             memo: btn.dataset.memo || '',
+            nextVisit: btn.dataset.nextVisit || '',
             vet: btn.dataset.vet || ''
         });
     }

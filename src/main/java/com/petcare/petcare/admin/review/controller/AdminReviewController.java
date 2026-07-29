@@ -6,6 +6,8 @@
 
 package com.petcare.petcare.admin.review.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,8 +27,21 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/admin/review")
 public class AdminReviewController extends AdminBaseController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminReviewController.class);
+
     @Autowired
     private AdminReviewService adminReviewService;
+
+    // 2026-07-28 박유정 — adminNo 없으면 memberNo로 처리자 식별
+    private long resolveAdminNo(MemberVO admin) {
+        if (admin.getAdminNo() != null) {
+            return admin.getAdminNo();
+        }
+        if (admin.getMemberNo() != null) {
+            return admin.getMemberNo();
+        }
+        return 0L;
+    }
 
     // 2026-07-24 박유정 — 리뷰 삭제 요청 목록
     @GetMapping("/list")
@@ -65,14 +80,24 @@ public class AdminReviewController extends AdminBaseController {
             return redirectToLogin();
 
         try {
-            adminReviewService.approveReviewDeleteRequest(requestId, admin.getAdminNo());
+            long adminNo = resolveAdminNo(admin);
+            adminReviewService.approveReviewDeleteRequest(requestId, adminNo);
             rttr.addFlashAttribute("successMsg", "리뷰가 삭제(승인) 처리되었습니다.");
             return "redirect:/admin/review/list?statusCd=APPROVED";
         } catch (IllegalArgumentException | IllegalStateException e) {
+            // 2026-07-28 박유정 — 검증 실패 로그
+            log.warn("리뷰 삭제 승인 거부 requestId={}: {}", requestId, e.getMessage());
             rttr.addFlashAttribute("errorMsg", "처리할 수 없는 요청입니다.");
             return "redirect:/admin/review/list?statusCd=PENDING";
         } catch (Exception e) {
-            rttr.addFlashAttribute("errorMsg", "승인 처리 중 오류가 발생했습니다.");
+            // 2026-07-28 박유정 — 승인 오류 로그·원인 메시지 flash
+            log.error("리뷰 삭제 승인 실패 requestId={}", requestId, e);
+            String err = e.getMessage();
+            if (err == null && e.getCause() != null) {
+                err = e.getCause().getMessage();
+            }
+            rttr.addFlashAttribute("errorMsg",
+                    "승인 처리 중 오류가 발생했습니다." + (err != null ? " (" + err + ")" : ""));
             return "redirect:/admin/review/list?statusCd=PENDING";
         }
     }
@@ -94,7 +119,7 @@ public class AdminReviewController extends AdminBaseController {
 
         try {
             adminReviewService.rejectReviewDeleteRequest(
-                    requestId, rejectReason.trim(), admin.getAdminNo());
+                    requestId, rejectReason.trim(), resolveAdminNo(admin));
             rttr.addFlashAttribute("successMsg", "삭제 요청이 반려되었습니다.");
             return "redirect:/admin/review/list?statusCd=REJECTED";
         } catch (IllegalArgumentException | IllegalStateException e) {

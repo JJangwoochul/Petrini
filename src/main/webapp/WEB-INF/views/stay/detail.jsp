@@ -113,17 +113,16 @@
     </div>
     <div class="sd-rating">
       <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <%-- 2026-07-28 박유정 — TB_STAY.AVG_RATING / REVIEW_CNT (병원 detail.jsp와 동일) --%>
       <c:choose>
-        <c:when test="${not empty reviewList}">
-          <c:set var="ratingSum" value="0"/><c:set var="ratingCnt" value="0"/>
-          <c:forEach var="r" items="${reviewList}"><c:set var="ratingSum" value="${ratingSum + r.rating}"/><c:set var="ratingCnt" value="${ratingCnt + 1}"/></c:forEach>
-          <fmt:formatNumber value="${ratingSum / ratingCnt}" pattern="0.0"/>
-          <span style="font-size:13px;color:var(--text-muted);font-weight:400">(<c:out value="${ratingCnt}"/>개 리뷰)</span>
+        <c:when test="${not empty stay.avgRating}">
+          <fmt:formatNumber value="${stay.avgRating}" pattern="0.0"/>
         </c:when>
-        <c:otherwise>
-          <span style="font-size:13px;color:var(--text-muted);font-weight:400">리뷰 없음</span>
-        </c:otherwise>
+        <c:otherwise>0.0</c:otherwise>
       </c:choose>
+      <span style="font-size:13px;color:var(--text-muted);font-weight:400">
+        (<c:out value="${empty stay.reviewCnt ? 0 : stay.reviewCnt}"/>개 리뷰)
+      </span>
     </div>
     <%-- 편의시설 태그 --%>
     <c:if test="${not empty stay.facilities}">
@@ -203,15 +202,15 @@
 
     <%-- HYJ 26.07.20 리뷰 (DB 연동) --%>
     <div class="sd-section">
-      <h3><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>리뷰 (<c:out value="${empty reviewList ? 0 : fn:length(reviewList)}"/>)</h3>
-      <c:if test="${not empty reviewList}">
+      <h3><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>리뷰 (<c:out value="${empty stay.reviewCnt ? 0 : stay.reviewCnt}"/>)</h3>
+      <c:if test="${not empty stay.avgRating and stay.reviewCnt != null and stay.reviewCnt > 0}">
         <div class="review-summary">
           <div class="rv-avg">
-            <div class="big"><c:set var="rvTotal" value="0"/><c:set var="rvCount" value="0"/><c:forEach var="rv" items="${reviewList}"><c:set var="rvTotal" value="${rvTotal + rv.rating}"/><c:set var="rvCount" value="${rvCount + 1}"/></c:forEach><fmt:formatNumber value="${rvTotal / rvCount}" pattern="0.0"/></div>
+            <div class="big"><fmt:formatNumber value="${stay.avgRating}" pattern="0.0"/></div>
             <div class="rv-stars">
               <c:forEach begin="1" end="5"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></c:forEach>
             </div>
-            <small><c:out value="${fn:length(reviewList)}"/>개 리뷰</small>
+            <small><c:out value="${stay.reviewCnt}"/>개 리뷰</small>
           </div>
         </div>
       </c:if>

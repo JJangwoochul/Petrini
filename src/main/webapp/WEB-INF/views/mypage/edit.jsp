@@ -42,14 +42,14 @@
             <div class="edit-group full">
                 <label>현재 비밀번호 <span class="req">*</span></label>
                 <div class="edit-pw-wrap">
-                    <input type="password" placeholder="현재 비밀번호를 입력하세요">
+                    <input type="password" placeholder="현재 비밀번호를 입력하세요" autocomplete="off">
                     <button class="edit-pw-eye" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
             </div>
             <div class="edit-group">
                 <label>새 비밀번호</label>
                 <div class="edit-pw-wrap">
-                    <input type="password" placeholder="영문+숫자+특수문자 8자 이상">
+                    <input type="password" placeholder="영문+숫자+특수문자 8자 이상" autocomplete="new-password">
                     <button class="edit-pw-eye" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
                 <div class="pw-strength"><span></span><span></span><span></span><span></span></div>
@@ -57,13 +57,13 @@
             <div class="edit-group">
                 <label>새 비밀번호 확인</label>
                 <div class="edit-pw-wrap">
-                    <input type="password" placeholder="비밀번호를 다시 입력하세요">
+                    <input type="password" placeholder="비밀번호를 다시 입력하세요 autocomplete="new-password">
                     <button class="edit-pw-eye" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
             </div>
         </div>
     </div>
-    <%-- 기본 정보 --%>
+    <%-- 기본 정보 (2026-07-28 박유정 — TB_MEMBER 프로필 ${profile.xxx} 표시) --%>
     <div class="edit-section">
         <div class="edit-section-title">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -72,43 +72,40 @@
         <div class="edit-grid">
             <div class="edit-group">
                 <label>이름</label>
-                <input type="text" value="${memberInfo.memberName}" readonly>
+                <input type="text" value="${profile.memberName}" readonly>
             </div>
             <div class="edit-group">
                 <label>아이디</label>
-                <input type="text" value="${memberInfo.memberId}" readonly>
+                <input type="text" value="${profile.memberId}" readonly>
             </div>
             <div class="edit-group">
                 <label>이메일</label>
-                <input type="email" placeholder="example@email.com">
+                <input type="email" value="${profile.email}" readonly>
             </div>
             <div class="edit-group">
                 <label>전화번호 <span class="req">*</span></label>
                 <div class="edit-input-row">
-                    <input type="tel" placeholder="010-0000-0000">
+                    <input type="tel" value="${profile.phone}" readonly>
                     <button class="btn-verify" type="button">인증</button>
                 </div>
             </div>
             <div class="edit-group">
                 <label>생년월일</label>
-                <input type="date">
+                <input type="date" readonly value="${profile.birthDate}">
             </div>
             <div class="edit-group">
                 <label>성별</label>
-                <select>
-                    <option value="">선택 안함</option>
-                    <option>남성</option>
-                    <option>여성</option>
-                </select>
+                <input type="text" readonly
+                       value="<c:choose><c:when test="${profile.gender eq 'M'}">남성</c:when><c:when test="${profile.gender eq 'F'}">여성</c:when><c:otherwise>선택 안함</c:otherwise></c:choose>">
             </div>
             <div class="edit-group full">
                 <label>주소</label>
                 <div class="edit-input-row">
-                    <input type="text" placeholder="우편번호" style="max-width:120px">
+                    <input type="text" value="${profile.zipcode}" readonly style="max-width:120px">
                     <button class="btn-verify" type="button">주소 검색</button>
                 </div>
-                <input type="text" placeholder="기본 주소" style="margin-top:8px">
-                <input type="text" placeholder="상세 주소" style="margin-top:8px">
+                <input type="text" value="${profile.addr1}" readonly style="margin-top:8px">
+                <input type="text" value="${profile.addr2}" readonly style="margin-top:8px">
             </div>
         </div>
     </div>

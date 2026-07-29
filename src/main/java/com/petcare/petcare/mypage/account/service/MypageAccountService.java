@@ -19,4 +19,10 @@
 
 package com.petcare.petcare.mypage.account.service;
 
-public interface MypageAccountService {}
+import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
+
+public interface MypageAccountService {
+
+    // 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 조회
+    MypageAccountVO getMemberProfile(Long memberNo);
+}

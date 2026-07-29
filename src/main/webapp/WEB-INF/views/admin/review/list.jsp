@@ -17,7 +17,7 @@
     <div class="adm-page-head">
         <div class="adm-page-head-left">
             <h1 class="adm-page-title">사업자 리뷰 삭제 요청</h1>
-            <p class="adm-page-desc">병원 사업자의 리뷰 삭제 요청을 확인하고 처리하세요.</p>
+            <p class="adm-page-desc">병원·숙소 사업자의 리뷰 삭제 요청을 확인하고 처리하세요.</p>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
             <%-- 2026-07-24 박유정 — GET 검색 (keyword, statusCd) --%>
             <form method="get" action="${contextPath}/admin/review/list" class="adm-filter-bar">
                 <input type="text" name="keyword" class="adm-filter-input"
-                       placeholder="병원명, 사업자명, 작성자, 사유 검색" value="${keyword}">
+                       placeholder="병원명, 숙소명, 사업자명, 작성자, 사유 검색" value="${keyword}">
                 <select name="statusCd" class="adm-filter-select">
                     <option value="ALL" ${statusCd eq 'ALL' ? 'selected' : ''}>상태 전체</option>
                     <option value="PENDING" ${statusCd eq 'PENDING' ? 'selected' : ''}>대기</option>
@@ -54,7 +54,7 @@
             <table class="adm-table">
                 <thead>
                     <tr>
-                        <th>번호</th><th>병원</th><th>사업자</th><th>작성자</th>
+                        <th>번호</th><th>유형</th><th>대상</th><th>사업자</th><th>작성자</th>
                         <th>평점</th><th>리뷰</th><th>삭제사유</th><th>상태</th><th>요청일</th><th>처리</th>
                     </tr>
                 </thead>
@@ -62,7 +62,7 @@
                     <c:choose>
                         <c:when test="${empty list}">
                             <tr>
-                                <td colspan="10" style="text-align:center;color:#999;padding:40px 0">
+                                <td colspan="11" style="text-align:center;color:#999;padding:40px 0">
                                     삭제 요청이 없습니다.
                                 </td>
                             </tr>
@@ -71,6 +71,13 @@
                             <c:forEach var="item" items="${list}">
                                 <tr>
                                     <td>${item.requestId}</td>
+                                    <%-- 2026-07-27 박유정 — 병원·숙소 리뷰 구분 --%>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${item.reviewType eq 'STAY'}">숙소</c:when>
+                                            <c:otherwise>병원</c:otherwise>
+                                        </c:choose>
+                                    </td>
                                     <td>${item.hospitalName}</td>
                                     <td>${item.bizName}</td>
                                     <td>${item.reviewerNickname}</td>
@@ -108,8 +115,8 @@
                                             <c:when test="${item.statusCd eq 'PENDING'}">
                                                 <%-- 2026-07-24 박유정 — 승인(리뷰 삭제) --%>
                                                 <form method="post" action="${contextPath}/admin/review/approve"
-                                                      style="display:inline;margin:0"
-                                                      onsubmit="return confirm('리뷰를 삭제(승인)하시겠습니까?')">
+                                                      class="js-admin-approve-form"
+                                                      style="display:inline;margin:0">
                                                     <input type="hidden" name="requestId" value="${item.requestId}">
                                                     <button type="submit" class="adm-btn red">승인(삭제)</button>
                                                 </form>
@@ -156,5 +163,60 @@
         </div>
     </div>
 </main>
+
+<%-- 2026-07-28 박유정 — 승인 fetch(AJAX)·20초 타임아웃(락 대기 방지) --%>
+<script>
+(function () {
+  function bindAjaxForm(selector, timeoutMsg) {
+    document.querySelectorAll(selector).forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!confirm('리뷰를 삭제(승인)하시겠습니까?')) return;
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn && btn.disabled) return;
+        if (btn) {
+          btn.disabled = true;
+          btn.dataset.label = btn.textContent;
+          btn.textContent = '처리 중...';
+        }
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 20000);
+        fetch(form.action, {
+          method: 'POST',
+          body: new URLSearchParams(new FormData(form)),
+          credentials: 'same-origin',
+          redirect: 'manual',
+          signal: ctrl.signal,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (res) {
+          clearTimeout(timer);
+          if (res.status === 0 || (res.status >= 300 && res.status < 400)) {
+            var loc = res.headers.get('Location');
+            window.location.href = loc || '${contextPath}/admin/review/list';
+            return;
+          }
+          if (res.ok) {
+            window.location.reload();
+            return;
+          }
+          return res.text().then(function (t) {
+            throw new Error(t && t.length < 200 ? t : ('HTTP ' + res.status));
+          });
+        }).catch(function (err) {
+          clearTimeout(timer);
+          var msg = err.name === 'AbortError' ? timeoutMsg : (err.message || '알 수 없는 오류');
+          alert('처리 실패: ' + msg);
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = btn.dataset.label || '승인(삭제)';
+          }
+        });
+      });
+    });
+  }
+  bindAjaxForm('.js-admin-approve-form',
+      '요청 시간이 초과되었습니다. DB 락·서버 상태를 확인해 주세요.');
+})();
+</script>
 
 <%@ include file="/WEB-INF/views/admin/common/footer.jsp" %>

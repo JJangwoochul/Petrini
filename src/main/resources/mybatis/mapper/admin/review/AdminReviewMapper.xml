@@ -4,21 +4,28 @@
 <mapper namespace="com.petcare.petcare.admin.review.mapper.AdminReviewMapper">
 
   <!-- 2026-07-24 박유정 — 공통 WHERE (목록·건수 동일 조건) -->
+  <!-- 2026-07-28 박유정 STEP 4 — HOSPITAL + STAY 확장 -->
   <sql id="reviewDeleteRequestWhere">
     FROM TB_REVIEW_DELETE_REQUEST DR
     LEFT JOIN TB_REVIEW R
       ON R.REVIEW_ID = DR.REVIEW_ID
      AND R.REVIEW_TYPE = DR.REVIEW_TYPE
     LEFT JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
-    JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = DR.TARGET_ID
+    LEFT JOIN TB_HOSPITAL H
+      ON H.HOSPITAL_ID = DR.TARGET_ID
+     AND DR.REVIEW_TYPE = 'HOSPITAL'
+    LEFT JOIN TB_STAY S
+      ON S.STAY_ID = DR.TARGET_ID
+     AND DR.REVIEW_TYPE = 'STAY'
     JOIN TB_BUSINESS B ON B.BIZ_NO = DR.BIZ_NO
-   WHERE DR.REVIEW_TYPE = 'HOSPITAL'
+   WHERE DR.REVIEW_TYPE IN ('HOSPITAL', 'STAY')
     <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
      AND DR.STATUS_CD = #{statusCd}
     </if>
     <if test="keyword != null and keyword != ''">
      AND (
            H.NAME LIKE '%' || #{keyword} || '%'
+        OR S.NAME LIKE '%' || #{keyword} || '%'
         OR B.BIZ_NAME LIKE '%' || #{keyword} || '%'
         OR M.NICKNAME LIKE '%' || #{keyword} || '%'
         OR DR.REQUEST_REASON LIKE '%' || #{keyword} || '%'
@@ -43,7 +50,7 @@
           DR.REQ_DATE       AS reqDate,
           DR.ADMIN_NO       AS adminNo,
           DR.PROCESS_DATE   AS processDate,
-          H.NAME            AS hospitalName,
+          COALESCE(H.NAME, S.NAME) AS hospitalName,
           B.BIZ_NAME        AS bizName,
           R.RATING          AS reviewRating,
           R.CONTENT         AS reviewContent,
@@ -65,7 +72,7 @@
     SELECT COUNT(*)
       FROM TB_REVIEW_DELETE_REQUEST
      WHERE STATUS_CD = 'PENDING'
-       AND REVIEW_TYPE = 'HOSPITAL'
+       AND REVIEW_TYPE IN ('HOSPITAL', 'STAY')
   </select>
 
   <!-- 2026-07-24 박유정 — 삭제 요청 단건 (승인/반려 시 검증) -->
@@ -83,7 +90,7 @@
       DR.REQ_DATE       AS reqDate,
       DR.ADMIN_NO       AS adminNo,
       DR.PROCESS_DATE   AS processDate,
-      H.NAME            AS hospitalName,
+      COALESCE(H.NAME, S.NAME) AS hospitalName,
       B.BIZ_NAME        AS bizName,
       R.RATING          AS reviewRating,
       R.CONTENT         AS reviewContent,
@@ -94,7 +101,12 @@
       ON R.REVIEW_ID = DR.REVIEW_ID
      AND R.REVIEW_TYPE = DR.REVIEW_TYPE
     LEFT JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
-    JOIN TB_HOSPITAL H ON H.HOSPITAL_ID = DR.TARGET_ID
+    LEFT JOIN TB_HOSPITAL H
+      ON H.HOSPITAL_ID = DR.TARGET_ID
+     AND DR.REVIEW_TYPE = 'HOSPITAL'
+    LEFT JOIN TB_STAY S
+      ON S.STAY_ID = DR.TARGET_ID
+     AND DR.REVIEW_TYPE = 'STAY'
     JOIN TB_BUSINESS B ON B.BIZ_NO = DR.BIZ_NO
    WHERE DR.REQUEST_ID = #{requestId}
   </select>
@@ -124,7 +136,7 @@
   <delete id="deleteReviewById">
     DELETE FROM TB_REVIEW
      WHERE REVIEW_ID = #{reviewId}
-       AND REVIEW_TYPE = 'HOSPITAL'
+       AND REVIEW_TYPE = #{reviewType}
   </delete>
 
   <!-- 2026-07-24 박유정 — 반려 알림 수신 사업자 회원번호 -->

@@ -47,9 +47,22 @@ public interface MypageNotifyService {
     void sendHospitalReviewToBizNotification(Long bizMemberNo, String hospitalName,
                                              String reviewerNickname, Double rating, Long resvId);
 
+    // 2026-07-28 박유정 — 유저 리뷰 등록 → 사업자(숙소 회원) 알림
+    void sendStayReviewToBizNotification(Long bizMemberNo, String stayName,
+                                         String reviewerNickname, Double rating, Long resvId);
+
+    // 2026-07-28 박유정 — 숙소 예약 결제 완료 → 사업자 알림
+    void sendStayReserveToBizNotification(Long bizMemberNo, String stayName,
+                                          java.util.Date checkinDate, java.util.Date checkoutDate,
+                                          Long resvId);
+
     // 2026/07/14 장우철 — 병원 답글 → 리뷰 작성 회원 알림
     void sendHospitalReviewReplyNotification(Long memberNo, String hospitalName,
                                              Long resvId, Long hospitalId);
+
+    // 2026-07-28 박유정 — 숙소 답글 → 리뷰 작성 회원 알림
+    void sendStayReviewReplyNotification(Long memberNo, String stayName,
+                                     Long resvId, Long stayId);
 
     // 2026-07-16 지윤 — 상품 품절 알림 → 사업자 회원 알림함 "재고" 탭
     void sendProductSoldoutNotification(Long bizMemberNo, String productName, Long productId);                                         
@@ -68,8 +81,10 @@ public interface MypageNotifyService {
     int countUnreadNotifications(Long memberNo);
 
     // 2026-07-24 박유정 — 리뷰 삭제 요청 반려 알림 (사업자)
-    void sendReviewDeleteRejectNotification(Long bizMemberNo, String hospitalName, String rejectReason);
+    void sendReviewDeleteRejectNotification(Long bizMemberNo, String targetName,
+                                            String rejectReason, String linkUrl);
 
     // 2026-07-24 박유정 — 리뷰 삭제 요청 승인 알림 (사업자)
-    void sendReviewDeleteApproveNotification(Long bizMemberNo, String hospitalName, Long reviewId);
+    void sendReviewDeleteApproveNotification(Long bizMemberNo, String targetName,
+                                             Long reviewId, String linkUrl);
 }

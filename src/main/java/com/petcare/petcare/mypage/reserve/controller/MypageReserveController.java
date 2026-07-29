@@ -8,6 +8,8 @@ package com.petcare.petcare.mypage.reserve.controller;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,12 +22,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.mypage.reserve.service.MypageReserveService;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
+import com.petcare.petcare.mypage.reserve.vo.StayReviewRegisterResult;
 
 import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/mypage")
 public class MypageReserveController {
+
+    private static final Logger log = LoggerFactory.getLogger(MypageReserveController.class);
 
     @Autowired
     private MypageReserveService mypageReserveService;
@@ -100,29 +105,36 @@ public class MypageReserveController {
             return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId;
         }
 
-        try {
-            // 적립 전 잔액
-            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId);
-            long totalAmount = (detail != null && detail.getTotalAmount() != null) ? detail.getTotalAmount() : 0;
-            long earnedPoint = (long) Math.floor(totalAmount * 0.03);
-            
-            mypageReserveService.addStayReview(member.getMemberNo(), resvId, rating, content);
+        log.info("POST /mypage/reserve/stay-review resvId={}", resvId);
 
-            // 세션 포인트 갱신
-            if (earnedPoint > 0) {
+        try {
+            StayReviewRegisterResult result = mypageReserveService.addStayReview(
+                    member.getMemberNo(), resvId, rating, content, member.getPointBalance());
+
+            // 2026-07-28 박유정 — 리뷰 포인트 적립 후 세션 잔액 갱신
+            if (result.isPointEarned()) {
                 long currentBalance = (member.getPointBalance() != null) ? member.getPointBalance() : 0;
-                member.setPointBalance(currentBalance + earnedPoint);
+                member.setPointBalance(currentBalance + result.getEarnedPoint());
                 session.setAttribute("memberInfo", member);
             }
 
             String msg = "리뷰가 등록되었습니다.";
-            if (earnedPoint > 0) {
-                msg += " " + String.format("%,d", earnedPoint) + "P가 적립되었습니다!";
+            // 2026-07-28 박유정 — 포인트 적립 시 안내 메시지
+            if (result.isPointEarned()) {
+                msg += " " + String.format("%,d", result.getEarnedPoint()) + "P가 적립되었습니다!";
             }
             rttr.addFlashAttribute("msg", msg);
-        } 
+        }
         catch (IllegalArgumentException | IllegalStateException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
+        } catch (Exception e) {
+            log.error("숙소 리뷰 등록 실패 resvId={}", resvId, e);
+            String err = e.getMessage();
+            if (err == null && e.getCause() != null) {
+                err = e.getCause().getMessage();
+            }
+            rttr.addFlashAttribute("errorMsg",
+                    "리뷰 등록 중 오류가 발생했습니다." + (err != null ? " (" + err + ")" : ""));
         }
         return "redirect:/mypage/reserve/detail?resvId=" + resvId;
     }

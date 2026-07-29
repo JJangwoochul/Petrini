@@ -7,9 +7,7 @@
 package com.petcare.petcare.mypage.reserve.service;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +17,7 @@ import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
+import com.petcare.petcare.mypage.reserve.vo.StayReviewRegisterResult;
 import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Service
@@ -28,6 +27,8 @@ public class MypageReserveServiceImpl implements MypageReserveService {
     private MypageReserveMapper mypageReserveMapper;
     @Autowired
     private MypageNotifyService mypageNotifyService;
+    @Autowired
+    private MypageReservePointService mypageReservePointService;
 
     @Override
     @Transactional(readOnly = true)
@@ -103,9 +104,11 @@ public class MypageReserveServiceImpl implements MypageReserveService {
     }
 
     // HYJ 26.07.20 — DONE + 미작성 예약만 숙소 리뷰 INSERT
+    // 2026-07-28 박유정 — 사업자 알림·결제금액 3% 포인트 적립·결과 VO 반환 (별도 TX)
     @Override
-    @Transactional
-    public void addStayReview(Long memberNo, Long resvId, Double rating, String content) {
+    @Transactional(timeout = 15)
+    public StayReviewRegisterResult addStayReview(Long memberNo, Long resvId, Double rating, String content,
+                                                  Long currentPointBalance) {
         if (memberNo == null || resvId == null) {
             throw new IllegalArgumentException("리뷰 정보가 올바르지 않습니다.");
         }
@@ -126,47 +129,40 @@ public class MypageReserveServiceImpl implements MypageReserveService {
         if (!"STAY".equalsIgnoreCase(detail.getResvType())) {
             throw new IllegalStateException("숙소 예약이 아닙니다.");
         }
-        if ("Y".equalsIgnoreCase(detail.getReviewedYn())
-                || mypageReserveMapper.countStayReviewByResvId(resvId, memberNo) > 0) {
+        if ("Y".equalsIgnoreCase(detail.getReviewedYn())) {
             throw new IllegalStateException("이미 리뷰를 작성한 예약입니다.");
         }
         if (detail.getTargetId() == null || detail.getTargetId().isBlank()) {
             throw new IllegalStateException("숙소 정보가 없습니다.");
         }
 
-        Long stayId = Long.parseLong(detail.getTargetId());
         StayReviewVO review = new StayReviewVO();
-        review.setTargetId(stayId);
+        review.setTargetId(Long.parseLong(detail.getTargetId()));
         review.setMemberNo(memberNo);
         review.setResvId(resvId);
         review.setRating(rating);
         review.setContent(content.trim());
 
-        // 1. 리뷰 INSERT
         mypageReserveMapper.insertStayReview(review);
+        // 2026-07-29 박유정 — TB_STAY AVG_RATING·REVIEW_CNT 갱신 (병원 addHospitalReview와 동일)
+        mypageReserveMapper.updateStayRatingSummary(review.getTargetId());
 
-        // 2. 포인트 적립 — 결제 금액의 3% (소수점 버림)
+        // 2026-07-28 박유정 — 사업자에게 리뷰 등록 알림
+        Long bizMemberNo = mypageReserveMapper.selectStayMemberNo(review.getTargetId());
+        String nickname = mypageReserveMapper.selectMemberNickname(memberNo);
+        mypageNotifyService.sendStayReviewToBizNotification(
+                bizMemberNo, detail.getStayName(), nickname, rating, resvId);
+
+        // 2026-07-28 박유정 — 숙소 리뷰 포인트 적립 (결제금액 3%, MypageReservePointService 별도 TX)
+        long earnedPoint = 0;
         if (detail.getTotalAmount() != null && detail.getTotalAmount() > 0) {
-            long pointAmount = (long) Math.floor(detail.getTotalAmount() * 0.03);
-            if (pointAmount > 0) {
-                // 잔액 먼저 증가
-                Map<String, Object> balanceParam = new HashMap<>();
-                balanceParam.put("memberNo", memberNo);
-                balanceParam.put("pointAmount", pointAmount);
-                mypageReserveMapper.addMemberPointBalance(balanceParam);
-
-                // 증가 후 잔액 조회
-                Long balanceAfter = mypageReserveMapper.selectMemberPointBalance(memberNo);
-
-                // 포인트 이력 INSERT
-                Map<String, Object> pointParam = new HashMap<>();
-                pointParam.put("memberNo", memberNo);
-                pointParam.put("pointAmount", String.valueOf(pointAmount));
-                pointParam.put("balanceAfter", String.valueOf(balanceAfter));
-                pointParam.put("refType", "STAY_REVIEW");
-                pointParam.put("refId", String.valueOf(review.getReviewId()));
-                mypageReserveMapper.insertReviewPoint(pointParam);
-            }
+            earnedPoint = (long) Math.floor(detail.getTotalAmount() * 0.03);
         }
+        boolean pointEarned = earnedPoint > 0
+                && mypageReservePointService.earnStayReviewPoint(
+                        memberNo, earnedPoint, review.getReviewId(),
+                        currentPointBalance != null ? currentPointBalance : 0L);
+
+        return new StayReviewRegisterResult(review.getReviewId(), earnedPoint, pointEarned);
     }
 }

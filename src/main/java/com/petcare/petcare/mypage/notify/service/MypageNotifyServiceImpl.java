@@ -197,6 +197,53 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026-07-28 박유정 — 리뷰 등록 → 사업자(숙소) 알림
+    @Override
+    @Transactional
+    public void sendStayReviewToBizNotification(Long bizMemberNo, String stayName,
+                                                String reviewerNickname, Double rating, Long resvId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String who = (reviewerNickname != null && !reviewerNickname.isBlank()) ? reviewerNickname : "회원";
+        String star = rating != null ? String.valueOf(rating) : "-";
+        String content = "[" + safeName + "] 새 숙소 리뷰가 등록되었습니다.\n\n작성자: " + who
+                + "\n별점: " + star;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 리뷰가 등록되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/stay/reviews");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-07-28 박유정 — 숙소 예약 결제 완료 → 사업자 알림
+    @Override
+    @Transactional
+    public void sendStayReserveToBizNotification(Long bizMemberNo, String stayName,
+                                                 java.util.Date checkinDate, java.util.Date checkoutDate,
+                                                 Long resvId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String period = formatStayPeriod(checkinDate, checkoutDate);
+        String content = "[" + safeName + "] 새 숙소 예약이 접수되었습니다.\n\n숙박 기간: " + period;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("새 숙소 예약이 접수되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/stay/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     // 2026/07/14 장우철 — 병원 답글 → 회원 알림
     @Override
     @Transactional
@@ -223,15 +270,43 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         vo.setIsRead("N");
         mypageNotifyMapper.insertNotification(vo);
     }
+    
+    // 2026-07-28 박유정 — 숙소 답글 → 회원 알림
+    @Override
+    @Transactional
+    public void sendStayReviewReplyNotification(Long memberNo, String stayName,
+                                                Long resvId, Long stayId) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String content = "[" + safeName + "] 회원님의 리뷰에 숙소 답글이 등록되었습니다.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 리뷰 답글이 등록되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        if (stayId != null) {
+            vo.setLinkUrl("/stay/detail?id=" + stayId);
+        } else if (resvId != null) {
+            vo.setLinkUrl("/mypage/reserve/detail?resvId=" + resvId);
+        } else {
+            vo.setLinkUrl("/mypage/reserve");
+        }
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
 
     // 2026-07-24 박유정 — 리뷰 삭제 요청 반려 알림 (사업자)
     @Override
     @Transactional
-    public void sendReviewDeleteRejectNotification(Long bizMemberNo, String hospitalName, String rejectReason) {
+    public void sendReviewDeleteRejectNotification(Long bizMemberNo, String targetName,
+                                                   String rejectReason, String linkUrl) {
         if (bizMemberNo == null) {
             return;
         }
-        String safeName = hospitalName != null ? hospitalName : "병원";
+        String safeName = targetName != null ? targetName : "사업장";
         String safeReason = (rejectReason != null && !rejectReason.isBlank()) ? rejectReason.trim() : "사유 없음";
         String content = "[" + safeName + "] 리뷰 삭제 요청이 반려되었습니다. 반려 사유: " + safeReason;
 
@@ -240,7 +315,7 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         vo.setNotiType("BIZ");
         vo.setTitle("리뷰 삭제 요청이 반려되었습니다");
         vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
-        vo.setLinkUrl("/biz/hospital/reviews");
+        vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/biz/hospital/reviews");
         vo.setIsRead("N");
         mypageNotifyMapper.insertNotification(vo);
     }
@@ -248,11 +323,12 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
     // 2026-07-24 박유정 — 리뷰 삭제 요청 승인 알림 (사업자)
     @Override
     @Transactional
-    public void sendReviewDeleteApproveNotification(Long bizMemberNo, String hospitalName, Long reviewId) {
+    public void sendReviewDeleteApproveNotification(Long bizMemberNo, String targetName,
+                                                    Long reviewId, String linkUrl) {
         if (bizMemberNo == null) {
             return;
         }
-        String safeName = hospitalName != null ? hospitalName : "병원";
+        String safeName = targetName != null ? targetName : "사업장";
         String content = "[" + safeName + "] 리뷰 삭제 요청이 승인되어 리뷰가 삭제되었습니다.";
 
         MypageNotifyVO vo = new MypageNotifyVO();
@@ -260,7 +336,7 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         vo.setNotiType("BIZ");
         vo.setTitle("리뷰 삭제 요청이 승인되었습니다");
         vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
-        vo.setLinkUrl("/biz/hospital/reviews");
+        vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/biz/hospital/reviews");
         vo.setIsRead("N");
         mypageNotifyMapper.insertNotification(vo);
     }
@@ -272,6 +348,13 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         }
         String timePart = (resvTime != null && !resvTime.isBlank()) ? resvTime : "";
         return (datePart + " " + timePart).trim();
+    }
+
+    private String formatStayPeriod(java.util.Date checkinDate, java.util.Date checkoutDate) {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        String checkin = checkinDate != null ? sdf.format(checkinDate) : "-";
+        String checkout = checkoutDate != null ? sdf.format(checkoutDate) : "-";
+        return checkin + " ~ " + checkout;
     }
 
     private String resolveBizTypeLabel(String bizType) {

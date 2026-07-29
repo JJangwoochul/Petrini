@@ -56,7 +56,9 @@ public interface AdminReviewMapper {
             @Param("rejectReason") String rejectReason);
 
     // 2026-07-24 박유정 — 리뷰 삭제
-    int deleteReviewById(@Param("reviewId") long reviewId);
+    // 2026-07-27 박유정 — reviewType(STAY/HOSPITAL)별 테이블 분기
+    int deleteReviewById(@Param("reviewId") long reviewId,
+                         @Param("reviewType") String reviewType);
 
     // 2026-07-24 박유정 — 사업자 회원번호 (알림용)
     Long selectBizMemberNoByBizNo(@Param("bizNo") long bizNo);

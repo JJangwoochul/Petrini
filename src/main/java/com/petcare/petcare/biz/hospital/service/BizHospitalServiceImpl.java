@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.hospital.util.MedicalRecordMemoParser;
 import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
 import com.petcare.petcare.hospital.vo.HospitalResvExceptionVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
@@ -275,7 +276,12 @@ public class BizHospitalServiceImpl implements BizHospitalService {
             return List.of();
         }
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
-        return bizHospitalMapper.selectMedicalRecords(hospitalId, kw, periodMonths);
+        List<MedicalRecordVO> list = bizHospitalMapper.selectMedicalRecords(hospitalId, kw, periodMonths);
+        // 2026-07-28 박유정 — MEMO 태그 파싱 후 유형·신체계측·수의사메모 분리 (상세보기 모달용)
+        for (MedicalRecordVO r : list) {
+            MedicalRecordMemoParser.parse(r);
+        }
+        return list;
     }
 
     @Override
@@ -284,7 +290,12 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         if (hospitalId == null || recordId == null) {
             return null;
         }
-        return bizHospitalMapper.selectMedicalRecordDetail(hospitalId, recordId);
+        MedicalRecordVO record = bizHospitalMapper.selectMedicalRecordDetail(hospitalId, recordId);
+        // 2026-07-28 박유정 — MEMO 태그 파싱 (상세보기)
+        if (record != null) {
+            MedicalRecordMemoParser.parse(record);
+        }
+        return record;
     }
 
     // 2026/07/13 장우철 — 진료기록 작성 모달용
