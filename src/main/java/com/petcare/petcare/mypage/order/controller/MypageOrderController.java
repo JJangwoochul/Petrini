@@ -89,15 +89,31 @@ public class MypageOrderController {
  }
 
     //지윤 26.07.20 추가: 주문상세보기 (결제내역/배송지, 읽기전용 - 리뷰작성은 목록에서 모달로 처리)
+    //지윤 26.07.30 수정: 같은 결제로 쪼개진 사업자별 주문을 전부 모아서 하나의 상세페이지로 보여줌
     @GetMapping("/orders/detail")
     public String orderDetail(@RequestParam("orderId") Long orderId, HttpSession session, Model model) {
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null) return "redirect:/login";
 
-        var detail = mypageOrderService.getOrderDetail(member.getMemberNo(), orderId);
-        if (detail == null) return "redirect:/mypage/orders?error=notfound";
+        java.util.List<MypageOrderVO> group = mypageOrderService.getOrderGroupDetail(member.getMemberNo(), orderId);
+        if (group == null || group.isEmpty()) return "redirect:/mypage/orders?error=notfound";
 
-        model.addAttribute("order", detail);
+        int groupTotalAmount = 0, groupDeliveryFee = 0, groupDiscountAmount = 0, groupPointUsed = 0, groupPayAmount = 0;
+        for (MypageOrderVO o : group) {
+            groupTotalAmount += o.getTotalAmount() != null ? o.getTotalAmount() : 0;
+            groupDeliveryFee += o.getDeliveryFee() != null ? o.getDeliveryFee() : 0;
+            groupDiscountAmount += o.getDiscountAmount() != null ? o.getDiscountAmount() : 0;
+            groupPointUsed += o.getPointUsed() != null ? o.getPointUsed() : 0;
+            groupPayAmount += o.getPayAmount() != null ? o.getPayAmount() : 0;
+        }
+
+        model.addAttribute("orderGroup", group);
+        model.addAttribute("order", group.get(0)); //대표 1건 (주문일/받는사람/배송지/주문자 등 공통정보 표시용)
+        model.addAttribute("groupTotalAmount", groupTotalAmount);
+        model.addAttribute("groupDeliveryFee", groupDeliveryFee);
+        model.addAttribute("groupDiscountAmount", groupDiscountAmount);
+        model.addAttribute("groupPointUsed", groupPointUsed);
+        model.addAttribute("groupPayAmount", groupPayAmount);
         return "mypage/orders-detail";
     }
 

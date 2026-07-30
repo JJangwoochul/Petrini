@@ -18,6 +18,7 @@ public class OrderTempVO {
     private Integer productTotal;
     private Integer deliveryFee;
     private Long couponMemberCouponId;   // 쓴 쿠폰 없으면 null
+    private String couponBizMemberId;    //지윤 26.07.30 추가: 쿠폰이 어느 사업자 건지 (사업자 쪼개기용)
     private Integer couponDiscount;
     private Integer pointUsed;
     private Integer totalDiscount;

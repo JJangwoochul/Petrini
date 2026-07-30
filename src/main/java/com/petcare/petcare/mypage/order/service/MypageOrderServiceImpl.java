@@ -103,6 +103,27 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         return order;
     }
 
+    //지윤 26.07.30 추가: 같은 결제(orderGroupId)로 묶인 사업자별 주문을 전부 모아서 반환.
+    //클릭한 orderId가 그룹에 속하지 않는(orderGroupId가 없는) 예전 단일주문 데이터면, 그 주문 하나만 담긴 리스트로 대체함
+    @Override
+    public java.util.List<MypageOrderVO> getOrderGroupDetail(Long memberNo, Long orderId) {
+        MypageOrderVO clicked = mypageOrderMapper.selectOrderDetail(orderId, memberNo);
+        if (clicked == null) return java.util.Collections.emptyList();
+
+        java.util.List<MypageOrderVO> group;
+        if (clicked.getOrderGroupId() != null) {
+            group = mypageOrderMapper.selectOrdersByGroupId(clicked.getOrderGroupId(), memberNo);
+        } else {
+            group = new java.util.ArrayList<>();
+            group.add(clicked);
+        }
+
+        for (MypageOrderVO o : group) {
+            o.setItemList(mypageOrderMapper.selectOrderItems(o.getOrderId()));
+        }
+        return group;
+    }
+
 //지윤 26.07.22 추가: 주문취소 신청 (실제 조건 체크는 매퍼 UPDATE의 WHERE절에서 함, 여기선 결과만 판단)
     //지윤 26.07.23 수정: 성공하면 사업자에게 알림도 같이 전송
     @Override

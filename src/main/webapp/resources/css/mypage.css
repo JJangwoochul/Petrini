@@ -192,7 +192,8 @@
 /* ================================================================
    주문내역
 ================================================================ */
-.order-filter { display:flex; gap:8px; margin-bottom:0; flex-wrap:wrap; }
+
+.order-filter { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
 .filter-btn {
     padding:7px 16px; border-radius:50px;
     border:1px solid var(--border); background:#fff;
@@ -225,6 +226,15 @@
     border-bottom:1px solid var(--border);
 }
 .order-card-head strong { color:var(--text-main); font-weight:600; }
+/* 지윤 26.07.30 추가: 한 결제(카드) 안에서 사업자별로 쪼개진 주문을 구분하는 서브그룹 */
+.order-subgroup { border-top:1px solid var(--border); }
+.order-subgroup:first-of-type { border-top:none; }
+.order-subhead {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 18px; font-size:13px; color:var(--text-muted);
+    background:var(--bg-page);
+}
+.order-subhead strong { color:var(--text-main); font-weight:600; }
 .order-item {
     display:flex; gap:16px; padding:16px 18px;
     border-bottom:1px solid var(--border); align-items:center;

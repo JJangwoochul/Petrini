@@ -19,6 +19,10 @@
 .store-cat-list li a:hover { background:var(--primary-light); color:var(--primary-dark); }
 .store-cat-list li a.active { background:var(--primary-light); color:var(--primary-dark); font-weight:700; }
 .store-cat-list .cat-count { font-size:12px; color:var(--text-muted); }
+.store-cat-list li label { padding:8px 10px; border-radius:var(--radius-sm); transition:var(--transition); }
+.store-cat-list li label:hover { background:var(--primary-light); }
+/* 지윤 26.07.30 추가: 브랜드 li가 모달(div)로 옮겨지면 ul의 list-style:none 상속이 끊겨서 점(•)이 다시 생김 -> li 자체에 직접 지정 */
+.brand-item { list-style:none; }
 .price-range { display:flex; flex-direction:column; gap:8px; }
 .price-range input[type=range] { width:100%; accent-color:var(--primary); }
 .price-range-vals { display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); }
@@ -116,30 +120,60 @@
         </span></div>
       </div>
     </div>
-    <%-- 지윤 26.07.12 수정: 브랜드 하드코딩 5개 -> TB_PRODUCT.BRAND_NAME 실데이터 집계로 교체, 현재 카테고리/가격 조건 내 브랜드만 노출 --%>
+    <%-- After: 체크박스 다중선택 + 상위 5개만 노출 + 더보기 + 전체보기 모달 --%>
+    <%-- 지윤 26.07.30 수정: 단일선택 링크 -> 체크박스 다중선택. 상위 5개 노출, 나머지는 더보기/전체보기 --%>
     <div class="store-sidebar-card">
-      <div class="store-sidebar-title">브랜드</div>
-      <ul class="store-cat-list">
-        <c:url var="brandAllUrl" value="/store">
-          <c:param name="species" value="${selectedSpecies}"/>
-          <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
-          <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
-          <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
-          <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
-        </c:url>
-        <li><a href="${brandAllUrl}" class="${empty selectedBrand ? 'active' : ''}">전체</a></li>
-        <c:forEach var="b" items="${brandList}">
-          <c:url var="brandUrl" value="/store">
-            <c:param name="species" value="${selectedSpecies}"/>
-            <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
-            <c:if test="${not empty selectedAge}"><c:param name="age" value="${selectedAge}"/></c:if>
-            <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
-            <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
-            <c:param name="brand" value="${b.brandName}"/>
-          </c:url>
-          <li><a href="${brandUrl}" class="${selectedBrand == b.brandName ? 'active' : ''}">${b.brandName}<span class="cat-count">${b.productCount}</span></a></li>
-        </c:forEach>
-      </ul>
+      <div class="store-sidebar-title" style="display:flex;justify-content:space-between;align-items:center;">
+        브랜드
+        <c:if test="${fn:length(brandList) > 5}">
+          <button type="button" onclick="openBrandModal()" style="font-size:12px;color:var(--text-muted);background:none;border:none;text-decoration:underline;cursor:pointer;">전체보기 &gt;</button>
+        </c:if>
+      </div>
+
+      <%-- 필터 기준 폼. 체크박스 바뀌면 이 폼 그대로 제출됨 (다른 필터값은 hidden으로 유지) --%>
+      <form id="brandForm" method="get" action="${contextPath}/store">
+        <input type="hidden" name="species" value="${selectedSpecies}">
+        <c:if test="${not empty selectedCategory}"><input type="hidden" name="category" value="${selectedCategory}"></c:if>
+        <c:if test="${not empty selectedAge}"><input type="hidden" name="age" value="${selectedAge}"></c:if>
+        <c:if test="${not empty selectedKeyword}"><input type="hidden" name="keyword" value="${selectedKeyword}"></c:if>
+        <c:if test="${not empty selectedMaxPrice}"><input type="hidden" name="maxPrice" value="${selectedMaxPrice}"></c:if>
+        <input type="hidden" name="sort" value="${selectedSort}">
+
+        <ul class="store-cat-list" id="brandListAll">
+          <c:forEach var="b" items="${brandList}" varStatus="vs">
+            <li class="brand-item${vs.index >= 5 ? ' brand-extra' : ''}" style="${vs.index >= 5 ? 'display:none;' : ''}">
+              
+              <%-- 지윤 26.07.30 수정: 모달 안에서 체크할 땐 즉시제출 안 되게 분기, 재고숫자 표시 제거 --%>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" name="brand" value="${b.brandName}"
+                       ${not empty selectedBrand and selectedBrand.contains(b.brandName) ? 'checked' : ''}
+                       onchange="if (!this.closest('#brandModalGrid')) { document.getElementById('brandForm').submit(); }">
+                ${b.brandName}
+              </label>
+
+            </li>
+          </c:forEach>
+        </ul>
+      </form>
+
+      <c:if test="${fn:length(brandList) > 5}">
+        <button type="button" id="brandMoreBtn" onclick="toggleBrandMore()" style="font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;margin-top:6px;">더보기 ⌄</button>
+      </c:if>
+    </div>
+
+    <%-- 지윤 26.07.30 추가: 브랜드 전체보기 모달 (그리드로 한눈에 보기, sidebar 체크박스를 그대로 옮겨서 재사용 -> 상태 동기화 문제 없음) --%>
+    <div id="brandModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:24px;width:640px;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <strong style="font-size:16px;">브랜드 전체</strong>
+          <button type="button" onclick="cancelBrandModal()" style="background:none;border:none;font-size:18px;cursor:pointer;">&times;</button>
+        </div>
+        <div id="brandModalGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 16px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--border,#eee);">
+          <button type="button" onclick="clearBrandAll()" style="font-size:13px;color:var(--text-muted);background:none;border:none;text-decoration:underline;cursor:pointer;">선택한 필터 전체 삭제</button>
+          <button type="button" onclick="applyBrandModal()" style="background:var(--primary,#2BAB82);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;">적용하기</button>
+        </div>
+      </div>
     </div>
 
   </aside>
@@ -195,6 +229,7 @@
   <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
   <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
 </c:url>--%>
+<%-- After: selectedBrand가 이제 List라서 c:forEach로 여러 개를 각각 brand 파라미터로 추가 --%>
 <c:url var="sortBaseUrl" value="/store">
   <c:param name="species" value="${selectedSpecies}"/>
   <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
@@ -202,7 +237,8 @@
   <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
   <%-- 지윤 26.07.12 추가: 정렬 바뀌어도 가격/브랜드 필터 유지 --%>
   <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
-  <c:if test="${not empty selectedBrand}"><c:param name="brand" value="${selectedBrand}"/></c:if>
+  <%-- 지윤 26.07.30 수정: selectedBrand String -> List, 여러 개 각각 param으로 추가 --%>
+  <c:forEach var="sb" items="${selectedBrand}"><c:param name="brand" value="${sb}"/></c:forEach>
 </c:url>
 
 <%--<div class="store-sort">
@@ -261,12 +297,7 @@
   </c:forEach>
 </div>
 
-    <%-- 지윤 26.07.06 페이지네이션 기능 추가: 하드코딩 1~5 -> totalPages만큼 자동 생성 --%>
-<%--<c:url var="pageBaseUrl" value="/store">
-  <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
-  <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
-  <c:if test="${not empty selectedSort}"><c:param name="sort" value="${selectedSort}"/></c:if>
-</c:url>--%>
+    
 <c:url var="pageBaseUrl" value="/store">
   <c:param name="species" value="${selectedSpecies}"/>
   <c:if test="${not empty selectedCategory}"><c:param name="category" value="${selectedCategory}"/></c:if>
@@ -275,7 +306,8 @@
   <c:if test="${not empty selectedSort}"><c:param name="sort" value="${selectedSort}"/></c:if>
   <%-- 지윤 26.07.12 추가: 페이지 이동해도 가격/브랜드 필터 유지 --%>
   <c:if test="${not empty selectedMaxPrice}"><c:param name="maxPrice" value="${selectedMaxPrice}"/></c:if>
-  <c:if test="${not empty selectedBrand}"><c:param name="brand" value="${selectedBrand}"/></c:if>
+  <%-- 지윤 26.07.30 수정: selectedBrand String -> List --%>
+  <c:forEach var="sb" items="${selectedBrand}"><c:param name="brand" value="${sb}"/></c:forEach>
 </c:url>
 
 <%--<c:set var="pageSep" value="${empty selectedCategory && empty selectedKeyword && empty selectedSort ? '?' : '&'}"/>--%>
@@ -301,25 +333,6 @@ document.querySelectorAll('.sort-btn').forEach(b => b.addEventListener('click', 
   document.querySelectorAll('.sort-btn').forEach(x => x.classList.remove('on'));
   this.classList.add('on');
 }));
-//지윤 26.07.08 수정: 가짜 alert -> 실제 /store/cart/add 호출로 변경 (페이지 이동 없이 AJAX로 담기)
-//지윤 26.07.09 삭제: 목록카드 장바구니담기 관련 JS 통째로 제거 
-/*document.querySelectorAll('.btn-cart').forEach(b => b.addEventListener('click', e => {
-  e.stopPropagation();
-  var productId = b.dataset.productId;
-  var price = b.dataset.price;
-  fetch('${contextPath}/store/cart/add', {
-    method: 'POST',
-    headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    body: 'productId=' + productId + '&optionId=&qty=1&price=' + price
-  }).then(function(res){
-    if (res.ok) {
-      alert('장바구니에 담았습니다!');
-      refreshCartCount();
-    } else {
-      alert('장바구니 담기에 실패했습니다.');
-    }
-  });
-}));*/
 
 //지윤 26.07.12 가격대 슬라이더: 드래그 중엔 라벨만 갱신, 손 뗄 때(change) 기존 필터 유지한 채 maxPrice로 이동
 var priceRangeInput = document.getElementById('priceRangeInput');
@@ -337,10 +350,62 @@ if (priceRangeInput) {
     <c:if test="${not empty selectedAge}">params.set('age', '${selectedAge}');</c:if>
     <c:if test="${not empty selectedKeyword}">params.set('keyword', '${selectedKeyword}');</c:if>
     <c:if test="${not empty selectedSort}">params.set('sort', '${selectedSort}');</c:if>
-    <c:if test="${not empty selectedBrand}">params.set('brand', '${selectedBrand}');</c:if>
+    <c:forEach var="sb" items="${selectedBrand}">params.append('brand', '${sb}');</c:forEach>
     if (v < 150000) { params.set('maxPrice', v); }
     location.href = '${contextPath}/store?' + params.toString();
   });
+}
+
+//지윤 26.07.30 추가: 브랜드 더보기 (사이드바 안에서 6번째부터 펼치기/접기)
+function toggleBrandMore() {
+  var extras = document.querySelectorAll('#brandListAll .brand-extra');
+  var btn = document.getElementById('brandMoreBtn');
+  var showing = extras.length > 0 && extras[0].style.display !== 'none';
+  extras.forEach(function (li) { li.style.display = showing ? 'none' : ''; });
+  btn.textContent = showing ? '더보기 ⌄' : '접기 ⌃';
+}
+
+//지윤 26.07.30 수정: 모달 열 때 체크 상태를 스냅샷으로 저장 -> X로 닫으면 이걸로 복구
+var brandCheckedSnapshot = [];
+function openBrandModal() {
+  var items = document.querySelectorAll('#brandListAll .brand-item');
+  var grid = document.getElementById('brandModalGrid');
+  brandCheckedSnapshot = Array.from(document.querySelectorAll('#brandForm input[name=brand]')).map(function (cb) { return cb.checked; });
+  items.forEach(function (li) {
+    li.style.display = '';
+    grid.appendChild(li);
+  });
+  document.getElementById('brandModalBg').style.display = 'flex';
+}
+
+//지윤 26.07.30 추가: X(취소)로 닫을 때 스냅샷으로 체크 상태 되돌림
+function cancelBrandModal() {
+  var checkboxes = document.querySelectorAll('#brandModalGrid input[name=brand]');
+  checkboxes.forEach(function (cb, idx) { cb.checked = brandCheckedSnapshot[idx]; });
+  closeBrandModal();
+}
+
+//모달 닫을 때 원래 사이드바 자리로 되돌림 (5개까지만 보이게 다시 정리)
+function closeBrandModal() {
+  var grid = document.getElementById('brandModalGrid');
+  var sidebarList = document.getElementById('brandListAll');
+  var items = Array.from(grid.children);
+  items.forEach(function (li, idx) {
+    if (idx >= 5) { li.style.display = 'none'; }
+    sidebarList.appendChild(li);
+  });
+  document.getElementById('brandModalBg').style.display = 'none';
+  var btn = document.getElementById('brandMoreBtn');
+  if (btn) btn.textContent = '더보기 ⌄';
+}
+
+function applyBrandModal() {
+  closeBrandModal();
+  document.getElementById('brandForm').submit();
+}
+
+function clearBrandAll() {
+  document.querySelectorAll('#brandModalGrid input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
 }
 </script>
 

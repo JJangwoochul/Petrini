@@ -23,4 +23,5 @@ public class CartItemVO {
     private Integer price;
     private Integer stockQty;
     private Long bizNo; //지윤 26.07.13 추가: 주문 저장 시 TB_ORDER.BIZ_NO에 넣어야 해서 추가
+    private String bizName; //지윤 26.07.30 추가: 장바구니 화면에서 사업자별로 묶어 보여주기 위해 추가
 }

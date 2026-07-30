@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- 지윤 26.07.08 가격 콤마 표시용 fmt 태그 --%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%-- 지윤 26.07.30 추가: 이미지 URL이 http로 시작하는지 검사용 (fn:startsWith 쓰려고 필요) --%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
 <c:set var="pageId" value="store" />
@@ -37,6 +39,11 @@
   .cart-price{font-size:16px;font-weight:800;color:var(--text-main);text-align:right;flex-shrink:0;min-width:90px}
   .cart-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;padding:4px;flex-shrink:0}
   .cart-del:hover{color:var(--accent)}
+  /* 지윤 26.07.30 추가: 사업자별 그룹 헤더/미니요약 (화해 앱 스타일) */
+  .cart-seller-head{display:flex;align-items:center;gap:8px;padding:14px 20px;background:var(--bg-page);border-bottom:1px solid var(--border);font-size:14px;font-weight:800;color:var(--text-main)}
+  .cart-seller-summary{display:flex;flex-direction:column;gap:6px;padding:14px 20px;background:var(--bg-page);border-bottom:1px solid var(--border);font-size:13px;color:var(--text-sub)}
+  .cart-seller-summary .row{display:flex;justify-content:space-between}
+
   .cart-summary{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
   .cart-summary h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
   .summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px;color:var(--text-sub)}
@@ -67,10 +74,18 @@
       <c:if test="${empty cartItems}">
         <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">장바구니가 비어있습니다.</div>
       </c:if>
-      <c:forEach var="item" items="${cartItems}">
-        <div class="cart-item" data-price="${item.price}" data-cart-item-id="${item.cartItemId}">
+      <%-- 지윤 26.07.30 수정: 사업자(BIZ_NO)별로 묶어서 렌더링. 쿼리가 BIZ_NO 순으로 정렬해서 주므로 같은 사업자 상품끼리 붙어있음을 전제로,
+           이전/다음 상품의 bizNo와 비교해서 그룹의 시작/끝을 판단함 --%>
+      <c:forEach var="item" items="${cartItems}" varStatus="vs">
+        <c:if test="${vs.first || item.bizNo != cartItems[vs.index-1].bizNo}">
+          <div class="cart-seller-head" data-biz-no="${item.bizNo}">🏪 ${item.bizName}</div>
+        </c:if>
+
+        <%-- 지윤 26.07.30 추가: 로컬 업로드 이미지는 /upload/ 접두사 필요, 외부(목업) URL은 그대로 (list.jsp와 동일 패턴) --%>
+        <c:set var="cartThumbSrc" value="${fn:startsWith(item.thumbnailUrl,'http') ? item.thumbnailUrl : contextPath.concat('/upload/').concat(item.thumbnailUrl)}"/>
+        <div class="cart-item" data-price="${item.price}" data-cart-item-id="${item.cartItemId}" data-biz-no="${item.bizNo}">
           <input type="checkbox" class="cart-cb" checked>
-          <img class="cart-thumb" src="${item.thumbnailUrl}" alt="${item.productName}" onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=IMG'">
+          <img class="cart-thumb" src="${cartThumbSrc}" alt="${item.productName}" onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=IMG'">
           <div class="cart-info">
             <div class="cart-brand">${item.brandName}</div>
             <div class="cart-name">${item.productName}</div>
@@ -86,6 +101,13 @@
           <div class="cart-price"><fmt:formatNumber value="${item.price * item.qty}" pattern="#,###"/>원</div>
           <button class="cart-del">×</button>
         </div>
+
+        <c:if test="${vs.last || item.bizNo != cartItems[vs.index+1].bizNo}">
+          <div class="cart-seller-summary" data-biz-no="${item.bizNo}">
+            <div class="row"><span>상품금액</span><span id="groupProduct-${item.bizNo}">0원</span></div>
+            <div class="row"><span>배송비</span><span id="groupDelivery-${item.bizNo}">무료</span></div>
+          </div>
+        </c:if>
       </c:forEach>
 
     </div>
@@ -101,27 +123,62 @@
 </div>
 <script>
   function won(n){ return n.toLocaleString('ko-KR') + '원'; }
-  
+
+  //지윤 26.07.30 추가: 삭제 후 남은 상품 없는 사업자 그룹의 헤더/미니요약을 정리
+  function cleanupEmptyGroups(){
+    var remainingBizNos = new Set(
+      Array.from(document.querySelectorAll('.cart-item')).map(function(item){ return item.dataset.bizNo; })
+    );
+    document.querySelectorAll('.cart-seller-head, .cart-seller-summary').forEach(function(el){
+      if (!remainingBizNos.has(el.dataset.bizNo)) {
+        el.remove();
+      }
+    });
+  }
+
   //지윤 26.07.09 배송비 계산 추가 (5만원 이상 무료, 미만은 3,000원)
+  //지윤 26.07.30 수정: 전체 합산 -> 사업자(bizNo)별로 따로 계산 후 합산. 그룹별 소계 DOM도 같이 갱신
   function recalc(){
+    var groups = {}; // bizNo -> { total, count }
     var total = 0, count = 0;
+
     document.querySelectorAll('.cart-item').forEach(function(item){
       var checked = item.querySelector('.cart-cb').checked;
       var unitPrice = parseInt(item.dataset.price, 10);
       var qty = parseInt(item.querySelector('.cart-qty-wrap input').value, 10);
       var lineTotal = unitPrice * qty;
       item.querySelector('.cart-price').textContent = won(lineTotal);
-      if(checked){ total += lineTotal; count++; }
+
+      var bizNo = item.dataset.bizNo;
+      if (!groups[bizNo]) groups[bizNo] = { total: 0, count: 0 };
+
+      if(checked){
+        groups[bizNo].total += lineTotal;
+        groups[bizNo].count++;
+        total += lineTotal;
+        count++;
+      }
     });
-    var deliveryFee = (total === 0 || total >= 50000) ? 0 : 3000;
+
+    var deliveryTotal = 0;
+    Object.keys(groups).forEach(function(bizNo){
+      var g = groups[bizNo];
+      var fee = (g.total === 0 || g.total >= 50000) ? 0 : 3000;
+      deliveryTotal += fee;
+      var pEl = document.getElementById('groupProduct-' + bizNo);
+      var dEl = document.getElementById('groupDelivery-' + bizNo);
+      if (pEl) pEl.textContent = won(g.total);
+      if (dEl) dEl.textContent = fee === 0 ? '무료' : won(fee);
+    });
+
     document.getElementById('sumProduct').textContent = won(total);
-    document.getElementById('sumDelivery').textContent = deliveryFee === 0 ? '무료' : won(deliveryFee);
-    document.getElementById('sumTotal').textContent = won(total + deliveryFee);
+    document.getElementById('sumDelivery').textContent = deliveryTotal === 0 ? '무료' : won(deliveryTotal);
+    document.getElementById('sumTotal').textContent = won(total + deliveryTotal);
     var btn = document.getElementById('btnOrder');
     btn.textContent = '주문하기 (' + count + '개)';
     btn.disabled = count === 0;
   }
-  
+
   document.querySelectorAll('.cart-qty-wrap button').forEach(function(btn){
     btn.addEventListener('click', function(){
       var item = this.closest('.cart-item');
@@ -131,7 +188,7 @@
       val = isPlus ? val + 1 : Math.max(1, val - 1);
       input.value = val;
       recalc();
-  
+
       fetch('${contextPath}/store/cart/updateQty', {
         method: 'POST',
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
@@ -139,7 +196,7 @@
       });
     });
   });
-  
+
   document.querySelectorAll('.cart-cb').forEach(function(cb){
     cb.addEventListener('change', function(){
       if(this.closest('.cart-section-head')){
@@ -149,14 +206,15 @@
       recalc();
     });
   });
-  
+
   document.querySelectorAll('.cart-del').forEach(function(btn){
     btn.addEventListener('click', function(){
       var item = this.closest('.cart-item');
       var cartItemId = item.dataset.cartItemId;
       item.remove();
+      cleanupEmptyGroups();
       recalc();
-  
+
       fetch('${contextPath}/store/cart/delete', {
         method: 'POST',
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
@@ -164,8 +222,8 @@
       }).then(function(){ refreshCartCount(); });
     });
   });
-  
-  //지윤 26.07.08 추가: 선택삭제/전체삭제 (체크된 항목 전부 서버에서 삭제 후 화면에서 제거)
+
+  //지윤 26.07.08 추가: 선택삭제(체크된 것만) / 전체삭제(장바구니 통째로) 버튼
   document.getElementById('btnDeleteSelected').addEventListener('click', function(){
     var checkedItems = Array.from(document.querySelectorAll('.cart-item')).filter(function(item){
       return item.querySelector('.cart-cb').checked;
@@ -175,12 +233,12 @@
       return;
     }
     if (!confirm(checkedItems.length + '개 상품을 삭제하시겠습니까?')) return;
-  
+
     var params = new URLSearchParams();
     checkedItems.forEach(function(item){
       params.append('cartItemIds', item.dataset.cartItemId);
     });
-  
+
    fetch('${contextPath}/store/cart/deleteAll', {
       method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
@@ -188,13 +246,14 @@
     }).then(function(res){
       if (res.ok) {
         checkedItems.forEach(function(item){ item.remove(); });
+        cleanupEmptyGroups();
         recalc();
       } else {
         alert('삭제에 실패했습니다.');
       }
     });
   });
-  
+
   //지윤 26.07.08 추가: 전체삭제 (체크 여부 상관없이 장바구니에 있는 항목 전부 삭제)
   document.getElementById('btnDeleteAll').addEventListener('click', function(){
     var allItems = Array.from(document.querySelectorAll('.cart-item'));
@@ -203,12 +262,12 @@
       return;
     }
     if (!confirm('장바구니를 전체 삭제하시겠습니까?')) return;
-  
+
     var params = new URLSearchParams();
     allItems.forEach(function(item){
       params.append('cartItemIds', item.dataset.cartItemId);
     });
-  
+
     fetch('${contextPath}/store/cart/deleteAll', {
       method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
@@ -216,13 +275,14 @@
     }).then(function(res){
       if (res.ok) {
         allItems.forEach(function(item){ item.remove(); });
+        cleanupEmptyGroups();
         recalc();
       } else {
         alert('삭제에 실패했습니다.');
       }
     });
   });
-  
+
   //지윤 26.07.09 추가: 주문하기 클릭 시 체크된 장바구니 항목ID들을 파라미터로 넘김
   document.getElementById('btnOrder').addEventListener('click', function () {
     var checkedIds = Array.from(document.querySelectorAll('.cart-item'))
@@ -234,7 +294,7 @@
     }
     location.href = '${contextPath}/store/order?cartItemIds=' + checkedIds.join(',');
   });
-  
+
   recalc();
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

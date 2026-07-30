@@ -40,16 +40,17 @@ public interface StoreShopMapper {
 
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(offset, size) 추가
     //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
+    //지윤 26.07.30 수정: brand String -> List<String> (MyBatis foreach로 IN절 처리)
     List<StoreShopVO> selectProductList(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
                                          @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
-                                         @Param("brand") String brand,
+                                         @Param("brand") List<String> brand,
                                          @Param("sort") String sort, @Param("offset") int offset, @Param("size") int size);
 
     //지윤 26.07.06 페이지네이션용 전체 상품 개수 조회 (카테고리/검색 조건은 목록과 동일하게 적용)
     //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
     int selectProductCount(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
                             @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
-                            @Param("brand") String brand);
+                            @Param("brand") List<String> brand);
 
     //지윤 26.07.12 브랜드별 상품 수 집계 (카테고리/검색/가격 조건은 목록과 동일하게 적용, 브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능하게 함)
     List<BrandVO> selectBrandCounts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,

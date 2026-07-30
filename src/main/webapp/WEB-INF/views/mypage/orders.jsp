@@ -37,10 +37,22 @@
             <p class="mp-empty" style="padding:40px 0;text-align:center;color:var(--text-muted)">주문 내역이 없습니다.</p>
         </c:when>
         <c:otherwise>
-            <c:forEach var="o" items="${orderList}">
+            <%-- 지윤 26.07.30 수정: 사업자별로 쪼개진 여러 TB_ORDER가 같은 결제(orderGroupId)면 카드 하나로 묶어서 보여줌.
+                 카드 안에서는 사업자(주문)별로 order-subgroup으로 다시 나눠, 상태뱃지/상세보기/액션버튼은 그 사업자 주문 기준 그대로 유지 --%>
+            <c:forEach var="o" items="${orderList}" varStatus="ovs">
+                <c:if test="${ovs.first || o.orderGroupId != orderList[ovs.index-1].orderGroupId}">
                 <div class="order-card">
                     <div class="order-card-head">
                         <span>${o.orderDate} 주문 <strong>#${o.orderNo}</strong></span>
+                        <%-- 지윤 26.07.30 수정: 사업자별로 쪼개져도 유저 입장에선 "결제 1건"이라, 주문번호/상세보기는 카드당 하나만 표시.
+                             어느 사업자 주문의 orderId를 넘겨도 상세페이지에서 같은 결제그룹 전체를 묶어서 보여줌 --%>
+                        <a href="${contextPath}/mypage/orders/detail?orderId=${o.orderId}" style="font-size:13px;color:var(--text-muted);text-decoration:none">주문상세보기 &gt;</a>
+                    </div>
+                </c:if>
+
+                    <div class="order-subgroup">
+                    <div class="order-subhead">
+                        <span>🏪 ${o.bizName}</span>
                         <div style="display:flex;align-items:center;gap:10px">
                             <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
                             <c:choose>
@@ -50,8 +62,6 @@
                                 <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
                                 <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
                             </c:choose>
-                            <%-- 지윤 26.07.20 추가: 주문상세보기 - 결제내역/배송지까지 자세히 보여주는 읽기전용 페이지로 이동 --%>
-                            <a href="${contextPath}/mypage/orders/detail?orderId=${o.orderId}" style="font-size:13px;color:var(--text-muted);text-decoration:none">주문상세보기 &gt;</a>
                         </div>
                     </div>
 
@@ -130,7 +140,11 @@
                             </c:if>
                         </div>
                     </c:if>
+                    </div>
+
+                <c:if test="${ovs.last || o.orderGroupId != orderList[ovs.index+1].orderGroupId}">
                 </div>
+                </c:if>
             </c:forEach>
         </c:otherwise>
     </c:choose>

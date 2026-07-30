@@ -26,9 +26,11 @@ import lombok.NoArgsConstructor;
 public class MypageOrderVO {
     private Long orderId;
     private String orderNo;
+    private String orderGroupId; //지윤 26.07.30 추가: 같은 결제(TOSS_ORDER_ID)로 묶인 여러 사업자 주문을 화면에서 하나로 그룹핑하기 위한 키
     private String orderDate;
     private String orderStatus;   //PAID/READY/SHIPPING/DONE/CANCEL
     private Integer payAmount;
+    private String bizName; //지윤 26.07.30 추가: 상세보기에서 사업자별 소계 섹션 헤더용
     private List<MypageOrderItemVO> itemList;
     private String ordererName; //지윤 26.07.21 추가: 주문정보 섹션의 "주문자" (TB_MEMBER.NICKNAME)
 

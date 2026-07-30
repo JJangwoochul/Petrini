@@ -16,4 +16,5 @@ public class CouponVO {
     private String couponType;
     private Integer discountValue;
     private Integer minOrderAmt;
+    private String bizMemberId; //지윤 26.07.30 추가: 이 쿠폰이 어느 사업자 발급인지 (TB_COUPON.BIZ_MEMBER_ID)
 }

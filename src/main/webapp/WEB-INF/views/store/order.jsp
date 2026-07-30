@@ -24,6 +24,12 @@
   .order-product-thumb{width:60px;height:60px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0}
   .order-product-name{flex:1;font-size:14px;font-weight:600;color:var(--text-main)}
   .order-product-price{font-size:14px;font-weight:700;color:var(--text-main)}
+  .order-seller-group{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:16px;overflow:hidden}
+  .order-seller-group:last-child{margin-bottom:0}
+  .order-seller-head{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:800;color:var(--primary-dark);background:var(--primary-light);padding:12px 16px}
+  .order-seller-group .order-product-row{padding:14px 16px;border-bottom:1px solid var(--border)}
+  .order-seller-summary{display:flex;flex-direction:column;gap:4px;padding:12px 16px;font-size:13px;color:var(--text-sub);background:var(--bg-page)}
+  .order-seller-summary .row{display:flex;justify-content:space-between}
   .coupon-input{display:flex;gap:8px}
   .coupon-input input{flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;outline:none;font-family:inherit}
   .coupon-input input:focus{border-color:var(--primary)}
@@ -59,17 +65,30 @@
 
   <h1 class="order-title">주문서 작성</h1>
 
+  <%-- After --%>
   <div class="order-section">
     <h3>주문 상품</h3>
+    <%-- 지윤 26.07.30 수정: 사업자(BIZ_NO)별로 묶어서 렌더링, 그룹별 소계+배송비 계산 후 전체 배송비(totalDeliveryFee)로 누적 --%>
     <c:set var="productTotal" value="0" />
+    <c:set var="totalDeliveryFee" value="0" />
+    <c:set var="groupSubtotal" value="0" />
 
-<c:forEach var="item" items="${orderItems}">
+<%-- After --%>
+<c:forEach var="item" items="${orderItems}" varStatus="vs">
+  <c:if test="${vs.first || item.bizNo != orderItems[vs.index-1].bizNo}">
+    <c:set var="groupSubtotal" value="0" />
+    <div class="order-seller-group">
+    <div class="order-seller-head">🏪 ${item.bizName}</div>
+  </c:if>
+
   <c:set var="lineTotal" value="${item.price * item.qty}" />
   <c:set var="productTotal" value="${productTotal + lineTotal}" />
+  <c:set var="groupSubtotal" value="${groupSubtotal + lineTotal}" />
 
+  <c:set var="orderThumbSrc" value="${fn:startsWith(item.thumbnailUrl,'http') ? item.thumbnailUrl : contextPath.concat('/upload/').concat(item.thumbnailUrl)}"/>
   <div class="order-product-row">
     <img class="order-product-thumb"
-         src="${item.thumbnailUrl}"
+         src="${orderThumbSrc}"
          alt="${item.productName}"
          onerror="this.src='https://placehold.co/60x60/EAF7F2/2BAB82?text=IMG'">
 
@@ -90,15 +109,33 @@
       <fmt:formatNumber value="${lineTotal}" pattern="#,###"/>원
     </div>
   </div>
+
+  <c:if test="${vs.last || item.bizNo != orderItems[vs.index+1].bizNo}">
+    <c:set var="groupFee" value="${groupSubtotal >= 50000 ? 0 : 3000}" />
+    <c:set var="totalDeliveryFee" value="${totalDeliveryFee + groupFee}" />
+    <div class="order-seller-summary">
+      <div class="row"><span>상품금액</span><span><fmt:formatNumber value="${groupSubtotal}" pattern="#,###"/>원</span></div>
+      <div class="row"><span>배송비</span><span>
+        <c:choose>
+          <c:when test="${groupFee == 0}">무료</c:when>
+          <c:otherwise><fmt:formatNumber value="${groupFee}" pattern="#,###"/>원</c:otherwise>
+        </c:choose>
+      </span></div>
+    </div>
+    </div>
+  </c:if>
 </c:forEach>
   </div>
 
+  <%-- After --%>
   <div class="order-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="margin:0">배송지 입력</h3>
-      <%-- 지윤 26.07.29 추가: 저장된 배송지 목록 모달 여는 버튼 (네이버페이 스타일) --%>
-      <button type="button" onclick="openAddressModal()" style="font-size:13px;color:var(--primary,#2BAB82);background:none;border:none;text-decoration:underline;cursor:pointer;">배송지 목록 &gt;</button>
+    <%-- 지윤 26.07.30 수정: h3의 margin:0으로 인해 다른 섹션(h3 기본 여백 18px+밑줄)보다 간격이 좁아 보이던 문제 -> 감싸는 div에 동일한 여백/밑줄 부여 --%>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:18px;">
+      <h3 style="margin:0;padding:0;border:none;">배송지 정보</h3>
+      <%-- 지윤 26.07.30 수정: 초기화 버튼은 가시성 낮아서 주소 입력폼 하단으로 이동함 (아래 수정② 참고) --%>
+      <button type="button" onclick="openAddressModal()" style="font-size:13px;color:var(--primary,#2BAB82);background:none;border:none;text-decoration:underline;cursor:pointer;">배송지 관리 &gt;</button>
     </div>
+
     <div class="order-form-grid">
       
     <%-- 지윤 26.07.29 수정: memberInfo.memberName 직접참조 -> Controller에서 배송지록 우선순위 계산해서 넘겨준 memberRecvName 사용 --%>
@@ -131,6 +168,7 @@
           <input type="text" id="phoneEnd" maxlength="4" value="${phoneEndVal}" placeholder="0000" style="text-align:center; width:70px; flex:none;">
         </div>
       </div>
+      <%-- After --%>
       <div class="order-form-group full">
         <label>주소</label>
         <div class="addr-row">
@@ -140,6 +178,14 @@
         </div>
         <input type="text" id="orderAddr1" name="orderAddr1" value="${memberAddr1}" placeholder="기본 주소" style="margin-top:8px" readonly>
         <input type="text" id="orderAddr2" name="orderAddr2" value="${memberAddr2}" placeholder="상세 주소" style="margin-top:8px">
+        <%-- 지윤 26.07.30 이동+수정: 헤더에 있던 초기화 버튼을 주소 필드 바로 아래로 이동, 아이콘+테두리 스타일로 변경 (가시성 개선) --%>
+        <div style="text-align:right;margin-top:8px;">
+          <%-- After --%>
+          <button type="button" onclick="resetAddressForm()" style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--text-secondary);background:#f5f5f5;border:1px solid var(--border-strong);border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:500;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            입력 초기화
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -259,6 +305,8 @@ var contextPath = '${contextPath}';
 //지윤 26.07.09 추가: 쿠폰/포인트 선택 시 결제 예정 금액 실시간 계산
 var PRODUCT_TOTAL = ${productTotal};
 var MEMBER_POINT = ${memberPoint};
+//지윤 26.07.30 추가: 배송비를 전체금액 기준(50000원)이 아니라, JSP에서 사업자별로 이미 계산해둔 합계로 사용
+var TOTAL_DELIVERY_FEE = ${totalDeliveryFee};
 function won(n){ return n.toLocaleString('ko-KR') + '원'; }
 
 
@@ -269,7 +317,8 @@ function updateOrderTotal() {
   var couponValue = parseInt(opt.dataset.value) || 0;
   var minOrderAmt = parseInt(opt.dataset.min) || 0;
 
-  var deliveryFee = (PRODUCT_TOTAL === 0 || PRODUCT_TOTAL >= 50000) ? 0 : 3000;
+  //지윤 26.07.30 수정: 전체금액 기준 계산 -> 사업자별로 미리 합산해둔 TOTAL_DELIVERY_FEE 그대로 사용
+  var deliveryFee = TOTAL_DELIVERY_FEE;
 
   var couponDiscount = 0;
   if (couponType) {
@@ -308,7 +357,8 @@ document.getElementById('btnUseAllPoint').addEventListener('click', function () 
   var pointInput = document.getElementById('pointInput');
 
   if (btn.textContent === '최대사용') {
-    var deliveryFee = (PRODUCT_TOTAL === 0 || PRODUCT_TOTAL >= 50000) ? 0 : 3000;
+    //지윤 26.07.30 수정: TOTAL_DELIVERY_FEE 그대로 사용
+    var deliveryFee = TOTAL_DELIVERY_FEE;
     var paymentAmount = PRODUCT_TOTAL + deliveryFee;
     var maxUsable = Math.min(MEMBER_POINT, paymentAmount);
     pointInput.value = maxUsable;
@@ -445,26 +495,26 @@ function loadAddressList() {
         var esc = function (s) { return (s || '').replace(/'/g, "\\'"); };
         var argStr = a.addrId + ", '" + esc(a.recvName) + "', '" + esc(a.recvPhone) + "', '" + esc(a.zipCode) + "', '" + esc(a.addr1) + "', '" + esc(a.addr2) + "'";
 
-        html += '<div style="border:1px solid #E2E8E4; border-radius:10px; padding:14px 16px; margin-bottom:10px;">';
-        html += '  <div style="display:flex; justify-content:space-between; align-items:flex-start;">';
-        html += '    <div>';
-        html += '      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">';
-        html += '        <b style="font-size:14px; color:' + (isDefault ? 'var(--primary,#2BAB82)' : '#333') + ';">' + a.recvName + '</b>';
+        //지윤 26.07.29 수정: 네이버페이 레이아웃 그대로 - 이름줄 오른쪽 끝에 선택/선택됨 표시, 수정·삭제는 주소 아래 별도 줄
+        html += '<div style="border:1px solid ' + (isDefault ? 'var(--primary,#2BAB82)' : '#E2E8E4') + '; background:' + (isDefault ? 'var(--primary-light,#EAF7F2)' : '#fff') + '; border-radius:10px; padding:14px 16px; margin-bottom:10px;">';
+        html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">';
+        html += '    <div style="display:flex; align-items:center; gap:6px;">';
+        html += '      <b style="font-size:14px; color:' + (isDefault ? 'var(--primary,#2BAB82)' : '#333') + ';">' + a.recvName + '</b>';
         if (isDefault) {
-          html += '        <span style="font-size:11px; background:var(--primary-light,#EAF7F2); color:var(--primary,#2BAB82); padding:2px 8px; border-radius:20px; font-weight:700;">기본배송지</span>';
-          html += '        <span style="font-size:12px; color:var(--primary,#2BAB82); font-weight:700;">✓ 선택됨</span>';
-        }
-        html += '      </div>';
-        html += '      <p style="font-size:13px; color:#666; margin:0 0 4px;">' + a.recvPhone + '</p>';
-        html += '      <p style="font-size:13px; color:#666; margin:0;">(' + a.zipCode + ') ' + a.addr1 + ' ' + (a.addr2 || '') + '</p>';
-        html += '    </div>';
-        html += '    <div style="display:flex; gap:6px; flex-shrink:0;">';
-        html += '      <button type="button" onclick="editAddress(' + argStr + ')" style="border:1px solid #D8DEDA; background:#fff; color:#666; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;">수정</button>';
-        html += '      <button type="button" onclick="removeAddress(' + a.addrId + ')" style="border:1px solid #D8DEDA; background:#fff; color:#666; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;">삭제</button>';
-        if (!isDefault) {
-          html += '      <button type="button" onclick="selectAddress(' + argStr + ')" style="border:1px solid var(--primary,#2BAB82); background:#fff; color:var(--primary,#2BAB82); font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:700;">선택</button>';
+          html += '      <span style="font-size:11px; background:var(--primary-light,#EAF7F2); color:var(--primary,#2BAB82); padding:2px 8px; border-radius:20px; font-weight:700;">기본배송지</span>';
         }
         html += '    </div>';
+        if (isDefault) {
+          html += '    <span style="font-size:12px; color:var(--primary,#2BAB82); font-weight:700; flex-shrink:0;">✓ 선택됨</span>';
+        } else {
+          html += '    <button type="button" onclick="selectAddress(' + argStr + ')" style="border:1px solid var(--primary,#2BAB82); background:#fff; color:var(--primary,#2BAB82); font-size:12px; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:700; flex-shrink:0;">선택</button>';
+        }
+        html += '  </div>';
+        html += '  <p style="font-size:13px; color:#666; margin:0 0 4px;">' + a.recvPhone + '</p>';
+        html += '  <p style="font-size:13px; color:#666; margin:0 0 10px;">(' + a.zipCode + ') ' + a.addr1 + ' ' + (a.addr2 || '') + '</p>';
+        html += '  <div style="display:flex; gap:6px;">';
+        html += '    <button type="button" onclick="editAddress(' + argStr + ')" style="border:1px solid #D8DEDA; background:#fff; color:#666; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;">수정</button>';
+        html += '    <button type="button" onclick="removeAddress(' + a.addrId + ')" style="border:1px solid #D8DEDA; background:#fff; color:#666; font-size:12px; padding:5px 10px; border-radius:6px; cursor:pointer;">삭제</button>';
         html += '  </div>';
         html += '</div>';
       });
@@ -564,7 +614,8 @@ function searchNewAddress() {
   }).open();
 }
 
-//지윤 26.07.29 추가: 신규 배송지 저장 (항상 기본배송지로 등록 - 방금 입력한 게 앞으로 계속 쓰일 주소라는 의도)
+//지윤 26.07.29 수정: editingAddrId가 있으면 수정(/update), 없으면 신규등록(/add)으로 분기
+//기존 코드는 editingAddrId를 아예 확인 안 하고 무조건 /add만 호출해서, 수정해도 새 주소가 하나 더 생기는 버그가 있었음
 function saveNewAddress() {
   var recvName = document.getElementById('newRecvName').value.trim();
   var recvPhone = document.getElementById('newRecvPhone').value.trim();
@@ -577,53 +628,58 @@ function saveNewAddress() {
     return;
   }
 
+  var isEdit = editingAddrId !== null;
+  var url = isEdit ? '/mypage/address/update' : '/mypage/address/add';
+
   var formData = new URLSearchParams();
+  if (isEdit) formData.set('addrId', editingAddrId);
   formData.set('recvName', recvName);
   formData.set('recvPhone', recvPhone);
   formData.set('zipCode', zipCode);
   formData.set('addr1', addr1);
   formData.set('addr2', addr2);
-  formData.set('setDefault', 'true');
+  if (!isEdit) formData.set('setDefault', 'true');
 
-  fetch(contextPath + '/mypage/address/add', {
+  fetch(contextPath + url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: formData.toString()
   })
-   .then(function (res) {
-  return res.text();
-})
-.then(function (result) {
+    .then(function (res) { return res.text(); })
+    .then(function (result) {
+      if (result === 'OK') {
+        if (!isEdit) {
+          fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2);
+        }
+        editingAddrId = null;
+        document.getElementById('newAddressForm').style.display = 'none';
+        document.getElementById('newRecvName').value = '';
+        document.getElementById('newRecvPhone').value = '';
+        document.getElementById('newZipcode').value = '';
+        document.getElementById('newAddr1').value = '';
+        document.getElementById('newAddr2').value = '';
+        loadAddressList();
+      } else if (result === 'LOGIN_REQUIRED') {
+        alert('로그인 세션이 없습니다.');
+      } else {
+        alert('저장에 실패했습니다.');
+      }
+    })
+    .catch(function () {
+      alert('저장 중 오류가 발생했습니다.');
+    });
+}
 
-  console.log('배송지 저장 결과:', result);
-
-  if (result === 'OK') {
-
-    fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2);
-    closeAddressModal();
-
-    document.getElementById('newRecvName').value = '';
-    document.getElementById('newRecvPhone').value = '';
-    document.getElementById('newZipcode').value = '';
-    document.getElementById('newAddr1').value = '';
-    document.getElementById('newAddr2').value = '';
-
-  } else if (result === 'LOGIN_REQUIRED') {
-
-    alert('로그인 세션이 없습니다.');
-
-  } else {
-
-    alert('저장 실패: ' + result);
-
-  }
-})
-.catch(function(error) {
-
-  console.error('배송지 저장 오류:', error);
-  alert('배송지 저장 중 오류가 발생했습니다.');
-
-});
+//지윤 26.07.30 추가: 배송지 입력 필드 일괄 초기화 (일회성 주소 입력 후 빠르게 지우고 싶을 때)
+function resetAddressForm() {
+  if (!confirm('입력하신 배송지 정보를 모두 지우시겠습니까?')) return;
+  document.getElementById('recvName').value = '';
+  document.getElementById('phonePrefix').value = '010';
+  document.getElementById('phoneMid').value = '';
+  document.getElementById('phoneEnd').value = '';
+  document.getElementById('orderZipcode').value = '';
+  document.getElementById('orderAddr1').value = '';
+  document.getElementById('orderAddr2').value = '';
 }
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

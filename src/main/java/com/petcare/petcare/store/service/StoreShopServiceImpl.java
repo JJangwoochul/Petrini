@@ -49,7 +49,7 @@ public class StoreShopServiceImpl implements StoreShopService {
 
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(pageNo) 추가, 26.07.12 가격대·브랜드 필터 파라미터 추가
     @Override
-    public List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand, String sort, int pageNo) {
+    public List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, String sort, int pageNo) {
         int offset = (pageNo - 1) * PAGE_SIZE;
         List<StoreShopVO> list = storeShopMapper.selectProductList(categoryId, keyword, minPrice, maxPrice, brand, sort, offset, PAGE_SIZE);
         for (StoreShopVO p : list) {
@@ -66,14 +66,14 @@ public class StoreShopServiceImpl implements StoreShopService {
 //지윤 26.07.06 총 페이지 수 계산 (전체개수 / 12, 나머지 있으면 올림)
 //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
 @Override
-public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand) {
+public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand) {
     int totalCount = storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
     return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
 }
 
 //지윤 26.07.21 추가: 전체 상품 개수 (getTotalPages와 같은 count 쿼리 재사용, 화면 표시용으로 그대로 반환)
 @Override
-public int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, String brand) {
+public int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand) {
     return storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
 }
 
@@ -213,65 +213,120 @@ public boolean deleteProductQna(Long qnaId, Long memberNo) {
 
 //지윤 26.07.13 결제 완료 처리 (주문/주문상품/결제내역 저장 + 쿠폰/포인트 반영 + 장바구니 정리)
 //@Transactional: 중간에 하나라도 실패하면 전부 롤백됨
+//지윤 26.07.30 수정: 장바구니에 여러 사업자 상품이 섞여도, TB_ORDER를 사업자(BIZ_NO)별로 각각 생성하도록 전면 수정.
+//쿠폰은 발급 사업자 몫에만, 포인트는 상품금액 비례로 각 주문에 나눠 배분함.
 @Override
 @Transactional
 public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrderId) {
-    //지윤 26.07.29 수정: 밀리초 나머지(ts % 10000) 방식은 10초마다 값이 반복되어 ORDER_NO(UNIQUE 제약)가 겹칠 위험이 있었음
-    //-> 뒷자리를 "실제 PK가 될 ORDER_ID"로 교체 (MAX+1 방식, 이 프로젝트 공통 채번 규칙이라 절대 안 겹침)
-    //orderId를 미리 뽑아서 1) 주문번호 뒷자리로도 쓰고 2) insertOrder에도 그대로 넘겨서 두 값이 항상 일치하게 함
-    Long orderId = storeShopMapper.selectNextOrderId();
-    String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
-    String orderNo = "ORD" + datePart + "-" + String.format("%06d", orderId);
 
-    // 상품이 전부 같은 사업자(BIZ_NO)라고 가정 (현재 테스트데이터가 단일 셀러 구조라 첫 상품 기준으로 넣음)
-    Long bizNo = p.getOrderItems().get(0).getBizNo();
-
-    storeShopMapper.insertOrder(orderId, orderNo, p.getMemberNo(), p.getProductTotal(), p.getDeliveryFee(),
-    p.getCouponDiscount(), p.getPointUsed(), p.getFinalTotal(),
-    p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo,
-    p.getDeliveryMemo(), p.getCouponMemberCouponId());
-
-    //지윤 26.07.21 추가: 주문 접수 즉시 사업자에게 알림 (알림함 "주문" 탭). 대표 상품명은 첫 상품 기준, 나머지는 "외 N건"으로 표시
-    Long bizMemberNoForOrder = storeShopMapper.selectBizMemberNoByBizNo(bizNo);
-    mypageNotifyService.sendNewOrderNotification(bizMemberNoForOrder, orderNo,
-            p.getOrderItems().get(0).getProductName(), p.getOrderItems().size());
-
+    //1) 상품을 사업자(BIZ_NO)별로 묶음 (LinkedHashMap이라 처음 등장한 순서 유지)
+    java.util.Map<Long, java.util.List<CartItemVO>> groups = new java.util.LinkedHashMap<>();
     for (CartItemVO item : p.getOrderItems()) {
-        storeShopMapper.insertOrderItem(orderId, item.getProductId(), item.getOptionId(),
-                item.getOptionColor(), item.getOptionSize(), item.getProductName(),
-                item.getQty(), item.getPrice(), item.getPrice() * item.getQty());
+        groups.computeIfAbsent(item.getBizNo(), k -> new java.util.ArrayList<>()).add(item);
+    }
 
-        //지윤 26.07.13 추가: 주문 확정된 만큼 재고 차감 (옵션 있으면 옵션 재고, 없으면 상품 재고)
-        //지윤 26.07.15 수정: 옵션 재고 깎을 때도 상품 전체 재고를 같이 깎아야 목록/상태 표시가 맞음
-        if (item.getOptionId() != null) {
-            storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
+    //2) 포인트를 상품금액 비례로 배분할 때 반올림 오차를 마지막 그룹이 흡수하도록 미리 계산
+    int totalProductAmt = p.getProductTotal();
+    int remainingPoint = p.getPointUsed() != null ? p.getPointUsed() : 0;
+    int groupIndex = 0;
+    int groupCount = groups.size();
+
+    java.util.List<String> orderNos = new java.util.ArrayList<>();
+
+    for (java.util.Map.Entry<Long, java.util.List<CartItemVO>> entry : groups.entrySet()) {
+        groupIndex++;
+        Long bizNo = entry.getKey();
+        java.util.List<CartItemVO> items = entry.getValue();
+
+        int groupSubtotal = 0;
+        for (CartItemVO item : items) {
+            groupSubtotal += item.getPrice() * item.getQty();
+        }
+        int groupDeliveryFee = (groupSubtotal >= 50000) ? 0 : 3000;
+
+        //지윤 26.07.30 추가: 쿠폰은 발급 사업자(couponBizMemberId)와 이 그룹의 bizNo가 일치할 때만 적용
+        int groupCouponDiscount = 0;
+        if (p.getCouponBizMemberId() != null && bizNo != null
+                && bizNo.equals(Long.valueOf(p.getCouponBizMemberId()))) {
+            groupCouponDiscount = p.getCouponDiscount() != null ? p.getCouponDiscount() : 0;
         }
 
-        //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
-        //지윤 26.07.16 수정: 방금 품절로 "새로 바뀐" 경우에만(반환값>0) 사업자에게 알림 전송
-        int soldoutJustNow = storeShopMapper.checkAndSetSoldout(item.getProductId());
-        if (soldoutJustNow > 0) {
-            Long bizMemberNo = storeShopMapper.selectBizMemberNoByBizNo(item.getBizNo());
-            mypageNotifyService.sendProductSoldoutNotification(bizMemberNo, item.getProductName(), item.getProductId());
+        //지윤 26.07.30 추가: 포인트는 상품금액 비례 배분, 마지막 그룹은 나머지 전부(반올림 오차 흡수)
+        int groupPointUsed;
+        if (groupIndex == groupCount) {
+            groupPointUsed = remainingPoint;
+        } else {
+            groupPointUsed = totalProductAmt == 0 ? 0
+                    : (int) ((long) (p.getPointUsed() != null ? p.getPointUsed() : 0) * groupSubtotal / totalProductAmt);
+            remainingPoint -= groupPointUsed;
+        }
+
+        int groupDiscountAmount = groupCouponDiscount + groupPointUsed;
+        int groupFinalTotal = Math.max(0, groupSubtotal + groupDeliveryFee - groupDiscountAmount);
+
+        //지윤 26.07.29 수정: 밀리초 나머지(ts % 10000) 방식은 10초마다 값이 반복되어 ORDER_NO(UNIQUE 제약)가 겹칠 위험이 있었음
+        //-> 뒷자리를 "실제 PK가 될 ORDER_ID"로 교체 (MAX+1 방식, 이 프로젝트 공통 채번 규칙이라 절대 안 겹침)
+        Long orderId = storeShopMapper.selectNextOrderId();
+        String datePart = new java.text.SimpleDateFormat("yyyyMMdd").format(new java.util.Date());
+        String orderNo = "ORD" + datePart + "-" + String.format("%06d", orderId);
+        orderNos.add(orderNo);
+
+        Long groupMemberCouponId = groupCouponDiscount > 0 ? p.getCouponMemberCouponId() : null;
+
+        storeShopMapper.insertOrder(orderId, orderNo, p.getMemberNo(), groupSubtotal, groupDeliveryFee,
+                groupDiscountAmount, groupPointUsed, groupFinalTotal,
+                p.getRecvName(), p.getRecvPhone(), p.getZipCode(), p.getAddr1(), p.getAddr2(), bizNo,
+                p.getDeliveryMemo(), groupMemberCouponId);
+
+        //지윤 26.07.21 추가: 주문 접수 즉시 사업자에게 알림 (알림함 "주문" 탭). 대표 상품명은 이 그룹 첫 상품 기준
+        Long bizMemberNoForOrder = storeShopMapper.selectBizMemberNoByBizNo(bizNo);
+        mypageNotifyService.sendNewOrderNotification(bizMemberNoForOrder, orderNo,
+                items.get(0).getProductName(), items.size());
+
+        for (CartItemVO item : items) {
+            storeShopMapper.insertOrderItem(orderId, item.getProductId(), item.getOptionId(),
+                    item.getOptionColor(), item.getOptionSize(), item.getProductName(),
+                    item.getQty(), item.getPrice(), item.getPrice() * item.getQty());
+
+            //지윤 26.07.13 추가: 주문 확정된 만큼 재고 차감 (옵션 있으면 옵션 재고, 없으면 상품 재고)
+            //지윤 26.07.15 수정: 옵션 재고 깎을 때도 상품 전체 재고를 같이 깎아야 목록/상태 표시가 맞음
+            if (item.getOptionId() != null) {
+                storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
+            }
+
+            //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
+            //지윤 26.07.16 수정: 방금 품절로 "새로 바뀐" 경우에만(반환값>0) 사업자에게 알림 전송
+            int soldoutJustNow = storeShopMapper.checkAndSetSoldout(item.getProductId());
+            if (soldoutJustNow > 0) {
+                Long bizMemberNo = storeShopMapper.selectBizMemberNoByBizNo(item.getBizNo());
+                mypageNotifyService.sendProductSoldoutNotification(bizMemberNo, item.getProductName(), item.getProductId());
+            }
+        }
+
+        //지윤 26.07.30 수정: 토스 결제 1건에 대해, 사업자 수만큼 TB_PAYMENT도 각각 생성 (같은 paymentKey/orderId 공유, orderId 컬럼만 다름)
+        storeShopMapper.insertPayment(orderId, "TOSS", groupFinalTotal, tossPaymentKey, tossOrderId);
+
+        //지윤 26.07.30 수정: 포인트 사용 이력도 그룹(주문)별로 나눠서 남김
+        if (groupPointUsed > 0) {
+            storeShopMapper.insertPointHistory(p.getMemberNo(), groupPointUsed, orderId);
         }
     }
 
-    storeShopMapper.insertPayment(orderId, "TOSS", p.getFinalTotal(), tossPaymentKey, tossOrderId);
-
-    if (p.getCouponMemberCouponId() != null) {
+    //쿠폰 사용처리, 포인트 잔액 차감은 결제 1건당 한 번만
+    if (p.getCouponMemberCouponId() != null && p.getCouponDiscount() != null && p.getCouponDiscount() > 0) {
         storeShopMapper.updateCouponUsed(p.getCouponMemberCouponId());
     }
 
     if (p.getPointUsed() != null && p.getPointUsed() > 0) {
         storeShopMapper.updateMemberPointBalance(p.getMemberNo(), p.getPointUsed());
-        storeShopMapper.insertPointHistory(p.getMemberNo(), p.getPointUsed(), orderId);
     }
 
     if (p.getCartItemIds() != null && !p.getCartItemIds().isEmpty()) {
         storeShopMapper.deleteCartItems(p.getCartItemIds());
     }
 
-    return orderNo;
+    //지윤 26.07.30 수정: 주문이 여러 건으로 쪼개질 수 있어서 쉼표로 이어붙여 반환 (order-complete 화면엔 그대로 표시됨)
+    return String.join(", ", orderNos);
 }
 
 //지윤 26.07.21 추가: 유저 리뷰 신고 - 같은 유저가 같은 리뷰 중복 신고 못 하게 막음
