@@ -10,8 +10,23 @@
  * - TB_RESERVATION
  *
  * DB 컬럼명은 팀 VO 규칙(camelCase)에 맞게 작성
+ *
+ * - 박유정 / 2026-07-29 — Phase 1: 승인 대기 사업자 목록
  */
 
 package com.petcare.petcare.admin.main.vo;
 
-public class AdminMainVO {}
+import java.util.List;
+
+import com.petcare.petcare.admin.biz.vo.AdminBizVO;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class AdminMainVO {
+
+    // 2026-07-29 박유정 — 사업자 승인 대기 (dashboard.jsp 표, 최대 5건은 Service에서 자름)
+    private List<AdminBizVO> pendingBizList;
+}

@@ -2,6 +2,7 @@
  * 역할: MypageReserveService 구현체 (@Service)
  *
  * 2026/07/11 장우철 — 마이페이지 예약 목록·상세 (2차)
+ * - 박유정 / 2026-07-29 — addStayReview 후 TB_STAY AVG_RATING·REVIEW_CNT 갱신
  */
 
 package com.petcare.petcare.mypage.reserve.service;

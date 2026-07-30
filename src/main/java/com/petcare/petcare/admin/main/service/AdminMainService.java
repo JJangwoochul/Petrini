@@ -18,8 +18,16 @@
  * - TB_MEMBER
  * - TB_ORDER
  * - TB_RESERVATION
+ *
+ * - 박유정 / 2026-07-29 — Phase 1: getDashboardSummary()
  */
 
 package com.petcare.petcare.admin.main.service;
 
-public interface AdminMainService {}
+import com.petcare.petcare.admin.main.vo.AdminMainVO;
+
+public interface AdminMainService {
+
+    // 2026-07-29 박유정 — 대시보드 요약 (승인 대기 사업자 목록 등)
+    AdminMainVO getDashboardSummary();
+}
