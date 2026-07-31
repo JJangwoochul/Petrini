@@ -31,7 +31,7 @@ public class WithdrawPurgeScheduler {
     }
 
     // 매일 자정 실행
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "0 0 0 * * *")
     public void purgeExpiredWithdrawnMembers() {
         log.info("=== 탈퇴 회원 개인정보 삭제 스케줄러 시작 ===");
         int count = mypageAccountService.purgeExpiredWithdrawnMembers();

@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="mypage" />
 <c:set var="sec" value="points" />
@@ -28,7 +29,7 @@
         </div>
         <div class="point-summary-item">
             <span class="ps-label">보유 쿠폰</span>
-            <span class="ps-val">2</span>
+            <span class="ps-val">${not empty usableCouponCount ? usableCouponCount : 0}</span>
             <span class="ps-unit">장</span>
         </div>
     </div>
@@ -48,32 +49,45 @@
         </table>
     </div>
     <div id="tab-coupons" style="display:none">
-        <div class="coupon-grid">
-            <div class="coupon-card">
-                <div class="coupon-left">
-                    <div class="c-discount">10% 할인</div>
-                    <div class="c-name">반려동물 용품 전체 할인</div>
-                    <div class="c-expire">만료: 2025.07.31</div>
+        <c:choose>
+            <c:when test="${empty myCoupons}">
+                <div style="text-align:center;padding:48px 0;color:var(--text-muted);font-size:14px">
+                    보유한 쿠폰이 없습니다.<br>
+                    <a href="${contextPath}/coupon" style="color:var(--primary);font-weight:700;text-decoration:underline;margin-top:8px;display:inline-block">쿠폰 받으러 가기</a>
                 </div>
-                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
-            </div>
-            <div class="coupon-card">
-                <div class="coupon-left">
-                    <div class="c-discount">3,000원 할인</div>
-                    <div class="c-name">병원 예약 할인 쿠폰</div>
-                    <div class="c-expire">만료: 2025.08.15</div>
+            </c:when>
+            <c:otherwise>
+                <div class="coupon-grid">
+                    <c:forEach var="mc" items="${myCoupons}">
+                        <div class="coupon-card ${mc.memberCouponStatus eq 'USED' ? 'used' : ''} ${mc.memberCouponStatus eq 'EXPIRED' ? 'used' : ''}">
+                            <div class="coupon-left">
+                                <div class="c-discount">
+                                    <c:choose>
+                                        <c:when test="${mc.couponType eq 'FIXED'}">
+                                            <fmt:formatNumber value="${mc.discountValue}" type="number"/>원 할인
+                                        </c:when>
+                                        <c:when test="${mc.couponType eq 'RATE'}">
+                                            ${mc.discountValue}% 할인
+                                        </c:when>
+                                    </c:choose>
+                                </div>
+                                <div class="c-name">${mc.couponName}</div>
+                                <div class="c-expire">
+                                    <c:choose>
+                                        <c:when test="${mc.memberCouponStatus eq 'UNUSED'}">
+                                            만료: ${mc.useEndDate.substring(0,4)}.${mc.useEndDate.substring(4,6)}.${mc.useEndDate.substring(6,8)}
+                                        </c:when>
+                                        <c:when test="${mc.memberCouponStatus eq 'USED'}">사용완료</c:when>
+                                        <c:when test="${mc.memberCouponStatus eq 'EXPIRED'}">기간만료</c:when>
+                                    </c:choose>
+                                </div>
+                            </div>
+                            <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+                        </div>
+                    </c:forEach>
                 </div>
-                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
-            </div>
-            <div class="coupon-card used">
-                <div class="coupon-left">
-                    <div class="c-discount">5% 할인</div>
-                    <div class="c-name">신규가입 축하 쿠폰</div>
-                    <div class="c-expire">사용완료</div>
-                </div>
-                <svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
-            </div>
-        </div>
+            </c:otherwise>
+        </c:choose>
     </div>
 </div>
 

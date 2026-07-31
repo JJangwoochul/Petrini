@@ -27,6 +27,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.stay.service.BizStayService;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
@@ -340,5 +341,79 @@ public class BizStayController extends BizBaseController {
 
         rttr.addFlashAttribute("msg", "객실이 삭제되었습니다.");
         return "redirect:/biz/stay/rooms";
+    }
+
+    // HYJ 26.07.29 ── 쿠폰 신청 목록 ──
+    @GetMapping({"/coupon", "/coupon/"})
+    public String couponList(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        model.addAttribute("couponList",
+                bizStayService.getCouponList(member.getMemberId()));
+        return "biz/stay/coupon";
+    }
+
+    // ── 쿠폰 신청 POST ──
+    @PostMapping("/coupon/apply")
+    public String applyCoupon(BizCouponVO vo,
+                              HttpSession session,
+                              RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            bizStayService.applyCoupon(member.getMemberId(), vo);
+            rttr.addFlashAttribute("msg", "쿠폰 승인 신청이 완료되었습니다.");
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "쿠폰 신청 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
+    }
+
+    // ── 쿠폰 수정 POST (PENDING 상태일 때만) ──
+    @PostMapping("/coupon/update")
+    public String updateCoupon(BizCouponVO vo,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            bizStayService.updateCoupon(member.getMemberId(), vo);
+            rttr.addFlashAttribute("msg", "쿠폰 정보가 수정되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인 대기 상태의 쿠폰만 수정할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "수정 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "수정 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
+    }
+
+    // ── 쿠폰 삭제 POST (PENDING 상태일 때만) ──
+    @PostMapping("/coupon/delete")
+    public String deleteCoupon(@RequestParam Long couponId,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            bizStayService.deleteCoupon(member.getMemberId(), couponId);
+            rttr.addFlashAttribute("msg", "쿠폰 신청이 삭제되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인 대기 상태의 쿠폰만 삭제할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "삭제 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "삭제 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
     }
 }

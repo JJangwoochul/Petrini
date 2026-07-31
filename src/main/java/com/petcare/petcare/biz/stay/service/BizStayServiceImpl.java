@@ -17,12 +17,14 @@ package com.petcare.petcare.biz.stay.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
@@ -211,5 +213,62 @@ public class BizStayServiceImpl implements BizStayService {
             return 0;
         }
         return bizStayMapper.countTodayConfirmedReservations(stayId);
+    }
+
+
+    //HYJ 26.07.29 쿠폰관리
+    @Override
+    public List<BizCouponVO> getCouponList(String bizMemberId) {
+        return bizStayMapper.selectCouponListByBizId(bizMemberId);
+    }
+
+    @Override
+    public BizCouponVO getCouponDetail(Long couponId) {
+        return bizStayMapper.selectCouponById(couponId);
+    }
+
+    @Override
+    public void applyCoupon(String bizMemberId, BizCouponVO vo) {
+        // 쿠폰 코드 자동 생성 (CPN- + UUID 앞 8자리)
+        String code = "CPN-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        vo.setCouponCode(code);
+        vo.setBizMemberId(bizMemberId);
+        vo.setApprovalStatus("PENDING");
+        vo.setStatusCd("INACTIVE");
+        vo.setIssuedBudget(0);
+        vo.setIssuedQty(0);
+
+        bizStayMapper.insertCoupon(vo);
+    }
+
+    @Override
+    public void updateCoupon(String bizMemberId, BizCouponVO vo) {
+        BizCouponVO existing = bizStayMapper.selectCouponById(vo.getCouponId());
+        if (existing == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+        if (!bizMemberId.equals(existing.getBizMemberId())) {
+            throw new IllegalStateException("NOT_OWNER");
+        }
+        if (!"PENDING".equals(existing.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_PENDING");
+        }
+        vo.setBizMemberId(bizMemberId);
+        bizStayMapper.updateCoupon(vo);
+    }
+
+    @Override
+    public void deleteCoupon(String bizMemberId, Long couponId) {
+        BizCouponVO existing = bizStayMapper.selectCouponById(couponId);
+        if (existing == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+        if (!bizMemberId.equals(existing.getBizMemberId())) {
+            throw new IllegalStateException("NOT_OWNER");
+        }
+        if (!"PENDING".equals(existing.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_PENDING");
+        }
+        bizStayMapper.deleteCoupon(couponId, bizMemberId);
     }
 }

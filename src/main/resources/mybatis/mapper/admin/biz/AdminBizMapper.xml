@@ -116,4 +116,92 @@
     FETCH FIRST 1 ROW ONLY
   </select>
 
+  <!--HYJ 26.07.29 쿠폰 관리-->
+  <!-- 승인 상태별 쿠폰 목록 (사업자명 조인) -->
+  <select id="selectCouponListByStatus"
+          parameterType="string"
+          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+    SELECT C.COUPON_ID,
+           C.COUPON_CODE,
+           C.COUPON_NAME,
+           C.COUPON_TYPE,
+           C.DISCOUNT_VALUE,
+           C.MIN_ORDER_AMT,
+           C.TOTAL_BUDGET,
+           C.ISSUED_BUDGET,
+           C.TOTAL_QTY,
+           C.ISSUED_QTY,
+           C.USE_START_DATE,
+           C.USE_END_DATE,
+           C.BIZ_MEMBER_ID,
+           C.APPROVAL_STATUS,
+           C.REJECT_REASON,
+           C.APPROVAL_DATE,
+           C.STATUS_CD,
+           C.REG_DATE,
+           B.BIZ_NAME
+      FROM TB_COUPON C
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_ID
+     WHERE C.APPROVAL_STATUS = #{approvalStatus}
+     ORDER BY C.REG_DATE DESC
+  </select>
+
+  <!-- 상태별 건수 -->
+  <select id="countCouponByStatus"
+          parameterType="string"
+          resultType="int">
+    SELECT COUNT(*)
+      FROM TB_COUPON
+     WHERE APPROVAL_STATUS = #{approvalStatus}
+  </select>
+
+  <!-- 쿠폰 상세 -->
+  <select id="selectCouponById"
+          parameterType="long"
+          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+    SELECT C.COUPON_ID,
+           C.COUPON_CODE,
+           C.COUPON_NAME,
+           C.COUPON_TYPE,
+           C.DISCOUNT_VALUE,
+           C.MIN_ORDER_AMT,
+           C.TOTAL_BUDGET,
+           C.ISSUED_BUDGET,
+           C.TOTAL_QTY,
+           C.ISSUED_QTY,
+           C.USE_START_DATE,
+           C.USE_END_DATE,
+           C.BIZ_MEMBER_ID,
+           C.APPROVAL_STATUS,
+           C.REJECT_REASON,
+           C.APPROVAL_DATE,
+           C.STATUS_CD,
+           C.REG_DATE,
+           B.BIZ_NAME
+      FROM TB_COUPON C
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_ID
+     WHERE C.COUPON_ID = #{couponId}
+  </select>
+
+  <!-- 승인 처리 -->
+  <update id="updateCouponApproval">
+    UPDATE TB_COUPON
+       SET APPROVAL_STATUS = #{approvalStatus},
+           STATUS_CD       = #{statusCd},
+           APPROVAL_DATE   = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+           MOD_DATE        = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+     WHERE COUPON_ID       = #{couponId}
+       AND APPROVAL_STATUS = 'PENDING'
+  </update>
+
+  <!-- 반려 처리 -->
+  <update id="updateCouponReject">
+    UPDATE TB_COUPON
+       SET APPROVAL_STATUS = #{approvalStatus},
+           REJECT_REASON   = #{rejectReason},
+           APPROVAL_DATE   = TO_CHAR(SYSDATE, 'YYYYMMDD'),
+           MOD_DATE        = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+     WHERE COUPON_ID       = #{couponId}
+       AND APPROVAL_STATUS = 'PENDING'
+  </update>
 </mapper>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.petcare.petcare.coupon.mapper.CouponMapper">
+
+<!--
+  역할: 사용자 이벤트/쿠폰 페이지 SQL
+  테이블: TB_COUPON, TB_MEMBER_COUPON, TB_BUSINESS
+-->
+
+  <!-- 전체 쿠폰 목록 (APPROVED 전체 — 기간·수량 필터 없음)
+       로그인 시 이미 받았는지 체크 (alreadyClaimed) -->
+  <select id="selectAvailableCoupons"
+          resultType="com.petcare.petcare.store.vo.CouponVO">
+    SELECT C.COUPON_ID,
+           C.COUPON_CODE,
+           C.COUPON_NAME,
+           C.COUPON_TYPE,
+           C.DISCOUNT_VALUE,
+           C.MIN_ORDER_AMT,
+           C.TOTAL_QTY,
+           C.ISSUED_QTY,
+           C.USE_START_DATE,
+           C.USE_END_DATE,
+           C.STATUS_CD,
+           B.BIZ_NAME,
+           <choose>
+               <when test="memberNo != null">
+                   CASE WHEN EXISTS (
+                       SELECT 1 FROM TB_MEMBER_COUPON MC
+                        WHERE MC.MEMBER_NO = #{memberNo}
+                          AND MC.COUPON_ID = C.COUPON_ID
+                   ) THEN 1 ELSE 0 END AS ALREADY_CLAIMED
+               </when>
+               <otherwise>
+                   0 AS ALREADY_CLAIMED
+               </otherwise>
+           </choose>
+      FROM TB_COUPON C
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
+     WHERE C.APPROVAL_STATUS = 'APPROVED'
+     ORDER BY CASE C.STATUS_CD WHEN 'ACTIVE' THEN 1 WHEN 'EXHAUSTED' THEN 2 ELSE 3 END,
+              C.REG_DATE DESC
+  </select>
+
+  <!-- 보유 쿠폰 목록 (TB_MEMBER_COUPON JOIN TB_COUPON) -->
+  <select id="selectMyCoupons"
+          resultType="com.petcare.petcare.store.vo.CouponVO">
+    SELECT MC.MEMBER_COUPON_ID,
+           MC.STATUS_CD     AS MEMBER_COUPON_STATUS,
+           MC.USED_DATE,
+           MC.REG_DATE,
+           C.COUPON_ID,
+           C.COUPON_CODE,
+           C.COUPON_NAME,
+           C.COUPON_TYPE,
+           C.DISCOUNT_VALUE,
+           C.MIN_ORDER_AMT,
+           C.USE_START_DATE,
+           C.USE_END_DATE,
+           B.BIZ_NAME
+      FROM TB_MEMBER_COUPON MC
+      JOIN TB_COUPON C    ON C.COUPON_ID = MC.COUPON_ID
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
+     WHERE MC.MEMBER_NO = #{memberNo}
+     ORDER BY CASE MC.STATUS_CD
+                  WHEN 'UNUSED'  THEN 1
+                  WHEN 'USED'    THEN 2
+                  WHEN 'EXPIRED' THEN 3
+                  ELSE 4
+              END,
+              MC.REG_DATE DESC
+  </select>
+
+  <!-- 사용 가능 보유 쿠폰 개수 -->
+  <select id="countUsableCoupons"
+          parameterType="long"
+          resultType="int">
+    SELECT COUNT(*)
+      FROM TB_MEMBER_COUPON MC
+      JOIN TB_COUPON C ON C.COUPON_ID = MC.COUPON_ID
+     WHERE MC.MEMBER_NO  = #{memberNo}
+       AND MC.STATUS_CD  = 'UNUSED'
+       AND C.USE_END_DATE &gt;= TO_CHAR(SYSDATE, 'YYYYMMDD')
+  </select>
+
+  <!-- 이미 받았는지 체크 -->
+  <select id="countMemberCoupon" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_MEMBER_COUPON
+     WHERE MEMBER_NO = #{memberNo}
+       AND COUPON_ID = #{couponId}
+  </select>
+
+  <!-- 쿠폰 받기 (TB_MEMBER_COUPON INSERT) -->
+  <insert id="insertMemberCoupon">
+    INSERT INTO TB_MEMBER_COUPON (
+        MEMBER_COUPON_ID,
+        MEMBER_NO,
+        COUPON_ID,
+        STATUS_CD,
+        REG_DATE
+    ) VALUES (
+        SEQ_MEMBER_COUPON.NEXTVAL,
+        #{memberNo},
+        #{couponId},
+        'UNUSED',
+        TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+    )
+  </insert>
+
+  <!-- 발급 수량·예산 갱신 -->
+  <update id="updateCouponIssued">
+    UPDATE TB_COUPON
+       SET ISSUED_QTY    = ISSUED_QTY + 1,
+           ISSUED_BUDGET = ISSUED_BUDGET + #{discountValue},
+           MOD_DATE      = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+     WHERE COUPON_ID = #{couponId}
+  </update>
+
+  <!-- 쿠폰 상세 1건 (발급 가능 여부 검증) -->
+  <select id="selectCouponById"
+          parameterType="long"
+          resultType="com.petcare.petcare.store.vo.CouponVO">
+    SELECT COUPON_ID,
+           COUPON_TYPE,
+           DISCOUNT_VALUE,
+           TOTAL_BUDGET,
+           ISSUED_BUDGET,
+           TOTAL_QTY,
+           ISSUED_QTY,
+           STATUS_CD,
+           USE_START_DATE,
+           USE_END_DATE
+      FROM TB_COUPON
+     WHERE COUPON_ID = #{couponId}
+       AND APPROVAL_STATUS = 'APPROVED'
+  </select>
+
+</mapper>

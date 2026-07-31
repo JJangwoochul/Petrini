@@ -12,4 +12,6 @@
 
 package com.petcare.petcare.main.banner.vo;
 
-public class MainBannerVO {}
+public class MainBannerVO {
+    
+}

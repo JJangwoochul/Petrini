@@ -9,6 +9,7 @@
 package com.petcare.petcare.admin.biz.service;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +21,7 @@ import com.petcare.petcare.admin.biz.mapper.AdminBizMapper;
 import com.petcare.petcare.admin.biz.vo.AdminBizVO;
 import com.petcare.petcare.biz.hospital.mapper.BizHospitalMapper;
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
@@ -148,5 +150,53 @@ public class AdminBizServiceImpl implements AdminBizService {
             throw new IllegalStateException("BIZ_NOT_PENDING");
         }
         return biz;
+    }
+
+    //HYJ 26.07.29 쿠폰관리
+    @Override
+    public List<BizCouponVO> getCouponListByStatus(String approvalStatus) {
+        return adminBizMapper.selectCouponListByStatus(approvalStatus);
+    }
+
+    @Override
+    public BizCouponVO getCouponDetail(Long couponId) {
+        return adminBizMapper.selectCouponById(couponId);
+    }
+
+    @Override
+    public Map<String, Integer> getCouponStatusCounts() {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        counts.put("PENDING",  adminBizMapper.countCouponByStatus("PENDING"));
+        counts.put("APPROVED", adminBizMapper.countCouponByStatus("APPROVED"));
+        counts.put("REJECTED", adminBizMapper.countCouponByStatus("REJECTED"));
+        return counts;
+    }
+
+    @Override
+    public void approveCoupon(Long couponId) {
+        BizCouponVO coupon = adminBizMapper.selectCouponById(couponId);
+        if (coupon == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+        if (!"PENDING".equals(coupon.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_PENDING");
+        }
+        // 승인 → APPROVED + ACTIVE
+        adminBizMapper.updateCouponApproval(couponId, "APPROVED", "ACTIVE");
+    }
+
+    @Override
+    public void rejectCoupon(Long couponId, String rejectReason) {
+        if (rejectReason == null || rejectReason.isBlank()) {
+            throw new IllegalArgumentException("REJECT_REASON_REQUIRED");
+        }
+        BizCouponVO coupon = adminBizMapper.selectCouponById(couponId);
+        if (coupon == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+        if (!"PENDING".equals(coupon.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_PENDING");
+        }
+        adminBizMapper.updateCouponReject(couponId, "REJECTED", rejectReason.trim());
     }
 }

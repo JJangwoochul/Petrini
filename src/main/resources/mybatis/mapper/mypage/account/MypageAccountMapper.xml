@@ -17,12 +17,14 @@
         INSERT INTO TB_MEMBER_WITHDRAW (
             MEMBER_NO,
             MEMBER_ID,
-            MEMBER_NAME
+            MEMBER_NAME,
+            EMAIL
         )
         SELECT
             MEMBER_NO,
             MEMBER_ID,
-            MEMBER_NAME
+            MEMBER_NAME,
+            EMAIL
         FROM TB_MEMBER
         WHERE MEMBER_NO = #{memberNo}
     </insert>

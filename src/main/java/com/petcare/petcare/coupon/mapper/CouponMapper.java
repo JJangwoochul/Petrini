@@ -1,0 +1,42 @@
+package com.petcare.petcare.coupon.mapper;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.store.vo.CouponVO;
+
+/**
+ * 사용자 이벤트/쿠폰 페이지 DB 접근
+ *
+ * XML: resources/mybatis/mapper/coupon/CouponMapper.xml
+ */
+@Mapper
+public interface CouponMapper {
+
+    // 받을 수 있는 쿠폰 목록 (APPROVED + ACTIVE + 기간 내 + 잔여 수량)
+    // 로그인 상태면 이미 받았는지 체크 (alreadyClaimed)
+    List<CouponVO> selectAvailableCoupons(@Param("memberNo") Long memberNo);
+
+    // 보유 쿠폰 목록 (TB_MEMBER_COUPON JOIN TB_COUPON)
+    List<CouponVO> selectMyCoupons(@Param("memberNo") Long memberNo);
+
+    // 보유 쿠폰 개수 (사용 가능 상태)
+    int countUsableCoupons(@Param("memberNo") Long memberNo);
+
+    // 이미 받았는지 체크
+    int countMemberCoupon(@Param("memberNo") Long memberNo,
+                          @Param("couponId") Long couponId);
+
+    // 쿠폰 받기 (TB_MEMBER_COUPON INSERT)
+    int insertMemberCoupon(@Param("memberNo") Long memberNo,
+                           @Param("couponId") Long couponId);
+
+    // TB_COUPON 발급수량·예산 갱신
+    int updateCouponIssued(@Param("couponId") Long couponId,
+                           @Param("discountValue") int discountValue);
+
+    // TB_COUPON 상세 1건 (발급 가능 여부 검증용)
+    CouponVO selectCouponById(@Param("couponId") Long couponId);
+}
