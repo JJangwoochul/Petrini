@@ -9,7 +9,8 @@
  * return 경로는 담당 JSP와 동일하게 맞출 것
  *
  * - 박유정 / 2026-07-29 — Phase 1: 승인 대기 사업자
- * - 박유정 / 2026-07-30 — ADMIN-01 대시보드 / ADMIN-04 통계
+ * - 박유정 / 2026-07-30 — ADMIN-01 대시보드 / ADMIN-04 통계 Phase 1
+ * - 박유정 / 2026-07-31 — ADMIN-04 통계 Phase 5-C: /stats/export CSV
  */
 
 package com.petcare.petcare.admin.main.controller;
@@ -26,6 +27,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 
 import com.petcare.petcare.admin.main.service.AdminMainService;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller("adminController")
 @RequestMapping("/admin")
@@ -55,4 +62,22 @@ public class AdminMainController extends AdminBaseController {
         model.addAttribute("stats", adminMainService.getStatsSummary());
         return "admin/stats/index";
     }    
+
+    // 2026-07-31 박유정 — Phase 5-C: 통계 CSV(Excel)보내기 → stats_YYYYMMDD.csv
+    @GetMapping("/stats/export")
+    public void exportStats(HttpSession session, HttpServletResponse response) throws IOException {
+        if (getAdmin(session) == null) {
+            response.sendRedirect("/admin/login");
+            return;
+        }
+
+        // 2026-07-31 박유정 — 파일명·Content-Type (회원 export 와 동일 패턴)
+        String fileName = "stats_"
+                + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".csv";
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + fileName + "\"");
+
+        adminMainService.exportStatsCsv(response.getOutputStream());
+    }
 }

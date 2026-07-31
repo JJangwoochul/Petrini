@@ -6,7 +6,8 @@
 <!--
   역할: AdminMainMapper SQL 정의
 
-  - 박유정 / 2026-07-30 — ADMIN-01 대시보드 통계·차트 / ADMIN-04 통계 요약
+  - 박유정 / 2026-07-30 — ADMIN-01 대시보드 통계·차트 / ADMIN-04 Phase 1
+  - 박유정 / 2026-07-31 — ADMIN-04 Phase 2~5-A: 차트·업종·지난달 SQL
 
   테이블
   - TB_MEMBER
@@ -150,5 +151,94 @@
       FROM TB_ORDER
      WHERE TRUNC(ORDER_DATE) &gt;= TRUNC(SYSDATE, 'MM')
        AND TRUNC(ORDER_DATE) &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+  </select>
+
+    <!-- 2026-07-31 박유정 — ADMIN-04 Phase 2: 최근 6개월 월별 매출 (취소 제외) -->
+  <select id="selectLast6MonthsSales"
+          resultType="com.petcare.petcare.admin.main.vo.AdminMainSalesDayVO">
+    SELECT
+      TO_CHAR(TRUNC(O.ORDER_DATE, 'MM'), 'YYYY-MM') AS dayLabel,
+      NVL(SUM(NVL(O.PAY_AMOUNT, 0)), 0)              AS salesAmount
+    FROM TB_ORDER O
+    WHERE TRUNC(O.ORDER_DATE, 'MM') &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+      AND TRUNC(O.ORDER_DATE, 'MM') &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+      AND O.ORDER_STATUS &lt;&gt; 'CANCEL'
+    GROUP BY TRUNC(O.ORDER_DATE, 'MM')
+    ORDER BY TRUNC(O.ORDER_DATE, 'MM')
+  </select>
+
+    <!-- 2026-07-31 박유정 — ADMIN-04 Phase 3: 최근 6개월 월별 신규 가입 -->
+  <select id="selectLast6MonthsNewMembers"
+          resultType="com.petcare.petcare.admin.main.vo.AdminMainSalesDayVO">
+    SELECT
+      TO_CHAR(TRUNC(M.JOIN_DATE, 'MM'), 'YYYY-MM') AS dayLabel,
+      COUNT(*)                                       AS salesAmount
+    FROM TB_MEMBER M
+    WHERE TRUNC(M.JOIN_DATE, 'MM') &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+      AND TRUNC(M.JOIN_DATE, 'MM') &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+    GROUP BY TRUNC(M.JOIN_DATE, 'MM')
+    ORDER BY TRUNC(M.JOIN_DATE, 'MM')
+  </select>
+
+  <!-- 2026-07-31 박유정 — ADMIN-04 Phase 4: 이번 달 업종별 예약/주문 (병원·숙소·쇼핑) -->
+  <select id="selectMonthCategoryResvOrderStats"
+          resultType="com.petcare.petcare.admin.main.vo.AdminMainSalesDayVO">
+    SELECT dayLabel, salesAmount
+      FROM (
+        SELECT '병원' AS dayLabel, COUNT(*) AS salesAmount
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE = 'HOSPITAL'
+           AND TRUNC(REG_DATE) &gt;= TRUNC(SYSDATE, 'MM')
+           AND TRUNC(REG_DATE) &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+        UNION ALL
+        SELECT '숙소', COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE = 'STAY'
+           AND TRUNC(REG_DATE) &gt;= TRUNC(SYSDATE, 'MM')
+           AND TRUNC(REG_DATE) &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+        UNION ALL
+        SELECT '쇼핑', COUNT(*)
+          FROM TB_ORDER
+         WHERE TRUNC(ORDER_DATE) &gt;= TRUNC(SYSDATE, 'MM')
+           AND TRUNC(ORDER_DATE) &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+      ) T
+     ORDER BY CASE dayLabel
+                WHEN '병원' THEN 1
+                WHEN '숙소' THEN 2
+                WHEN '쇼핑' THEN 3
+              END
+  </select>
+
+  <!-- 2026-07-31 박유정 — Phase 5-A: 지난 달 총 매출(원), 취소 제외 -->
+  <select id="sumPrevMonthSalesAmount" resultType="long">
+    SELECT NVL(SUM(NVL(PAY_AMOUNT, 0)), 0)
+      FROM TB_ORDER
+     WHERE TRUNC(ORDER_DATE) &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -1)
+       AND TRUNC(ORDER_DATE) &lt; TRUNC(SYSDATE, 'MM')
+       AND ORDER_STATUS &lt;&gt; 'CANCEL'
+  </select>
+
+  <!-- 2026-07-31 박유정 — Phase 5-A: 지난 달 신규 가입 -->
+  <select id="countPrevMonthNewMembers" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_MEMBER
+     WHERE TRUNC(JOIN_DATE) &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -1)
+       AND TRUNC(JOIN_DATE) &lt; TRUNC(SYSDATE, 'MM')
+  </select>
+
+  <!-- 2026-07-31 박유정 — Phase 5-A: 지난 달 예약 건수 (등록일 기준) -->
+  <select id="countPrevMonthReservations" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_RESERVATION
+     WHERE TRUNC(REG_DATE) &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -1)
+       AND TRUNC(REG_DATE) &lt; TRUNC(SYSDATE, 'MM')
+  </select>
+
+  <!-- 2026-07-31 박유정 — Phase 5-A: 지난 달 주문 수 -->
+  <select id="countPrevMonthOrders" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_ORDER
+     WHERE TRUNC(ORDER_DATE) &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -1)
+       AND TRUNC(ORDER_DATE) &lt; TRUNC(SYSDATE, 'MM')
   </select>
 </mapper>
