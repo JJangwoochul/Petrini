@@ -1,0 +1,106 @@
+/**
+ * 역할: 숙소 예약 전액 환불 취소 (사업자·관리자 공통)
+ * 2026/07/31 장우철 — 수수료 0 · 결제액 전액 토스 취소 · 정산 대상 아님(CANCEL)
+ */
+package com.petcare.petcare.stay.service;
+
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.petcare.petcare.common.external.service.TossPaymentService;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
+import com.petcare.petcare.stay.mapper.StayCancelMapper;
+import com.petcare.petcare.stay.vo.ReservationVO;
+
+@Service
+public class StayFullCancelService {
+
+    @Autowired
+    private StayCancelMapper stayCancelMapper;
+    @Autowired
+    private TossPaymentService tossPaymentService;
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
+
+    /**
+     * 사업자·관리자 취소: CANCEL_FEE=0, REFUND=TOTAL, 토스 전액(또는 결제액) 취소
+     * @param stayId 사업자 소속 검증용 (관리자면 null)
+     */
+    @Transactional
+    public void cancelWithFullRefund(Long resvId, Long stayId, String cancelReason, String actorLabel)
+            throws Exception {
+        cancelWithFullRefund(resvId, stayId, cancelReason, actorLabel, false);
+    }
+
+    /**
+     * 2026/07/31 장우철 — R3 관리자 환불승인: DONE 포함 전액 환불 취소
+     */
+    @Transactional
+    public void cancelWithFullRefund(Long resvId, Long stayId, String cancelReason, String actorLabel,
+                                     boolean allowDone)
+            throws Exception {
+        if (resvId == null) {
+            throw new IllegalArgumentException("예약 정보가 올바르지 않습니다.");
+        }
+        if (cancelReason == null || cancelReason.isBlank()) {
+            throw new IllegalArgumentException("취소 사유를 입력해 주세요.");
+        }
+        String reason = cancelReason.trim();
+        if (reason.length() > 500) {
+            reason = reason.substring(0, 500);
+        }
+        String actor = (actorLabel == null || actorLabel.isBlank()) ? "관리자" : actorLabel.trim();
+
+        ReservationVO resv = stayCancelMapper.selectStayReservation(resvId, stayId);
+        if (resv == null) {
+            throw new IllegalStateException("예약을 찾을 수 없거나 권한이 없습니다.");
+        }
+        if (!"STAY".equalsIgnoreCase(resv.getResvType())) {
+            throw new IllegalStateException("숙소 예약만 취소할 수 있습니다.");
+        }
+
+        String status = resv.getStatusCd() != null ? resv.getStatusCd().trim().toUpperCase() : "";
+        if ("CANCEL".equals(status) || "REJECTED".equals(status)) {
+            throw new IllegalStateException("이미 취소된 예약입니다.");
+        }
+        if ("DONE".equals(status) && !allowDone) {
+            throw new IllegalStateException("이용완료 예약은 취소할 수 없습니다.");
+        }
+        // PENDING / CONFIRMED / CHECKIN / CHECKOUT (+ allowDone 시 DONE)
+
+        long total = resv.getTotalAmount() != null ? resv.getTotalAmount() : 0L;
+        long cancelFeeAmt = 0L;
+        long refundAmt = total;
+
+        // 결제 완료건만 토스 전액 환불
+        if (refundAmt > 0 && !"PENDING".equals(status)) {
+            Map<String, Object> payment = stayCancelMapper.selectDonePaymentByResvId(resvId);
+            if (payment != null && payment.get("tossPaymentKey") != null) {
+                String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
+                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()) {
+                    // 전액 취소 — cancelAmount 생략
+                    String tossError = tossPaymentService.cancelPayment(
+                            paymentKey, actor + " 숙소 예약 취소", null);
+                    if (tossError != null) {
+                        throw new IllegalStateException(tossError);
+                    }
+                }
+                stayCancelMapper.updatePaymentRefundByResvId(resvId, refundAmt);
+            }
+        }
+
+        int updated = stayCancelMapper.updateStayFullCancel(
+                resvId, stayId, reason, cancelFeeAmt, refundAmt, allowDone);
+        if (updated == 0) {
+            throw new IllegalStateException("예약을 취소할 수 없습니다. 상태를 확인해 주세요.");
+        }
+
+        String stayName = resv.getStayName() != null && !resv.getStayName().isBlank()
+                ? resv.getStayName() : "숙소";
+        mypageNotifyService.sendReserveCancelNotification(
+                resv.getMemberNo(), stayName, resv.getCheckinDate(), null, reason, resvId);
+    }
+}

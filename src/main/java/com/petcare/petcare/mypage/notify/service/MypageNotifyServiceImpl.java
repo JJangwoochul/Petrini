@@ -347,4 +347,91 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         }
         return mypageNotifyMapper.countUnreadNotifications(memberNo);
     }
+
+    // 2026/07/30 장우철 — 숙소 중간정산 승인 알림 (사이트 내, 이메일 아님)
+    @Override
+    @Transactional
+    public void sendStayMidSettleApproveNotification(Long memberNo, String bizName,
+                                                     String periodStart, String periodEnd,
+                                                     String requestScope, Long settleAmount) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeBiz = bizName != null ? bizName : "숙소";
+        String scopeLabel = "ROOM".equalsIgnoreCase(requestScope) ? "특정 객실" : "숙소 전체";
+        String amountText = settleAmount == null ? "-" : String.format("%,d원", settleAmount);
+        String content = "[" + safeBiz + "] 중간정산 요청이 승인되었습니다.\n\n"
+                + "기간: " + nullToDash(periodStart) + " ~ " + nullToDash(periodEnd) + "\n"
+                + "범위: " + scopeLabel + "\n"
+                + "정산금: " + amountText + "\n"
+                + "지급은 관리자 처리 후 정산 내역에서 확인할 수 있습니다.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle("중간정산 요청이 승인되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/stay/settlement");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/07/30 장우철 — 숙소 중간정산 거절 알림 (사유 포함)
+    @Override
+    @Transactional
+    public void sendStayMidSettleRejectNotification(Long memberNo, String bizName,
+                                                    String periodStart, String periodEnd,
+                                                    String rejectReason) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeBiz = bizName != null ? bizName : "숙소";
+        String safeReason = rejectReason != null ? rejectReason.trim() : "";
+        if (safeReason.length() > 400) {
+            safeReason = safeReason.substring(0, 400) + "...";
+        }
+        String content = "[" + safeBiz + "] 중간정산 요청이 거절되었습니다.\n\n"
+                + "기간: " + nullToDash(periodStart) + " ~ " + nullToDash(periodEnd) + "\n"
+                + "거절 사유:\n" + safeReason;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle("중간정산 요청이 거절되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/stay/settlement");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/07/30 장우철 — 숙소 정산 더미 지급 완료 알림 (사이트 내)
+    @Override
+    @Transactional
+    public void sendStaySettlementPaidNotification(Long memberNo, String bizName,
+                                                   String periodStart, String periodEnd,
+                                                   String requestType, Long settleAmount) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeBiz = bizName != null ? bizName : "숙소";
+        String typeLabel = "ADHOC".equalsIgnoreCase(requestType) ? "중간정산" : "월정산";
+        String amountText = settleAmount == null ? "-" : String.format("%,d원", settleAmount);
+        String content = "[" + safeBiz + "] " + typeLabel + " 지급이 완료 처리되었습니다.\n\n"
+                + "기간: " + nullToDash(periodStart) + " ~ " + nullToDash(periodEnd) + "\n"
+                + "지급액: " + amountText + "\n"
+                + "정산 내역에서 확인해 주세요.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle(typeLabel + " 지급이 완료되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/stay/settlement");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    private String nullToDash(String s) {
+        return (s == null || s.isBlank()) ? "-" : s;
+    }
 }

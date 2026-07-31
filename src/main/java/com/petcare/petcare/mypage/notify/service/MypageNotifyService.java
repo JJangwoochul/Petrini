@@ -72,4 +72,23 @@ public interface MypageNotifyService {
 
     // 2026/07/11 장우철 — 헤더 미읽음 알림 배지
     int countUnreadNotifications(Long memberNo);
+
+    /**
+     * 2026/07/30 장우철 — 숙소 중간정산 승인/거절 사이트 알림 (5-4 B/C)
+     * NOTI_TYPE=SYSTEM, 이메일 아님 · TB_NOTIFICATION 만
+     */
+    void sendStayMidSettleApproveNotification(Long memberNo, String bizName,
+                                              String periodStart, String periodEnd,
+                                              String requestScope, Long settleAmount);
+
+    void sendStayMidSettleRejectNotification(Long memberNo, String bizName,
+                                             String periodStart, String periodEnd,
+                                             String rejectReason);
+
+    /**
+     * 2026/07/30 장우철 — 숙소 정산 더미 지급 완료 알림 (5-4 D)
+     */
+    void sendStaySettlementPaidNotification(Long memberNo, String bizName,
+                                            String periodStart, String periodEnd,
+                                            String requestType, Long settleAmount);
 }

@@ -126,4 +126,23 @@ public class MypageReserveController {
         }
         return "redirect:/mypage/reserve/detail?resvId=" + resvId;
     }
+
+    // 2026/07/31 장우철 — 유저 숙소 예약 취소 (1-4·1-6)
+    @PostMapping("/reserve/stay-cancel")
+    public String cancelStayReservation(@RequestParam("resvId") Long resvId,
+                                        @RequestParam("cancelReason") String cancelReason,
+                                        HttpSession session,
+                                        RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId;
+        }
+        try {
+            mypageReserveService.cancelStayReservation(member.getMemberNo(), resvId, cancelReason);
+            rttr.addFlashAttribute("msg", "예약이 취소되었습니다. 환불은 결제수단 정책에 따라 처리됩니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/mypage/reserve/detail?resvId=" + resvId;
+    }
 }

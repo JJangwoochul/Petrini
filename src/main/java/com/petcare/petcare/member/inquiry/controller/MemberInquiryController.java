@@ -1,13 +1,7 @@
 /**
- * 역할: 1:1 문의 URL 처리 → Service 호출 → JSP 반환
- *
- * 연결
- * - Service: MemberInquiryService
- *
- * SQL·비즈니스 로직은 넣지 말 것 → Service로 위임
- * return 경로는 담당 JSP와 동일하게 맞출 것
+ * 역할: 1:1 문의 URL 처리
+ * 2026/07/31 장우철 — memberNo 기준 DB 연동 + 숙소 환불 작성 프리필
  */
-
 package com.petcare.petcare.member.inquiry.controller;
 
 import java.util.Optional;
@@ -22,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.petcare.petcare.member.inquiry.service.MemberInquiryService;
 import com.petcare.petcare.member.vo.InquiryVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.mypage.reserve.service.MypageReserveService;
+import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -30,9 +26,12 @@ import jakarta.servlet.http.HttpSession;
 public class MemberInquiryController {
 
     private final MemberInquiryService inquiryService;
+    private final MypageReserveService mypageReserveService;
 
-    public MemberInquiryController(MemberInquiryService inquiryService) {
+    public MemberInquiryController(MemberInquiryService inquiryService,
+                                   MypageReserveService mypageReserveService) {
         this.inquiryService = inquiryService;
+        this.mypageReserveService = mypageReserveService;
     }
 
     @GetMapping("/inquiry")
@@ -41,15 +40,28 @@ public class MemberInquiryController {
         if (member == null) {
             return "redirect:/login?redirect=/member/cs/inquiry";
         }
-
-        model.addAttribute("inquiries", inquiryService.getListForMember(member.getMemberId()));
+        model.addAttribute("inquiries", inquiryService.getListForMemberNo(member.getMemberNo()));
         return "member/cs-inquiry-list";
     }
 
     @GetMapping("/inquiry/write")
-    public String inquiryWriteForm(HttpSession session) {
-        if (getMemberOrRedirect(session) == null) {
-            return "redirect:/login?redirect=/member/cs/inquiry/write";
+    public String inquiryWriteForm(HttpSession session,
+                                   @RequestParam(value = "resvId", required = false) Long resvId,
+                                   @RequestParam(value = "type", required = false) String type,
+                                   Model model) {
+        MemberVO member = getMemberOrRedirect(session);
+        if (member == null) {
+            String redirect = "/member/cs/inquiry/write";
+            if (resvId != null) {
+                redirect += "?resvId=" + resvId + "&type=stay_refund";
+            }
+            return "redirect:/login?redirect=" + redirect;
+        }
+        if (resvId != null && "stay_refund".equalsIgnoreCase(type)) {
+            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId);
+            model.addAttribute("stayRefund", true);
+            model.addAttribute("resvId", resvId);
+            model.addAttribute("reservation", detail);
         }
         return "member/cs-inquiry-write";
     }
@@ -59,6 +71,8 @@ public class MemberInquiryController {
             @RequestParam String category,
             @RequestParam String title,
             @RequestParam String content,
+            @RequestParam(value = "resvId", required = false) Long resvId,
+            @RequestParam(value = "type", required = false) String type,
             HttpSession session) {
 
         MemberVO member = getMemberOrRedirect(session);
@@ -72,7 +86,16 @@ public class MemberInquiryController {
             return "redirect:/member/cs/inquiry/write?error=empty";
         }
 
-        InquiryVO inquiry = inquiryService.create(member, category, title, content);
+        InquiryVO inquiry;
+        try {
+            if (resvId != null && "stay_refund".equalsIgnoreCase(type)) {
+                inquiry = inquiryService.createStayRefundInquiry(member, resvId, content);
+            } else {
+                inquiry = inquiryService.create(member, category, title, content);
+            }
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return "redirect:/member/cs/inquiry/write?error=fail";
+        }
         if (inquiry == null) {
             return "redirect:/member/cs/inquiry?error=db";
         }
@@ -90,7 +113,7 @@ public class MemberInquiryController {
             return "redirect:/login?redirect=/member/cs/inquiry/detail?id=" + id;
         }
 
-        Optional<InquiryVO> inquiry = inquiryService.findForMember(member.getMemberId(), id);
+        Optional<InquiryVO> inquiry = inquiryService.findForMemberNo(member.getMemberNo(), id);
         if (inquiry.isEmpty()) {
             return "redirect:/member/cs/inquiry";
         }

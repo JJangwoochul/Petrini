@@ -41,6 +41,8 @@
         <button type="button" class="biz-tab active" data-tab="all" onclick="switchTab('all')">전체<span class="biz-tab-count" id="cntAll"></span></button>
         <button type="button" class="biz-tab" data-tab="pending" onclick="switchTab('pending')">예약신청<span class="biz-tab-count" id="cntPending"></span></button>
         <button type="button" class="biz-tab" data-tab="confirmed" onclick="switchTab('confirmed')">예약확정<span class="biz-tab-count" id="cntConfirmed"></span></button>
+        <button type="button" class="biz-tab" data-tab="checkin" onclick="switchTab('checkin')">체크인<span class="biz-tab-count" id="cntCheckin"></span></button>
+        <button type="button" class="biz-tab" data-tab="checkout" onclick="switchTab('checkout')">체크아웃<span class="biz-tab-count" id="cntCheckout"></span></button>
         <button type="button" class="biz-tab" data-tab="done" onclick="switchTab('done')">숙박완료<span class="biz-tab-count" id="cntDone"></span></button>
         <button type="button" class="biz-tab" data-tab="cancel" onclick="switchTab('cancel')">취소<span class="biz-tab-count" id="cntCancel"></span></button>
       </div>
@@ -130,6 +132,8 @@
       status: (function(cd){
         if (cd === 'PENDING') return 'pending';
         if (cd === 'CONFIRMED') return 'confirmed';
+        if (cd === 'CHECKIN') return 'checkin';
+        if (cd === 'CHECKOUT') return 'checkout';
         if (cd === 'DONE') return 'done';
         if (cd === 'CANCEL' || cd === 'REJECTED') return 'cancel';
         return 'pending';
@@ -144,6 +148,8 @@
   var badgeMap = {
     pending:   { cls: 'bs-wait',   label: '예약신청' },
     confirmed: { cls: 'bs-ready',  label: '예약확정' },
+    checkin:   { cls: 'bs-ready',  label: '체크인' },
+    checkout:  { cls: 'bs-ready',  label: '체크아웃' },
     done:      { cls: 'bs-done',   label: '숙박완료' },
     cancel:    { cls: 'bs-cancel', label: '취소' }
   };
@@ -162,6 +168,8 @@
     document.getElementById('cntAll').textContent = reservations.length;
     document.getElementById('cntPending').textContent = reservations.filter(function(r) { return r.status === 'pending'; }).length;
     document.getElementById('cntConfirmed').textContent = reservations.filter(function(r) { return r.status === 'confirmed'; }).length;
+    document.getElementById('cntCheckin').textContent = reservations.filter(function(r) { return r.status === 'checkin'; }).length;
+    document.getElementById('cntCheckout').textContent = reservations.filter(function(r) { return r.status === 'checkout'; }).length;
     document.getElementById('cntDone').textContent = reservations.filter(function(r) { return r.status === 'done'; }).length;
     document.getElementById('cntCancel').textContent = reservations.filter(function(r) { return r.status === 'cancel'; }).length;
 
@@ -184,8 +192,14 @@
           '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
       } else if (r.status === 'confirmed') {
         actionHtml +=
-          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'DONE\')">숙박완료</button> ' +
+          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'CHECKIN\')">체크인</button> ' +
           '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
+      } else if (r.status === 'checkin') {
+        actionHtml +=
+          '<button type="button" class="biz-btn" onclick="postStatus(' + r.resvId + ',\'CHECKOUT\')">체크아웃</button> ' +
+          '<button type="button" class="biz-btn danger" onclick="openCancelModal(' + r.resvId + ')">예약취소</button>';
+      } else if (r.status === 'checkout') {
+        actionHtml += '<span style="font-size:12px;color:#888">완료 대기(자동)</span>';
       }
 
       var periodHtml = r.checkinLabel + '~' + r.checkoutLabel;
@@ -206,7 +220,8 @@
 
   function postStatus(resvId, statusCd) {
     if (statusCd === 'CONFIRMED' && !confirm('예약을 확정하시겠습니까?')) return;
-    if (statusCd === 'DONE' && !confirm('숙박완료로 처리하시겠습니까?')) return;
+    if (statusCd === 'CHECKIN' && !confirm('체크인 처리하시겠습니까?')) return;
+    if (statusCd === 'CHECKOUT' && !confirm('체크아웃 처리하시겠습니까?')) return;
 
     var form = document.createElement('form');
     form.method = 'POST';

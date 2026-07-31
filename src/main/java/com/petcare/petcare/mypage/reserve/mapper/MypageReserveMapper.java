@@ -58,4 +58,16 @@ public interface MypageReserveMapper {
     void insertReviewPoint(java.util.Map<String, Object> param);
     void addMemberPointBalance(java.util.Map<String, Object> param);
     Long selectMemberPointBalance(@Param("memberNo") Long memberNo);
+
+    // 2026/07/31 장우철 — 유저 숙소 취소 (1-4·1-6)
+    int updateStayUserCancel(@Param("resvId") Long resvId,
+                             @Param("memberNo") Long memberNo,
+                             @Param("rejectReason") String rejectReason,
+                             @Param("cancelFeeAmt") Long cancelFeeAmt,
+                             @Param("refundAmt") Long refundAmt);
+
+    java.util.Map<String, Object> selectDonePaymentByResvId(@Param("resvId") Long resvId);
+
+    int updatePaymentRefundByResvId(@Param("resvId") Long resvId,
+                                    @Param("refundAmt") Long refundAmt);
 }

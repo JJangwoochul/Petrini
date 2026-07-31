@@ -24,4 +24,10 @@ public interface MypageReserveService {
     
     // HYJ 26.07.20 — DONE 예약에 한해 숙소 리뷰·별점 등록
     void addStayReview(Long memberNo, Long resvId, Double rating, String content);
+
+    /**
+     * 2026/07/31 장우철 — 유저 숙소 취소 (1-4) + 위약금 계산 저장 (1-6)
+     * CONFIRMED + 체크인 전만 가능
+     */
+    void cancelStayReservation(Long memberNo, Long resvId, String cancelReason);
 }

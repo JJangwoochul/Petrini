@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.petcare.petcare.common.external.service.KakaoMessageService;
+import com.petcare.petcare.common.external.service.TossPaymentService;
 import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayPetVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
@@ -46,6 +47,9 @@ public class StayServiceImpl implements StayService {
 
     @Autowired
     private KakaoMessageService kakaoMessageService;
+
+    @Autowired
+    private TossPaymentService tossPaymentService;
 
     @Override
     public List<StayVO> getStayList() {
@@ -125,9 +129,11 @@ public class StayServiceImpl implements StayService {
     }
 
     // HYJ 26.07.20 결제 확정 (PENDING → CONFIRMED + TB_PAYMENT INSERT + 포인트 차감)
+    // 2026/07/31 장우철 — 위젯 결제는 토스 confirm API 필수 (미호출 시 취소 불가)
     @Override
     @Transactional
-    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken, Long memberNo, long usedPoint) {
+    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod,
+                               String kakaoAccessToken, Long memberNo, long usedPoint, Long tossPaidAmount) {
         // 예약 조회
         ReservationVO resv = stayMapper.selectReservationById(resvId);
         if (resv == null) {
@@ -135,6 +141,36 @@ public class StayServiceImpl implements StayService {
         }
         if (!"PENDING".equals(resv.getStatusCd())) {
             throw new RuntimeException("결제할 수 없는 예약 상태입니다.");
+        }
+
+        long total = resv.getTotalAmount() != null ? resv.getTotalAmount() : 0L;
+        if (usedPoint < 0) {
+            usedPoint = 0;
+        }
+        if (usedPoint > total) {
+            usedPoint = total;
+        }
+        long cardAmount = total - usedPoint;
+        if (tossPaidAmount != null) {
+            cardAmount = tossPaidAmount;
+        }
+
+        String key = tossPaymentKey != null ? tossPaymentKey.trim() : "";
+        boolean pointOnly = "POINT_ONLY".equalsIgnoreCase(key) || "POINT".equalsIgnoreCase(payMethod);
+        boolean billingAlreadyPaid = "BILLING".equalsIgnoreCase(payMethod);
+
+        // 위젯 결제: 토스 승인 완료 후에만 DB 확정 (쇼핑과 동일)
+        if (!pointOnly && !billingAlreadyPaid && cardAmount > 0) {
+            if (key.isEmpty()) {
+                throw new RuntimeException("결제 키가 없습니다.");
+            }
+            String tossError = tossPaymentService.confirmPayment(key, tossOrderId, (int) cardAmount);
+            if (tossError != null) {
+                throw new RuntimeException(tossError);
+            }
+            if (payMethod == null || payMethod.isBlank()) {
+                payMethod = "CARD";
+            }
         }
 
         // 포인트 사용 처리
@@ -177,11 +213,19 @@ public class StayServiceImpl implements StayService {
         statusParam.put("statusCd", "CONFIRMED");
         stayMapper.updateReservationStatus(statusParam);
 
-        // 결제 정보 INSERT
+        // 결제 정보 INSERT — PAY_AMOUNT 는 카드(토스) 실결제액
+        long payAmountToStore = pointOnly ? 0L : cardAmount;
+        if (pointOnly) {
+            payAmountToStore = 0L;
+        } else if (billingAlreadyPaid || cardAmount > 0) {
+            payAmountToStore = cardAmount;
+        } else {
+            payAmountToStore = total;
+        }
         Map<String, Object> payParam = new HashMap<>();
         payParam.put("resvId", resvId);
         payParam.put("payMethod", payMethod);
-        payParam.put("payAmount", resv.getTotalAmount());
+        payParam.put("payAmount", payAmountToStore);
         payParam.put("tossPaymentKey", tossPaymentKey);
         payParam.put("tossOrderId", tossOrderId);
         payParam.put("payStatus", "DONE");

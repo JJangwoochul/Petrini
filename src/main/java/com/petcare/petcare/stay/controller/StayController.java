@@ -205,7 +205,9 @@ public class StayController {
 
         try {
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
-            stayService.confirmPayment(resvId, paymentKey, orderId, null, kakaoToken, member.getMemberNo(), usedPoint);
+            // 2026/07/31 장우철 — amount 는 토스 위젯 실결제액(confirm 필수)
+            stayService.confirmPayment(resvId, paymentKey, orderId, "CARD", kakaoToken,
+                    member.getMemberNo(), usedPoint, amount);
 
             // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
             syncSessionPointBalance(session, member);
@@ -302,7 +304,7 @@ public class StayController {
                     ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
             stayService.confirmPayment(resvId, paymentKey, tossOrderId, "BILLING",
-                    kakaoToken, member.getMemberNo(), usedPoint);
+                    kakaoToken, member.getMemberNo(), usedPoint, (long) chargeAmount);
 
             // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
             syncSessionPointBalance(session, member);
@@ -330,7 +332,7 @@ public class StayController {
         try {
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
             stayService.confirmPayment(resvId, "POINT_ONLY", "point-" + resvId + "-" + System.currentTimeMillis(),
-                    "POINT", kakaoToken, member.getMemberNo(), usedPoint);
+                    "POINT", kakaoToken, member.getMemberNo(), usedPoint, 0L);
 
             // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
             syncSessionPointBalance(session, member);

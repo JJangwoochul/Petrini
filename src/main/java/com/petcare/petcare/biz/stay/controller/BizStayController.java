@@ -11,7 +11,9 @@
 
 package com.petcare.petcare.biz.stay.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -31,6 +34,11 @@ import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.settlement.service.StaySettlementService;
+import com.petcare.petcare.settlement.vo.StaySettlementItemVO;
+import com.petcare.petcare.settlement.vo.StaySettlementRequestVO;
+import com.petcare.petcare.settlement.vo.StaySettlementSummaryVO;
+import com.petcare.petcare.settlement.vo.StaySettlementVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -43,6 +51,9 @@ public class BizStayController extends BizBaseController {
     private BizStayService bizStayService;
     @Autowired
     private FileService fileService;
+    // 2026/07/30 장우철 — 숙소 정산 요약/목록
+    @Autowired
+    private StaySettlementService staySettlementService;
 
     // 2026-07-14 — 사이드바 예약관리 배지: PENDING 건수
     @ModelAttribute("pendingReserveCount")
@@ -184,12 +195,128 @@ public class BizStayController extends BizBaseController {
             return "redirect:/login";
         return "biz/stay/contract";
     }
-/*사업자(상점) 정산관리 추가*/
+/* 사업자(숙소) 정산관리 — 2026/07/30 장우철 2-1 요약 / 2-2 목록 */
     @GetMapping("/settlement")
-    public String staySettlement(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String staySettlement(HttpSession session, Model model,
+                                 @RequestParam(value = "month", required = false, defaultValue = "all") String month,
+                                 @RequestParam(value = "status", required = false, defaultValue = "all") String status) {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
             return "redirect:/login";
+        }
+
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getBizNo() == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        Long bizNo = stay.getBizNo();
+        StaySettlementSummaryVO summary = staySettlementService.getStaySettlementSummary(bizNo);
+        List<StaySettlementVO> settlements = staySettlementService.getStaySettlementList(bizNo, month, status);
+        List<String> settleMonths = staySettlementService.getStaySettlementMonths(bizNo);
+        // 2026/07/30 장우철 — 4-1 중간정산 요청 폼용 객실 목록 (저장은 4-2)
+        List<StayRoomVO> roomList = (stay.getStayId() != null)
+                ? bizStayService.getRoomList(stay.getStayId())
+                : java.util.Collections.emptyList();
+
+        model.addAttribute("stay", stay);
+        model.addAttribute("summary", summary);
+        model.addAttribute("settlements", settlements);
+        model.addAttribute("settleMonths", settleMonths);
+        model.addAttribute("filterMonth", month);
+        model.addAttribute("filterStatus", status);
+        model.addAttribute("roomList", roomList);
         return "biz/stay/settlement";
+    }
+
+    /**
+     * 2026/07/30 장우철 — 2-4 정산 상세 ITEM JSON
+     * GET /biz/stay/settlement/items?settleId=
+     */
+    @GetMapping("/settlement/items")
+    @ResponseBody
+    public Map<String, Object> staySettlementItems(HttpSession session,
+                                                   @RequestParam("settleId") Long settleId) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            result.put("ok", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getBizNo() == null) {
+            result.put("ok", false);
+            result.put("message", "숙소 사업자 정보가 없습니다.");
+            return result;
+        }
+
+        List<StaySettlementItemVO> items =
+                staySettlementService.getStaySettlementItems(stay.getBizNo(), settleId);
+        result.put("ok", true);
+        result.put("items", items);
+        return result;
+    }
+
+    /**
+     * 2026/07/30 장우철 — 4-2 중간정산 요청 저장
+     * POST /biz/stay/settlement/request
+     * body: { requestScope, roomId?, targetEnd, requestMemo? }
+     * TARGET_START 는 서버에서 해당 월 1일로 고정
+     */
+    @PostMapping("/settlement/request")
+    @ResponseBody
+    public Map<String, Object> staySettlementRequest(HttpSession session,
+                                                     @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            result.put("ok", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getBizNo() == null) {
+            result.put("ok", false);
+            result.put("message", "숙소 사업자 정보가 없습니다.");
+            return result;
+        }
+
+        try {
+            String scope = body.get("requestScope") == null
+                    ? null : String.valueOf(body.get("requestScope"));
+            Long roomId = null;
+            if (body.get("roomId") != null && !String.valueOf(body.get("roomId")).isBlank()) {
+                roomId = Long.parseLong(String.valueOf(body.get("roomId")));
+            }
+            String endStr = body.get("targetEnd") == null
+                    ? null : String.valueOf(body.get("targetEnd"));
+            if (endStr == null || endStr.isBlank()) {
+                throw new IllegalArgumentException("대상 종료일(컷오프)을 입력하세요.");
+            }
+            java.util.Date targetEnd = java.sql.Date.valueOf(endStr.substring(0, 10));
+            String memo = body.get("requestMemo") == null
+                    ? null : String.valueOf(body.get("requestMemo"));
+
+            StaySettlementRequestVO saved = staySettlementService.createMidSettlementRequest(
+                    stay.getBizNo(), scope, roomId, targetEnd, memo);
+
+            result.put("ok", true);
+            result.put("requestId", saved.getRequestId());
+            result.put("targetStart", saved.getTargetStart());
+            result.put("targetEnd", saved.getTargetEnd());
+            // 5-4 A: 화면 문구만 (사이트 알림/이메일 없음)
+            result.put("message", "중간정산 요청이 접수되었습니다. 관리자 승인 후 지급 예정입니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            result.put("ok", false);
+            result.put("message", e.getMessage());
+        } catch (Exception e) {
+            result.put("ok", false);
+            result.put("message", "요청 처리 중 오류가 발생했습니다.");
+        }
+        return result;
     }
 
     @GetMapping("/info")

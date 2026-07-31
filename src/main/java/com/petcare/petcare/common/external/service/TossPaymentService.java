@@ -21,6 +21,14 @@ public class TossPaymentService {
     private String tossSecretKey;
 
     public String cancelPayment(String paymentKey, String cancelReason) {
+        return cancelPayment(paymentKey, cancelReason, null);
+    }
+
+    /**
+     * 2026/07/31 장우철 — 숙소 부분환불: cancelAmount 있으면 해당 금액만 취소
+     * @param cancelAmount null이면 전액 취소
+     */
+    public String cancelPayment(String paymentKey, String cancelReason, Long cancelAmount) {
         try {
             URL url = new URL("https://api.tosspayments.com/v1/payments/" + paymentKey + "/cancel");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -29,11 +37,18 @@ public class TossPaymentService {
             String encodedAuth = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
             conn.setRequestProperty("Authorization", "Basic " + encodedAuth);
             conn.setRequestProperty("Content-Type", "application/json");
+            // 2026/07/31 장우철 — 토스 권장 멱등키 (중복 취소 방지)
+            conn.setRequestProperty("Idempotency-Key", java.util.UUID.randomUUID().toString());
             conn.setDoOutput(true);
 
-            String body = "{\"cancelReason\":\"" + cancelReason.replace("\"", "'") + "\"}";
+            String safeReason = cancelReason == null ? "취소" : cancelReason.replace("\"", "'");
+            StringBuilder body = new StringBuilder("{\"cancelReason\":\"").append(safeReason).append("\"");
+            if (cancelAmount != null && cancelAmount > 0) {
+                body.append(",\"cancelAmount\":").append(cancelAmount);
+            }
+            body.append("}");
             try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
+                os.write(body.toString().getBytes(StandardCharsets.UTF_8));
             }
 
             int status = conn.getResponseCode();
@@ -48,7 +63,12 @@ public class TossPaymentService {
             if (status == 200) return null;
 
             JsonNode json = new ObjectMapper().readTree(sb.toString());
-            return json.path("message").asText("토스 결제취소 요청이 거절되었습니다.");
+            String code = json.path("code").asText("");
+            String message = json.path("message").asText("토스 결제취소 요청이 거절되었습니다.");
+            if (code != null && !code.isBlank()) {
+                return message + " [" + code + "]";
+            }
+            return message;
 
         } catch (Exception e) {
             return "토스 API 호출 중 오류가 발생했습니다: " + e.getMessage();

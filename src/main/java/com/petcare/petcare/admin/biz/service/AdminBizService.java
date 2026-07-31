@@ -17,7 +17,8 @@ import com.petcare.petcare.file.vo.FileVO;
 public interface AdminBizService {
 
     // 2026-07-09 장우철 — 사업자 승인 목록·상세·처리 API
-    List<AdminBizVO> getBizApplyList(String statusCd);
+    // 2026/07/28 장우철 — bizType: ALL 또는 HOSPITAL/STAY/STORE/GROOMING/STUDIO (승인/관리 필터)
+    List<AdminBizVO> getBizApplyList(String statusCd, String bizType);
 
     AdminBizVO getBizApplyDetail(Long bizNo);
 

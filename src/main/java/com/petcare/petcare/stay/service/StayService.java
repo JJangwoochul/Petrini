@@ -47,7 +47,9 @@ public interface StayService {
     public boolean checkRoomAvailability(Long roomId, Date checkinDate, Date checkoutDate);
 
     // HYJ 26.07.20 결제 확정 (+ 포인트 사용)
-    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod, String kakaoAccessToken, Long memberNo, long usedPoint);
+    // 2026/07/31 장우철 — tossPaidAmount: 위젯/빌링 실결제액(포인트 차감 후). null이면 total-usedPoint
+    public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod,
+                               String kakaoAccessToken, Long memberNo, long usedPoint, Long tossPaidAmount);
 
     // 2026/07/27 장우철 — DB 실제 보유 포인트
     Long getMemberPointBalance(Long memberNo);

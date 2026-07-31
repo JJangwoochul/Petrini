@@ -208,6 +208,12 @@
             <when test="tab == 'confirmed'">
            AND  R.STATUS_CD = 'CONFIRMED'
             </when>
+            <when test="tab == 'checkin'">
+           AND  R.STATUS_CD = 'CHECKIN'
+            </when>
+            <when test="tab == 'checkout'">
+           AND  R.STATUS_CD = 'CHECKOUT'
+            </when>
             <when test="tab == 'done'">
            AND  R.STATUS_CD = 'DONE'
             </when>
@@ -282,7 +288,7 @@
      LEFT JOIN  TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
          WHERE  R.RESV_TYPE  = 'STAY'
            AND  R.TARGET_ID  = TO_CHAR(#{stayId})
-           AND  R.STATUS_CD IN ('PENDING', 'CONFIRMED', 'DONE')
+           AND  R.STATUS_CD IN ('PENDING', 'CONFIRMED', 'CHECKIN', 'CHECKOUT', 'DONE')
            AND  R.CHECKOUT_DATE &gt;= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
            AND  R.CHECKIN_DATE  &lt;  TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
          ORDER BY R.CHECKIN_DATE

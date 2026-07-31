@@ -48,17 +48,17 @@ public class AdminBizController extends AdminBaseController {
     @GetMapping("/list")
     public String bizList(HttpSession session,
                           @RequestParam(defaultValue = "PENDING") String status,
+                          @RequestParam(defaultValue = "ALL") String bizType,
                           Model model) {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
-        // 2026-07-09 장우철 — [변경 전] JSP 더미 카드만 반환
-        // return "admin/biz/list";
-
-        // 2026-07-09 장우철 — [변경 후] 상태 탭별 실데이터 목록 + 탭 건수
-        // 이유: USER 사업자 신청(TB_BUSINESS PENDING)을 관리자가 검토하는 화면
-        model.addAttribute("list", adminBizService.getBizApplyList(status));
+        // 2026-07-09 장우철 — 상태 탭별 실데이터 목록 + 탭 건수
+        // 2026/07/28 장우철 — APPROVED(승인/관리) 일 때만 업종 필터 적용
+        String typeFilter = "APPROVED".equals(status) ? bizType : "ALL";
+        model.addAttribute("list", adminBizService.getBizApplyList(status, typeFilter));
         model.addAttribute("status", status);
+        model.addAttribute("bizType", typeFilter);
         model.addAttribute("statusCounts", adminBizService.getBizStatusCounts());
         return "admin/biz/list";
     }

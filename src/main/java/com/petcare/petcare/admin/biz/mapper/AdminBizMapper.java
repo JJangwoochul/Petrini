@@ -17,8 +17,9 @@ import com.petcare.petcare.admin.biz.vo.AdminBizVO;
 public interface AdminBizMapper {
 
     // 2026-07-09 장우철 — 사업자 신청 목록 (상태 탭 필터)
-    // 이유: admin/biz/list.jsp 탭(PENDING/APPROVED/REJECTED)별로 TB_BUSINESS 조회
-    List<AdminBizVO> selectBizApplyList(@Param("statusCd") String statusCd);
+    // 2026/07/28 장우철 — APPROVED(승인/관리) 탭에서 업종(bizType) 추가 필터
+    List<AdminBizVO> selectBizApplyList(@Param("statusCd") String statusCd,
+                                        @Param("bizType") String bizType);
 
     // 2026-07-09 장우철 — 사업자 신청 상세 1건
     // 이유: admin/biz/detail.jsp 에서 bizNo 기준으로 기본정보 + 최신 AUTH 이력 표시

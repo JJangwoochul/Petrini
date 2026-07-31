@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 2026/07/31 장우철 — 숙소 전액 환불 취소 공통 -->
+<mapper namespace="com.petcare.petcare.stay.mapper.StayCancelMapper">
+
+  <select id="selectStayReservation" resultType="com.petcare.petcare.stay.vo.ReservationVO">
+    SELECT  R.RESV_ID       AS resvId,
+            R.RESV_NO       AS resvNo,
+            R.RESV_TYPE     AS resvType,
+            R.MEMBER_NO     AS memberNo,
+            R.STATUS_CD     AS statusCd,
+            R.TOTAL_AMOUNT  AS totalAmount,
+            R.CHECKIN_DATE  AS checkinDate,
+            R.CHECKOUT_DATE AS checkoutDate,
+            R.TARGET_ID     AS targetId,
+            S.NAME          AS stayName
+      FROM  TB_RESERVATION R
+      LEFT JOIN TB_STAY S
+             ON R.RESV_TYPE = 'STAY'
+            AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+     WHERE  R.RESV_ID   = #{resvId}
+       AND  R.RESV_TYPE = 'STAY'
+    <if test="stayId != null">
+       AND  R.TARGET_ID = TO_CHAR(#{stayId})
+    </if>
+  </select>
+
+  <select id="selectDonePaymentByResvId" resultType="map">
+    SELECT PAYMENT_ID       AS "paymentId",
+           TOSS_PAYMENT_KEY AS "tossPaymentKey",
+           PAY_AMOUNT       AS "payAmount",
+           PAY_STATUS       AS "payStatus",
+           REFUND_AMT       AS "refundAmt"
+      FROM TB_PAYMENT
+     WHERE RESV_ID = #{resvId}
+       AND PAY_TYPE = 'RESERVATION'
+       AND PAY_STATUS = 'DONE'
+       AND ROWNUM = 1
+  </select>
+
+  <update id="updatePaymentRefundByResvId">
+    UPDATE TB_PAYMENT
+       SET REFUND_AMT = #{refundAmt},
+           PAY_STATUS = 'REFUND'
+     WHERE RESV_ID = #{resvId}
+       AND PAY_TYPE = 'RESERVATION'
+       AND PAY_STATUS = 'DONE'
+  </update>
+
+  <!--
+    2026/07/31 장우철 — R3: allowDone=true 이면 DONE도 취소(관리자 환불승인)
+  -->
+  <update id="updateStayFullCancel">
+    UPDATE TB_RESERVATION
+       SET STATUS_CD      = 'CANCEL',
+           REJECT_REASON  = #{rejectReason, jdbcType=VARCHAR},
+           CANCEL_FEE_AMT = #{cancelFeeAmt},
+           REFUND_AMT     = #{refundAmt},
+           CANCEL_AT      = SYSDATE
+     WHERE RESV_ID   = #{resvId}
+       AND RESV_TYPE = 'STAY'
+    <choose>
+      <when test="allowDone != null and allowDone == true">
+       AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+      </when>
+      <otherwise>
+       AND STATUS_CD NOT IN ('CANCEL', 'REJECTED', 'DONE')
+      </otherwise>
+    </choose>
+    <if test="stayId != null">
+       AND TARGET_ID = TO_CHAR(#{stayId})
+    </if>
+  </update>
+
+</mapper>

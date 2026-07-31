@@ -24,8 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
 import com.petcare.petcare.common.external.service.KakaoMapService;
-import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
+import com.petcare.petcare.stay.service.StayFullCancelService;
+import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
 
@@ -37,6 +38,8 @@ public class BizStayServiceImpl implements BizStayService {
     private KakaoMapService kakaoMapService;
     @Autowired
     private MypageNotifyService mypageNotifyService;
+    @Autowired
+    private StayFullCancelService stayFullCancelService;
     
     @Override
     public StayVO getStayByBizId(String bizId) {
@@ -130,6 +133,7 @@ public class BizStayServiceImpl implements BizStayService {
 
         String next = statusCd.trim().toUpperCase();
         if (!next.equals("PENDING") && !next.equals("CONFIRMED")
+                && !next.equals("CHECKIN") && !next.equals("CHECKOUT")
                 && !next.equals("DONE") && !next.equals("CANCEL")) {
             throw new IllegalArgumentException("허용되지 않은 예약 상태입니다.");
         }
@@ -144,23 +148,17 @@ public class BizStayServiceImpl implements BizStayService {
             throw new IllegalStateException("현재 상태에서는 해당 처리가 불가합니다. (현재: " + prev + ")");
         }
 
-        String rejectReason = null;
+        // 2026/07/31 장우철 — 사업자 취소 = 수수료 0 · 전액 환불
         if ("CANCEL".equals(next)) {
-            if (cancelReason == null || cancelReason.isBlank()) {
-                throw new IllegalArgumentException("취소 사유를 입력해 주세요.");
-            }
-            rejectReason = cancelReason.trim();
-            if (rejectReason.length() > 500) {
-                rejectReason = rejectReason.substring(0, 500);
-            }
+            stayFullCancelService.cancelWithFullRefund(resvId, stayId, cancelReason, "사업자");
+            return;
         }
 
-        int updated = bizStayMapper.updateReservationStatus(resvId, stayId, next, rejectReason);
+        int updated = bizStayMapper.updateReservationStatus(resvId, stayId, next, null);
         if (updated == 0) {
             throw new IllegalStateException("예약을 찾을 수 없거나 변경할 수 없습니다.");
         }
 
-        // 알림 발송
         String stayName = bizStayMapper.selectStayNameById(stayId);
         if (stayName == null || stayName.isBlank()) {
             stayName = "숙소";
@@ -168,20 +166,25 @@ public class BizStayServiceImpl implements BizStayService {
         if ("CONFIRMED".equals(next)) {
             mypageNotifyService.sendReserveConfirmNotification(
                     current.getMemberNo(), stayName, current.getCheckinDate(), null, resvId);
-        } else if ("CANCEL".equals(next)) {
-            mypageNotifyService.sendReserveCancelNotification(
-                    current.getMemberNo(), stayName, current.getCheckinDate(), null,
-                    rejectReason, resvId);
         }
     }
 
-    /** PENDING→CONFIRMED/CANCEL, CONFIRMED→DONE/CANCEL 만 허용 */
+    /**
+     * 2026/07/31 장우철 — R2 상태 전이
+     * PENDING→CONFIRMED/CANCEL
+     * CONFIRMED→CHECKIN/CANCEL
+     * CHECKIN→CHECKOUT/CANCEL
+     * CHECKOUT→ (DONE은 스케줄러만, 수동 DONE 불가)
+     */
     private boolean isAllowedStatusTransition(String prev, String next) {
         if ("PENDING".equals(prev)) {
             return "CONFIRMED".equals(next) || "CANCEL".equals(next);
         }
         if ("CONFIRMED".equals(prev)) {
-            return "DONE".equals(next) || "CANCEL".equals(next);
+            return "CHECKIN".equals(next) || "CANCEL".equals(next);
+        }
+        if ("CHECKIN".equals(prev)) {
+            return "CHECKOUT".equals(next) || "CANCEL".equals(next);
         }
         return false;
     }

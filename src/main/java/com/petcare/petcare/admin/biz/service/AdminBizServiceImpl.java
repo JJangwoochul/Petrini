@@ -47,8 +47,9 @@ public class AdminBizServiceImpl implements AdminBizService {
     private MypageNotifyService mypageNotifyService;
 
     @Override
-    public List<AdminBizVO> getBizApplyList(String statusCd) {
-        return adminBizMapper.selectBizApplyList(statusCd);
+    public List<AdminBizVO> getBizApplyList(String statusCd, String bizType) {
+        // 2026/07/28 장우철 — 승인/관리 탭 업종 필터 (null/ALL = 전체)
+        return adminBizMapper.selectBizApplyList(statusCd, bizType);
     }
 
     @Override

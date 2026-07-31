@@ -45,13 +45,34 @@
     padding:6px 12px; font-size:12px; color:#333;
     outline:none; width:220px; display:none;
 }
+/* 2026/07/28 장우철 — 승인/관리 업종 필터 드롭다운 */
+.biz-type-filter-wrap { margin-bottom:16px; position:relative; max-width:220px; }
+.biz-type-filter-btn {
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; border:1px solid #E4E6ED; border-radius:8px;
+    background:#fff; font-size:14px; font-weight:600; color:#1A1A2E; cursor:pointer;
+}
+.biz-type-filter-btn:hover { border-color:#C7D2FE; }
+.biz-type-filter-menu {
+    display:none; position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:20;
+    background:#fff; border:1px solid #E4E6ED; border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.08); overflow:hidden;
+}
+.biz-type-filter-menu.open { display:block; }
+.biz-type-filter-menu a {
+    display:block; padding:10px 14px; font-size:13px; font-weight:600;
+    color:#555; text-decoration:none; border-bottom:1px solid #F3F4F6;
+}
+.biz-type-filter-menu a:last-child { border-bottom:none; }
+.biz-type-filter-menu a:hover { background:#F8FAFC; color:#3B5BDB; }
+.biz-type-filter-menu a.active { background:#EEF2FF; color:#3B5BDB; }
 </style>
 
 <main class="adm-main">
     <div class="adm-page-head">
         <div class="adm-page-head-left">
-            <h1 class="adm-page-title">사업자 승인 관리</h1>
-            <p class="adm-page-desc">사업자 등록 신청을 검토하고 승인·반려 처리하세요.</p>
+            <h1 class="adm-page-title">사업자 승인/관리</h1>
+            <p class="adm-page-desc">사업자 등록 신청을 검토하고, 승인된 사업자를 업종별로 관리하세요.</p>
         </div>
     </div>
 
@@ -63,16 +84,15 @@
         <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">${errorMsg}</div>
     </c:if>
 
-    <%-- 2026-07-09 장우철 — [변경 후] 상태 탭 (DB 건수 연동)
-         이유: PENDING/APPROVED/REJECTED 별 TB_BUSINESS 목록 필터 --%>
+    <%-- 2026/07/28 장우철 — 탭: 대기 / 승인/관리(APPROVED) / 반려 --%>
     <div style="display:flex;gap:0;border-bottom:2px solid #E4E6ED;margin-bottom:20px">
         <a href="${contextPath}/admin/biz/list?status=PENDING"
            style="padding:10px 20px;font-size:14px;font-weight:${status eq 'PENDING' ? '700' : '600'};color:${status eq 'PENDING' ? '#3B5BDB' : '#999'};text-decoration:none;border:none;background:none;border-bottom:2px solid ${status eq 'PENDING' ? '#3B5BDB' : 'transparent'};margin-bottom:-2px">
             대기 <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">${statusCounts.PENDING}</span>
         </a>
-        <a href="${contextPath}/admin/biz/list?status=APPROVED"
+        <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=ALL"
            style="padding:10px 20px;font-size:14px;font-weight:${status eq 'APPROVED' ? '700' : '600'};color:${status eq 'APPROVED' ? '#3B5BDB' : '#999'};text-decoration:none;border:none;background:none;border-bottom:2px solid ${status eq 'APPROVED' ? '#3B5BDB' : 'transparent'};margin-bottom:-2px">
-            승인완료 <span style="background:#F0FDF4;color:#16A34A;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">${statusCounts.APPROVED}</span>
+            승인/관리 <span style="background:#F0FDF4;color:#16A34A;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">${statusCounts.APPROVED}</span>
         </a>
         <a href="${contextPath}/admin/biz/list?status=REJECTED"
            style="padding:10px 20px;font-size:14px;font-weight:${status eq 'REJECTED' ? '700' : '600'};color:${status eq 'REJECTED' ? '#3B5BDB' : '#999'};text-decoration:none;border:none;background:none;border-bottom:2px solid ${status eq 'REJECTED' ? '#3B5BDB' : 'transparent'};margin-bottom:-2px">
@@ -80,10 +100,51 @@
         </a>
     </div>
 
+    <%-- 2026/07/28 장우철 — 승인/관리 업종 필터 (전체→병원→숙소→쇼핑→미용→스튜디오) --%>
+    <c:if test="${status eq 'APPROVED'}">
+    <div class="biz-type-filter-wrap" id="bizTypeFilter">
+        <button type="button" class="biz-type-filter-btn" id="bizTypeFilterBtn">
+            <span>
+                <c:choose>
+                    <c:when test="${bizType eq 'HOSPITAL'}">병원</c:when>
+                    <c:when test="${bizType eq 'STAY'}">숙소</c:when>
+                    <c:when test="${bizType eq 'STORE'}">쇼핑</c:when>
+                    <c:when test="${bizType eq 'GROOMING'}">미용</c:when>
+                    <c:when test="${bizType eq 'STUDIO'}">스튜디오</c:when>
+                    <c:otherwise>전체</c:otherwise>
+                </c:choose>
+            </span>
+            <span style="color:#999;font-size:12px">▾</span>
+        </button>
+        <div class="biz-type-filter-menu" id="bizTypeFilterMenu">
+            <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=ALL" class="${empty bizType or bizType eq 'ALL' ? 'active' : ''}">전체</a>
+            <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=HOSPITAL" class="${bizType eq 'HOSPITAL' ? 'active' : ''}">병원</a>
+            <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=STAY" class="${bizType eq 'STAY' ? 'active' : ''}">숙소</a>
+            <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=STORE" class="${bizType eq 'STORE' ? 'active' : ''}">쇼핑</a>
+            <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=GROOMING" class="${bizType eq 'GROOMING' ? 'active' : ''}">미용</a>
+            <a href="${contextPath}/admin/biz/list?status=APPROVED&amp;bizType=STUDIO" class="${bizType eq 'STUDIO' ? 'active' : ''}">스튜디오</a>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var btn = document.getElementById('bizTypeFilterBtn');
+        var menu = document.getElementById('bizTypeFilterMenu');
+        if (!btn || !menu) return;
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            menu.classList.toggle('open');
+        });
+        document.addEventListener('click', function () {
+            menu.classList.remove('open');
+        });
+    })();
+    </script>
+    </c:if>
+
     <%-- 2026-07-09 장우철 — [변경 후] 신청 목록 실데이터 반복 --%>
     <c:choose>
     <c:when test="${empty list}">
-        <p style="text-align:center;color:#999;padding:48px 0">해당 상태의 사업자 신청이 없습니다.</p>
+        <p style="text-align:center;color:#999;padding:48px 0">해당 조건의 사업자가 없습니다.</p>
     </c:when>
     <c:otherwise>
     <c:forEach var="item" items="${list}">

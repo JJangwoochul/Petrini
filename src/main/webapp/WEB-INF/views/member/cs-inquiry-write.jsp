@@ -119,13 +119,32 @@
     </a>
 
     <div class="cs-inquiry-write-card">
-        <h1 class="cs-inquiry-write-title">1:1 문의 작성</h1>
+        <h1 class="cs-inquiry-write-title">
+          <c:choose>
+            <c:when test="${stayRefund}">숙소 환불 신청</c:when>
+            <c:otherwise>1:1 문의 작성</c:otherwise>
+          </c:choose>
+        </h1>
 
         <c:if test="${param.error eq 'empty'}">
             <p class="cs-form-error">문의 유형, 제목, 내용을 모두 입력해 주세요.</p>
         </c:if>
+        <c:if test="${param.error eq 'fail'}">
+            <p class="cs-form-error">신청에 실패했습니다. 예약 상태·중복 신청 여부를 확인해 주세요.</p>
+        </c:if>
 
         <form action="${contextPath}/member/cs/inquiry/write" method="post">
+            <c:if test="${stayRefund}">
+              <input type="hidden" name="type" value="stay_refund">
+              <input type="hidden" name="resvId" value="${resvId}">
+              <input type="hidden" name="category" value="예약">
+              <p style="font-size:13px;color:#666;margin:0 0 16px;line-height:1.5">
+                예약번호 <strong><c:out value="${reservation.resvNo}"/></strong>
+                · 관리자 검토 후 환불 승인/거절이 진행됩니다.
+              </p>
+            </c:if>
+
+            <c:if test="${!stayRefund}">
             <div class="cs-form-group">
                 <label for="category">문의 유형</label>
                 <select id="category" name="category" required>
@@ -137,20 +156,27 @@
                     <option value="기타">기타</option>
                 </select>
             </div>
+            </c:if>
 
             <div class="cs-form-group">
                 <label for="title">제목</label>
-                <input type="text" id="title" name="title" placeholder="제목을 입력하세요" required maxlength="100">
+                <input type="text" id="title" name="title" placeholder="제목을 입력하세요" required maxlength="100"
+                       value="<c:if test='${stayRefund}'>숙소 환불신청 #<c:out value='${reservation.resvNo}'/></c:if>">
             </div>
 
             <div class="cs-form-group">
                 <label for="content">내용</label>
-                <textarea id="content" name="content" placeholder="문의 내용을 자세히 입력해 주세요." required></textarea>
+                <textarea id="content" name="content" placeholder="문의 내용을 자세히 입력해 주세요." required><c:if test="${stayRefund}">숙소 이용 중 환불을 신청합니다.&#10;사유: </c:if></textarea>
             </div>
 
             <div class="cs-form-actions">
                 <a href="${contextPath}/member/cs/inquiry" class="btn-inquiry-cancel">취소</a>
-                <button type="submit" class="btn-inquiry-submit">등록하기</button>
+                <button type="submit" class="btn-inquiry-submit">
+                  <c:choose>
+                    <c:when test="${stayRefund}">환불 신청하기</c:when>
+                    <c:otherwise>등록하기</c:otherwise>
+                  </c:choose>
+                </button>
             </div>
         </form>
     </div>
