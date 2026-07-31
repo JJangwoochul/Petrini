@@ -383,12 +383,12 @@ SELECT
 </select>
 
 <!-- 지윤 26.07.09 회원 보유쿠폰 목록 조회 (미사용 상태만) -->
-<!-- 지윤 26.07.30 수정: BIZ_MEMBER_ID 추가해서 쿠폰이 어느 사업자 건지 판별 가능하게 -->
+<!-- 지윤 26.07.30 수정: 실제 컬럼명이 BIZ_NO라서 그대로 사용 (자바 필드명도 bizNo로 통일함) -->
 <select id="selectMemberCoupons" resultType="com.petcare.petcare.store.vo.CouponVO">
     SELECT mc.MEMBER_COUPON_ID, c.COUPON_ID, c.COUPON_NAME, c.COUPON_TYPE,
            c.DISCOUNT_VALUE,
            c.MIN_ORDER_AMT,
-           c.BIZ_MEMBER_ID
+           c.BIZ_NO
     FROM TB_MEMBER_COUPON mc
     JOIN TB_COUPON c ON c.COUPON_ID = mc.COUPON_ID
     WHERE mc.MEMBER_NO = #{memberNo} AND mc.STATUS_CD = 'UNUSED'

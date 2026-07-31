@@ -244,10 +244,10 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
         }
         int groupDeliveryFee = (groupSubtotal >= 50000) ? 0 : 3000;
 
-        //지윤 26.07.30 추가: 쿠폰은 발급 사업자(couponBizMemberId)와 이 그룹의 bizNo가 일치할 때만 적용
+        //지윤 26.07.30 수정: 쿠폰은 발급 사업자(couponBizNo)와 이 그룹의 bizNo가 일치할 때만 적용
         int groupCouponDiscount = 0;
-        if (p.getCouponBizMemberId() != null && bizNo != null
-                && bizNo.equals(Long.valueOf(p.getCouponBizMemberId()))) {
+        if (p.getCouponBizNo() != null && bizNo != null
+                && bizNo.equals(Long.valueOf(p.getCouponBizNo()))) {
             groupCouponDiscount = p.getCouponDiscount() != null ? p.getCouponDiscount() : 0;
         }
 

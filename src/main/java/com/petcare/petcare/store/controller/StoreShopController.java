@@ -224,21 +224,21 @@ public String payment(@RequestParam(required = false) Long productId,
     }
 
     // 지윤 26.07.10 쿠폰 재검증: 본인이 실제 보유한(UNUSED) 쿠폰인지 확인
-    // 지윤 26.07.30 수정: 쿠폰은 발급한 사업자(BIZ_MEMBER_ID) 상품에만 적용, 최소주문금액도 그 사업자 몫 기준으로 검증
+    // 지윤 26.07.30 수정: 쿠폰은 발급한 사업자(BIZ_NO) 상품에만 적용, 최소주문금액도 그 사업자 몫 기준으로 검증
     int couponDiscount = 0;
     String couponName = null;
-    String couponBizMemberId = null;
+    String couponBizNoStr = null;
     if (couponId != null && couponId > 0) {
         for (CouponVO c : storeShopService.getMemberCoupons(memberNo)) {
             if (c.getMemberCouponId().equals(couponId)) {
-                Long couponBizNo = c.getBizMemberId() != null ? Long.valueOf(c.getBizMemberId()) : null;
+                Long couponBizNo = c.getBizNo() != null ? Long.valueOf(c.getBizNo()) : null;
                 int couponTargetAmt = groupSubtotals.getOrDefault(couponBizNo, 0);
                 if (couponTargetAmt >= c.getMinOrderAmt()) {
                     couponDiscount = "RATE".equals(c.getCouponType())
                             ? couponTargetAmt * c.getDiscountValue() / 100
                             : c.getDiscountValue();
                     couponName = c.getCouponName();
-                    couponBizMemberId = c.getBizMemberId();
+                    couponBizNoStr = c.getBizNo();
                 }
                 break;
             }
@@ -279,7 +279,7 @@ public String payment(@RequestParam(required = false) Long productId,
     orderTemp.setProductTotal(productTotal);
     orderTemp.setDeliveryFee(deliveryFee);
     orderTemp.setCouponMemberCouponId((couponId != null && couponId > 0) ? couponId : null);
-    orderTemp.setCouponBizMemberId(couponBizMemberId);
+    orderTemp.setCouponBizNo(couponBizNoStr);
     orderTemp.setCouponDiscount(couponDiscount);
     orderTemp.setPointUsed((int) pointUsed);
     orderTemp.setTotalDiscount(totalDiscount);
