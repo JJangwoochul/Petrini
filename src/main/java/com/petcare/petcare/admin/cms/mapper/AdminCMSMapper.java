@@ -29,8 +29,21 @@
 
 package com.petcare.petcare.admin.cms.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
+
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
 
 @Mapper
-public interface AdminCMSMapper {}
+public interface AdminCMSMapper {
+    // ── 관리자: 전체 배너 목록 (PENDING 우선 정렬) ──
+    List<MainBannerVO> selectAllBannerList();
+
+    // ── 관리자: PENDING 건수 ──
+    int selectPendingBannerCount();
+
+    // ── 관리자: 배너 상태 변경 (승인/반려) ──
+    void updateBannerStatus(MainBannerVO banner);
+}

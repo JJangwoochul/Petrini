@@ -30,7 +30,7 @@ public class BizCouponVO {
     private String useStartDate;     // 사용 시작일 (YYYYMMDD)
     private String useEndDate;       // 사용 종료일 (YYYYMMDD)
 
-    private String bizMemberId;      // 신청 사업자 회원 ID
+    private String bizMemberNo;      // 신청 사업자 회원 ID
     private String approvalStatus;   // 승인 상태 (PENDING / APPROVED / REJECTED)
     private String rejectReason;     // 반려 사유
     private String approvalDate;     // 승인/반려 처리일

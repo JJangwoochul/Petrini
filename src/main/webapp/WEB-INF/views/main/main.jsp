@@ -19,9 +19,8 @@
     ===================================================== --%>
     <div class="hero-section inner">
         <div class="hero-slides">
-
-            <%-- Slide 1 --%>
-            <div class="hero-slide active">
+            <%-- Slide 1 HYJ 26.07.31 JS에서 동적삽입--%>
+            <%-- <div class="hero-slide active">
                 <div class="hero-text">
                     <span class="hero-badge">반려동물 통합 케어</span>
                     <h2 class="hero-title">우리 아이의<br>모든 순간을 함께해요</h2>
@@ -49,68 +48,7 @@
                         </svg>
                     </div>
                 </div>
-            </div>
-
-            <%-- Slide 2 --%>
-            <div class="hero-slide">
-                <div class="hero-text">
-                    <span class="hero-badge">🏥 병원 예약 서비스</span>
-                    <h2 class="hero-title">가까운 동물병원<br>빠르게 예약하세요</h2>
-                    <p class="hero-desc">검증된 전문의와 함께<br>우리 아이 건강을 지켜드려요</p>
-                    <%-- <a href="/hospital" class="hero-cta">병원 예약하기</a> --%>
-                </div>
-                <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=480&q=80"
-                         alt="동물병원" onerror="this.src='https://placehold.co/480x300/EAF7F2/5B8DEF?text=병원예약'">
-                    <div class="hero-float f1">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2v20M2 12h20" stroke="#5B8DEF" stroke-width="2.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="hero-float f2">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="#2BAB82" stroke-width="2"/>
-                            <path d="M12 6v6l4 2" stroke="#2BAB82" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="hero-float f3">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#FFC700">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <%-- Slide 3 --%>
-            <div class="hero-slide">
-                <div class="hero-text">
-                    <span class="hero-badge">🛍️ 반려동물 용품 쇼핑</span>
-                    <h2 class="hero-title">우리 아이를 위한<br>최고의 선물</h2>
-                    <p class="hero-desc">사료부터 장난감, 의류까지<br>엄선된 프리미엄 상품만 모았어요</p>
-                    <%-- <a href="/store" class="hero-cta">쇼핑 시작하기</a> --%>
-                </div>
-                <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1601758003122-53c40e686a19?w=480&q=80"
-                         alt="반려동물 용품" onerror="this.src='https://placehold.co/480x300/EAF7F2/2BAB82?text=쇼핑'">
-                    <div class="hero-float f1">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                            <circle cx="9" cy="21" r="1" fill="#2BAB82"/>
-                            <circle cx="20" cy="21" r="1" fill="#2BAB82"/>
-                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" stroke="#2BAB82" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="hero-float f2">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" fill="#FF6B6B"/>
-                        </svg>
-                    </div>
-                    <div class="hero-float f3">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#FFC700">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
+            </div> --%>
         </div>
 
         <%-- 슬라이드 컨트롤 --%>
@@ -366,3 +304,24 @@
 <jsp:include page="/WEB-INF/views/common/footer.jsp" />
 
 <script src="${contextPath}/resources/js/main.js"></script>
+<script>
+    fetch('/api/banners')
+    .then(function(result) { return result.json(); })
+    .then(function(list) {
+        let slider = document.getElementById('bannerSlider');
+        for (let i = 0; i < list.length; i++) {
+            let banner = list[i];
+            let div = document.createElement('div');
+            div.className = 'hero-slide' + (i === 0 ? ' active' : '');
+            div.innerHTML =
+                '<a href="' + (b.linkUrl || '#') + '">' +
+                '  <img src="/upload/' + b.imageUrl + '" alt="' + b.title + '">' +
+                '</a>' +
+                '<div class="hero-text">' +
+                '  <span class="hero-badge">' + (b.bizName || '') + '</span>' +
+                '  <h2 class="hero-title">' + b.title + '</h2>' +
+                '</div>';
+            slider.appendChild(div);
+        }
+    });
+</script>

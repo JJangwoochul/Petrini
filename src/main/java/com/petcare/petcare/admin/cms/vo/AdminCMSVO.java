@@ -2,7 +2,7 @@
  * 역할: 관리자 CMS 배너·공지·FAQ 데이터 객체
  *
  * 필드 예시
- * - bannerId, title, imageUrl, linkUrl, sortOrder, isActive
+ * - bannerId, title, imageUrl, linkUrl, isActive
  *
  * 참고 테이블
  * - TB_BANNER

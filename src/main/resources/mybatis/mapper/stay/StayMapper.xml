@@ -151,7 +151,7 @@
     <!-- 숙소 예약 등록 -->
     <insert id="insertReservation" parameterType="com.petcare.petcare.stay.vo.ReservationVO">
         <selectKey keyProperty="resvId" resultType="long" order="BEFORE">
-            SELECT SEQ_RESERVATION.NEXTVAL FROM DUAL
+            SELECT SEQ_TB_RESERVATION.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO TB_RESERVATION (
             CHECKIN_DATE, 

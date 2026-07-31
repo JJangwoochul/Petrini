@@ -6,11 +6,42 @@
 <!--
   역할: MainBannerMapper SQL 정의
 
-  쿼리 id 예시
-  - selectActiveBanners
-
   테이블
   - TB_BANNER
+  - TB_FILE (REF_TYPE = 'BANNER')
+  - TB_BUSINESS
 -->
 
+    <!-- 배너 이미지 서브쿼리 (반복 사용) -->
+    <sql id="bannerImageJoin">
+        LEFT JOIN (
+                    SELECT  REF_ID, 
+                            FILE_URL,
+                            ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+                    FROM    TB_FILE
+                    WHERE   REF_TYPE = 'BANNER'
+                ) f ON f.REF_ID = b.BANNER_ID AND f.RN = 1
+    </sql>
+
+    <!-- ─── 사용자: 위치별 활성 배너 조회 ─── -->
+    <select id="selectActiveBannersByPosition"
+            parameterType="String"
+            resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        SELECT
+                    b.BANNER_ID, 
+                    b.TITLE, 
+                    b.LINK_URL,
+                    b.POSITION_CD, 
+                    b.START_DATE, 
+                    b.END_DATE, 
+                    biz.BIZ_NAME AS bizName,
+                    f.FILE_URL AS imageUrl
+        FROM        TB_BANNER b
+        JOIN        TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
+        <include refid="bannerImageJoin"/>
+        WHERE       b.STATUS_CD = 'ACTIVE'
+          AND       b.POSITION_CD = #{positionCd}
+          AND       TRUNC(SYSDATE) BETWEEN b.START_DATE AND b.END_DATE
+        ORDER       BY b.BANNER_ID ASC
+    </select>
 </mapper>

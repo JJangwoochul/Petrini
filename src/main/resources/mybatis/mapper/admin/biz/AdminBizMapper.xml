@@ -133,7 +133,7 @@
            C.ISSUED_QTY,
            C.USE_START_DATE,
            C.USE_END_DATE,
-           C.BIZ_MEMBER_ID,
+           C.BIZ_MEMBER_NO,
            C.APPROVAL_STATUS,
            C.REJECT_REASON,
            C.APPROVAL_DATE,
@@ -141,7 +141,7 @@
            C.REG_DATE,
            B.BIZ_NAME
       FROM TB_COUPON C
-      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_ID
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
      WHERE C.APPROVAL_STATUS = #{approvalStatus}
      ORDER BY C.REG_DATE DESC
   </select>
@@ -171,7 +171,7 @@
            C.ISSUED_QTY,
            C.USE_START_DATE,
            C.USE_END_DATE,
-           C.BIZ_MEMBER_ID,
+           C.BIZ_MEMBER_NO,
            C.APPROVAL_STATUS,
            C.REJECT_REASON,
            C.APPROVAL_DATE,
@@ -179,7 +179,7 @@
            C.REG_DATE,
            B.BIZ_NAME
       FROM TB_COUPON C
-      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_ID
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
      WHERE C.COUPON_ID = #{couponId}
   </select>
 
