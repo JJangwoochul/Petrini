@@ -24,9 +24,21 @@
     </sql>
 
     <!-- ─── 사용자: 위치별 활성 배너 조회 ─── -->
+    <!-- 2026/08/01 장우철 — START/END_DATE VARCHAR2 → String 매핑 (ORA-17132 방지) -->
+    <resultMap id="bannerActiveMap" type="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        <id     property="bannerId"   column="BANNER_ID"/>
+        <result property="title"      column="TITLE"/>
+        <result property="linkUrl"    column="LINK_URL"/>
+        <result property="positionCd" column="POSITION_CD"/>
+        <result property="startDate"  column="START_DATE" jdbcType="VARCHAR"/>
+        <result property="endDate"    column="END_DATE"   jdbcType="VARCHAR"/>
+        <result property="bizName"    column="BIZ_NAME"/>
+        <result property="imageUrl"   column="IMAGE_URL"/>
+    </resultMap>
+
     <select id="selectActiveBannersByPosition"
             parameterType="String"
-            resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+            resultMap="bannerActiveMap">
         SELECT
                     b.BANNER_ID, 
                     b.TITLE, 
@@ -34,14 +46,14 @@
                     b.POSITION_CD, 
                     b.START_DATE, 
                     b.END_DATE, 
-                    biz.BIZ_NAME AS bizName,
-                    f.FILE_URL AS imageUrl
+                    biz.BIZ_NAME,
+                    f.FILE_URL AS IMAGE_URL
         FROM        TB_BANNER b
         JOIN        TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
         <include refid="bannerImageJoin"/>
         WHERE       b.STATUS_CD = 'ACTIVE'
           AND       b.POSITION_CD = #{positionCd}
-          AND       TRUNC(SYSDATE) BETWEEN b.START_DATE AND b.END_DATE
+          AND       TO_CHAR(SYSDATE, 'YYYY-MM-DD') BETWEEN b.START_DATE AND b.END_DATE
         ORDER       BY b.BANNER_ID ASC
     </select>
 </mapper>

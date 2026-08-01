@@ -152,7 +152,7 @@
            C.REG_DATE,
            B.BIZ_NAME
       FROM TB_COUPON C
-      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_NO = C.BIZ_MEMBER_NO
      WHERE C.APPROVAL_STATUS = #{approvalStatus}
      ORDER BY C.REG_DATE DESC
   </select>
@@ -190,7 +190,7 @@
            C.REG_DATE,
            B.BIZ_NAME
       FROM TB_COUPON C
-      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_NO = C.BIZ_MEMBER_NO
      WHERE C.COUPON_ID = #{couponId}
   </select>
 

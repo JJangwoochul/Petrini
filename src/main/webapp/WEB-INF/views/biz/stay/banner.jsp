@@ -66,9 +66,7 @@
                                         <span class="biz-badge">${banner.positionLabel}</span>
                                     </td>
                                     <td>
-                                        <fmt:formatDate value="${banner.startDate}" pattern="yyyy.MM.dd"/>
-                                        ~
-                                        <fmt:formatDate value="${banner.endDate}" pattern="yyyy.MM.dd"/>
+                                        ${banner.startDate} ~ ${banner.endDate}
                                     </td>
                                     <td>
                                         <c:choose>

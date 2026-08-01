@@ -63,6 +63,9 @@ public class BizHospitalController extends BizBaseController {
     private FileService fileService;
     @Autowired
     private ObjectMapper objectMapper;
+    // 2026/08/01 장우철 — 병원 쿠폰 (BizStayService 공용)
+    @Autowired
+    private com.petcare.petcare.biz.stay.service.BizStayService bizStayService;
 
     // 2026/07/11 장우철 — 모든 병원 사업자 화면에 PENDING 배지 건수 전달
     // [변경 전] sidebar_hospital.jsp 에 더미 5 고정
@@ -722,5 +725,98 @@ public class BizHospitalController extends BizBaseController {
 
         rttr.addFlashAttribute("msg", "저장되었습니다.");
         return "redirect:/biz/hospital/profile";
+    }
+
+    // ─────────────────────────────────────────────
+    // HYJ 쿠폰 — 2026/08/01 장우철
+    // 사이드바 /biz/hospital/coupon 진입용 (로직은 BizStayService 공용)
+    // ─────────────────────────────────────────────
+    @GetMapping({"/coupon", "/coupon/"})
+    public String couponList(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        Long bizNo = bizStayService.getBizNo(member.getMemberId());
+        if (bizNo == null) {
+            model.addAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+            model.addAttribute("couponList", java.util.Collections.emptyList());
+            model.addAttribute("bizPage", "coupon");
+            return "biz/hospital/coupon";
+        }
+        model.addAttribute("couponList", bizStayService.getCouponList(bizNo));
+        model.addAttribute("bizPage", "coupon");
+        return "biz/hospital/coupon";
+    }
+
+    @PostMapping("/coupon/apply")
+    public String applyCoupon(com.petcare.petcare.biz.vo.BizCouponVO vo,
+                              HttpSession session,
+                              RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+        try {
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/hospital/coupon";
+            }
+            bizStayService.applyCoupon(bizNo, vo);
+            rttr.addFlashAttribute("msg", "쿠폰 승인 신청이 완료되었습니다.");
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "쿠폰 신청 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/hospital/coupon";
+    }
+
+    @PostMapping("/coupon/update")
+    public String updateCoupon(com.petcare.petcare.biz.vo.BizCouponVO vo,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+        try {
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/hospital/coupon";
+            }
+            bizStayService.updateCoupon(bizNo, vo);
+            rttr.addFlashAttribute("msg", "쿠폰 정보가 수정되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인 대기 상태의 쿠폰만 수정할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "수정 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "수정 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/hospital/coupon";
+    }
+
+    @PostMapping("/coupon/delete")
+    public String deleteCoupon(@RequestParam Long couponId,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+        try {
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/hospital/coupon";
+            }
+            bizStayService.deleteCoupon(bizNo, couponId);
+            rttr.addFlashAttribute("msg", "쿠폰 신청이 삭제되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인 대기 상태의 쿠폰만 삭제할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "삭제 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "삭제 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/hospital/coupon";
     }
 }

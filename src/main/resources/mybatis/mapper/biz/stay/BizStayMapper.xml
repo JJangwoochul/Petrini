@@ -322,8 +322,9 @@
     </select>
   
     <!-- HYJ 26.07.29 사업자 본인 쿠폰 목록 -->
-  <select id="selectCouponListByBizId"
-          parameterType="string"
+  <!-- 2026/08/01 장우철 — BIZ_MEMBER_NO = TB_BUSINESS.BIZ_NO -->
+  <select id="selectCouponListByBizNo"
+          parameterType="long"
           resultType="com.petcare.petcare.biz.vo.BizCouponVO">
     SELECT COUPON_ID,
            COUPON_CODE,
@@ -377,6 +378,7 @@
   </select>
 
   <!-- HYJ 26.07.29 쿠폰 신청 INSERT -->
+  <!-- 2026/08/01 장우철 — BIZ_MEMBER_NO/BIZ_NO 모두 TB_BUSINESS.BIZ_NO -->
   <insert id="insertCoupon"
           parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
     INSERT INTO TB_COUPON (
@@ -393,6 +395,7 @@
         USE_START_DATE,
         USE_END_DATE,
         BIZ_MEMBER_NO,
+        BIZ_NO,
         APPROVAL_STATUS,
         STATUS_CD,
         REG_DATE
@@ -409,6 +412,7 @@
         #{issuedQty},
         #{useStartDate},
         #{useEndDate},
+        #{bizMemberNo},
         #{bizMemberNo},
         #{approvalStatus},
         #{statusCd},

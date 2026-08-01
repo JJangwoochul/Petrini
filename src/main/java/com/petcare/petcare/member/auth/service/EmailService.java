@@ -34,7 +34,8 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${mail.smtp-from}")
+    // 2026/08/01 장우철 — mail.smtp-from 미설정 시 spring.mail.username 사용 (클린패키지/기동 실패 방지)
+    @Value("${mail.smtp-from:${spring.mail.username}}")
     private String from;
 
     public EmailService(JavaMailSender mailSender) {

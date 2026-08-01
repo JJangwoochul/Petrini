@@ -136,6 +136,19 @@
     </c:if>
   </div>
 
+  <%-- 2026/08/01 장우철 — PENDING(결제 미완료) 숙소 예약 재결제 --%>
+  <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'PENDING'}">
+    <div class="rd-cancel" style="background:#FFF8EE;border-color:#F5C26B">
+      <h3 style="margin:0 0 8px">결제 대기</h3>
+      <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">
+        예약은 신청되었지만 결제가 완료되지 않았습니다. 아래에서 결제를 이어가 주세요.
+        (미결제 예약은 일정 시간 후 자동 취소될 수 있습니다.)
+      </p>
+      <a class="btn-cancel-stay" style="display:inline-block;text-decoration:none;background:#FD8B00;text-align:center"
+         href="${contextPath}/stay/payment?resvId=${reservation.resvId}">결제하러 가기</a>
+    </div>
+  </c:if>
+
   <%-- 2026/07/31 장우철 — 숙소 CONFIRMED + 체크인 전 유저 취소 (1-4·1-6) --%>
   <c:if test="${reservation.resvType eq 'STAY' and reservation.cancelable eq true}">
     <div class="rd-cancel">
@@ -159,8 +172,8 @@
     </div>
   </c:if>
 
-  <%-- 2026/07/31 장우철 — CHECKIN~CHECKOUT 환불신청 → 1:1문의 --%>
-  <c:if test="${reservation.resvType eq 'STAY' and (reservation.statusCd eq 'CHECKIN' or reservation.statusCd eq 'CHECKOUT')}">
+  <%-- 2026/08/01 장우철 — 체크인만 환불신청 허용 (체크아웃 이후 숨김) --%>
+  <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'CHECKIN'}">
     <div class="rd-cancel" style="background:#F8FAFF;border-color:#C7D2FE">
       <h3 style="margin:0 0 8px">환불 신청</h3>
       <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">

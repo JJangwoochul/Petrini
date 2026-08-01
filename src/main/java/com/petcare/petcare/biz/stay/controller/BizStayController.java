@@ -11,7 +11,6 @@
 
 package com.petcare.petcare.biz.stay.controller;
 
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -473,14 +472,21 @@ public class BizStayController extends BizBaseController {
     }
     //
     // HYJ 26.07.29 ── 쿠폰 신청 목록 ──
+    // 2026/08/01 장우철 — BIZ_MEMBER_NO = BIZ_NO
     //
     @GetMapping({"/coupon", "/coupon/"})
     public String couponList(HttpSession session, Model model) {
         MemberVO member = getBizMember(session);
         if (member == null) return "redirect:/login";
 
-        model.addAttribute("couponList",
-                bizStayService.getCouponList(member.getMemberId()));
+        Long bizNo = bizStayService.getBizNo(member.getMemberId());
+        if (bizNo == null) {
+            model.addAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+            model.addAttribute("couponList", java.util.Collections.emptyList());
+            return "biz/stay/coupon";
+        }
+
+        model.addAttribute("couponList", bizStayService.getCouponList(bizNo));
         return "biz/stay/coupon";
     }
 
@@ -493,7 +499,12 @@ public class BizStayController extends BizBaseController {
         if (member == null) return "redirect:/login";
 
         try {
-            bizStayService.applyCoupon(member.getMemberId(), vo);
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/stay/coupon";
+            }
+            bizStayService.applyCoupon(bizNo, vo);
             rttr.addFlashAttribute("msg", "쿠폰 승인 신청이 완료되었습니다.");
         } catch (Exception e) {
             rttr.addFlashAttribute("errorMsg", "쿠폰 신청 중 오류가 발생했습니다.");
@@ -510,7 +521,12 @@ public class BizStayController extends BizBaseController {
         if (member == null) return "redirect:/login";
 
         try {
-            bizStayService.updateCoupon(member.getMemberId(), vo);
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/stay/coupon";
+            }
+            bizStayService.updateCoupon(bizNo, vo);
             rttr.addFlashAttribute("msg", "쿠폰 정보가 수정되었습니다.");
         } catch (IllegalStateException e) {
             if ("NOT_PENDING".equals(e.getMessage())) {
@@ -533,7 +549,12 @@ public class BizStayController extends BizBaseController {
         if (member == null) return "redirect:/login";
 
         try {
-            bizStayService.deleteCoupon(member.getMemberId(), couponId);
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/stay/coupon";
+            }
+            bizStayService.deleteCoupon(bizNo, couponId);
             rttr.addFlashAttribute("msg", "쿠폰 신청이 삭제되었습니다.");
         } catch (IllegalStateException e) {
             if ("NOT_PENDING".equals(e.getMessage())) {
@@ -586,15 +607,15 @@ public class BizStayController extends BizBaseController {
 
         try {
             Long bizNo = bizStayService.getBizNo(biz.getMemberId());
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
             MainBannerVO banner = new MainBannerVO();
             banner.setBizNo(bizNo);
             banner.setTitle(title);
             banner.setLinkUrl(linkUrl);
             banner.setPositionCd(positionCd);
-            banner.setStartDate(sdf.parse(startDate));
-            banner.setEndDate(sdf.parse(endDate));
+            // 2026/08/01 장우철 — DDL VARCHAR2(YYYY-MM-DD), input type=date 값 그대로 저장
+            banner.setStartDate(startDate);
+            banner.setEndDate(endDate);
 
             bizStayService.applyBanner(banner, bannerImage);
             rttr.addFlashAttribute("msg", "배너 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.");

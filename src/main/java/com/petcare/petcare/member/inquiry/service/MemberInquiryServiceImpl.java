@@ -90,7 +90,8 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
     }
 
     /**
-     * 숙소 CHECKIN~CHECKOUT 환불신청 → 1:1 문의 INSERT
+     * 숙소 체크인 상태 환불신청 → 1:1 문의 INSERT
+     * 2026/08/01 장우철 — 체크아웃 이후 환불 신청 불가 (CHECKIN만)
      */
     @Transactional
     public InquiryVO createStayRefundInquiry(MemberVO member, Long resvId, String content) {
@@ -102,8 +103,8 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
             throw new IllegalStateException("숙소 예약을 찾을 수 없습니다.");
         }
         String st = detail.getStatusCd() != null ? detail.getStatusCd().toUpperCase() : "";
-        if (!"CHECKIN".equals(st) && !"CHECKOUT".equals(st)) {
-            throw new IllegalStateException("체크인~체크아웃 상태에서만 환불 신청할 수 있습니다.");
+        if (!"CHECKIN".equals(st)) {
+            throw new IllegalStateException("체크인 상태에서만 환불 신청할 수 있습니다.");
         }
         if (memberInquiryMapper.countOpenStayRefund(member.getMemberNo(), resvId) > 0) {
             throw new IllegalStateException("이미 처리 중인 환불 신청이 있습니다.");

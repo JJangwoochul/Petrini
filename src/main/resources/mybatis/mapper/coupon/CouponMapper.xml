@@ -37,19 +37,21 @@
                </otherwise>
            </choose>
       FROM TB_COUPON C
-      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_NO = C.BIZ_MEMBER_NO
      WHERE C.APPROVAL_STATUS = 'APPROVED'
      ORDER BY CASE C.STATUS_CD WHEN 'ACTIVE' THEN 1 WHEN 'EXHAUSTED' THEN 2 ELSE 3 END,
               C.REG_DATE DESC
   </select>
 
   <!-- 보유 쿠폰 목록 (TB_MEMBER_COUPON JOIN TB_COUPON) -->
+  <!-- 2026/08/01 장우철 — TB_MEMBER_COUPON에 USED_DATE 없음 → NULL 별칭 -->
   <select id="selectMyCoupons"
           resultType="com.petcare.petcare.store.vo.CouponVO">
     SELECT MC.MEMBER_COUPON_ID,
            MC.STATUS_CD     AS MEMBER_COUPON_STATUS,
-           MC.USED_DATE,
+           NULL            AS USED_DATE,
            MC.REG_DATE,
+           MC.EXPIRE_DATE,
            C.COUPON_ID,
            C.COUPON_CODE,
            C.COUPON_NAME,
@@ -61,7 +63,7 @@
            B.BIZ_NAME
       FROM TB_MEMBER_COUPON MC
       JOIN TB_COUPON C    ON C.COUPON_ID = MC.COUPON_ID
-      LEFT JOIN TB_BUSINESS B ON B.BIZ_ID = C.BIZ_MEMBER_NO
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_NO = C.BIZ_MEMBER_NO
      WHERE MC.MEMBER_NO = #{memberNo}
      ORDER BY CASE MC.STATUS_CD
                   WHEN 'UNUSED'  THEN 1

@@ -149,9 +149,10 @@
     </select>
 
     <!-- 숙소 예약 등록 -->
+    <!-- 2026/08/01 장우철 — SEQ_TB_RESERVATION 없음 → TOTAL_DATA SEQ_RESERVATION 사용 (병원과 동일) -->
     <insert id="insertReservation" parameterType="com.petcare.petcare.stay.vo.ReservationVO">
         <selectKey keyProperty="resvId" resultType="long" order="BEFORE">
-            SELECT SEQ_TB_RESERVATION.NEXTVAL FROM DUAL
+            SELECT SEQ_RESERVATION.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO TB_RESERVATION (
             CHECKIN_DATE, 

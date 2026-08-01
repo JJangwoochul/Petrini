@@ -260,7 +260,7 @@
                             <c:if test="${cpn.approvalStatus eq 'PENDING'}">
                                 <div></div>
                                 <div style="display:flex;gap:6px">
-                                    <form method="post" action="${contextPath}/biz/store/coupon/delete"
+                                    <form method="post" action="${contextPath}/biz/hospital/coupon/delete"
                                           onsubmit="return confirm('삭제하시겠습니까?')">
                                         <input type="hidden" name="couponId" value="${cpn.couponId}">
                                         <button type="submit" class="cpn-btn red">삭제</button>
@@ -282,7 +282,7 @@
             <h2>쿠폰 승인 신청</h2>
             <button class="cpn-modal-close" onclick="closeApplyModal()">&times;</button>
         </div>
-        <form method="post" action="${contextPath}/biz/store/coupon/apply" onsubmit="return validateForm()">
+        <form method="post" action="${contextPath}/biz/hospital/coupon/apply" onsubmit="return validateForm()">
             <div class="cpn-modal-body">
                 <div class="cpn-form-group">
                     <label>쿠폰명 <span style="color:#DC2626">*</span></label>

@@ -30,7 +30,8 @@ public class BizCouponVO {
     private String useStartDate;     // 사용 시작일 (YYYYMMDD)
     private String useEndDate;       // 사용 종료일 (YYYYMMDD)
 
-    private String bizMemberNo;      // 신청 사업자 회원 ID
+    // 2026/08/01 장우철 — DDL BIZ_MEMBER_NO NUMBER (구 BIZ_MEMBER_ID 문자열 → TB_BUSINESS.BIZ_NO)
+    private Long   bizMemberNo;      // 신청 사업자번호 (TB_BUSINESS.BIZ_NO)
     private String approvalStatus;   // 승인 상태 (PENDING / APPROVED / REJECTED)
     private String rejectReason;     // 반려 사유
     private String approvalDate;     // 승인/반려 처리일

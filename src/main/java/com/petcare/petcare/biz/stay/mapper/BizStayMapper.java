@@ -76,8 +76,9 @@ public interface BizStayMapper {
     void updateStayProfile(StayVO vo);  
     
     //HYJ 26.07.29 쿠폰관리
+    // 2026/08/01 장우철 — BIZ_MEMBER_NO = TB_BUSINESS.BIZ_NO (NUMBER)
     // 사업자 본인 쿠폰 목록
-    List<BizCouponVO> selectCouponListByBizId(@Param("bizMemberNo") String bizMemberNo);
+    List<BizCouponVO> selectCouponListByBizNo(@Param("bizMemberNo") Long bizMemberNo);
 
     // 쿠폰 상세 1건
     BizCouponVO selectCouponById(@Param("couponId") Long couponId);
@@ -90,7 +91,7 @@ public interface BizStayMapper {
 
     // 쿠폰 삭제 (PENDING 상태일 때만)
     int deleteCoupon(@Param("couponId") Long couponId,
-                     @Param("bizMemberNo") String bizMemberNo);
+                     @Param("bizMemberNo") Long bizMemberNo);
 
     //HYJ 26.07.31 배너관리
     Long selectBizNoByBizId(@Param("bizId") String bizId);

@@ -13,8 +13,9 @@ public class MainBannerVO {
     private String positionCd;
     private Long fileId;
     private String linkUrl;
-    private Date startDate;
-    private Date endDate;
+    // 2026/08/01 장우철 — DDL START_DATE/END_DATE = VARCHAR2(YYYY-MM-DD)
+    private String startDate;
+    private String endDate;
     private String statusCd;        // PENDING / ACTIVE / REJECTED / EXPIRED
     private String rejectReason;
     private Date   regDate;

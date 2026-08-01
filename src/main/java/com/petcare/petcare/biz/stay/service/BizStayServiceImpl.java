@@ -225,9 +225,10 @@ public class BizStayServiceImpl implements BizStayService {
 
 
     //HYJ 26.07.29 쿠폰관리
+    // 2026/08/01 장우철 — BIZ_MEMBER_NO = TB_BUSINESS.BIZ_NO (NUMBER)
     @Override
-    public List<BizCouponVO> getCouponList(String bizMemberNo) {
-        return bizStayMapper.selectCouponListByBizId(bizMemberNo);
+    public List<BizCouponVO> getCouponList(Long bizNo) {
+        return bizStayMapper.selectCouponListByBizNo(bizNo);
     }
 
     @Override
@@ -236,11 +237,11 @@ public class BizStayServiceImpl implements BizStayService {
     }
 
     @Override
-    public void applyCoupon(String bizMemberNo, BizCouponVO vo) {
+    public void applyCoupon(Long bizNo, BizCouponVO vo) {
         // 쿠폰 코드 자동 생성 (CPN- + UUID 앞 8자리)
         String code = "CPN-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         vo.setCouponCode(code);
-        vo.setBizMemberNo(bizMemberNo);
+        vo.setBizMemberNo(bizNo);
         vo.setApprovalStatus("PENDING");
         vo.setStatusCd("INACTIVE");
         vo.setIssuedBudget(0);
@@ -250,34 +251,34 @@ public class BizStayServiceImpl implements BizStayService {
     }
 
     @Override
-    public void updateCoupon(String bizMemberNo, BizCouponVO vo) {
+    public void updateCoupon(Long bizNo, BizCouponVO vo) {
         BizCouponVO existing = bizStayMapper.selectCouponById(vo.getCouponId());
         if (existing == null) {
             throw new IllegalArgumentException("COUPON_NOT_FOUND");
         }
-        if (!bizMemberNo.equals(existing.getBizMemberNo())) {
+        if (bizNo == null || !bizNo.equals(existing.getBizMemberNo())) {
             throw new IllegalStateException("NOT_OWNER");
         }
         if (!"PENDING".equals(existing.getApprovalStatus())) {
             throw new IllegalStateException("NOT_PENDING");
         }
-        vo.setBizMemberNo(bizMemberNo);
+        vo.setBizMemberNo(bizNo);
         bizStayMapper.updateCoupon(vo);
     }
 
     @Override
-    public void deleteCoupon(String bizMemberNo, Long couponId) {
+    public void deleteCoupon(Long bizNo, Long couponId) {
         BizCouponVO existing = bizStayMapper.selectCouponById(couponId);
         if (existing == null) {
             throw new IllegalArgumentException("COUPON_NOT_FOUND");
         }
-        if (!bizMemberNo.equals(existing.getBizMemberNo())) {
+        if (bizNo == null || !bizNo.equals(existing.getBizMemberNo())) {
             throw new IllegalStateException("NOT_OWNER");
         }
         if (!"PENDING".equals(existing.getApprovalStatus())) {
             throw new IllegalStateException("NOT_PENDING");
         }
-        bizStayMapper.deleteCoupon(couponId, bizMemberNo);
+        bizStayMapper.deleteCoupon(couponId, bizNo);
     }
 
     //
