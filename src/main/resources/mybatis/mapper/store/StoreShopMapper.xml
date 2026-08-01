@@ -449,12 +449,13 @@ SELECT
     )
 </insert>
 
+<!-- 2026/08/01 장우철 — MAX+1 → SEQ_PAYMENT (팀 시퀀스 규칙. jiyoon MAX+1이 숙소 SEQ와 PK 충돌) -->
 <insert id="insertPayment">
     INSERT INTO TB_PAYMENT (
         PAYMENT_ID, ORDER_ID, PAY_TYPE, PAY_METHOD, PAY_AMOUNT,
         TOSS_PAYMENT_KEY, TOSS_ORDER_ID, PAY_STATUS, PAY_DATE
     ) VALUES (
-        (SELECT NVL(MAX(PAYMENT_ID), 0) + 1 FROM TB_PAYMENT), #{orderId}, 'ORDER', #{payMethod}, #{payAmount},
+        SEQ_PAYMENT.NEXTVAL, #{orderId}, 'ORDER', #{payMethod}, #{payAmount},
         #{tossPaymentKey}, #{tossOrderId}, 'DONE', SYSDATE
     )
 </insert>

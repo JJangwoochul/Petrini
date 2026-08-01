@@ -120,7 +120,8 @@ public class MypageReserveServiceImpl implements MypageReserveService {
             if (payment != null && payment.get("tossPaymentKey") != null) {
                 String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
                 // POINT_ONLY 등 비토스 키는 API 호출 스킵
-                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()) {
+                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
+                        && !paymentKey.startsWith("BILLING-")) {
                     long payAmount = 0L;
                     Object payAmtObj = payment.get("payAmount");
                     if (payAmtObj instanceof Number) {
@@ -131,8 +132,12 @@ public class MypageReserveServiceImpl implements MypageReserveService {
                     Long cancelAmountParam = (payAmount > 0 && refundAmt >= payAmount)
                             ? null
                             : refundAmt;
+                    // 2026/08/01 장우철 — BILLING 결제는 billing secret 으로 취소
+                    String payMethod = payment.get("payMethod") != null
+                            ? String.valueOf(payment.get("payMethod")) : null;
+                    boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
                     String tossError = tossPaymentService.cancelPayment(
-                            paymentKey, "숙소 예약 취소", cancelAmountParam);
+                            paymentKey, "숙소 예약 취소", cancelAmountParam, billing);
                     if (tossError != null) {
                         throw new IllegalStateException(tossError);
                     }

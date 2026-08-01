@@ -279,12 +279,14 @@
   </update>
 
   <!-- 2026/07/31 장우철 — 예약 결제(완료) 조회 -->
+  <!-- 2026/08/01 장우철 — PAY_METHOD 추가 (빌링 취소 시 billing secret 분기) -->
   <select id="selectDonePaymentByResvId" resultType="map">
     SELECT PAYMENT_ID      AS "paymentId",
            TOSS_PAYMENT_KEY AS "tossPaymentKey",
            PAY_AMOUNT      AS "payAmount",
            PAY_STATUS      AS "payStatus",
-           REFUND_AMT      AS "refundAmt"
+           REFUND_AMT      AS "refundAmt",
+           PAY_METHOD      AS "payMethod"
       FROM TB_PAYMENT
      WHERE RESV_ID = #{resvId}
        AND PAY_TYPE = 'RESERVATION'

@@ -20,8 +20,12 @@ public class TossPaymentService {
     @Value("${toss.secret-key}")
     private String tossSecretKey;
 
+    // 2026/08/01 장우철 — 빌링키 결제는 위젯 시크릿과 분리 (섞으면 cancel FORBIDDEN_REQUEST)
+    @Value("${toss.billing.secret-key}")
+    private String tossBillingSecretKey;
+
     public String cancelPayment(String paymentKey, String cancelReason) {
-        return cancelPayment(paymentKey, cancelReason, null);
+        return cancelPayment(paymentKey, cancelReason, null, false);
     }
 
     /**
@@ -29,12 +33,23 @@ public class TossPaymentService {
      * @param cancelAmount null이면 전액 취소
      */
     public String cancelPayment(String paymentKey, String cancelReason, Long cancelAmount) {
+        return cancelPayment(paymentKey, cancelReason, cancelAmount, false);
+    }
+
+    /**
+     * 2026/08/01 장우철 — 빌링키로 승인된 결제는 billingSecret 으로 취소
+     * @param billingPayment true면 toss.billing.secret-key 사용
+     */
+    public String cancelPayment(String paymentKey, String cancelReason, Long cancelAmount,
+                                boolean billingPayment) {
         try {
             URL url = new URL("https://api.tosspayments.com/v1/payments/" + paymentKey + "/cancel");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
 
-            String encodedAuth = Base64.getEncoder().encodeToString((tossSecretKey + ":").getBytes(StandardCharsets.UTF_8));
+            String secret = resolveCancelSecret(billingPayment);
+            String encodedAuth = Base64.getEncoder()
+                    .encodeToString((secret + ":").getBytes(StandardCharsets.UTF_8));
             conn.setRequestProperty("Authorization", "Basic " + encodedAuth);
             conn.setRequestProperty("Content-Type", "application/json");
             // 2026/07/31 장우철 — 토스 권장 멱등키 (중복 취소 방지)
@@ -73,6 +88,21 @@ public class TossPaymentService {
         } catch (Exception e) {
             return "토스 API 호출 중 오류가 발생했습니다: " + e.getMessage();
         }
+    }
+
+    /** PAY_METHOD=BILLING 이면 빌링 시크릿 사용 */
+    public static boolean isBillingPayMethod(String payMethod) {
+        return payMethod != null && "BILLING".equalsIgnoreCase(payMethod.trim());
+    }
+
+    private String resolveCancelSecret(boolean billingPayment) {
+        if (billingPayment) {
+            if (tossBillingSecretKey == null || tossBillingSecretKey.isBlank()) {
+                throw new IllegalStateException("toss.billing.secret-key 가 설정되어 있지 않습니다.");
+            }
+            return tossBillingSecretKey;
+        }
+        return tossSecretKey;
     }
 
     /**

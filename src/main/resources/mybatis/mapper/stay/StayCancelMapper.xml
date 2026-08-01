@@ -31,7 +31,8 @@
            TOSS_PAYMENT_KEY AS "tossPaymentKey",
            PAY_AMOUNT       AS "payAmount",
            PAY_STATUS       AS "payStatus",
-           REFUND_AMT       AS "refundAmt"
+           REFUND_AMT       AS "refundAmt",
+           PAY_METHOD       AS "payMethod"
       FROM TB_PAYMENT
      WHERE RESV_ID = #{resvId}
        AND PAY_TYPE = 'RESERVATION'

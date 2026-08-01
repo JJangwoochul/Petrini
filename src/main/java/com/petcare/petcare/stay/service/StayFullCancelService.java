@@ -80,10 +80,14 @@ public class StayFullCancelService {
             Map<String, Object> payment = stayCancelMapper.selectDonePaymentByResvId(resvId);
             if (payment != null && payment.get("tossPaymentKey") != null) {
                 String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
-                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()) {
-                    // 전액 취소 — cancelAmount 생략
+                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
+                        && !paymentKey.startsWith("BILLING-")) {
+                    // 2026/08/01 장우철 — BILLING 결제는 billing secret 으로 취소
+                    String payMethod = payment.get("payMethod") != null
+                            ? String.valueOf(payment.get("payMethod")) : null;
+                    boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
                     String tossError = tossPaymentService.cancelPayment(
-                            paymentKey, actor + " 숙소 예약 취소", null);
+                            paymentKey, actor + " 숙소 예약 취소", null, billing);
                     if (tossError != null) {
                         throw new IllegalStateException(tossError);
                     }
