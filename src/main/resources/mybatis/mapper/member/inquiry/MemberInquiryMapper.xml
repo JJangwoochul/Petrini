@@ -1,18 +1,141 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 2026/07/31 장우철 — TB_INQUIRY 연동 -->
 <mapper namespace="com.petcare.petcare.member.inquiry.mapper.MemberInquiryMapper">
 
-<!--
-  역할: MemberInquiryMapper SQL 정의
+  <select id="selectByMemberNo" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+    SELECT I.INQUIRY_ID   AS inquiryId,
+           I.INQUIRY_TYPE AS inquiryType,
+           I.MEMBER_NO    AS memberNo,
+           I.TITLE        AS title,
+           I.BODY         AS body,
+           I.REF_TYPE     AS refType,
+           I.REF_ID       AS refId,
+           I.STATUS_CD    AS statusCd,
+           I.ANSWER       AS answer,
+           I.APPLY_DATE   AS applyDate,
+           I.ANSWER_DATE  AS answerDate,
+           I.REG_DATE     AS regDate
+      FROM TB_INQUIRY I
+     WHERE I.MEMBER_NO = #{memberNo}
+     ORDER BY I.REG_DATE DESC, I.INQUIRY_ID DESC
+  </select>
 
-  쿼리 id 예시
-  - selectInquiryList
-  - selectInquiryDetail
-  - insertInquiry
+  <select id="selectByIdAndMemberNo" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+    SELECT I.INQUIRY_ID   AS inquiryId,
+           I.INQUIRY_TYPE AS inquiryType,
+           I.MEMBER_NO    AS memberNo,
+           I.TITLE        AS title,
+           I.BODY         AS body,
+           I.REF_TYPE     AS refType,
+           I.REF_ID       AS refId,
+           I.STATUS_CD    AS statusCd,
+           I.ANSWER       AS answer,
+           I.APPLY_DATE   AS applyDate,
+           I.ANSWER_DATE  AS answerDate,
+           I.REG_DATE     AS regDate
+      FROM TB_INQUIRY I
+     WHERE I.INQUIRY_ID = #{inquiryId}
+       AND I.MEMBER_NO  = #{memberNo}
+  </select>
 
-  테이블
-  - TB_INQUIRY
--->
+  <insert id="insertInquiry" parameterType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+    <selectKey keyProperty="inquiryId" resultType="long" order="BEFORE">
+      SELECT NVL(MAX(INQUIRY_ID), 0) + 1 FROM TB_INQUIRY
+    </selectKey>
+    INSERT INTO TB_INQUIRY (
+      INQUIRY_ID, INQUIRY_TYPE, MEMBER_NO, TITLE, BODY,
+      REF_TYPE, REF_ID, STATUS_CD, APPLY_DATE, REG_DATE
+    ) VALUES (
+      #{inquiryId},
+      #{inquiryType},
+      #{memberNo},
+      #{title, jdbcType=VARCHAR},
+      #{body, jdbcType=CLOB},
+      #{refType, jdbcType=VARCHAR},
+      #{refId, jdbcType=NUMERIC},
+      #{statusCd},
+      SYSDATE,
+      SYSDATE
+    )
+  </insert>
+
+  <select id="countOpenStayRefund" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_INQUIRY
+     WHERE MEMBER_NO = #{memberNo}
+       AND REF_TYPE = 'RESV'
+       AND REF_ID = #{resvId}
+       AND STATUS_CD = 'WAIT'
+  </select>
+
+  <select id="selectStayRefundList" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+    SELECT I.INQUIRY_ID   AS inquiryId,
+           I.INQUIRY_TYPE AS inquiryType,
+           I.MEMBER_NO    AS memberNo,
+           M.MEMBER_NAME  AS memberName,
+           M.EMAIL        AS memberEmail,
+           I.TITLE        AS title,
+           I.BODY         AS body,
+           I.REF_TYPE     AS refType,
+           I.REF_ID       AS refId,
+           I.STATUS_CD    AS statusCd,
+           I.ANSWER       AS answer,
+           I.APPLY_DATE   AS applyDate,
+           I.ANSWER_DATE  AS answerDate,
+           I.REG_DATE     AS regDate,
+           R.RESV_NO      AS resvNo,
+           R.STATUS_CD    AS resvStatusCd,
+           R.TOTAL_AMOUNT AS totalAmount,
+           S.NAME         AS stayName
+      FROM TB_INQUIRY I
+      JOIN TB_MEMBER M ON M.MEMBER_NO = I.MEMBER_NO
+      LEFT JOIN TB_RESERVATION R ON R.RESV_ID = I.REF_ID AND R.RESV_TYPE = 'STAY'
+      LEFT JOIN TB_STAY S ON S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+     WHERE I.REF_TYPE = 'RESV'
+       AND I.INQUIRY_TYPE = 'RESERVE'
+    <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
+       AND I.STATUS_CD = #{statusCd}
+    </if>
+     ORDER BY I.REG_DATE DESC, I.INQUIRY_ID DESC
+  </select>
+
+  <select id="selectStayRefundDetail" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+    SELECT I.INQUIRY_ID   AS inquiryId,
+           I.INQUIRY_TYPE AS inquiryType,
+           I.MEMBER_NO    AS memberNo,
+           M.MEMBER_NAME  AS memberName,
+           M.EMAIL        AS memberEmail,
+           I.TITLE        AS title,
+           I.BODY         AS body,
+           I.REF_TYPE     AS refType,
+           I.REF_ID       AS refId,
+           I.STATUS_CD    AS statusCd,
+           I.ANSWER       AS answer,
+           I.APPLY_DATE   AS applyDate,
+           I.ANSWER_DATE  AS answerDate,
+           I.REG_DATE     AS regDate,
+           R.RESV_NO      AS resvNo,
+           R.STATUS_CD    AS resvStatusCd,
+           R.TOTAL_AMOUNT AS totalAmount,
+           S.NAME         AS stayName
+      FROM TB_INQUIRY I
+      JOIN TB_MEMBER M ON M.MEMBER_NO = I.MEMBER_NO
+      LEFT JOIN TB_RESERVATION R ON R.RESV_ID = I.REF_ID AND R.RESV_TYPE = 'STAY'
+      LEFT JOIN TB_STAY S ON S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+     WHERE I.INQUIRY_ID = #{inquiryId}
+       AND I.REF_TYPE = 'RESV'
+  </select>
+
+  <update id="updateInquiryAnswer">
+    UPDATE TB_INQUIRY
+       SET STATUS_CD   = #{statusCd},
+           ANSWER      = #{answer, jdbcType=CLOB},
+           ADMIN_NO    = #{adminNo, jdbcType=NUMERIC},
+           ANSWER_DATE = SYSDATE
+     WHERE INQUIRY_ID = #{inquiryId}
+       AND STATUS_CD  = 'WAIT'
+  </update>
 
 </mapper>

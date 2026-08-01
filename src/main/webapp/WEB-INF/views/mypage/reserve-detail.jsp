@@ -23,6 +23,13 @@
   .rd-stars input{margin-right:4px}
   .rd-review textarea{width:100%;min-height:90px;border:1px solid #E2E8E4;border-radius:8px;padding:10px 12px;font-size:14px;resize:vertical;box-sizing:border-box}
   .rd-review .btn-review{margin-top:12px;background:#2BAB82;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer}
+  /* 2026/07/31 장우철 — 숙소 유저 취소 */
+  .rd-cancel{background:#FFF8F8;border:1px solid #FECACA;border-radius:12px;padding:20px;margin-bottom:16px}
+  .rd-cancel h3{font-size:16px;font-weight:800;margin:0 0 8px;color:#1A1A2E}
+  .rd-cancel .fee-row{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;color:#444}
+  .rd-cancel .fee-row strong{color:#B91C1C}
+  .rd-cancel textarea{width:100%;min-height:80px;border:1px solid #E2E8E4;border-radius:8px;padding:10px 12px;font-size:14px;resize:vertical;box-sizing:border-box;margin-top:10px}
+  .rd-cancel .btn-cancel-stay{margin-top:12px;background:#DC2626;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer}
 </style>
 
 <div class="mypage-wrap">
@@ -41,7 +48,16 @@
         <c:choose>
           <c:when test="${reservation.statusCd eq 'PENDING'}"><span class="badge-status badge-wait">예약신청</span></c:when>
           <c:when test="${reservation.statusCd eq 'CONFIRMED'}"><span class="badge-status badge-ready">예약확정</span></c:when>
-          <c:when test="${reservation.statusCd eq 'DONE'}"><span class="badge-status badge-done">진료완료</span></c:when>
+          <c:when test="${reservation.statusCd eq 'CHECKIN'}"><span class="badge-status badge-ready">체크인</span></c:when>
+          <c:when test="${reservation.statusCd eq 'CHECKOUT'}"><span class="badge-status badge-ready">체크아웃</span></c:when>
+          <c:when test="${reservation.statusCd eq 'DONE'}">
+            <span class="badge-status badge-done">
+              <c:choose>
+                <c:when test="${reservation.resvType eq 'STAY'}">숙박완료</c:when>
+                <c:otherwise>진료완료</c:otherwise>
+              </c:choose>
+            </span>
+          </c:when>
           <c:otherwise><span class="badge-status badge-cancel">취소</span></c:otherwise>
         </c:choose>
       </span>
@@ -100,8 +116,57 @@
           <c:out value="${not empty reservation.rejectReason ? reservation.rejectReason : '사유가 등록되지 않았습니다.'}"/>
         </div>
       </div>
+      <c:if test="${reservation.resvType eq 'STAY'}">
+        <c:if test="${not empty reservation.cancelFeeAmt}">
+          <div class="rd-row">
+            <span>취소수수료</span>
+            <span><fmt:formatNumber value="${reservation.cancelFeeAmt}" pattern="#,###"/>원</span>
+          </div>
+        </c:if>
+        <c:if test="${not empty reservation.refundAmt}">
+          <div class="rd-row">
+            <span>환불금액</span>
+            <span><fmt:formatNumber value="${reservation.refundAmt}" pattern="#,###"/>원</span>
+          </div>
+        </c:if>
+      </c:if>
     </c:if>
   </div>
+
+  <%-- 2026/07/31 장우철 — 숙소 CONFIRMED + 체크인 전 유저 취소 (1-4·1-6) --%>
+  <c:if test="${reservation.resvType eq 'STAY' and reservation.cancelable eq true}">
+    <div class="rd-cancel">
+      <h3>예약 취소</h3>
+      <p style="font-size:13px;color:#666;margin:0 0 10px;line-height:1.5">
+        체크인 전 취소 시 입실일 기준으로 취소수수료가 적용됩니다.
+        (<c:out value="${reservation.cancelFeeTierLabel}"/> · 체크인까지 ${reservation.daysUntilCheckin}일)
+      </p>
+      <div class="fee-row"><span>결제금액</span><span><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span></div>
+      <div class="fee-row">
+        <span>취소수수료 (${reservation.cancelFeeRatePercent}%)</span>
+        <strong><fmt:formatNumber value="${reservation.cancelFeeAmt}" pattern="#,###"/>원</strong>
+      </div>
+      <div class="fee-row"><span>예상 환불액</span><span><fmt:formatNumber value="${reservation.refundAmt}" pattern="#,###"/>원</span></div>
+      <form method="post" action="${contextPath}/mypage/reserve/stay-cancel"
+            onsubmit="return confirm('예약을 취소하시겠습니까? 취소수수료가 적용됩니다.');">
+        <input type="hidden" name="resvId" value="${reservation.resvId}">
+        <textarea name="cancelReason" maxlength="500" placeholder="취소 사유를 입력해 주세요." required></textarea>
+        <button type="submit" class="btn-cancel-stay">예약 취소하기</button>
+      </form>
+    </div>
+  </c:if>
+
+  <%-- 2026/07/31 장우철 — CHECKIN~CHECKOUT 환불신청 → 1:1문의 --%>
+  <c:if test="${reservation.resvType eq 'STAY' and (reservation.statusCd eq 'CHECKIN' or reservation.statusCd eq 'CHECKOUT')}">
+    <div class="rd-cancel" style="background:#F8FAFF;border-color:#C7D2FE">
+      <h3 style="margin:0 0 8px">환불 신청</h3>
+      <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">
+        체크인 이후 환불은 관리자 1:1 문의로 접수됩니다.
+      </p>
+      <a class="btn-cancel-stay" style="display:inline-block;text-decoration:none;background:#3B5BDB"
+         href="${contextPath}/member/cs/inquiry/write?resvId=${reservation.resvId}&amp;type=stay_refund">환불 신청하기</a>
+    </div>
+  </c:if>
 
   <%-- 2026/07/13 장우철 — 진료완료 + 미작성 시 리뷰·별점 작성 --%>
   <c:if test="${not empty msg}">

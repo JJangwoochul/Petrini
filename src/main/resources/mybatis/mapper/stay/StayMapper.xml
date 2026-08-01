@@ -292,11 +292,12 @@
     </insert>
 
     <!-- HYJ 26.07.20 스케줄러 — 체크아웃 날짜 지난 CONFIRMED → DONE 일괄 변경 -->
+    <!-- 2026/07/31 장우철 — CHECKOUT → DONE (체크아웃일 다음날부터) -->
     <update id="updateConfirmedToDone">
         UPDATE TB_RESERVATION
            SET STATUS_CD = 'DONE'
          WHERE RESV_TYPE  = 'STAY'
-           AND STATUS_CD  = 'CONFIRMED'
+           AND STATUS_CD  = 'CHECKOUT'
            AND CHECKOUT_DATE <![CDATA[<]]> TRUNC(SYSDATE)
     </update>
 

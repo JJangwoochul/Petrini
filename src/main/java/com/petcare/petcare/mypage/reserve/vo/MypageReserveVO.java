@@ -55,4 +55,15 @@ public class MypageReserveVO {
     private String stayAddr;
     private Long   roomId;
     private String roomName;
+
+    // 2026/07/31 장우철 — 유저 취소 위약금/환불 (TB_RESERVATION)
+    private Long cancelFeeAmt;
+    private Long refundAmt;
+    private Date cancelAt;
+
+    // 2026/07/31 장우철 — 상세 화면 미리보기용 (DB 미저장)
+    private Long daysUntilCheckin;
+    private Integer cancelFeeRatePercent;
+    private String cancelFeeTierLabel;
+    private Boolean cancelable;
 }

@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.biz.vo.BusinessVO;
 import com.petcare.petcare.common.config.controller.CommonConfigController;
+import com.petcare.petcare.common.external.service.KftcOpenBankingService;
+import com.petcare.petcare.common.external.vo.KftcRealNameResultVO;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.member.auth.service.MemberAuthService;
 import com.petcare.petcare.member.vo.MemberVO;
@@ -66,6 +68,10 @@ public class MypageBizController extends CommonConfigController {
     // 이유: 관리자 승인 후 재로그인 없이 /mypage/biz ↔ /apply 무한 리다이렉트 방지
     @Autowired
     private MemberAuthService memberAuthService;
+
+    // 2026/07/28 장우철 — 정산 계좌 실명조회 (mock/실연동)
+    @Autowired
+    private KftcOpenBankingService kftcOpenBankingService;
     
     @GetMapping({"", "/"})
     public String biz(HttpSession session) {
@@ -204,6 +210,45 @@ public class MypageBizController extends CommonConfigController {
         return result;
     }
 
+    /**
+     * 2026/07/28 장우철 — Ajax: 정산 계좌 실명조회 (mock / 금결원)
+     * 요청: bankCodeStd, bankName, accountNum, accountHolder, bizRegNo
+     */
+    @PostMapping("/account/verify")
+    @ResponseBody
+    public Map<String, Object> verifySettleAccount(HttpSession session,
+                                                   @RequestParam String bankCodeStd,
+                                                   @RequestParam String bankName,
+                                                   @RequestParam String accountNum,
+                                                   @RequestParam String accountHolder,
+                                                   @RequestParam(required = false) String bizRegNo) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) {
+            result.put("success", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        StringBuilder err = new StringBuilder();
+        String holderInfo = bizRegNo != null ? bizRegNo.replaceAll("[^0-9]", "") : "";
+        String holderType = holderInfo.length() >= 10 ? "1" : " ";
+
+        KftcRealNameResultVO vo = kftcOpenBankingService.inquireRealName(
+                bankCodeStd, bankName, accountNum, holderType, holderInfo, accountHolder, err);
+
+        result.put("success", vo.isSuccess());
+        result.put("mock", vo.isMock());
+        result.put("message", vo.isSuccess() ? vo.getMessage() : (err.length() > 0 ? err.toString() : vo.getMessage()));
+        if (vo.isSuccess()) {
+            result.put("bankCodeStd", vo.getBankCodeStd());
+            result.put("bankName", vo.getBankName());
+            result.put("accountNum", vo.getAccountNum());
+            result.put("accountHolderName", vo.getAccountHolderName());
+        }
+        return result;
+    }
+
     /* 사업자 등록 신청 — 폼 제출 처리 */
     @PostMapping("/apply")
     public String bizApplySubmit(@RequestParam(required = true) MultipartFile docFile,
@@ -218,6 +263,23 @@ public class MypageBizController extends CommonConfigController {
 
         vo.setBizId(member.getMemberId());
         vo.setStatusCd("PENDING");
+
+        // 2026/07/28 장우철 — 숙소·쇼핑은 정산 계좌 인증값 필수
+        if ("STAY".equals(vo.getBizType()) || "STORE".equals(vo.getBizType())) {
+            if (!"Y".equalsIgnoreCase(vo.getSettleVerifyYn())
+                    || vo.getSettleAccount() == null || vo.getSettleAccount().isBlank()
+                    || vo.getSettleHolder() == null || vo.getSettleHolder().isBlank()
+                    || vo.getSettleBank() == null || vo.getSettleBank().isBlank()) {
+                redirectAttr.addFlashAttribute("errorMsg", "정산 계좌 인증을 완료해 주세요.");
+                return "redirect:/mypage/biz/apply";
+            }
+        } else {
+            vo.setSettleBank(null);
+            vo.setSettleBankCode(null);
+            vo.setSettleAccount(null);
+            vo.setSettleHolder(null);
+            vo.setSettleVerifyYn(null);
+        }
 
         try {
             // 1) 파일을 로컬 또는 GCS에 저장 + FileVO 목록 준비 — 2026/07/22 장우철

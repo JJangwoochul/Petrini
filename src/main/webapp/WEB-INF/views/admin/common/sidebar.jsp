@@ -45,16 +45,34 @@
         <div class="adm-nav-group">사업자 · 커뮤니티</div>
         <a href="${contextPath}/admin/biz/list" class="adm-nav-link ${adminPage eq 'biz-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
-            사업자 승인
+            사업자 승인/관리
             <%-- 2026/07/11 장우철 — PENDING 승인대기 건수 (더미 3 제거) --%>
             <c:if test="${pendingBizApproveCount > 0}">
               <span class="adm-nav-badge">${pendingBizApproveCount}</span>
             </c:if>
         </a>
-        <%-- 2026/07/24 장우철 — 관리자 정산 UI (더미, API 추후) --%>
-        <a href="${contextPath}/admin/settlement" class="adm-nav-link ${adminPage eq 'settlement' ? 'active' : ''}">
+        <a href="${contextPath}/admin/settlement?tab=STAY" class="adm-nav-link ${adminPage eq 'settlement' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             정산 관리
+            <%-- 2026/07/30 장우철 — 숙소 중간정산 REQUESTED 배지 --%>
+            <c:if test="${pendingStaySettleRequestCount > 0}">
+              <span class="adm-nav-badge">
+                <c:choose>
+                  <c:when test="${pendingStaySettleRequestCount > 99}">99+</c:when>
+                  <c:otherwise>${pendingStaySettleRequestCount}</c:otherwise>
+                </c:choose>
+              </span>
+            </c:if>
+        </a>
+        <%-- 2026/07/31 장우철 — 숙소 예약 관리 (전액 환불 취소) --%>
+        <a href="${contextPath}/admin/reservation/list" class="adm-nav-link ${adminPage eq 'reservation-list' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            숙소 예약 관리
+        </a>
+        <%-- 2026/07/31 장우철 — 숙소 환불신청(1:1) 승인/거절 --%>
+        <a href="${contextPath}/admin/inquiry/stay-refund?status=WAIT" class="adm-nav-link ${adminPage eq 'stay-refund' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            숙소 환불 신청
         </a>
         <a href="${contextPath}/admin/biz/talent?status=PENDING" class="adm-nav-link ${adminPage eq 'biz-talent' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>

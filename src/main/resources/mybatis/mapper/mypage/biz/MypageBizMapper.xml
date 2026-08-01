@@ -13,6 +13,7 @@
             SELECT MAX(BIZ_NO) FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
         </selectKey>
         <!-- 2026-07-10 장우철 — 신청 주소(ZIP/ADDR) 저장 → 승인 시 병원 ADDR 복사 -->
+        <!-- 2026/07/28 장우철 — 정산 계좌 SETTLE_* (숙소·쇼핑 인증 후) -->
         INSERT INTO TB_BUSINESS (
                                     BIZ_ID, 
                                     BIZ_TYPE, 
@@ -23,6 +24,12 @@
                                     ZIP_CODE,
                                     ADDR,
                                     ADDR_DETAIL,
+                                    SETTLE_BANK,
+                                    SETTLE_BANK_CODE,
+                                    SETTLE_ACCOUNT,
+                                    SETTLE_HOLDER,
+                                    SETTLE_VERIFY_YN,
+                                    SETTLE_VERIFY_DATE,
                                     STATUS_CD, 
                                     JOIN_DATE
                                 ) 
@@ -36,6 +43,12 @@
                                     #{zipCode, jdbcType=VARCHAR},
                                     #{addr, jdbcType=VARCHAR},
                                     #{addrDetail, jdbcType=VARCHAR},
+                                    #{settleBank, jdbcType=VARCHAR},
+                                    #{settleBankCode, jdbcType=VARCHAR},
+                                    #{settleAccount, jdbcType=VARCHAR},
+                                    #{settleHolder, jdbcType=VARCHAR},
+                                    #{settleVerifyYn, jdbcType=VARCHAR},
+                                    CASE WHEN #{settleVerifyYn, jdbcType=VARCHAR} = 'Y' THEN SYSDATE ELSE NULL END,
                                     'PENDING', 
                                     SYSDATE
                                 )
@@ -105,6 +118,12 @@
                ZIP_CODE     = #{zipCode, jdbcType=VARCHAR},
                ADDR         = #{addr, jdbcType=VARCHAR},
                ADDR_DETAIL  = #{addrDetail, jdbcType=VARCHAR},
+               SETTLE_BANK       = #{settleBank, jdbcType=VARCHAR},
+               SETTLE_BANK_CODE  = #{settleBankCode, jdbcType=VARCHAR},
+               SETTLE_ACCOUNT    = #{settleAccount, jdbcType=VARCHAR},
+               SETTLE_HOLDER     = #{settleHolder, jdbcType=VARCHAR},
+               SETTLE_VERIFY_YN  = #{settleVerifyYn, jdbcType=VARCHAR},
+               SETTLE_VERIFY_DATE = CASE WHEN #{settleVerifyYn, jdbcType=VARCHAR} = 'Y' THEN SYSDATE ELSE NULL END,
                STATUS_CD    = 'PENDING'
         WHERE  BIZ_NO       = #{bizNo}
           AND  BIZ_ID       = #{bizId}

@@ -58,8 +58,8 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  var statusLabel = { pending:'예약신청', confirmed:'예약확정', done:'숙박완료', cancel:'취소' };
-  var statusColor = { pending:'#F5A623', confirmed:'#4F6BC4', done:'#2BAB82', cancel:'#999' };
+  var statusLabel = { pending:'예약신청', confirmed:'예약확정', checkin:'체크인', checkout:'체크아웃', done:'숙박완료', cancel:'취소' };
+  var statusColor = { pending:'#F5A623', confirmed:'#4F6BC4', checkin:'#2BAB82', checkout:'#0EA5E9', done:'#2BAB82', cancel:'#999' };
   var statusBadgeClass = { pending:'bs-wait', confirmed:'bs-ready', done:'bs-done' };
 
   var reservations = [
@@ -74,8 +74,10 @@
       status: (function(cd){
         if (cd === 'PENDING') return 'pending';
         if (cd === 'CONFIRMED') return 'confirmed';
+        if (cd === 'CHECKIN') return 'checkin';
+        if (cd === 'CHECKOUT') return 'checkout';
         if (cd === 'DONE') return 'done';
-        if (cd === 'CANCEL') return 'cancel';
+        if (cd === 'CANCEL' || cd === 'REJECTED') return 'cancel';
         return 'pending';
       })('<c:out value="${r.statusCd}"/>')
     }<c:if test="${!st.last}">,</c:if>
@@ -102,7 +104,8 @@
 
   function confirmedCountOnDay(key) {
     return reservations.filter(function (r) {
-      return key >= r.checkin && key < r.checkout && r.status === 'confirmed';
+      return key >= r.checkin && key < r.checkout
+        && (r.status === 'confirmed' || r.status === 'checkin' || r.status === 'checkout' || r.status === 'done');
     }).length;
   }
 

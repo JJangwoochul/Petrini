@@ -33,6 +33,9 @@
             R.NIGHT_CNT     AS nightCnt,
             R.TOTAL_AMOUNT  AS totalAmount,
             R.ROOM_ID       AS roomId,
+            R.CANCEL_FEE_AMT AS cancelFeeAmt,
+            R.REFUND_AMT    AS refundAmt,
+            R.CANCEL_AT     AS cancelAt,
             P.PET_NAME      AS petName,
             P.SPECIES       AS petSpecies,
             P.BREED         AS petBreed,
@@ -76,6 +79,12 @@
       <when test="statusFilter == 'confirmed'">
        AND  R.STATUS_CD = 'CONFIRMED'
       </when>
+      <when test="statusFilter == 'checkin'">
+       AND  R.STATUS_CD = 'CHECKIN'
+      </when>
+      <when test="statusFilter == 'checkout'">
+       AND  R.STATUS_CD = 'CHECKOUT'
+      </when>
       <when test="statusFilter == 'done'">
        AND  R.STATUS_CD = 'DONE'
       </when>
@@ -110,6 +119,9 @@
             R.NIGHT_CNT     AS nightCnt,
             R.TOTAL_AMOUNT  AS totalAmount,
             R.ROOM_ID       AS roomId,
+            R.CANCEL_FEE_AMT AS cancelFeeAmt,
+            R.REFUND_AMT    AS refundAmt,
+            R.CANCEL_AT     AS cancelAt,
             P.PET_NAME      AS petName,
             P.SPECIES       AS petSpecies,
             P.BREED         AS petBreed,
@@ -251,5 +263,43 @@
   <select id="selectStayMemberNo" resultType="long">
     SELECT MEMBER_NO FROM TB_STAY WHERE STAY_ID = #{stayId}
   </select>
+
+  <!-- 2026/07/31 장우철 — 유저 숙소 취소 (CONFIRMED만) -->
+  <update id="updateStayUserCancel">
+    UPDATE TB_RESERVATION
+       SET STATUS_CD      = 'CANCEL',
+           REJECT_REASON  = #{rejectReason, jdbcType=VARCHAR},
+           CANCEL_FEE_AMT = #{cancelFeeAmt},
+           REFUND_AMT     = #{refundAmt},
+           CANCEL_AT      = SYSDATE
+     WHERE RESV_ID   = #{resvId}
+       AND MEMBER_NO = #{memberNo}
+       AND RESV_TYPE = 'STAY'
+       AND STATUS_CD = 'CONFIRMED'
+  </update>
+
+  <!-- 2026/07/31 장우철 — 예약 결제(완료) 조회 -->
+  <select id="selectDonePaymentByResvId" resultType="map">
+    SELECT PAYMENT_ID      AS "paymentId",
+           TOSS_PAYMENT_KEY AS "tossPaymentKey",
+           PAY_AMOUNT      AS "payAmount",
+           PAY_STATUS      AS "payStatus",
+           REFUND_AMT      AS "refundAmt"
+      FROM TB_PAYMENT
+     WHERE RESV_ID = #{resvId}
+       AND PAY_TYPE = 'RESERVATION'
+       AND PAY_STATUS = 'DONE'
+       AND ROWNUM = 1
+  </select>
+
+  <!-- 2026/07/31 장우철 — 결제 환불 반영 -->
+  <update id="updatePaymentRefundByResvId">
+    UPDATE TB_PAYMENT
+       SET REFUND_AMT = #{refundAmt},
+           PAY_STATUS = 'REFUND'
+     WHERE RESV_ID = #{resvId}
+       AND PAY_TYPE = 'RESERVATION'
+       AND PAY_STATUS = 'DONE'
+  </update>
 
 </mapper>

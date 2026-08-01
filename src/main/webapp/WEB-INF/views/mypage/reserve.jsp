@@ -127,6 +127,12 @@
             <c:when test="${r.statusCd eq 'CONFIRMED'}">
               <span class="badge-status badge-ready">예약확정</span>
             </c:when>
+            <c:when test="${r.statusCd eq 'CHECKIN'}">
+              <span class="badge-status badge-ready">체크인</span>
+            </c:when>
+            <c:when test="${r.statusCd eq 'CHECKOUT'}">
+              <span class="badge-status badge-ready">체크아웃</span>
+            </c:when>
             <c:when test="${r.statusCd eq 'DONE'}">
               <span class="badge-status badge-done">이용완료</span>
               <%-- 2026/07/13 장우철 — DONE + 미작성 시 리뷰 안내 --%>

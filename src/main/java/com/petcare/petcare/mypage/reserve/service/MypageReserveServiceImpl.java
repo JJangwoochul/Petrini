@@ -15,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.petcare.petcare.common.external.service.TossPaymentService;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
+import com.petcare.petcare.stay.service.StayCancelFeeCalculator;
 import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Service
@@ -28,6 +30,8 @@ public class MypageReserveServiceImpl implements MypageReserveService {
     private MypageReserveMapper mypageReserveMapper;
     @Autowired
     private MypageNotifyService mypageNotifyService;
+    @Autowired
+    private TossPaymentService tossPaymentService;
 
     @Override
     @Transactional(readOnly = true)
@@ -52,7 +56,102 @@ public class MypageReserveServiceImpl implements MypageReserveService {
         if (memberNo == null || resvId == null) {
             return null;
         }
-        return mypageReserveMapper.selectMyReservationDetail(memberNo, resvId);
+        MypageReserveVO detail = mypageReserveMapper.selectMyReservationDetail(memberNo, resvId);
+        if (detail != null) {
+            fillStayCancelPreview(detail);
+        }
+        return detail;
+    }
+
+    /** 2026/07/31 장우철 — CONFIRMED 숙소면 취소 수수료 미리보기 채움 */
+    private void fillStayCancelPreview(MypageReserveVO detail) {
+        if (!"STAY".equalsIgnoreCase(detail.getResvType())
+                || !"CONFIRMED".equalsIgnoreCase(detail.getStatusCd())
+                || detail.getCheckinDate() == null) {
+            detail.setCancelable(false);
+            return;
+        }
+        try {
+            StayCancelFeeCalculator.Result fee =
+                    StayCancelFeeCalculator.calculate(detail.getTotalAmount(), detail.getCheckinDate());
+            detail.setCancelable(true);
+            detail.setDaysUntilCheckin(fee.getDaysUntilCheckin());
+            detail.setCancelFeeRatePercent(fee.getFeeRatePercent());
+            detail.setCancelFeeTierLabel(fee.getTierLabel());
+            detail.setCancelFeeAmt(fee.getCancelFeeAmt());
+            detail.setRefundAmt(fee.getRefundAmt());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            detail.setCancelable(false);
+        }
+    }
+
+    // 2026/07/31 장우철 — 유저 숙소 취소 (1-4) + 위약금(1-6)
+    @Override
+    @Transactional
+    public void cancelStayReservation(Long memberNo, Long resvId, String cancelReason) {
+        if (memberNo == null || resvId == null) {
+            throw new IllegalArgumentException("예약 정보가 올바르지 않습니다.");
+        }
+        if (cancelReason == null || cancelReason.isBlank()) {
+            throw new IllegalArgumentException("취소 사유를 입력해 주세요.");
+        }
+        String reason = cancelReason.trim();
+        if (reason.length() > 500) {
+            reason = reason.substring(0, 500);
+        }
+
+        MypageReserveVO detail = mypageReserveMapper.selectMyReservationDetail(memberNo, resvId);
+        if (detail == null) {
+            throw new IllegalStateException("예약을 찾을 수 없습니다.");
+        }
+        if (!"STAY".equalsIgnoreCase(detail.getResvType())) {
+            throw new IllegalStateException("숙소 예약만 취소할 수 있습니다.");
+        }
+        if (!"CONFIRMED".equalsIgnoreCase(detail.getStatusCd())) {
+            throw new IllegalStateException("예약확정 상태에서만 취소할 수 있습니다.");
+        }
+
+        StayCancelFeeCalculator.Result fee =
+                StayCancelFeeCalculator.calculate(detail.getTotalAmount(), detail.getCheckinDate());
+
+        // 1) 토스 부분/전액 환불 (환불액 0이면 스킵)
+        if (fee.getRefundAmt() > 0) {
+            Map<String, Object> payment = mypageReserveMapper.selectDonePaymentByResvId(resvId);
+            if (payment != null && payment.get("tossPaymentKey") != null) {
+                String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
+                // POINT_ONLY 등 비토스 키는 API 호출 스킵
+                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()) {
+                    long payAmount = 0L;
+                    Object payAmtObj = payment.get("payAmount");
+                    if (payAmtObj instanceof Number) {
+                        payAmount = ((Number) payAmtObj).longValue();
+                    }
+                    long refundAmt = fee.getRefundAmt();
+                    // 전액 환불이면 cancelAmount 생략 (토스 전액취소)
+                    Long cancelAmountParam = (payAmount > 0 && refundAmt >= payAmount)
+                            ? null
+                            : refundAmt;
+                    String tossError = tossPaymentService.cancelPayment(
+                            paymentKey, "숙소 예약 취소", cancelAmountParam);
+                    if (tossError != null) {
+                        throw new IllegalStateException(tossError);
+                    }
+                }
+                mypageReserveMapper.updatePaymentRefundByResvId(resvId, fee.getRefundAmt());
+            }
+        }
+
+        // 2) 예약 CANCEL + 위약금/환불액 저장
+        int updated = mypageReserveMapper.updateStayUserCancel(
+                resvId, memberNo, reason, fee.getCancelFeeAmt(), fee.getRefundAmt());
+        if (updated == 0) {
+            throw new IllegalStateException("예약을 취소할 수 없습니다. 상태를 확인해 주세요.");
+        }
+
+        // 3) 알림 (본인)
+        String stayName = detail.getHospitalName() != null ? detail.getHospitalName() : "숙소";
+        mypageNotifyService.sendReserveCancelNotification(
+                memberNo, stayName, detail.getCheckinDate(), null, reason, resvId);
     }
 
     // 2026/07/13 장우철 — DONE + 미작성 예약만 병원 리뷰 INSERT 후 평점 갱신

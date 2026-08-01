@@ -86,7 +86,7 @@
     </c:if>
 
     <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#999;margin-bottom:20px">
-        <a href="${contextPath}/admin/biz/list" style="color:#999;text-decoration:none">사업자 승인 관리</a>
+        <a href="${contextPath}/admin/biz/list" style="color:#999;text-decoration:none">사업자 승인/관리</a>
         <span>›</span>
         <span style="color:#1A1A2E;font-weight:600">${biz.bizName} 상세</span>
     </div>
@@ -125,20 +125,53 @@
                 <div class="bds-row"><label>PetCare 계정</label><span>${biz.bizId}</span></div>
             </div>
 
-            <%-- 2026/07/24 장우철 — 정산 계좌 UI (DB·API 연동 전 표시 영역) --%>
+            <%-- 2026/07/28 장우철 — 정산 계좌 (TB_BUSINESS.SETTLE_* 연동) --%>
             <c:if test="${biz.bizType eq 'STAY' or biz.bizType eq 'STORE'}">
             <div class="bds">
                 <div class="bds-title">
                     <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     정산 계좌
-                    <span style="font-size:12px;font-weight:500;color:#999;margin-left:6px">UI · 연동 후 신청값 표시</span>
+                    <c:choose>
+                        <c:when test="${biz.settleVerifyYn eq 'Y'}">
+                            <span style="font-size:12px;font-weight:600;color:#166534;margin-left:6px">인증완료</span>
+                        </c:when>
+                        <c:otherwise>
+                            <span style="font-size:12px;font-weight:500;color:#999;margin-left:6px">미인증</span>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
-                <div class="bds-row"><label>은행</label><span style="color:#999">—</span></div>
-                <div class="bds-row"><label>계좌번호</label><span style="color:#999">—</span></div>
-                <div class="bds-row"><label>예금주</label><span style="color:#999">—</span></div>
+                <div class="bds-row">
+                    <label>은행</label>
+                    <span>
+                        <c:choose>
+                            <c:when test="${not empty biz.settleBank}">${biz.settleBank}<c:if test="${not empty biz.settleBankCode}"> (${biz.settleBankCode})</c:if></c:when>
+                            <c:otherwise><span style="color:#999">—</span></c:otherwise>
+                        </c:choose>
+                    </span>
+                </div>
+                <div class="bds-row">
+                    <label>계좌번호</label>
+                    <span>
+                        <c:choose>
+                            <c:when test="${not empty biz.settleAccount}">${biz.settleAccount}</c:when>
+                            <c:otherwise><span style="color:#999">—</span></c:otherwise>
+                        </c:choose>
+                    </span>
+                </div>
+                <div class="bds-row">
+                    <label>예금주</label>
+                    <span>
+                        <c:choose>
+                            <c:when test="${not empty biz.settleHolder}">${biz.settleHolder}</c:when>
+                            <c:otherwise><span style="color:#999">—</span></c:otherwise>
+                        </c:choose>
+                    </span>
+                </div>
+                <c:if test="${biz.settleVerifyYn eq 'Y' and not empty biz.settleVerifyDate}">
+                <div class="bds-row"><label>인증일시</label><span>${biz.settleVerifyDate}</span></div>
+                </c:if>
                 <p style="font-size:12px;color:#999;margin:8px 0 0;line-height:1.5">
-                    숙소·쇼핑몰 신청 시 계좌 인증값이 저장되면 이곳에 표시됩니다.
-                    승인 전 사업자번호 가운데 자리로 개인/법인을 구분하고, 예금주(대표자명·법인명)를 확인하세요.
+                    승인 전 사업자번호로 개인/법인을 구분하고, 예금주(대표자명·법인명)가 맞는지 확인하세요.
                 </p>
             </div>
             </c:if>
@@ -224,7 +257,7 @@
     <%-- ========== [변경 전] 2026-07-09 장우철 — 더미 상세(행복 동물병원) 목업 보존
          이유: 기존 UI 목업을 삭제하지 않고 참고용으로 남김 ==========
     <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#999;margin-bottom:20px">
-        <a href="${contextPath}/admin/biz/list" style="color:#999;text-decoration:none">사업자 승인 관리</a>
+        <a href="${contextPath}/admin/biz/list" style="color:#999;text-decoration:none">사업자 승인/관리</a>
         <span>›</span>
         <span style="color:#1A1A2E;font-weight:600">행복 동물병원 상세</span>
     </div>

@@ -172,27 +172,27 @@
                         </div>
                     </div>
                 </div>
-                <%-- 2026/07/24 장우철 — 숙소·쇼핑 선택 시 정산 계좌 UI (더미 인증, DB 미저장) --%>
+                <%-- 2026/07/28 장우철 — 숙소·쇼핑 정산 계좌 (금결원 mock/실연동) --%>
                 <div class="biz-form-section" id="accountSection" style="display:none">
                     <div class="biz-form-title">
                         <svg viewBox="0 0 24 24">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
                             <line x1="2" y1="10" x2="22" y2="10"/>
                         </svg>정산 계좌 인증
-                        <small style="font-weight:400;color:var(--text-muted);margin-left:8px">숙소·쇼핑몰만 해당 · UI 단계(API 추후)</small>
+                        <small style="font-weight:400;color:var(--text-muted);margin-left:8px">숙소·쇼핑몰만 해당</small>
                     </div>
                     <div class="biz-grid">
                         <div class="biz-group">
                             <label>은행 <span class="req">*</span></label>
                             <select id="bankName" name="bankNameUi">
                                 <option value="">은행 선택</option>
-                                <option value="국민">국민</option>
-                                <option value="신한">신한</option>
-                                <option value="우리">우리</option>
-                                <option value="하나">하나</option>
-                                <option value="농협">농협</option>
-                                <option value="카카오뱅크">카카오뱅크</option>
-                                <option value="토스뱅크">토스뱅크</option>
+                                <option value="004" data-name="국민">국민</option>
+                                <option value="088" data-name="신한">신한</option>
+                                <option value="020" data-name="우리">우리</option>
+                                <option value="081" data-name="하나">하나</option>
+                                <option value="011" data-name="농협">농협</option>
+                                <option value="090" data-name="카카오뱅크">카카오뱅크</option>
+                                <option value="092" data-name="토스뱅크">토스뱅크</option>
                             </select>
                         </div>
                         <div class="biz-group">
@@ -208,6 +208,12 @@
                             <p style="font-size:12px;color:var(--text-muted);margin-top:5px;margin-left:5px" id="accountCheckResult"></p>
                         </div>
                     </div>
+                    <%-- 인증 성공 시 서버로 제출되는 값 --%>
+                    <input type="hidden" name="settleBank" id="settleBank" value="">
+                    <input type="hidden" name="settleBankCode" id="settleBankCode" value="">
+                    <input type="hidden" name="settleAccount" id="settleAccount" value="">
+                    <input type="hidden" name="settleHolder" id="settleHolder" value="">
+                    <input type="hidden" name="settleVerifyYn" id="settleVerifyYn" value="">
                 </div>
                 <div class="biz-form-section">
                     <div class="biz-form-title">
@@ -274,11 +280,21 @@
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
     let bizVerified = false;
-    // 2026/07/24 장우철 — 계좌 UI 더미 인증 플래그 (서버 미연동)
+    // 2026/07/28 장우철 — 계좌 인증 (서버 mock/금결원)
     let accountVerified = false;
 
     function needsAccountVerify(bizType) {
         return bizType === 'STAY' || bizType === 'STORE';
+    }
+
+    function clearAccountVerify() {
+        accountVerified = false;
+        $("#accountCheckResult").text("");
+        $("#settleBank").val("");
+        $("#settleBankCode").val("");
+        $("#settleAccount").val("");
+        $("#settleHolder").val("");
+        $("#settleVerifyYn").val("");
     }
 
     function toggleAccountSection() {
@@ -287,23 +303,25 @@
             $("#accountSection").show();
         } else {
             $("#accountSection").hide();
-            accountVerified = false;
-            $("#accountCheckResult").text("");
+            clearAccountVerify();
         }
     }
 
     $("select[name='bizType']").on("change", function () {
-        accountVerified = false;
-        $("#accountCheckResult").text("");
+        clearAccountVerify();
         toggleAccountSection();
     });
     toggleAccountSection();
 
     $("#btnCheckAccount").click(function () {
-        const bank = $("#bankName").val();
+        const $opt = $("#bankName option:selected");
+        const bankCode = $opt.val();
+        const bankName = $opt.data("name") || $opt.text();
         const holder = $("#accountHolder").val().trim();
         const acct = $("#bankAccount").val().replace(/[^0-9]/g, "");
-        if (!bank) {
+        const bizRegNo = $("input[name='bizRegNo']").val() || "";
+
+        if (!bankCode) {
             alert("은행을 선택하세요.");
             return;
         }
@@ -315,15 +333,48 @@
             alert("계좌번호를 입력하세요.");
             return;
         }
-        // UI 더미: 실제 토스 계좌인증 API는 추후
-        accountVerified = true;
-        $("#bankAccount").val(acct);
-        $("#accountCheckResult").css("color", "blue").text("계좌 인증 완료 (UI 더미)");
+
+        $("#btnCheckAccount").prop("disabled", true).text("인증중...");
+        $.ajax({
+            url: "${contextPath}/mypage/biz/account/verify",
+            type: "POST",
+            data: {
+                bankCodeStd: bankCode,
+                bankName: bankName,
+                accountNum: acct,
+                accountHolder: holder,
+                bizRegNo: bizRegNo
+            },
+            success: function (res) {
+                if (res && res.success) {
+                    accountVerified = true;
+                    $("#bankAccount").val(res.accountNum || acct);
+                    $("#settleBank").val(res.bankName || bankName);
+                    $("#settleBankCode").val(res.bankCodeStd || bankCode);
+                    $("#settleAccount").val(res.accountNum || acct);
+                    $("#settleHolder").val(res.accountHolderName || holder);
+                    $("#settleVerifyYn").val("Y");
+                    const suffix = res.mock ? " (더미)" : "";
+                    $("#accountCheckResult").css("color", "blue")
+                        .text("계좌 인증 완료 · " + (res.bankName || bankName) + " / " + (res.accountHolderName || holder) + suffix);
+                } else {
+                    clearAccountVerify();
+                    $("#accountCheckResult").css("color", "red")
+                        .text((res && res.message) ? res.message : "계좌 인증에 실패했습니다.");
+                }
+            },
+            error: function () {
+                clearAccountVerify();
+                $("#accountCheckResult").css("color", "red").text("계좌 인증 요청 중 오류가 발생했습니다.");
+            },
+            complete: function () {
+                $("#btnCheckAccount").prop("disabled", false).text("계좌 인증");
+            }
+        });
     });
 
     $("#bankName, #accountHolder, #bankAccount").on("change input", function () {
-        accountVerified = false;
-        $("#accountCheckResult").text("");
+        clearAccountVerify();
     });
 
     $("#btnCheckBizNo").click(function() {

@@ -34,4 +34,12 @@ public class AdminBizVO {
 
     private Long authId;         // TB_BUSINESS_AUTH 최신 건 PK
     private LocalDateTime applyDate;
+
+    // 2026/07/28 장우철 — 정산 계좌 (숙소·쇼핑, TB_BUSINESS.SETTLE_*)
+    private String settleBank;
+    private String settleBankCode;
+    private String settleAccount;
+    private String settleHolder;
+    private String settleVerifyYn;
+    private LocalDateTime settleVerifyDate;
 }
