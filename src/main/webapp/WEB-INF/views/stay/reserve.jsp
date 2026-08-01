@@ -38,6 +38,22 @@
   .ps-row.total span:last-child{color:var(--primary-dark)}
   .btn-pay-submit{width:100%;padding:16px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:17px;font-weight:800;cursor:pointer;margin-top:16px;transition:.15s}
   .btn-pay-submit:hover{background:var(--primary-dark)}
+  .btn-pay-submit:disabled{background:var(--border);cursor:not-allowed}
+
+  /* 예약 확인 모달 */
+  .confirm-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:9999;justify-content:center;align-items:center}
+  .confirm-overlay.show{display:flex}
+  .confirm-box{background:#fff;border-radius:16px;padding:28px 24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center}
+  .confirm-box .icon{width:56px;height:56px;border-radius:50%;background:#FEF3C7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .confirm-box .icon svg{width:28px;height:28px;stroke:#D97706;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .confirm-box h3{font-size:18px;font-weight:800;color:var(--text-main);margin:0 0 10px}
+  .confirm-box p{font-size:14px;color:var(--text-sub);line-height:1.7;margin:0 0 8px}
+  .confirm-box .timer-notice{background:#FEF2F2;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:#DC2626;margin:12px 0 20px;line-height:1.5}
+  .confirm-box .btn-group{display:flex;gap:10px}
+  .confirm-box .btn-cancel{flex:1;padding:12px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text-sub);font-size:14px;font-weight:600;cursor:pointer}
+  .confirm-box .btn-cancel:hover{background:var(--bg-page)}
+  .confirm-box .btn-confirm{flex:1;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:14px;font-weight:800;cursor:pointer}
+  .confirm-box .btn-confirm:hover{background:var(--primary-dark)}
 </style>
 
 <div class="res-wrap">
@@ -163,9 +179,29 @@
         </c:if>
         <div class="ps-row total"><span>총 결제금액</span><span id="totalLabel">-</span></div>
       </div>
-      <button type="submit" class="btn-pay-submit" id="submitBtn" disabled>결제하기</button>
+      <button type="button" class="btn-pay-submit" id="submitBtn" disabled onclick="showConfirmModal()">예약 신청하기</button>
     </div>
   </form>
+
+  <%-- 예약 확인 모달 --%>
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-box">
+      <div class="icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h3>예약을 진행하시겠습니까?</h3>
+      <p>예약 신청 후 결제 페이지로 이동합니다.</p>
+      <div class="timer-notice">
+        ⏱ 예약 후 <strong>15분 이내</strong>에 결제를 완료해야 합니다.<br>
+        미결제 시 예약이 자동 취소됩니다.
+      </div>
+      <p style="font-size:13px;color:#888;margin:0 0 16px" id="confirmSummary"></p>
+      <div class="btn-group">
+        <button class="btn-cancel" onclick="closeConfirmModal()">취소</button>
+        <button class="btn-confirm" onclick="submitReservation()">예약하기</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -271,6 +307,34 @@
     if (roomSel.value && ci) {
       calcPrice();
     }
+  });
+
+  // 예약 확인 모달
+  function showConfirmModal() {
+    var roomSel = document.getElementById('roomSelect');
+    var roomName = roomSel.options[roomSel.selectedIndex].text.split(' — ')[0];
+    var ci = document.getElementById('checkinDate').value;
+    var co = document.getElementById('checkoutDate').value;
+    var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
+    var total = document.getElementById('totalLabel').textContent;
+
+    document.getElementById('confirmSummary').textContent =
+        roomName + ' · ' + ci + ' ~ ' + co + ' (' + nights + '박) · ' + total;
+    document.getElementById('confirmModal').classList.add('show');
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+  }
+
+  function submitReservation() {
+    closeConfirmModal();
+    document.getElementById('reserveForm').submit();
+  }
+
+  // 모달 바깥 클릭 시 닫기
+  document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
   });
 </script>
 

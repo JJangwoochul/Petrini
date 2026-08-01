@@ -122,7 +122,7 @@
             <a href="${contextPath}/stay" class="gnb-item ${pageId eq 'stay' ? 'active' : ''}">숙소</a>
             <a href="${contextPath}/store" class="gnb-item ${pageId eq 'store' ? 'active' : ''}">쇼핑</a>
             <a href="${contextPath}/hospital" class="gnb-item ${pageId eq 'hospital' ? 'active' : ''}">병원</a>
-            <a href="${contextPath}/walk" class="gnb-item ${pageId eq 'walk' ? 'active' : ''}">산책</a>
+            <a href="${contextPath}/coupon" class="gnb-item ${pageId eq 'coupon' ? 'active' : ''}">이벤트</a>
             <a href="${contextPath}/community" class="gnb-item ${pageId eq 'community' ? 'active' : ''}">커뮤니티</a>
             <a href="${contextPath}/give" class="gnb-item ${pageId eq 'give' ? 'active' : ''}">가족찾기</a>
             <a href="${contextPath}/petmap" class="gnb-item ${pageId eq 'petmap' ? 'active' : ''}">펫맵</a>

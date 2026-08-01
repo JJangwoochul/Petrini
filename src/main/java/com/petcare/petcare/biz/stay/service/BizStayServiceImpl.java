@@ -17,13 +17,18 @@ package com.petcare.petcare.biz.stay.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.common.external.service.KakaoMapService;
+import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.stay.service.StayFullCancelService;
 import com.petcare.petcare.stay.vo.ReservationVO;
@@ -37,10 +42,12 @@ public class BizStayServiceImpl implements BizStayService {
     @Autowired
     private KakaoMapService kakaoMapService;
     @Autowired
+    private FileService fileService;
+    @Autowired
     private MypageNotifyService mypageNotifyService;
     @Autowired
     private StayFullCancelService stayFullCancelService;
-    
+
     @Override
     public StayVO getStayByBizId(String bizId) {
         return bizStayMapper.selectStayByBizId(bizId);
@@ -214,5 +221,88 @@ public class BizStayServiceImpl implements BizStayService {
             return 0;
         }
         return bizStayMapper.countTodayConfirmedReservations(stayId);
+    }
+
+
+    //HYJ 26.07.29 쿠폰관리
+    @Override
+    public List<BizCouponVO> getCouponList(String bizMemberNo) {
+        return bizStayMapper.selectCouponListByBizId(bizMemberNo);
+    }
+
+    @Override
+    public BizCouponVO getCouponDetail(Long couponId) {
+        return bizStayMapper.selectCouponById(couponId);
+    }
+
+    @Override
+    public void applyCoupon(String bizMemberNo, BizCouponVO vo) {
+        // 쿠폰 코드 자동 생성 (CPN- + UUID 앞 8자리)
+        String code = "CPN-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        vo.setCouponCode(code);
+        vo.setBizMemberNo(bizMemberNo);
+        vo.setApprovalStatus("PENDING");
+        vo.setStatusCd("INACTIVE");
+        vo.setIssuedBudget(0);
+        vo.setIssuedQty(0);
+
+        bizStayMapper.insertCoupon(vo);
+    }
+
+    @Override
+    public void updateCoupon(String bizMemberNo, BizCouponVO vo) {
+        BizCouponVO existing = bizStayMapper.selectCouponById(vo.getCouponId());
+        if (existing == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+        if (!bizMemberNo.equals(existing.getBizMemberNo())) {
+            throw new IllegalStateException("NOT_OWNER");
+        }
+        if (!"PENDING".equals(existing.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_PENDING");
+        }
+        vo.setBizMemberNo(bizMemberNo);
+        bizStayMapper.updateCoupon(vo);
+    }
+
+    @Override
+    public void deleteCoupon(String bizMemberNo, Long couponId) {
+        BizCouponVO existing = bizStayMapper.selectCouponById(couponId);
+        if (existing == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+        if (!bizMemberNo.equals(existing.getBizMemberNo())) {
+            throw new IllegalStateException("NOT_OWNER");
+        }
+        if (!"PENDING".equals(existing.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_PENDING");
+        }
+        bizStayMapper.deleteCoupon(couponId, bizMemberNo);
+    }
+
+    //
+    //HYJ 26.07.31 배너관리
+    //
+    @Override
+    public Long getBizNo(String bizId) {
+        return bizStayMapper.selectBizNoByBizId(bizId);
+    }
+
+    @Override
+    public List<MainBannerVO> getBannerList(Long bizNo) {
+        return bizStayMapper.selectBannerList(bizNo);
+    }
+
+    // ── 사업자: 배너 신청 (INSERT + 이미지 업로드) ──
+    @Override
+    @Transactional
+    public void applyBanner(MainBannerVO banner, MultipartFile image) throws Exception {
+        // 1) 배너 INSERT (selectKey로 bannerId 자동 세팅)
+        bizStayMapper.insertBanner(banner);
+
+        // 2) 이미지 업로드 (기존 FileService 활용, REF_TYPE = 'BANNER')
+        if (image != null && !image.isEmpty()) {
+            fileService.uploadFile(image, "BANNER", banner.getBannerId());
+        }
     }
 }

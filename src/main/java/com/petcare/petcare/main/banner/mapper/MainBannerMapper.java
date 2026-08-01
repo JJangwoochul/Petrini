@@ -16,8 +16,16 @@
 
 package com.petcare.petcare.main.banner.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
 
 @Mapper
-public interface MainBannerMapper {}
+public interface MainBannerMapper {
+    // ── 사용자: 위치별 활성 배너 조회 ──
+    List<MainBannerVO> selectActiveBannersByPosition(@Param("positionCd") String positionCd);
+}

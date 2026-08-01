@@ -150,6 +150,7 @@ public class StayController {
         try {
             
             //HYJ 26.07.23 결제 없이 예약버튼만 눌러도 예약처리됨 -> 수정필요
+            //HYJ 26.07.28 예약후 15분 이내 결제 없을 경우 취소안내 후, 예약처리
             Long resvId = stayService.createStayReservation(vo);
             // 결제 페이지로 리다이렉트
             return "redirect:/stay/payment?resvId=" + resvId;

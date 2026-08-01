@@ -31,6 +31,10 @@ package com.petcare.petcare.biz.stay.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import com.petcare.petcare.biz.vo.BizCouponVO;
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
@@ -66,4 +70,26 @@ public interface BizStayService {
     int countPendingReservations(Long stayId) throws Exception;
 
     int countTodayConfirmedReservations(Long stayId) throws Exception;
+
+    //HYJ 26.07.29 쿠폰관리
+    // 사업자 본인 쿠폰 목록
+    List<BizCouponVO> getCouponList(String bizMemberNo);
+
+    // 쿠폰 상세
+    BizCouponVO getCouponDetail(Long couponId);
+
+    // 쿠폰 신청 (PENDING 상태로 INSERT)
+    void applyCoupon(String bizMemberNo, BizCouponVO vo);
+
+    // 쿠폰 수정 (PENDING 상태일 때만)
+    void updateCoupon(String bizMemberNo, BizCouponVO vo);
+
+    // 쿠폰 삭제 (PENDING 상태일 때만)
+    void deleteCoupon(String bizMemberNo, Long couponId);
+
+    //HYJ 26.07.31 배너관리
+    Long getBizNo(String bizId);
+    List<MainBannerVO> getBannerList(Long bizNo);
+    void applyBanner(MainBannerVO banner, MultipartFile image) throws Exception;
+
 }

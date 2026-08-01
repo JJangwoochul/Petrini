@@ -52,7 +52,16 @@
       </svg>
       예약 캘린더<c:if test="${todayConfirmedCount > 0}"><span class="biz-nav-badge">${todayConfirmedCount}</span></c:if>
     </a>
+
     <div class="biz-nav-group">운영 관리</div>
+    
+    <a href="${contextPath}/biz/stay/coupon" class="biz-nav-link ${bizPage eq 'coupon' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      쿠폰 신청
+    </a>
+
     <a href="${contextPath}/biz/stay/reviews" class="biz-nav-link ${bizPage eq 'reviews' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -60,14 +69,22 @@
       리뷰 관리
     </a>
     
-    <a href="${contextPath}/biz/stay/contract" class="biz-nav-link ${bizPage eq 'contract' ? 'active' : ''}">
+    <%--HYJ 26.07.31 교체 <a href="${contextPath}/biz/stay/contract" class="biz-nav-link ${bizPage eq 'contract' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="1" x2="12" y2="23"/>
         <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
       </svg>
       계약 관리
+    </a> --%>
+    <a href="${contextPath}/biz/stay/banner" class="biz-nav-link ${bizPage eq 'banner' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      배너 광고
     </a>
-
     <a href="${contextPath}/biz/stay/settlement" class="biz-nav-link ${bizPage eq 'settlement' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="1" x2="12" y2="23"/>

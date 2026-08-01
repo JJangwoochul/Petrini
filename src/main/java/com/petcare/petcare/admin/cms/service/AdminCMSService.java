@@ -26,5 +26,13 @@
  */
 
 package com.petcare.petcare.admin.cms.service;
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
-public interface AdminCMSService {}
+import java.util.List;
+
+public interface AdminCMSService {
+    List<MainBannerVO> getAllBannerList();
+    int getPendingBannerCount();
+    void approveBanner(Long bannerId);
+    void rejectBanner(Long bannerId, String rejectReason);
+}

@@ -320,4 +320,183 @@
           FROM TB_STAY
          WHERE STAY_ID = #{stayId}
     </select>
+  
+    <!-- HYJ 26.07.29 사업자 본인 쿠폰 목록 -->
+  <select id="selectCouponListByBizId"
+          parameterType="string"
+          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+    SELECT COUPON_ID,
+           COUPON_CODE,
+           COUPON_NAME,
+           COUPON_TYPE,
+           DISCOUNT_VALUE,
+           MIN_ORDER_AMT,
+           TOTAL_BUDGET,
+           ISSUED_BUDGET,
+           TOTAL_QTY,
+           ISSUED_QTY,
+           USE_START_DATE,
+           USE_END_DATE,
+           BIZ_MEMBER_NO,
+           APPROVAL_STATUS,
+           REJECT_REASON,
+           APPROVAL_DATE,
+           STATUS_CD,
+           REG_DATE,
+           MOD_DATE
+      FROM TB_COUPON
+     WHERE BIZ_MEMBER_NO = #{bizMemberNo}
+     ORDER BY REG_DATE DESC
+  </select>
+
+  <!-- HYJ 26.07.29 쿠폰 상세 1건 -->
+  <select id="selectCouponById"
+          parameterType="long"
+          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+    SELECT COUPON_ID,
+           COUPON_CODE,
+           COUPON_NAME,
+           COUPON_TYPE,
+           DISCOUNT_VALUE,
+           MIN_ORDER_AMT,
+           TOTAL_BUDGET,
+           ISSUED_BUDGET,
+           TOTAL_QTY,
+           ISSUED_QTY,
+           USE_START_DATE,
+           USE_END_DATE,
+           BIZ_MEMBER_NO,
+           APPROVAL_STATUS,
+           REJECT_REASON,
+           APPROVAL_DATE,
+           STATUS_CD,
+           REG_DATE,
+           MOD_DATE
+      FROM TB_COUPON
+     WHERE COUPON_ID = #{couponId}
+  </select>
+
+  <!-- HYJ 26.07.29 쿠폰 신청 INSERT -->
+  <insert id="insertCoupon"
+          parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
+    INSERT INTO TB_COUPON (
+        COUPON_ID,
+        COUPON_CODE,
+        COUPON_NAME,
+        COUPON_TYPE,
+        DISCOUNT_VALUE,
+        MIN_ORDER_AMT,
+        TOTAL_BUDGET,
+        ISSUED_BUDGET,
+        TOTAL_QTY,
+        ISSUED_QTY,
+        USE_START_DATE,
+        USE_END_DATE,
+        BIZ_MEMBER_NO,
+        APPROVAL_STATUS,
+        STATUS_CD,
+        REG_DATE
+    ) VALUES (
+        SEQ_COUPON.NEXTVAL,
+        #{couponCode},
+        #{couponName},
+        #{couponType},
+        #{discountValue},
+        #{minOrderAmt},
+        #{totalBudget},
+        #{issuedBudget},
+        #{totalQty},
+        #{issuedQty},
+        #{useStartDate},
+        #{useEndDate},
+        #{bizMemberNo},
+        #{approvalStatus},
+        #{statusCd},
+        TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+    )
+  </insert>
+
+  <!-- HYJ 26.07.29 쿠폰 수정 (PENDING일 때만) -->
+  <update id="updateCoupon"
+          parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
+    UPDATE TB_COUPON
+       SET COUPON_NAME    = #{couponName},
+           COUPON_TYPE    = #{couponType},
+           DISCOUNT_VALUE = #{discountValue},
+           MIN_ORDER_AMT  = #{minOrderAmt},
+           TOTAL_BUDGET   = #{totalBudget},
+           TOTAL_QTY      = #{totalQty},
+           USE_START_DATE = #{useStartDate},
+           USE_END_DATE   = #{useEndDate},
+           MOD_DATE       = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+     WHERE COUPON_ID      = #{couponId}
+       AND BIZ_MEMBER_NO  = #{bizMemberNo}
+       AND APPROVAL_STATUS = 'PENDING'
+  </update>
+
+  <!-- HYJ 26.07.29 쿠폰 삭제 (PENDING일 때만) -->
+  <delete id="deleteCoupon">
+    DELETE FROM TB_COUPON
+     WHERE COUPON_ID      = #{couponId}
+       AND BIZ_MEMBER_NO  = #{bizMemberNo}
+       AND APPROVAL_STATUS = 'PENDING'
+  </delete>
+
+  <!-- HYJ 26.07.31 쿠폰 삭제 (로그인 ID로 BIZ_NO 조회) -->
+  <select id="selectBizNoByBizId" resultType="Long">
+      SELECT BIZ_NO FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
+  </select>
+
+  <!--HYJ 26.07.31 배너 신청-->
+    <sql id="bannerImageJoin">
+        LEFT JOIN (
+                    SELECT  REF_ID, 
+                            FILE_URL,
+                            ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+                    FROM    TB_FILE
+                    WHERE   REF_TYPE = 'BANNER'
+                ) f ON f.REF_ID = b.BANNER_ID AND f.RN = 1
+    </sql>
+
+    <!-- ─── 사업자: 내 배너 목록 ─── -->
+    <select id="selectBannerList" parameterType="Long" resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        SELECT
+                b.BANNER_ID, 
+                b.BIZ_NO, 
+                b.TITLE, 
+                b.LINK_URL,
+                b.POSITION_CD, 
+                b.START_DATE, 
+                b.END_DATE, 
+                b.STATUS_CD,
+                b.REJECT_REASON, 
+                b.REG_DATE,
+                f.FILE_URL AS imageUrl
+        FROM    TB_BANNER b
+        <include refid="bannerImageJoin"/>
+        WHERE   b.BIZ_NO = #{bizNo}
+        ORDER   BY b.REG_DATE DESC
+    </select>
+
+    <!-- ─── 사업자: 배너 신청 INSERT ─── -->
+    <insert id="insertBanner" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        INSERT INTO TB_BANNER (
+            BIZ_NO, 
+            TITLE, 
+            LINK_URL,
+            POSITION_CD, 
+            START_DATE, 
+            END_DATE, 
+            STATUS_CD
+        ) VALUES (
+            #{bizNo}, 
+            #{title}, 
+            #{linkUrl},
+            #{positionCd}, 
+            #{startDate}, 
+            #{endDate}, 
+            'PENDING'
+        )
+    </insert>
+
 </mapper>

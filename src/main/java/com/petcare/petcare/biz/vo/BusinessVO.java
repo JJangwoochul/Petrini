@@ -12,6 +12,7 @@ public class BusinessVO {
     private String bizRegNo;     // 사업자등록번호
     private String bizName;      // 상호명
     private String ceoName;      // 대표자
+    private String email;        // 이메일
     private String phone;        // 연락처
     private String statusCd;     // 상태코드 (PENDING/APPROVED)
 

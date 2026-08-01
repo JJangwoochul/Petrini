@@ -49,4 +49,9 @@ public interface AdminCommunityMapper {
     // 2026-07-15 박유정 STEP 7 — 상태 변경 (숨김/삭제/복구)
     int updatePostStatus(@Param("postId") long postId,
     @Param("statusCd") String statusCd);
+
+    //HYJ 26.07.28 관리자 게시글 삭제회수 반영
+    int updateMemberAdminPostDelCount(@Param("memberNo") long memberNo);
+    //HYJ 26.07.28 관리자 댓글 삭제회수 반영
+    int updateMemberAdminCommentDelCount(@Param("memberNo") long memberNo);
 }

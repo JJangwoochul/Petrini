@@ -13,6 +13,9 @@
 
 package com.petcare.petcare.admin.biz.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,12 +27,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.admin.biz.service.AdminBizService;
 import com.petcare.petcare.admin.controller.AdminBaseController;
+import com.petcare.petcare.biz.vo.BizCouponVO;
+import com.petcare.petcare.biz.vo.BusinessVO;
 
 import jakarta.servlet.http.HttpSession;
 
 import com.petcare.petcare.give.talent.service.GiveTalentService;
-
+import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
+import com.petcare.petcare.member.auth.service.EmailService;
+import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.mypage.biz.mapper.MypageBizMapper;
 
 @Controller("adminBizController")
 @RequestMapping("/admin/biz")
@@ -43,6 +51,15 @@ public class AdminBizController extends AdminBaseController {
     // 2026-07-13 박유정 — 재능나눔 승인 Service (admin/biz/talent.jsp)
     @Autowired
     private GiveTalentService giveTalentService;
+
+    // HYJ 26.07.28 사업자승인 이메일 안내발송
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private MypageBizMapper mypageBizMapper;
+    @Autowired
+    private MemberAuthMapper memberAuthMapper;
+
 
     // ── ADMIN-03 사업자 승인 ───────────────────────────────
     @GetMapping("/list")
@@ -105,12 +122,26 @@ public class AdminBizController extends AdminBaseController {
     @PostMapping("/approve")
     public String approveBiz(HttpSession session,
                              @RequestParam Long bizNo,
+                             @RequestParam String bizId,
                              RedirectAttributes redirectAttr) {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
         try {
             adminBizService.approveBiz(bizNo);
+
+            //HYJ 26.07.28 이메일 안내
+            BusinessVO existing = mypageBizMapper.selectBusinessByBizId(bizId);
+            String email = existing.getEmail();
+            if (email == null || email.isEmpty()) {
+                MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(existing.getBizId());
+                if (found != null) {
+                    email = found.getEmail();
+                }
+            }
+
+            emailService.sendApproveNotice(email, existing.getBizName());
+
             redirectAttr.addFlashAttribute("successMsg", "사업자 신청이 승인되었습니다.");
             return "redirect:/admin/biz/list?status=APPROVED";
         } catch (IllegalStateException e) {
@@ -129,13 +160,27 @@ public class AdminBizController extends AdminBaseController {
     @PostMapping("/reject")
     public String rejectBiz(HttpSession session,
                             @RequestParam Long bizNo,
-                            @RequestParam String rejectReason,
+                             @RequestParam String bizId,
+                             @RequestParam String rejectReason,
                             RedirectAttributes redirectAttr) {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
         try {
             adminBizService.rejectBiz(bizNo, rejectReason);
+
+            //HYJ 26.07.28 이메일 안내
+            BusinessVO existing = mypageBizMapper.selectBusinessByBizId(bizId);
+            String email = existing.getEmail();
+            if (email == null || email.isEmpty()) {
+                MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(existing.getBizId());
+                if (found != null) {
+                    email = found.getEmail();
+                }
+            }
+
+            emailService.sendRejectNotice(email, existing.getBizName(), rejectReason);
+
             redirectAttr.addFlashAttribute("successMsg", "사업자 신청이 반려되었습니다.");
             return "redirect:/admin/biz/list?status=REJECTED";
         } catch (IllegalArgumentException e) {
@@ -183,21 +228,89 @@ public class AdminBizController extends AdminBaseController {
                            @RequestParam Long talentId,
                            @RequestParam String rejectReason,
                            RedirectAttributes redirectAttr) {
-    MemberVO admin = getAdmin(session);
-    if (admin == null) return redirectToLogin();
+        MemberVO admin = getAdmin(session);
+        if (admin == null) return redirectToLogin();
 
-    if (rejectReason == null || rejectReason.isBlank()) {
-        redirectAttr.addFlashAttribute("errorMsg", "반려 사유를 입력해 주세요.");
-        return "redirect:/admin/biz/talent?status=PENDING";
+        if (rejectReason == null || rejectReason.isBlank()) {
+            redirectAttr.addFlashAttribute("errorMsg", "반려 사유를 입력해 주세요.");
+            return "redirect:/admin/biz/talent?status=PENDING";
+        }
+
+        try {
+            giveTalentService.rejectTalent(talentId, rejectReason.trim(), admin.getAdminNo());
+            redirectAttr.addFlashAttribute("successMsg", "재능나눔이 반려되었습니다.");
+            return "redirect:/admin/biz/talent?status=REJECTED";
+        } catch (Exception e) {
+            redirectAttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
+            return "redirect:/admin/biz/talent?status=PENDING";
+        }
     }
 
-    try {
-        giveTalentService.rejectTalent(talentId, rejectReason.trim(), admin.getAdminNo());
-        redirectAttr.addFlashAttribute("successMsg", "재능나눔이 반려되었습니다.");
-        return "redirect:/admin/biz/talent?status=REJECTED";
-    } catch (Exception e) {
-        redirectAttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
-        return "redirect:/admin/biz/talent?status=PENDING";
+    //HYJ 26.07.29 쿠폰관리
+    // ── 쿠폰 승인 목록 ──
+    @GetMapping("/coupon/list")
+    public String couponList(HttpSession session,
+                                @RequestParam(defaultValue = "PENDING") String status,
+                                Model model) {
+        if (getAdmin(session) == null) return redirectToLogin();
+        List<BizCouponVO> list = adminBizService.getCouponListByStatus(status);
+        Map<String, Integer> statusCounts = adminBizService.getCouponStatusCounts();
+        model.addAttribute("list", list);
+        model.addAttribute("status", status);
+        model.addAttribute("statusCounts", statusCounts);
+        return "admin/biz/coupon";
     }
-}
+
+    // ── 쿠폰 승인 POST ──
+    @PostMapping("/coupon/approve")
+    public String approveCoupon(HttpSession session,
+                                @RequestParam Long couponId,
+                                RedirectAttributes rttr) {
+        if (getAdmin(session) == null) return redirectToLogin();
+
+        try {
+            adminBizService.approveCoupon(couponId);
+            rttr.addFlashAttribute("successMsg", "쿠폰이 승인되었습니다.");
+            return "redirect:/admin/biz/coupon/list?status=APPROVED";
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "이미 처리된 쿠폰입니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "승인 처리 중 오류가 발생했습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "승인 처리 중 오류가 발생했습니다.");
+        }
+        return "redirect:/admin/biz/coupon/list?status=PENDING";
+    }
+
+    // ── 쿠폰 반려 POST ──
+    @PostMapping("/coupon/reject")
+    public String rejectCoupon(HttpSession session,
+                                @RequestParam Long couponId,
+                                @RequestParam String rejectReason,
+                                RedirectAttributes rttr) {
+        if (getAdmin(session) == null) return redirectToLogin();
+
+        try {
+            adminBizService.rejectCoupon(couponId, rejectReason);
+            rttr.addFlashAttribute("successMsg", "쿠폰이 반려되었습니다.");
+            return "redirect:/admin/biz/coupon/list?status=REJECTED";
+        } catch (IllegalArgumentException e) {
+            if ("REJECT_REASON_REQUIRED".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "반려 사유를 입력해 주세요.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
+            }
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "이미 처리된 쿠폰입니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
+        }
+        return "redirect:/admin/biz/coupon/list?status=PENDING";
+    }
 }

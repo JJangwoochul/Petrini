@@ -19,4 +19,17 @@
 
 package com.petcare.petcare.mypage.account.service;
 
-public interface MypageAccountService {}
+public interface MypageAccountService {
+
+    /**
+     * HYJ 26.07.29 회원 탈퇴 — 비밀번호 확인 후 STATUS_CD = 'WITHDRAWN'
+     * @return null 이면 성공, 문자열이면 오류 메시지
+     */
+    String withdraw(Long memberNo, String password);
+
+    /**
+     * HYJ 26.07.29 7일 경과 탈퇴 회원 개인정보 삭제 (스케줄러에서 호출)
+     * @return 처리된 회원 수
+     */
+    int purgeExpiredWithdrawnMembers();
+}

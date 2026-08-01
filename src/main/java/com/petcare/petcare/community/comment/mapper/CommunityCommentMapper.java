@@ -44,12 +44,16 @@ public interface CommunityCommentMapper {
     int selectCommentCountByPostId(long postId);
 
     int insertComment(CommunityCommentVO vo);
+    int updateMemberCommentCount(String memberId);
 
     Long selectMemberNoByMemberId(String memberId);
 
     Long selectMemberNoByEmail(String email);
 
     int softDeleteComment(long commentId);
+
+    //HYJ 26.07.28 댓글삭제
+    int hardDeleteComment(long commentId);
 
     // 2026-07-23 HYJ — 게시글 삭제 시 댓글 일괄 소프트 삭제 (LIFE)
     int softDeleteCommentsByPostId(long postId);

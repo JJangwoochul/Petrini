@@ -25,5 +25,49 @@
   - TB_NOTICE
   - TB_FAQ
 -->
+    <sql id="bannerImageJoin">
+        LEFT JOIN (
+                    SELECT  REF_ID, 
+                            FILE_URL,
+                            ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+                    FROM    TB_FILE
+                    WHERE   REF_TYPE = 'BANNER'
+                ) f ON f.REF_ID = b.BANNER_ID AND f.RN = 1
+    </sql>
+    
+    <!-- ─── 관리자: 전체 배너 목록 (PENDING 우선) ─── -->
+    <select id="selectAllBannerList" resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        SELECT
+                    b.BANNER_ID, 
+                    b.BIZ_NO, 
+                    b.TITLE, 
+                    b.LINK_URL,
+                    b.POSITION_CD, 
+                    b.START_DATE, 
+                    b.END_DATE, 
+                    b.STATUS_CD,
+                    b.REJECT_REASON, 
+                    b.REG_DATE,
+                    biz.BIZ_NAME AS bizName,
+                    f.FILE_URL AS imageUrl
+        FROM        TB_BANNER b
+        JOIN        TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
+        <include refid="bannerImageJoin"/>
+        ORDER BY    CASE b.STATUS_CD WHEN 'PENDING' THEN 0 ELSE 1 END,
+                    b.REG_DATE DESC
+    </select>
 
+    <!-- ─── 관리자: PENDING 건수 (사이드바 배지용) ─── -->
+    <select id="selectPendingBannerCount" resultType="int">
+        SELECT COUNT(*) FROM TB_BANNER WHERE STATUS_CD = 'PENDING'
+    </select>
+
+    <!-- ─── 관리자: 상태 변경 (승인/반려) ─── -->
+    <update id="updateBannerStatus" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        UPDATE  TB_BANNER
+        SET     STATUS_CD = #{statusCd},
+                REJECT_REASON = #{rejectReason},
+                MOD_DATE = SYSDATE
+        WHERE   BANNER_ID = #{bannerId}
+    </update>
 </mapper>

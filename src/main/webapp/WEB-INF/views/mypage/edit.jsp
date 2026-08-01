@@ -139,6 +139,12 @@
     <div class="edit-submit-area">
         <button class="btn-primary" style="padding:13px 52px; font-size:15px;">저장하기</button>
     </div>
+
+    <%-- HYJ 26.07.29 회원 탈퇴 --%>
+    <div style="text-align:center; margin-top:48px; padding-top:24px; border-top:1px solid #eee;">
+        <a href="${contextPath}/mypage/withdraw"
+           style="color:#999; font-size:13px; text-decoration:underline;">회원 탈퇴</a>
+    </div>
 </div>
 
 

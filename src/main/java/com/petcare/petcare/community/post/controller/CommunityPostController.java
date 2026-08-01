@@ -143,10 +143,15 @@ public class CommunityPostController {
         model.addAttribute("commentCount", countComments(comments));
         model.addAttribute("liked", liked);
         model.addAttribute("isLoggedIn", member != null);
+
         Long loginMemberNo = null;
         if (member != null) {
             loginMemberNo = communityCommentService.resolveLoginMemberNo(member);
+
+            //HYJ 26.07.28 관리자권한 확인
+            model.addAttribute("loginMemberRole", member.getRole());
         }
+
         model.addAttribute("loginMemberNo", loginMemberNo);
 
         // 2026/07/11 장우철 — LIFE 댓글 UI 권한 플래그 (서버 검증과 동일 규칙)
@@ -433,10 +438,9 @@ public class CommunityPostController {
      * POST /community/delete → deletePost() → 목록 redirect
      */
     @PostMapping("/delete")
-    public String deletePost(
-            @RequestParam long postId,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
+    public String deletePost(@RequestParam long postId,
+                             HttpSession session,
+                             RedirectAttributes redirectAttributes) {
         MemberVO member = getMemberOrNull(session);
         if (member == null) {
             return "redirect:/login?redirect=/community/detail?id=" + postId;

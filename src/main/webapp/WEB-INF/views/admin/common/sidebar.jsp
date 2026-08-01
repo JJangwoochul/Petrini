@@ -82,6 +82,11 @@
               <span class="adm-nav-badge">${pendingTalentApproveCount}</span>
             </c:if>
         </a>
+        <!--HYJ 26.07.29 쿠폰 승인-->
+        <a href="${contextPath}/admin/biz/coupon/list" class="adm-nav-link ${adminPage eq 'coupon-list' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+            쿠폰 승인
+        </a>
         <a href="${contextPath}/admin/community/list" class="adm-nav-link ${adminPage eq 'community-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             커뮤니티 관리

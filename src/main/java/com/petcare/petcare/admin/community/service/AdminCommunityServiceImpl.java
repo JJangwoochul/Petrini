@@ -18,11 +18,13 @@ package com.petcare.petcare.admin.community.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.admin.community.mapper.AdminCommunityMapper;
 import com.petcare.petcare.community.post.vo.CommunityPostVO;
 
 import com.petcare.petcare.community.comment.mapper.CommunityCommentMapper;
+import com.petcare.petcare.community.comment.service.CommunityCommentService;
 import com.petcare.petcare.community.post.mapper.CommunityPostMapper;
 import com.petcare.petcare.community.post.service.CommunityPostService;
 
@@ -33,18 +35,21 @@ public class AdminCommunityServiceImpl implements AdminCommunityService {
     private final CommunityPostMapper communityPostMapper;
     private final CommunityCommentMapper communityCommentMapper;
     private final CommunityPostService communityPostService;
+    private final CommunityCommentService communityCommentService;
 
     private static final int PAGE_SIZE = 10;
 
     public AdminCommunityServiceImpl(AdminCommunityMapper adminCommunityMapper,
                                      CommunityPostMapper communityPostMapper,
                                      CommunityCommentMapper communityCommentMapper,
-                                     CommunityPostService communityPostService) {
+                                     CommunityPostService communityPostService,
+                                     CommunityCommentService communityCommentService) {
 
         this.adminCommunityMapper = adminCommunityMapper;
         this.communityPostMapper = communityPostMapper;
         this.communityCommentMapper = communityCommentMapper;
         this.communityPostService = communityPostService;
+        this.communityCommentService = communityCommentService;
     }
 
     // 2026-07-15 박유정 — 관리자 게시글 목록 (검색·필터·페이징)
@@ -91,6 +96,37 @@ public class AdminCommunityServiceImpl implements AdminCommunityService {
             throw new IllegalArgumentException("POST_NOT_FOUND");
         }
         communityPostService.deletePhotosByPostId(postId);
+    }
+
+    @Override
+    @Transactional
+    public void deletePost(long postId, long memberNo) {
+        // int updated = adminCommunityMapper.updatePostStatus(postId, "DELETED");
+        // if (updated == 0) {
+        //     throw new IllegalArgumentException("POST_NOT_FOUND");
+        // }
+        // communityPostService.deletePhotosByPostId(postId);
+        
+        //HYJ 26.07.28 수의사상담 soft삭제
+        CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
+        boolean isLife = "LIFE".equalsIgnoreCase(existing.getBoardType());
+        int result;
+        if (isLife) {
+            // LIFE — STATUS_CD='DELETED' (관리자와 동일, 7일 후 스케줄러가 물리 삭제)
+            result = communityPostMapper.softDeletePostByUser(postId, memberNo);
+        } else {
+            // TOWN, SHARE — 즉시 물리 삭제
+            communityCommentService.hardDeleteCommentsByPostId(postId);
+            communityPostService.deletePhotosByPostId(postId);
+            result = communityPostMapper.hardDeletePostByUser(postId, memberNo);
+        }
+
+        if (result == 0) {
+            throw new IllegalStateException("DELETE_FAILED");
+        }
+
+        //HYJ 26.07.28 관리자 게시글삭제 회수반영
+        adminCommunityMapper.updateMemberAdminPostDelCount(memberNo);
     }
 
     // 2026-07-15 박유정 — 복구 (STATUS_CD = ACTIVE)

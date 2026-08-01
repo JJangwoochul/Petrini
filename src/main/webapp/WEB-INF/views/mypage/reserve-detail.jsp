@@ -48,13 +48,15 @@
         <c:choose>
           <c:when test="${reservation.statusCd eq 'PENDING'}"><span class="badge-status badge-wait">예약신청</span></c:when>
           <c:when test="${reservation.statusCd eq 'CONFIRMED'}"><span class="badge-status badge-ready">예약확정</span></c:when>
+          <%-- 2026/08/01 장우철 — HEAD(high) CHECKIN/CHECKOUT 유지 + DONE 병원/숙소 표기 --%>
           <c:when test="${reservation.statusCd eq 'CHECKIN'}"><span class="badge-status badge-ready">체크인</span></c:when>
           <c:when test="${reservation.statusCd eq 'CHECKOUT'}"><span class="badge-status badge-ready">체크아웃</span></c:when>
           <c:when test="${reservation.statusCd eq 'DONE'}">
             <span class="badge-status badge-done">
               <c:choose>
-                <c:when test="${reservation.resvType eq 'STAY'}">숙박완료</c:when>
-                <c:otherwise>진료완료</c:otherwise>
+                <c:when test="${reservation.resvType eq 'STAY'}">이용완료</c:when>
+                <c:when test="${reservation.resvType eq 'HOSPITAL'}">진료완료</c:when>
+                <c:otherwise>완료</c:otherwise>
               </c:choose>
             </span>
           </c:when>
@@ -76,6 +78,7 @@
     <div class="rd-row">
       <span>예약일시</span>
       <span>
+        <!--HYJ 26.07.28 사업장에 따라 처리-->
         <fmt:formatDate value="${reservation.resvDate}" pattern="yyyy-MM-dd"/>
         <c:if test="${not empty reservation.resvTime}"> ${reservation.resvTime}</c:if>
         <c:if test="${not empty reservation.endTime}"> ~ ${reservation.endTime}</c:if>

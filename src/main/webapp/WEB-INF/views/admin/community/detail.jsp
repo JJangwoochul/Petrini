@@ -15,30 +15,30 @@
 
 <%-- 2026-07-15 박유정 — 상세 레이아웃·처리 버튼 너비 통일 --%>
 <style>
-.comm-detail-breadcrumb{font-size:13px;color:#999;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.comm-detail-breadcrumb a{color:#999;text-decoration:none}
-.comm-detail-breadcrumb a:hover{color:#3B5BDB}
-.comm-detail-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:flex-start}
-.comm-post-card{background:#fff;border:1px solid #E4E6ED;border-radius:12px;overflow:hidden}
-.comm-post-head{padding:22px 24px;border-bottom:1px solid #E4E6ED}
-.comm-post-board{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#EEF2FF;color:#3B5BDB;display:inline-block;margin-bottom:10px}
-.comm-post-title{font-size:20px;font-weight:800;color:#1A1A2E;margin:0 0 12px;line-height:1.4}
-.comm-post-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:#999}
-.comm-post-meta strong{color:#555}
-.comm-post-body{padding:24px;font-size:15px;color:#444;line-height:1.85}
-.comm-post-img{width:100%;max-height:360px;object-fit:cover;border-radius:8px;margin-bottom:20px}
-.comm-side-card{background:#fff;border:1px solid #E4E6ED;border-radius:12px;padding:20px;margin-bottom:16px}
-.comm-side-title{font-size:14px;font-weight:800;color:#1A1A2E;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid #E4E6ED}
-.comm-report-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F5F5F5;font-size:13px}
-.comm-report-item:last-child{border-bottom:none}
-.comm-action-btns{display:flex;flex-direction:column;gap:8px}
-.comm-action-btns form{display:block;width:100%}
-.comm-action-btns .adm-btn,
-.comm-action-btns a.adm-btn{width:100%;box-sizing:border-box;text-align:center}
-.adm-page-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.adm-page-actions form{display:inline;margin:0}
-.adm-page-actions .adm-btn{min-width:80px;padding:9px 20px}
-@media(max-width:900px){.comm-detail-grid{grid-template-columns:1fr}}
+    .comm-detail-breadcrumb{font-size:13px;color:#999;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+    .comm-detail-breadcrumb a{color:#999;text-decoration:none}
+    .comm-detail-breadcrumb a:hover{color:#3B5BDB}
+    .comm-detail-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:flex-start}
+    .comm-post-card{background:#fff;border:1px solid #E4E6ED;border-radius:12px;overflow:hidden}
+    .comm-post-head{padding:22px 24px;border-bottom:1px solid #E4E6ED}
+    .comm-post-board{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#EEF2FF;color:#3B5BDB;display:inline-block;margin-bottom:10px}
+    .comm-post-title{font-size:20px;font-weight:800;color:#1A1A2E;margin:0 0 12px;line-height:1.4}
+    .comm-post-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:#999}
+    .comm-post-meta strong{color:#555}
+    .comm-post-body{padding:24px;font-size:15px;color:#444;line-height:1.85}
+    .comm-post-img{width:100%;max-height:360px;object-fit:cover;border-radius:8px;margin-bottom:20px}
+    .comm-side-card{background:#fff;border:1px solid #E4E6ED;border-radius:12px;padding:20px;margin-bottom:16px}
+    .comm-side-title{font-size:14px;font-weight:800;color:#1A1A2E;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid #E4E6ED}
+    .comm-report-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F5F5F5;font-size:13px}
+    .comm-report-item:last-child{border-bottom:none}
+    .comm-action-btns{display:flex;flex-direction:column;gap:8px}
+    .comm-action-btns form{display:block;width:100%}
+    .comm-action-btns .adm-btn,
+    .comm-action-btns a.adm-btn{width:100%;box-sizing:border-box;text-align:center}
+    .adm-page-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+    .adm-page-actions form{display:inline;margin:0}
+    .adm-page-actions .adm-btn{min-width:80px;padding:9px 20px}
+    @media(max-width:900px){.comm-detail-grid{grid-template-columns:1fr}}
 </style>
 
 <main class="adm-main">

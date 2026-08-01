@@ -53,6 +53,13 @@
     )
   </insert>
 
+  <!--HYJ 26.07.28 게시글작성회수 반영-->
+  <update id="updateMemberPostCount" parameterType="string">
+    UPDATE TB_MEMBER
+    SET POST_COUNT = NVL(POST_COUNT, 0) + 1
+    WHERE MEMBER_ID = #{memberId}
+  </update>
+
   <select id="selectMemberNoByMemberId" resultType="long">
     SELECT MEMBER_NO
     FROM TB_MEMBER

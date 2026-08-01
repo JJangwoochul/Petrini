@@ -44,11 +44,13 @@ import com.petcare.petcare.give.report.vo.GiveReportFileVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import com.petcare.petcare.admin.community.mapper.AdminCommunityMapper;
 import com.petcare.petcare.community.comment.service.CommunityCommentService;
 import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.community.post.mapper.CommunityPostMapper;
@@ -77,6 +79,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     @Autowired
     private FileMapper fileMapper;
+    @Autowired
+    private AdminCommunityMapper adminCommunityMapper;
 
     private static final int MAX_PHOTOS = 5;
     private static final int PAGE_SIZE = 5;
@@ -184,6 +188,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
 
     @Override
+    @Transactional
     public void insertPost(CommunityPostVO vo, MemberVO loginMember, MultipartFile[] photos) {
         resolveMemberNo(vo, loginMember);
 
@@ -207,8 +212,13 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             vo.setTags("WAITING");  // LIFE 상담 등록 시 답변대기 / 2026-07-10
         }
 
-        communityPostMapper.insertPost(vo);
-        savePhotos(vo.getPostId(), photos);
+        int result = communityPostMapper.insertPost(vo);
+        if (result > 0) {
+            //HYJ 26.07.28 작성횟수 + 1
+            communityPostMapper.updateMemberPostCount(loginMember.getMemberId());
+
+            savePhotos(vo.getPostId(), photos);
+        }
     }
 
     private String normalizePetType(String petType) {
@@ -436,21 +446,28 @@ public class CommunityPostServiceImpl implements CommunityPostService {
      * - TOWN/SHARE: 즉시 물리 삭제 (댓글 → 파일 → 게시글 DELETE)
      */
     @Override
+    @Transactional
     public void deletePost(long postId, MemberVO loginMember) {
         if (loginMember == null) {
             throw new IllegalStateException("LOGIN_REQUIRED");
         }
         Long loginMemberNo = resolveMemberNoForUpdate(loginMember);
         if (loginMemberNo == null) {
-            throw new IllegalStateException("MEMBER_NOT_FOUND");
+            //HYJ 26.07.28 관리자계정 통과
+            if (!"ADMIN".equals(loginMember.getRole())){
+                throw new IllegalStateException("MEMBER_NOT_FOUND");
+            }
         }
 
         CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
         if (existing == null) {
             throw new IllegalArgumentException("POST_NOT_FOUND");
         }
-        if (!loginMemberNo.equals(existing.getMemberNo())) {
-            throw new IllegalStateException("FORBIDDEN");
+        if (loginMemberNo == null || !loginMemberNo.equals(existing.getMemberNo())) {
+            //HYJ 26.07.28 관리자계정 통과
+            if (!"ADMIN".equals(loginMember.getRole())){
+                throw new IllegalStateException("MEMBER_NOT_FOUND");
+            }
         }
 
         boolean isLife = "LIFE".equalsIgnoreCase(existing.getBoardType());
@@ -458,16 +475,21 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
         if (isLife) {
             // LIFE — STATUS_CD='DELETED' (관리자와 동일, 7일 후 스케줄러가 물리 삭제)
-            result = communityPostMapper.softDeletePostByUser(postId, loginMemberNo);
+            result = communityPostMapper.softDeletePostByUser(postId, existing.getMemberNo());
         } else {
             // TOWN, SHARE — 즉시 물리 삭제
             communityCommentService.hardDeleteCommentsByPostId(postId);
             deletePhotosByPostId(postId);
-            result = communityPostMapper.hardDeletePostByUser(postId, loginMemberNo);
+            result = communityPostMapper.hardDeletePostByUser(postId, existing.getMemberNo());
         }
 
         if (result == 0) {
             throw new IllegalStateException("DELETE_FAILED");
+        }
+
+        if ("ADMIN".equals(loginMember.getRole())) {
+            //HYJ 26.07.28 관리자 게시글삭제 회수반영
+            adminCommunityMapper.updateMemberAdminPostDelCount(existing.getMemberNo());
         }
     }
 

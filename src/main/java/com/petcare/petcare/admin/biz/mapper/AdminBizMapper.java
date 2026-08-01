@@ -12,6 +12,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.admin.biz.vo.AdminBizVO;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 
 @Mapper
 public interface AdminBizMapper {
@@ -48,4 +49,24 @@ public interface AdminBizMapper {
     // 2026-07-09 장우철 — BIZ_ID(=회원 이메일)로 MEMBER_NO 조회
     // 이유: 반려 알림은 TB_NOTIFICATION.MEMBER_NO 대상으로만 INSERT
     Long selectMemberNoByBizId(@Param("bizId") String bizId);
+
+    //HYJ 26.07.29 쿠폰 관리
+    // 승인 상태별 쿠폰 목록
+    List<BizCouponVO> selectCouponListByStatus(@Param("approvalStatus") String approvalStatus);
+
+    // 상태별 건수
+    int countCouponByStatus(@Param("approvalStatus") String approvalStatus);
+
+    // 쿠폰 상세
+    BizCouponVO selectCouponById(@Param("couponId") Long couponId);
+
+    // 승인 처리
+    int updateCouponApproval(@Param("couponId") Long couponId,
+                             @Param("approvalStatus") String approvalStatus,
+                             @Param("statusCd") String statusCd);
+
+    // 반려 처리
+    int updateCouponReject(@Param("couponId") Long couponId,
+                           @Param("approvalStatus") String approvalStatus,
+                           @Param("rejectReason") String rejectReason);
 }

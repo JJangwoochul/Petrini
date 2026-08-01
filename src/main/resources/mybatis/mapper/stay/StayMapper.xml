@@ -151,7 +151,7 @@
     <!-- 숙소 예약 등록 -->
     <insert id="insertReservation" parameterType="com.petcare.petcare.stay.vo.ReservationVO">
         <selectKey keyProperty="resvId" resultType="long" order="BEFORE">
-            SELECT SEQ_RESERVATION.NEXTVAL FROM DUAL
+            SELECT SEQ_TB_RESERVATION.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO TB_RESERVATION (
             CHECKIN_DATE, 
@@ -332,4 +332,15 @@
             SYSDATE
         )
     </insert>
+
+    <!-- HYJ 26.07.28 스케줄러 — 15분 경과한 PENDING 예약 자동 취소 -->
+    <update id="cancelExpiredPending">
+    <![CDATA[
+        UPDATE TB_RESERVATION
+           SET STATUS_CD = 'CANCEL'
+         WHERE RESV_TYPE = 'STAY'
+           AND STATUS_CD = 'PENDING'
+           AND REG_DATE  < SYSDATE - INTERVAL '15' MINUTE
+    ]]>
+    </update>
 </mapper>

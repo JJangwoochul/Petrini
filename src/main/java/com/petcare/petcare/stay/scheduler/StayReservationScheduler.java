@@ -35,4 +35,21 @@ public class StayReservationScheduler {
             log.error("[StayScheduler] 숙박 완료 자동 처리 실패", e);
         }
     }
+
+    /**
+     * HYJ 26.07.28 — 5분마다 실행
+     * 생성 후 15분 경과한 PENDING 예약 → CANCEL 자동 취소
+     * 결제 없이 이탈한 "유령 예약"을 정리하여 객실 가용성 복구
+     */
+    @Scheduled(fixedRate = 300000)
+    public void cancelExpiredPendingReservations() {
+        try {
+            int cancelledCount = stayMapper.cancelExpiredPending();
+            if (cancelledCount > 0) {
+                log.info("[StayScheduler] 만료 PENDING 예약 자동 취소 — {}건 PENDING → CANCEL", cancelledCount);
+            }
+        } catch (Exception e) {
+            log.error("[StayScheduler] 만료 PENDING 자동 취소 실패", e);
+        }
+    }
 }

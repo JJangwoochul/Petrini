@@ -96,4 +96,18 @@
     WHERE POST_ID = #{postId}
       AND BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
   </update>
+
+  <!--HYJ 26.07.28 관리자 게시글 삭제회수 반영-->
+  <update id="updateMemberAdminPostDelCount" parameterType="long">
+    UPDATE TB_MEMBER
+    SET ADMIN_POST_DEL_COUNT = NVL(ADMIN_POST_DEL_COUNT, 0) + 1
+    WHERE MEMBER_NO = #{memberNo}
+  </update>
+
+  <!--HYJ 26.07.28 관리자 댓글 삭제회수 반영-->
+  <update id="updateMemberAdminCommentDelCount" parameterType="long">
+    UPDATE TB_MEMBER
+    SET ADMIN_COMMENT_DEL_COUNT = NVL(ADMIN_COMMENT_DEL_COUNT, 0) + 1
+    WHERE MEMBER_NO = #{memberNo}
+  </update>
 </mapper>

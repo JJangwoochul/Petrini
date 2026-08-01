@@ -103,12 +103,17 @@ public class AdminCommunityController extends AdminBaseController {
     @PostMapping("/delete")
     public String deletePost(HttpSession session,
                              @RequestParam long postId,
+                             @RequestParam long memberNo,
                              RedirectAttributes rttr) {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
         try {
-            adminCommunityService.deletePost(postId);
+            // adminCommunityService.deletePost(postId);
+            
+            //HYJ 26.07.28 관리자 게시글 삭제 반영하기 위해 작성자정보 전달
+            adminCommunityService.deletePost(postId, memberNo);
+            
             rttr.addFlashAttribute("successMsg", "게시글이 삭제되었습니다.");
             return "redirect:/admin/community/list?statusCd=DELETED";
         } catch (IllegalArgumentException e) {

@@ -15,4 +15,22 @@
 
 package com.petcare.petcare.main.banner.service;
 
-public class MainBannerServiceImpl implements MainBannerService {}
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.petcare.petcare.main.banner.mapper.MainBannerMapper;
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
+
+@Service
+public class MainBannerServiceImpl implements MainBannerService {
+    @Autowired 
+    MainBannerMapper mainBannerMapper;
+
+    // ── 사용자: 위치별 활성 배너 ──
+    @Override
+    public List<MainBannerVO> getBannersByPosition(String positionCd) {
+        return mainBannerMapper.selectActiveBannersByPosition(positionCd);
+    }
+}

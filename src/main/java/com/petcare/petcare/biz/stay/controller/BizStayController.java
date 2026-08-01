@@ -11,6 +11,7 @@
 
 package com.petcare.petcare.biz.stay.controller;
 
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +31,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.stay.service.BizStayService;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
 import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.settlement.service.StaySettlementService;
@@ -467,5 +470,137 @@ public class BizStayController extends BizBaseController {
 
         rttr.addFlashAttribute("msg", "객실이 삭제되었습니다.");
         return "redirect:/biz/stay/rooms";
+    }
+    //
+    // HYJ 26.07.29 ── 쿠폰 신청 목록 ──
+    //
+    @GetMapping({"/coupon", "/coupon/"})
+    public String couponList(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        model.addAttribute("couponList",
+                bizStayService.getCouponList(member.getMemberId()));
+        return "biz/stay/coupon";
+    }
+
+    // ── 쿠폰 신청 POST ──
+    @PostMapping("/coupon/apply")
+    public String applyCoupon(BizCouponVO vo,
+                              HttpSession session,
+                              RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            bizStayService.applyCoupon(member.getMemberId(), vo);
+            rttr.addFlashAttribute("msg", "쿠폰 승인 신청이 완료되었습니다.");
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "쿠폰 신청 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
+    }
+
+    // ── 쿠폰 수정 POST (PENDING 상태일 때만) ──
+    @PostMapping("/coupon/update")
+    public String updateCoupon(BizCouponVO vo,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            bizStayService.updateCoupon(member.getMemberId(), vo);
+            rttr.addFlashAttribute("msg", "쿠폰 정보가 수정되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인 대기 상태의 쿠폰만 수정할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "수정 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "수정 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
+    }
+
+    // ── 쿠폰 삭제 POST (PENDING 상태일 때만) ──
+    @PostMapping("/coupon/delete")
+    public String deleteCoupon(@RequestParam Long couponId,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            bizStayService.deleteCoupon(member.getMemberId(), couponId);
+            rttr.addFlashAttribute("msg", "쿠폰 신청이 삭제되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_PENDING".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인 대기 상태의 쿠폰만 삭제할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "삭제 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "삭제 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
+    }
+
+    //
+    //HYJ 26.07.31 배너신청
+    //
+    // 배너 신청 목록 페이지
+    @GetMapping("/banner")
+    public String bannerList(HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+
+        Long bizNo = bizStayService.getBizNo(biz.getMemberId());
+        List<MainBannerVO> bannerList = bizStayService.getBannerList(bizNo);
+        model.addAttribute("bannerList", bannerList);
+        model.addAttribute("bizPage", "banner");
+        return "biz/stay/banner";
+    }
+
+    // 배너 신청 폼 페이지
+    @GetMapping("/banner/form")
+    public String bannerForm(HttpSession session, Model model) {
+        if (getBizMember(session) == null) return "redirect:/login";
+        model.addAttribute("bizPage", "banner");
+        return "biz/stay/banner-form";
+    }
+
+    // 배너 신청 처리
+    @PostMapping("/banner")
+    public String bannerSubmit(@RequestParam String title,
+                                  @RequestParam(required = false) String linkUrl,
+                                  @RequestParam String positionCd,
+                                  @RequestParam String startDate,
+                                  @RequestParam String endDate,
+                                  @RequestParam(required = false) MultipartFile bannerImage,
+                                  HttpSession session,
+                                  RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+
+        try {
+            Long bizNo = bizStayService.getBizNo(biz.getMemberId());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+            MainBannerVO banner = new MainBannerVO();
+            banner.setBizNo(bizNo);
+            banner.setTitle(title);
+            banner.setLinkUrl(linkUrl);
+            banner.setPositionCd(positionCd);
+            banner.setStartDate(sdf.parse(startDate));
+            banner.setEndDate(sdf.parse(endDate));
+
+            bizStayService.applyBanner(banner, bannerImage);
+            rttr.addFlashAttribute("msg", "배너 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.");
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "배너 신청 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/banner";
     }
 }

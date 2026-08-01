@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.petcare.petcare.admin.biz.vo.AdminBizVO;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.file.vo.FileVO;
 
 public interface AdminBizService {
@@ -31,4 +32,15 @@ public interface AdminBizService {
     void approveBiz(Long bizNo);
 
     void rejectBiz(Long bizNo, String rejectReason);
+
+    //HYJ 26.07.29 쿠폰관리
+    List<BizCouponVO> getCouponListByStatus(String approvalStatus);
+
+    BizCouponVO getCouponDetail(Long couponId);
+
+    Map<String, Integer> getCouponStatusCounts();
+
+    void approveCoupon(Long couponId);
+
+    void rejectCoupon(Long couponId, String rejectReason);
 }

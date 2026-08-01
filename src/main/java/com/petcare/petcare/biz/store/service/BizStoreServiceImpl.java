@@ -29,7 +29,6 @@ import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.common.external.service.TossPaymentService;
-import com.petcare.petcare.biz.store.service.OrderCancelTxService;
 
 @Service
 public class BizStoreServiceImpl implements BizStoreService {

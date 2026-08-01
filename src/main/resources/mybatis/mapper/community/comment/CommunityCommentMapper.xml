@@ -109,6 +109,13 @@
     )
   </insert>
 
+  <!--HYJ 26.07.28 댓글작성회수 반영-->
+  <update id="updateMemberCommentCount" parameterType="string">
+    UPDATE TB_MEMBER
+    SET COMMENT_COUNT = NVL(COMMENT_COUNT, 0) + 1
+    WHERE MEMBER_ID = #{memberId}
+  </update>
+
   <select id="selectMemberNoByMemberId" resultType="long">
     SELECT MEMBER_NO
     FROM TB_MEMBER
@@ -129,6 +136,12 @@
     WHERE COMMENT_ID = #{commentId}
       AND NVL(IS_DELETED, 'N') = 'N'
   </update>
+
+  <!--HYJ 26.07.28 댓글삭제-->
+  <delete id="hardDeleteComment">
+    DELETE FROM TB_POST_COMMENT
+    WHERE COMMENT_ID = #{commentId}
+  </delete>
 
   <!-- 2026-07-14 박유정 — 댓글 본문 수정 (작성자 본인만 Service에서 검증) -->
   <update id="updateCommentBody">
