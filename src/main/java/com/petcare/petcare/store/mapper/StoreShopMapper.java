@@ -40,16 +40,17 @@ public interface StoreShopMapper {
 
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(offset, size) 추가
     //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
+    //지윤 26.07.30 수정: brand String -> List<String> (MyBatis foreach로 IN절 처리)
     List<StoreShopVO> selectProductList(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
                                          @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
-                                         @Param("brand") String brand,
+                                         @Param("brand") List<String> brand,
                                          @Param("sort") String sort, @Param("offset") int offset, @Param("size") int size);
 
     //지윤 26.07.06 페이지네이션용 전체 상품 개수 조회 (카테고리/검색 조건은 목록과 동일하게 적용)
     //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
     int selectProductCount(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
                             @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
-                            @Param("brand") String brand);
+                            @Param("brand") List<String> brand);
 
     //지윤 26.07.12 브랜드별 상품 수 집계 (카테고리/검색/가격 조건은 목록과 동일하게 적용, 브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능하게 함)
     List<BrandVO> selectBrandCounts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
@@ -125,13 +126,16 @@ public interface StoreShopMapper {
    //지윤 26.07.13 주문 저장 (결제 완료 시)
    //지윤 26.07.21 수정: 배송 요청사항(deliveryMemo) 파라미터 추가
    //지윤 26.07.23 수정: 사용한 회원쿠폰(memberCouponId) 파라미터 추가 (취소 시 복구용)
-   void insertOrder(@Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
-                      @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
-                      @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
-                      @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
-                      @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
-                      @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo,
-                      @Param("deliveryMemo") String deliveryMemo, @Param("memberCouponId") Long memberCouponId);
+   void insertOrder(@Param("orderId") Long orderId, @Param("orderNo") String orderNo, @Param("memberNo") Long memberNo,
+                  @Param("totalAmount") Integer totalAmount, @Param("deliveryFee") Integer deliveryFee,
+                  @Param("discountAmount") Integer discountAmount, @Param("pointUsed") Integer pointUsed,
+                  @Param("payAmount") Integer payAmount, @Param("recvName") String recvName,
+                  @Param("recvPhone") String recvPhone, @Param("zipCode") String zipCode,
+                  @Param("addr1") String addr1, @Param("addr2") String addr2, @Param("bizNo") Long bizNo,
+                  @Param("deliveryMemo") String deliveryMemo, @Param("memberCouponId") Long memberCouponId);
+
+//지윤 26.07.29 추가: 주문번호(ORDER_NO) 뒷자리로 쓸 다음 ORDER_ID를 미리 조회 (PK라 절대 안 겹침)
+Long selectNextOrderId();
 
     //지윤 26.07.13 방금 저장한 주문의 ORDER_ID 조회 (ORDER_NO는 UNIQUE라 이걸로 되짚어 조회)
     Long selectOrderIdByOrderNo(@Param("orderNo") String orderNo);

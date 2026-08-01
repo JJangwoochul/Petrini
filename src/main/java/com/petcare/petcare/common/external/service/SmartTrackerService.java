@@ -43,7 +43,7 @@ public class SmartTrackerService {
             for (JsonNode c : companies) {
                 java.util.Map<String, String> item = new java.util.LinkedHashMap<>();
                 item.put("id", c.path("Code").asText());
-                item.put("name", c.path("International").asText(c.path("Name").asText()));
+                item.put("name", c.path("Name").asText());
                 result.add(item);
             }
         } catch (Exception e) {

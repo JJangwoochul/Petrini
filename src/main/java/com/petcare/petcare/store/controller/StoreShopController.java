@@ -50,6 +50,10 @@ public class StoreShopController {
     @Autowired
     private StoreShopService storeShopService;
 
+    //지윤 26.07.29 추가: 배송지록 기본배송지 조회용
+    @Autowired
+    private com.petcare.petcare.mypage.address.service.MypageAddressService mypageAddressService;
+
     //지윤 26.07.23 추가: 결제승인(confirm) API 호출용
     @Autowired
     private com.petcare.petcare.common.external.service.TossPaymentService tossPaymentService;
@@ -72,11 +76,12 @@ public class StoreShopController {
     //     if (q != null && !q.isBlank()) {
     //         return "redirect:/search?q=" + java.net.URLEncoder.encode(q.trim(), java.nio.charset.StandardCharsets.UTF_8);}
     //     return "store/list";}
-    // ----- 수정 전 원본 -----
+    
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
     //지윤 26.07.06 카테고리 트리(species/category/age 3단계) 적용
-    // 우선순위: age > category > species (더 세부적으로 고른 게 있으면 그걸로 필터링)
-   //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
+    //우선순위: age > category > species (더 세부적으로 고른 게 있으면 그걸로 필터링)
+    //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
+    //지윤 26.07.30 수정: 브랜드 단일선택(String) -> 다중선택(List<String>) 체크박스로 변경
     @GetMapping({"", "/"})
     public String store(@RequestParam(required = false) String q,
                          @RequestParam(required = false, defaultValue = "5") Long species,
@@ -85,7 +90,7 @@ public class StoreShopController {
                          @RequestParam(required = false) String keyword,
                          @RequestParam(required = false) Integer minPrice,
                          @RequestParam(required = false) Integer maxPrice,
-                         @RequestParam(required = false) String brand,
+                         @RequestParam(required = false) List<String> brand,
                          @RequestParam(required = false, defaultValue = "popular") String sort,
                          @RequestParam(required = false, defaultValue = "1") int page,
                          Model model) {
@@ -189,7 +194,7 @@ public String payment(Model model) {
     model.addAttribute("tossApiKey", tossApiKey);
     return "store/payment";
 }*/
-//지윤 26.07.10 수정: GET -> POST, 쿠폰/포인트 서버 재검증 후 결제페이지에 실데이터 전달
+//지윤 26.07.30 수정: 배송비/쿠폰을 사업자(BIZ_NO)별로 계산하도록 전면 수정 (다중 사업자 주문 대응)
 @PostMapping("/payment")
 public String payment(@RequestParam(required = false) Long productId,
                        @RequestParam(required = false) Long optionId,
@@ -220,19 +225,33 @@ public String payment(@RequestParam(required = false) Long productId,
     for (CartItemVO item : orderItems) {
         productTotal += item.getPrice() * item.getQty();
     }
-    int deliveryFee = (productTotal == 0 || productTotal >= 50000) ? 0 : 3000;
+
+    //지윤 26.07.30 추가: 사업자(bizNo)별로 상품금액을 묶어서, 배송비도 사업자별로 5만원 기준 계산 후 합산
+    java.util.Map<Long, Integer> groupSubtotals = new java.util.LinkedHashMap<>();
+    for (CartItemVO item : orderItems) {
+        groupSubtotals.merge(item.getBizNo(), item.getPrice() * item.getQty(), Integer::sum);
+    }
+    int deliveryFee = 0;
+    for (int groupSubtotal : groupSubtotals.values()) {
+        deliveryFee += (groupSubtotal >= 50000) ? 0 : 3000;
+    }
 
     // 지윤 26.07.10 쿠폰 재검증: 본인이 실제 보유한(UNUSED) 쿠폰인지 확인
+    // 지윤 26.07.30 수정: 쿠폰은 발급한 사업자(BIZ_NO) 상품에만 적용, 최소주문금액도 그 사업자 몫 기준으로 검증
     int couponDiscount = 0;
     String couponName = null;
+    String couponBizNoStr = null;
     if (couponId != null && couponId > 0) {
         for (CouponVO c : storeShopService.getMemberCoupons(memberNo)) {
             if (c.getMemberCouponId().equals(couponId)) {
-                if (productTotal >= c.getMinOrderAmt()) {
+                Long couponBizNo = c.getBizNo() != null ? Long.valueOf(c.getBizNo()) : null;
+                int couponTargetAmt = groupSubtotals.getOrDefault(couponBizNo, 0);
+                if (couponTargetAmt >= c.getMinOrderAmt()) {
                     couponDiscount = "RATE".equals(c.getCouponType())
-                            ? productTotal * c.getDiscountValue() / 100
+                            ? couponTargetAmt * c.getDiscountValue() / 100
                             : c.getDiscountValue();
                     couponName = c.getCouponName();
+                    couponBizNoStr = c.getBizNo();
                 }
                 break;
             }
@@ -274,6 +293,7 @@ public String payment(@RequestParam(required = false) Long productId,
     orderTemp.setProductTotal(productTotal);
     orderTemp.setDeliveryFee(deliveryFee);
     orderTemp.setCouponMemberCouponId((couponId != null && couponId > 0) ? couponId : null);
+    orderTemp.setCouponBizNo(couponBizNoStr);
     orderTemp.setCouponDiscount(couponDiscount);
     orderTemp.setPointUsed((int) pointUsed);
     orderTemp.setTotalDiscount(totalDiscount);
@@ -478,10 +498,22 @@ if (memberInfo != null) {
     session.setAttribute("memberInfo", memberInfo);
 }
 model.addAttribute("memberPoint", heldPoint);
-model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
-model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
-model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
-model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
+
+//지윤 26.07.29 수정: 배송지록(TB_MEMBER_ADDRESS)에 기본배송지가 있으면 그걸 우선 사용, 없으면 기존처럼 회원정보(TB_MEMBER) 주소로 fallback
+com.petcare.petcare.mypage.address.vo.MypageAddressVO defaultAddr = mypageAddressService.getDefaultAddress(memberNo);
+if (defaultAddr != null) {
+    model.addAttribute("memberRecvName", defaultAddr.getRecvName());
+    model.addAttribute("memberPhone", defaultAddr.getRecvPhone());
+    model.addAttribute("memberZipCode", defaultAddr.getZipCode());
+    model.addAttribute("memberAddr1", defaultAddr.getAddr1());
+    model.addAttribute("memberAddr2", defaultAddr.getAddr2());
+} else {
+    model.addAttribute("memberRecvName", memberInfo != null ? memberInfo.getMemberName() : "");
+    model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
+    model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
+    model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
+    model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
+}
 
     // 바로구매로 들어온 경우: 상품 1개만 주문서에 넘김
     if (productId != null) {

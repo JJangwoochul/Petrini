@@ -87,6 +87,14 @@ public interface BizStoreService {
     //지윤 26.07.24 수정: courierCode 파라미터 추가 (택배사 API 연동용, null 허용 - orders.jsp는 아직 안 보냄)
     boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String courierCode, String trackingNo);
 
+    //지윤 26.07.27 추가: 배송조회(스마트택배 API) 결과 level==6(배송완료) 확인 시 자동으로 주문상태 DONE 처리
+    //이미 DONE이면 false 반환 (중복 처리 방지)
+    boolean autoCompleteDeliveryIfDone(Long orderId, Long bizNo);
+
+    //지윤 26.07.28 추가: 배송조회 시 level 2~5(이동중) 확인되면 PAID/READY인 주문을 SHIPPING으로 자동승격
+    //이미 SHIPPING 이상이면 false 반환 (중복/역행 방지)
+    boolean autoElevateToShippingIfNeeded(Long orderId, Long bizNo);
+
     //지윤 26.07.20 추가: 배송관리 목록 조회 (필터 적용됨, 지연여부 계산 포함)
     List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword);
 

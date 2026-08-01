@@ -218,7 +218,7 @@
         m.NICKNAME AS BUYER_NAME, m.PHONE AS BUYER_PHONE, m.EMAIL AS BUYER_EMAIL,
         o.RECV_NAME, o.RECV_PHONE, o.ZIP_CODE, o.ADDR1, o.ADDR2,
         p.PAY_METHOD, p.TOSS_PAYMENT_KEY,
-        d.COURIER_NAME, d.TRACKING_NO, d.DELIVERY_STATUS,
+        d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO, d.DELIVERY_STATUS,
         o.CLAIM_STATUS, o.CANCEL_REASON, o.REQUESTED_AT, o.REFUND_AMOUNT,
         o.MEMBER_NO, o.POINT_USED, o.MEMBER_COUPON_ID
     FROM TB_ORDER o
@@ -242,6 +242,37 @@
     UPDATE TB_ORDER
     SET ORDER_STATUS = #{orderStatus}
     WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo}
+</update>
+
+<!-- 지윤 26.07.27 추가: 배송조회 자동완료 - 이미 DONE인 주문은 WHERE절에서 걸려서 0건 -->
+<update id="autoCompleteOrderStatus">
+    UPDATE TB_ORDER
+    SET ORDER_STATUS = 'DONE'
+    WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND ORDER_STATUS != 'DONE'
+</update>
+
+<!-- 지윤 26.07.28 추가: PAID/READY인 주문만 SHIPPING으로 승격 (이미 SHIPPING 이상이면 0건, 역행 방지) -->
+<update id="autoElevateToShipping">
+    UPDATE TB_ORDER
+    SET ORDER_STATUS = 'SHIPPING'
+    WHERE ORDER_ID = #{orderId} AND BIZ_NO = #{bizNo} AND ORDER_STATUS IN ('PAID','READY')
+</update>
+
+<!-- 지윤 26.07.28 추가: 자동동기화 스케줄러(DeliveryAutoSyncScheduler, 기본 비활성화)가 순회할 대상 -->
+<select id="selectOrdersNeedingSync" resultType="map">
+    SELECT o.ORDER_ID AS ORDER_ID, o.BIZ_NO AS BIZ_NO, d.COURIER_CODE AS COURIER_CODE, d.TRACKING_NO AS TRACKING_NO
+    FROM TB_ORDER o
+    JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+    WHERE o.ORDER_STATUS NOT IN ('DONE','CANCEL')
+      AND d.COURIER_CODE IS NOT NULL
+      AND d.TRACKING_NO IS NOT NULL
+</select>
+
+<!-- 지윤 26.07.27 추가: 배송조회 자동완료 시 TB_ORDER_DELIVERY 상태만 같이 맞춰줌 -->
+<update id="updateDeliveryStatusOnly">
+    UPDATE TB_ORDER_DELIVERY
+    SET DELIVERY_STATUS = #{deliveryStatus}
+    WHERE ORDER_ID = #{orderId}
 </update>
 
 <!-- 지윤 26.07.22 추가: 취소신청 승인 (토스취소 성공 후 호출, ORDER_STATUS까지 CANCEL로 확정) -->
@@ -303,18 +334,33 @@
     SELECT COUNT(*) FROM TB_ORDER_DELIVERY WHERE ORDER_ID = #{orderId}
 </select>
 
+<!-- 2026/08/01 장우철 — TB_ORDER_DELIVERY.DELIVERY_FEE NOT NULL 대응: 주문 배송비 복사(없으면 0) -->
 <update id="updateDeliveryTimestamp">
     MERGE INTO TB_ORDER_DELIVERY d
     USING (SELECT #{orderId} AS ORDER_ID FROM DUAL) src
     ON (d.ORDER_ID = src.ORDER_ID)
     WHEN MATCHED THEN UPDATE SET d.${column} = NVL(d.${column}, SYSDATE)
-    WHEN NOT MATCHED THEN INSERT (DELIVERY_ID, ORDER_ID, BIZ_NO, DELIVERY_STATUS, ${column})
-        VALUES ((SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY), #{orderId}, #{bizNo}, 'READY', SYSDATE)
+    WHEN NOT MATCHED THEN INSERT (DELIVERY_ID, ORDER_ID, BIZ_NO, DELIVERY_STATUS, DELIVERY_FEE, ${column})
+        VALUES (
+            (SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY),
+            #{orderId}, #{bizNo}, 'READY',
+            NVL((SELECT o.DELIVERY_FEE FROM TB_ORDER o WHERE o.ORDER_ID = #{orderId}), 0),
+            SYSDATE
+        )
 </update>
 
+<!-- 2026/08/01 장우철 — INSERT 시에도 DELIVERY_FEE NOT NULL 맞춤 -->
 <insert id="insertOrderDelivery">
-    INSERT INTO TB_ORDER_DELIVERY (DELIVERY_ID, ORDER_ID, BIZ_NO, COURIER_NAME, COURIER_CODE, TRACKING_NO, DELIVERY_STATUS, REGISTERED_AT)
-    VALUES ((SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY), #{orderId}, #{bizNo}, #{courierName}, #{courierCode}, #{trackingNo}, #{deliveryStatus}, SYSDATE)
+    INSERT INTO TB_ORDER_DELIVERY (
+        DELIVERY_ID, ORDER_ID, BIZ_NO, COURIER_NAME, COURIER_CODE, TRACKING_NO,
+        DELIVERY_STATUS, DELIVERY_FEE, REGISTERED_AT
+    )
+    VALUES (
+        (SELECT NVL(MAX(DELIVERY_ID),0)+1 FROM TB_ORDER_DELIVERY),
+        #{orderId}, #{bizNo}, #{courierName}, #{courierCode}, #{trackingNo}, #{deliveryStatus},
+        NVL((SELECT o.DELIVERY_FEE FROM TB_ORDER o WHERE o.ORDER_ID = #{orderId}), 0),
+        SYSDATE
+    )
 </insert>
 
 <update id="updateOrderDelivery">
@@ -335,9 +381,10 @@
     LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
     WHERE o.BIZ_NO = #{bizNo}
       AND o.ORDER_STATUS IN ('READY','SHIPPING','DONE')
-    <if test="carrier != null and carrier != ''">
-        AND d.COURIER_NAME = #{carrier}
-    </if>
+    <!-- 지윤 26.07.29 수정: 드롭다운이 택배사 코드(예: 04)를 넘기는데 COURIER_NAME(이름)과 비교하고 있어서 항상 매칭 실패하던 버그 수정 -->
+   <if test="carrier != null and carrier != ''">
+    AND d.COURIER_CODE = #{carrier}
+   </if>
     <if test="statusCd != null and statusCd != ''">
         AND o.ORDER_STATUS = #{statusCd}
     </if>

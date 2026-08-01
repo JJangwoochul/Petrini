@@ -37,6 +37,9 @@ public interface MypageOrderService {
     //지윤 26.07.20 추가: 주문상세보기 1건 조회 (상품목록 포함, 본인 주문 아니면 null)
     MypageOrderVO getOrderDetail(Long memberNo, Long orderId);
 
+    //지윤 26.07.30 추가: 같은 결제(orderGroupId)로 묶인 사업자별 주문을 전부 모아서 반환 (상세보기 결제그룹 단위 표시용)
+    java.util.List<MypageOrderVO> getOrderGroupDetail(Long memberNo, Long orderId);
+
     //지윤 26.07.22 추가: 주문취소 신청 (성공하면 true, 조건 안 맞으면 false)
     boolean requestCancel(Long memberNo, Long orderId, String reason);
 

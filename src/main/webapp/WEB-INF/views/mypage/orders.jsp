@@ -37,10 +37,22 @@
             <p class="mp-empty" style="padding:40px 0;text-align:center;color:var(--text-muted)">주문 내역이 없습니다.</p>
         </c:when>
         <c:otherwise>
-            <c:forEach var="o" items="${orderList}">
+            <%-- 지윤 26.07.30 수정: 사업자별로 쪼개진 여러 TB_ORDER가 같은 결제(orderGroupId)면 카드 하나로 묶어서 보여줌.
+                 카드 안에서는 사업자(주문)별로 order-subgroup으로 다시 나눠, 상태뱃지/상세보기/액션버튼은 그 사업자 주문 기준 그대로 유지 --%>
+            <c:forEach var="o" items="${orderList}" varStatus="ovs">
+                <c:if test="${ovs.first || o.orderGroupId != orderList[ovs.index-1].orderGroupId}">
                 <div class="order-card">
                     <div class="order-card-head">
                         <span>${o.orderDate} 주문 <strong>#${o.orderNo}</strong></span>
+                        <%-- 지윤 26.07.30 수정: 사업자별로 쪼개져도 유저 입장에선 "결제 1건"이라, 주문번호/상세보기는 카드당 하나만 표시.
+                             어느 사업자 주문의 orderId를 넘겨도 상세페이지에서 같은 결제그룹 전체를 묶어서 보여줌 --%>
+                        <a href="${contextPath}/mypage/orders/detail?orderId=${o.orderId}" style="font-size:13px;color:var(--text-muted);text-decoration:none">주문상세보기 &gt;</a>
+                    </div>
+                </c:if>
+
+                    <div class="order-subgroup">
+                    <div class="order-subhead">
+                        <span>🏪 ${o.bizName}</span>
                         <div style="display:flex;align-items:center;gap:10px">
                             <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
                             <c:choose>
@@ -50,8 +62,6 @@
                                 <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
                                 <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
                             </c:choose>
-                            <%-- 지윤 26.07.20 추가: 주문상세보기 - 결제내역/배송지까지 자세히 보여주는 읽기전용 페이지로 이동 --%>
-                            <a href="${contextPath}/mypage/orders/detail?orderId=${o.orderId}" style="font-size:13px;color:var(--text-muted);text-decoration:none">주문상세보기 &gt;</a>
                         </div>
                     </div>
 
@@ -86,10 +96,13 @@
                                 <fmt:formatNumber value="${it.totalPrice}" pattern="#,###"/>원
                             </div>
                         </div>
-                        <%-- 지윤 26.07.20 추가: 상품별 액션 버튼 (교환/반품, 리뷰작성, 재구매). "배송조회"/"환불내역"은 주문 전체에 대한 거라 카드 하단에 그대로 둠 --%>
-                        <div class="order-item-actions" style="display:flex;justify-content:flex-end;gap:8px;padding:0 0 14px">
-                            <c:if test="${o.orderStatus == 'DONE'}">
-                                <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
+                       <div class="order-item-actions" style="display:flex;justify-content:flex-end;gap:8px;padding:0 0 14px">
+                       <%-- 지윤 26.07.29 수정: 카드 하단(order-card-foot)에 있던 배송조회 버튼을 교환/반품·재구매랑 같은 줄로 이동 --%>
+                       <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'DONE'}">
+                       <button class="btn-sm" onclick="trackDelivery(${o.orderId}, '${o.courierCode}', '${o.trackingNo}')">배송조회</button>
+                        </c:if>
+                       <c:if test="${o.orderStatus == 'DONE'}">
+                           <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
                                 <c:choose>
                                     <c:when test="${it.reviewed}">
                                         <button class="btn-sm" disabled>리뷰완료</button>
@@ -107,9 +120,7 @@
                          "교환/반품"/"리뷰작성"/"재구매"는 위 상품 줄 안으로 옮김 --%>
                     <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'CANCEL' || o.orderStatus == 'DONE'}">
                         <div class="order-card-foot">
-                            <c:if test="${o.orderStatus == 'SHIPPING'}">
-                                <button class="btn-sm" onclick="alert('배송조회 기능은 준비 중입니다.')">배송조회</button>
-                            </c:if>
+                        <%-- 지윤 26.07.29 수정: 배송조회 버튼은 order-item-actions(상품 줄)로 이동함, 여기선 제거 --%>
                             <c:if test="${o.orderStatus == 'CANCEL'}">
                                 <button class="btn-sm" onclick="alert('환불내역 기능은 준비 중입니다.')">환불내역</button>
                             </c:if>
@@ -129,7 +140,11 @@
                             </c:if>
                         </div>
                     </c:if>
+                    </div>
+
+                <c:if test="${ovs.last || o.orderGroupId != orderList[ovs.index+1].orderGroupId}">
                 </div>
+                </c:if>
             </c:forEach>
         </c:otherwise>
     </c:choose>
@@ -160,9 +175,11 @@
     <input type="hidden" name="rating" id="reviewFormRating">
 
     <textarea name="content" id="reviewModalContent" maxlength="500"
-              placeholder="상품은 어떠셨나요? 다른 분들에게 도움이 되는 후기를 남겨주세요."
-              oninput="document.getElementById('reviewCharCount').textContent = this.value.length"></textarea>
-    <div class="review-modal-counter"><span id="reviewCharCount">0</span>/500 <small style="color:var(--text-muted)">(50자 이상 작성 시 500P, 사진 첨부 시 1000P 적립)</small></div>
+          placeholder="상품은 어떠셨나요? 다른 분들에게 도움이 되는 후기를 남겨주세요."
+          oninput="onReviewContentInput(this)"></textarea>
+<div class="review-modal-counter"><span id="reviewCharCount">0</span>/500 <small style="color:var(--text-muted)">(50자 이상 작성 시 500P, 사진 첨부 시 1000P 적립)</small></div>
+<%-- 지윤 26.07.28 추가: 10자 미만일 때만 뜨는 실시간 경고 문구 --%>
+<div id="reviewMinLengthWarn" style="display:none; color:#E24B4A; font-size:12px; margin-top:4px;">최소 10자 이상 입력해 주세요.</div>
 
     <div class="review-modal-photo-section">
       <p class="review-modal-photo-label">사진 첨부 <span>(선택, 최대 5장)</span></p>
@@ -181,7 +198,21 @@
   </form>
 </div>
 
+<%-- 지윤 26.07.29 추가: 배송조회 결과 모달 (사업자센터 배송관리와 동일한 방식, 화면만 구매자용으로 간단하게) --%>
+<div id="trackModalBg" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:24px; max-width:480px; width:90%; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <strong style="font-size:16px;">실시간 배송조회</strong>
+      <button type="button" onclick="closeTrackModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#999;">&times;</button>
+    </div>
+    <div id="trackModalBody"></div>
+  </div>
+</div>
+
 <script>
+  //지윤 26.07.29 추가: 배송조회 fetch 호출에 필요한 contextPath JS 변수 선언 (누락되어 있었음)
+  var contextPath = '${contextPath}';
+
   //지윤 26.07.20 수정: 모달이 곧 form이라 hidden form 복사 로직 삭제, submit 직전 검증만 남김
   var reviewRating = 0;
 
@@ -202,6 +233,7 @@
 
     document.getElementById('reviewModalContent').value = '';
     document.getElementById('reviewCharCount').textContent = '0';
+    document.getElementById('reviewMinLengthWarn').style.display = 'none';
     document.getElementById('reviewPhotoInput').value = '';
     document.getElementById('reviewPhotoPreview').innerHTML = '';
     document.getElementById('reviewPhotoHint').textContent = '사진 선택';
@@ -247,13 +279,60 @@
     });
   }
 
+  function onReviewContentInput(el) {
+    document.getElementById('reviewCharCount').textContent = el.value.length;
+    //지윤 26.07.28 추가: 10자 미만일 때만 실시간으로 빨간 경고문구 표시
+    document.getElementById('reviewMinLengthWarn').style.display = (el.value.trim().length < 10) ? 'block' : 'none';
+  }
+
   function validateReviewForm() {
     if (reviewRating === 0) { alert('별점을 선택해주세요.'); return false; }
     var content = document.getElementById('reviewModalContent').value.trim();
     if (!content) { alert('리뷰 내용을 입력해주세요.'); return false; }
-    //지윤 26.07.23 추가: 50자 미만이면 등록 안 되게 미리 막음 (서버에서도 이중 체크함)
-    if (content.length < 50) { alert('리뷰는 50자 이상 작성해야 적립금이 지급됩니다.\n(현재 ' + content.length + '자)'); return false; }
+    //지윤 26.07.28 수정: 10자 미만이면 제출 자체를 막음 (이미 입력창 아래 빨간 문구로 안내되고 있어서 별도 alert 없음)
+    if (content.length < 10) { return false; }
+    //지윤 26.07.28 추가: 10~49자면 포인트 미지급 대상임을 confirm 팝업으로 안내, 확인해야만 제출 진행
+    if (content.length < 50) {
+      return confirm('50자 미만이라 포인트 지급 대상이 아닙니다.\n이대로 진행하시겠습니까?');
+    }
     return true;
+  }
+
+  //지윤 26.07.29 추가: 마이페이지 배송조회 - 사업자센터 delivery.jsp와 동일한 패턴 (levelLabel 매핑, 조회결과 표시)
+  var levelLabel = { 1: '배송준비중', 2: '집화완료', 3: '배송중', 4: '지점도착', 5: '배송출발', 6: '배송완료' };
+
+  function trackDelivery(orderId, courierCode, trackingNo) {
+    document.getElementById('trackModalBody').innerHTML = '<p style="text-align:center;color:#999;padding:20px 0">조회 중...</p>';
+    document.getElementById('trackModalBg').style.display = 'flex';
+
+    fetch(contextPath + '/mypage/orders/track?orderId=' + orderId + '&courierCode=' + encodeURIComponent(courierCode) + '&trackingNo=' + encodeURIComponent(trackingNo))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var box = document.getElementById('trackModalBody');
+        if (!data || data.status === false || data.result === 'N') {
+          box.innerHTML = '<p style="color:#E24B4A">배송 정보를 조회할 수 없습니다. (' + (data && data.msg ? data.msg : '알 수 없는 운송장번호') + ')</p>';
+          return;
+        }
+
+        var html = '<p style="font-weight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
+        if (data.trackingDetails && data.trackingDetails.length > 0) {
+          html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="border-bottom:1px solid #E4E6ED"><th style="text-align:left;padding:8px 4px">시각</th><th style="text-align:left;padding:8px 4px">위치</th><th style="text-align:left;padding:8px 4px">처리내용</th></tr></thead><tbody>';
+          data.trackingDetails.forEach(function (d) {
+            html += '<tr style="border-bottom:1px solid #F0F2F0"><td style="padding:8px 4px">' + (d.timeString || '-') + '</td><td style="padding:8px 4px">' + (d.where || '-') + '</td><td style="padding:8px 4px">' + (d.kind || '-') + '</td></tr>';
+          });
+          html += '</tbody></table>';
+        } else {
+          html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
+        }
+        box.innerHTML = html;
+      })
+      .catch(function () {
+        document.getElementById('trackModalBody').innerHTML = '<p style="color:#E24B4A">조회 중 오류가 발생했습니다.</p>';
+      });
+  }
+
+  function closeTrackModal() {
+    document.getElementById('trackModalBg').style.display = 'none';
   }
 </script>
 

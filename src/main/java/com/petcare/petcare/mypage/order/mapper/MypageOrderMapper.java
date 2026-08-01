@@ -19,6 +19,7 @@
 package com.petcare.petcare.mypage.order.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -45,6 +46,9 @@ public interface MypageOrderMapper {
     //지윤 26.07.20 추가: 주문상세보기 1건 (본인 주문 아니면 null)
     MypageOrderVO selectOrderDetail(@Param("orderId") Long orderId, @Param("memberNo") Long memberNo);
 
+    //지윤 26.07.30 추가: 같은 결제(TOSS_ORDER_ID)로 묶인 사업자별 주문 전체 조회
+    List<MypageOrderVO> selectOrdersByGroupId(@Param("groupId") String groupId, @Param("memberNo") Long memberNo);
+
     //지윤 26.07.22 추가: 주문취소 신청 (조건 안 맞으면 0건 UPDATE되어 반환)
     int requestCancel(@Param("orderId") Long orderId, @Param("memberNo") Long memberNo, @Param("reason") String reason);
 
@@ -59,4 +63,7 @@ public interface MypageOrderMapper {
     void insertPointEarnHistory(@Param("memberNo") Long memberNo, @Param("pointAmount") Integer pointAmount,
                                  @Param("balanceAfter") Integer balanceAfter, @Param("reasonCd") String reasonCd,
                                  @Param("refType") String refType, @Param("refId") Long refId);
+
+    // 지윤 26.07.30 추가: 자동확정 스케줄러가 순회할 대상 (배송완료 7일 경과 + 미확정)
+    List<Map<String, Object>> selectOrdersNeedingAutoConfirm();                             
 }

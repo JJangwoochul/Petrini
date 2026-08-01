@@ -436,11 +436,14 @@
     reader.readAsDataURL(file);
   });
 
+ //용품 상품등록안되는거 해결 26/7/30지윤
  function submitProduct() {
     var form = document.getElementById('prodForm');
     if (!form.checkValidity()) { form.reportValidity(); return; }
     //지윤 26.07.16 추가: disabled된 상태 드롭다운은 폼에 안 실려서 제출 직전 잠깐 풀어줌
     document.getElementById('pStatus').disabled = false;
+    //지윤 26.07.30 추가: pCategory도 disabled 상태면 categoryId가 통째로 안 실려서 서버에서 "파라미터 없음" 에러 남 -> 똑같이 풀어줌
+    document.getElementById('pCategory').disabled = false;
     var formData = new FormData(form);
     var url = contextPath + '/biz/store/products' + (editingId ? '/' + editingId : '');
     fetch(url, { method: 'POST', body: formData })

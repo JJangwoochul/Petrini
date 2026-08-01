@@ -261,6 +261,14 @@ public class BizStoreServiceImpl implements BizStoreService {
     //송장번호가 입력되면 배송상태를 자동으로 SHIPPING으로, 이미 배송정보 있으면 UPDATE 없으면 INSERT
     @Override
     public boolean updateOrderStatus(Long orderId, Long bizNo, String orderStatus, String courierName, String courierCode, String trackingNo) {
+        //지윤 26.07.28 수정: 송장번호가 입력됐는데 드롭다운에서 주문상태를 "배송중"으로 안 바꾸고 저장하면
+        //TB_ORDER.ORDER_STATUS(=READY)와 TB_ORDER_DELIVERY.DELIVERY_STATUS(=SHIPPING)가 서로 어긋나는 문제가 있었음.
+        //송장번호가 있으면, 사람이 드롭다운을 안 바꿔도 PAID/READY인 경우엔 자동으로 SHIPPING으로 승격시켜서 두 값이 항상 일치하도록 보정
+        if (trackingNo != null && !trackingNo.isBlank()
+                && ("PAID".equals(orderStatus) || "READY".equals(orderStatus))) {
+            orderStatus = "SHIPPING";
+        }
+    
         int updated = bizStoreMapper.updateOrderStatus(orderId, bizNo, orderStatus);
         if (updated == 0) return false;
 
@@ -285,6 +293,29 @@ public class BizStoreServiceImpl implements BizStoreService {
         }
         return true;
     }
+
+    //지윤 26.07.27 추가: 배송조회 API 호출 시점에만 동기화 (스마트택배 무료플랜 월 100건 제한이라 스케줄러 폴링 대신 이 방식 선택)
+    //autoCompleteOrderStatus가 이미 DONE인 건은 0건 UPDATE하므로 그 경우 false 반환 -> DELIVERED_AT 중복갱신 안 됨
+    @Override
+    public boolean autoCompleteDeliveryIfDone(Long orderId, Long bizNo) {
+        int updated = bizStoreMapper.autoCompleteOrderStatus(orderId, bizNo);
+        if (updated == 0) return false;
+        bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, "DELIVERED_AT");
+        bizStoreMapper.updateDeliveryStatusOnly(orderId, "DELIVERED");
+        return true;
+    }
+
+    //지윤 26.07.28 추가: 배송조회 시 level 2~5(이동중) 확인되면 PAID/READY인 주문을 SHIPPING으로 자동승격
+    //autoElevateToShipping이 이미 SHIPPING 이상인 건은 0건 UPDATE하므로 그 경우 false 반환 (역행 방지)
+    @Override
+    public boolean autoElevateToShippingIfNeeded(Long orderId, Long bizNo) {
+        int updated = bizStoreMapper.autoElevateToShipping(orderId, bizNo);
+        if (updated == 0) return false;
+        bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, "SHIPPING_AT");
+        bizStoreMapper.updateDeliveryStatusOnly(orderId, "SHIPPING");
+        return true;
+    }
+
     //지윤 26.07.20 추가: 배송관리 목록 조회 + 지연여부(3일 이상 SHIPPING) 자바에서 계산
     @Override
     public List<BizDeliveryVO> getDeliveryList(Long bizNo, String carrier, String statusCd, String keyword) {

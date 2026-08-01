@@ -40,7 +40,7 @@
   </div>
 
   <%-- 지윤 26.07.20 수정: id="sumReady" 등 빈 값(JS render()가 채우던 것) -> ${summary.READY} 등 Controller가 넘겨준 실제 집계값 --%>
-  <div class="dlv-summary">
+  <div class="dlv-summary" id="dlvSummaryBox">
     <div class="dlv-summary-card"><div class="label">배송준비</div><div class="val">${summary.READY}<span>건</span></div></div>
     <div class="dlv-summary-card"><div class="label">배송중</div><div class="val">${summary.SHIPPING}<span>건</span></div></div>
     <div class="dlv-summary-card"><div class="label">배송완료</div><div class="val">${summary.DONE}<span>건</span></div></div>
@@ -66,7 +66,7 @@
     </form>
   </div>
 
-  <div class="biz-card" style="margin-bottom:16px">
+  <div class="biz-card" style="margin-bottom:16px" id="dlvListCard">
     <div class="dlv-table-head">
       <%-- 지윤 26.07.20 수정: id="totalCount">0</span> (JS가 채우던 것) -> ${deliveryList.size()} 서버값 바로 출력 --%>
       <div class="biz-card-head" style="padding:20px 0 12px"><span>배송 목록</span><small>총 ${deliveryList.size()}건</small></div>
@@ -100,9 +100,10 @@
                 <td>${empty d.trackingNo ? '-' : d.trackingNo}</td>
                 <td>
                   <c:choose>
-                    <c:when test="${d.orderStatus == 'READY'}"><span class="bs-badge bs-empty">배송준비</span></c:when>
-                    <c:when test="${d.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-empty">배송중</span></c:when>
-                    <c:when test="${d.orderStatus == 'DONE'}"><span class="bs-badge bs-empty">배송완료</span></c:when>
+                    <%-- 지윤 26.07.29 수정: 전부 bs-empty(회색)였던 것 -> orders.jsp와 색상 완전히 통일 (READY=보라, SHIPPING=파랑, DONE=초록) --%>
+                    <c:when test="${d.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
+                    <c:when test="${d.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
+                    <c:when test="${d.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
                   </c:choose>
                   <%-- 지윤 26.07.20 수정: isDelayed(d) JS 함수 계산 -> Service에서 이미 계산해서 넣어준 d.delayed(boolean) 그대로 사용 --%>
                   <c:if test="${d.delayed}"><span class="bs-badge bs-cancel" style="margin-left:4px">지연</span></c:if>
@@ -111,12 +112,15 @@
                 <%-- 지윤 26.07.20 수정: onclick="openEdit('ORD-2026-0892')" (주문번호 문자열로 로컬 배열 검색)
                      -> onclick="openEdit(25, 'ORD-2026-0892', ...)" (진짜 ORDER_ID + 현재값들을 그대로 넘겨서 모달에 채움, AJAX 재조회 없이 바로 채움) --%>
                 <td>
-                  <button class="biz-btn" onclick="openEdit(${d.orderId}, '${d.orderNo}', '${d.orderStatus}', '${d.courierName}', '${d.courierCode}', '${d.trackingNo}')">${empty d.trackingNo ? '송장등록' : '수정'}</button>
-                  <%-- 지윤 26.07.24 추가: 실시간 배송조회 (송장번호+택배사코드 둘 다 있어야 조회 가능) --%>
-                  <c:if test="${not empty d.trackingNo and not empty d.courierCode}">
-                    <button class="biz-btn" onclick="trackDelivery('${d.courierCode}', '${d.trackingNo}')">배송조회</button>
-                  </c:if>
-                </td>
+  <button class="biz-btn" onclick="openEdit(${d.orderId}, '${d.orderNo}', '${d.orderStatus}', '${d.courierName}', '${d.courierCode}', '${d.trackingNo}')">${empty d.trackingNo ? '송장등록' : '수정'}</button>
+  <c:if test="${not empty d.trackingNo and not empty d.courierCode}">
+    <button class="biz-btn" onclick="trackDelivery(${d.orderId}, '${d.courierCode}', '${d.trackingNo}')">배송조회</button>
+  </c:if>
+  <%-- 지윤 26.07.27 추가: 배송완료 수동처리 (SHIPPING일 때만, 확인창 거쳐야 실행됨) --%>
+  <c:if test="${d.orderStatus == 'SHIPPING'}">
+    <button class="biz-btn" onclick="forceComplete(${d.orderId})">수동완료</button>
+  </c:if>
+</td>
 
               </tr>
             </c:forEach>
@@ -150,11 +154,11 @@
         <div class="biz-form-row">
           <label>배송상태<span class="req">*</span></label>
           <%-- 지윤 26.07.20 수정: value="ready" 등 -> value="READY" 등 실제 DB(TB_ORDER.ORDER_STATUS) 코드값으로 통일 --%>
-          <select id="eStatus">
-            <option value="READY">배송준비</option>
-            <option value="SHIPPING">배송중</option>
-            <option value="DONE">배송완료</option>
-          </select>
+          <%-- 지윤 26.07.27 수정: DONE(배송완료) 옵션 제거 - orders.jsp와 동일한 이유 (자동완료/수동완료 버튼으로만 처리) --%>
+<select id="eStatus">
+  <option value="READY">배송준비</option>
+  <option value="SHIPPING">배송중</option>
+</select>
         </div>
         <div class="biz-form-row">
           <label>택배사<span class="req">*</span></label>
@@ -308,42 +312,97 @@
   //지윤 26.07.24 추가: 실시간 배송조회 (스마트택배 API 호출 결과를 화면에 표시)
   var levelLabel = { 1: '배송준비중', 2: '집화완료', 3: '배송중', 4: '지점도착', 5: '배송출발', 6: '배송완료' };
 
-  function trackDelivery(courierCode, trackingNo) {
-    document.getElementById('trackResultBox').innerHTML = '<p style="text-align:center;color:#999">조회 중...</p>';
-    document.getElementById('bulkCard').style.display = 'none';
-    document.getElementById('editCard').style.display = 'none';
-    document.getElementById('trackCard').style.display = 'block';
-    document.getElementById('trackCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  function trackDelivery(orderId, courierCode, trackingNo) {
+  document.getElementById('trackResultBox').innerHTML = '<p style="text-align:center;color:#999">조회 중...</p>';
+  document.getElementById('bulkCard').style.display = 'none';
+  document.getElementById('editCard').style.display = 'none';
+  document.getElementById('trackCard').style.display = 'block';
+  document.getElementById('trackCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    fetch(contextPath + '/biz/store/delivery/track?courierCode=' + encodeURIComponent(courierCode) + '&trackingNo=' + encodeURIComponent(trackingNo))
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        var box = document.getElementById('trackResultBox');
-        if (!data || data.status === false || data.result === 'N') {
-          box.innerHTML = '<p style="color:#E24B4A">배송 정보를 조회할 수 없습니다. (' + (data && data.msg ? data.msg : '알 수 없는 운송장번호') + ')</p>';
-          return;
-        }
+  //지윤 26.07.27 수정: orderId 같이 전송 -> 서버에서 level==6(배송완료) 확인되면 그 시점에 주문상태 자동 DONE 처리됨
+  fetch(contextPath + '/biz/store/delivery/track?orderId=' + orderId + '&courierCode=' + encodeURIComponent(courierCode) + '&trackingNo=' + encodeURIComponent(trackingNo))
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      var box = document.getElementById('trackResultBox');
+      if (!data || data.status === false || data.result === 'N') {
+        box.innerHTML = '<p style="color:#E24B4A">배송 정보를 조회할 수 없습니다. (' + (data && data.msg ? data.msg : '알 수 없는 운송장번호') + ')</p>';
+        return;
+      }
 
-        var html = '<p style="font-weight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
-        if (data.trackingDetails && data.trackingDetails.length > 0) {
-          html += '<table class="biz-table"><thead><tr><th>시각</th><th>위치</th><th>처리내용</th></tr></thead><tbody>';
-          data.trackingDetails.forEach(function (d) {
-            html += '<tr><td>' + (d.timeString || '-') + '</td><td>' + (d.where || '-') + '</td><td>' + (d.kind || '-') + '</td></tr>';
-          });
-          html += '</tbody></table>';
-        } else {
-          html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
-        }
-        box.innerHTML = html;
-      })
-      .catch(function () {
-        document.getElementById('trackResultBox').innerHTML = '<p style="color:#E24B4A">조회 중 오류가 발생했습니다.</p>';
-      });
-  }
+      var html = '<p style="font-sweight:700;font-size:15px;margin-bottom:12px">현재 상태: ' + (levelLabel[data.level] || data.level) + '</p>';
+//지윤 26.07.28 수정: level==6일 때만 안내문구 뜨던 것 -> level 2~5(이동중)일 때도 자동승격 안내 추가
+if (data.level === 6) {
+  html += '<p style="color:#2BAB82;font-size:13px;margin-bottom:12px">✓ 실제 배송완료가 확인되어 주문상태가 자동으로 "배송완료"로 갱신되었습니다.</p>';
+} else if (data.level >= 2) {
+  html += '<p style="color:#2B7FE0;font-size:13px;margin-bottom:12px">✓ 배송 진행이 확인되어 주문상태가 자동으로 "배송중"으로 갱신되었을 수 있습니다.</p>';
+}
+if (data.trackingDetails && data.trackingDetails.length > 0) {
+  html += '<table class="biz-table"><thead><tr><th>시각</th><th>위치</th><th>처리내용</th></tr></thead><tbody>';
+  data.trackingDetails.forEach(function (d) {
+    html += '<tr><td>' + (d.timeString || '-') + '</td><td>' + (d.where || '-') + '</td><td>' + (d.kind || '-') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+} else {
+  html += '<p style="color:#999">아직 상세 배송 이력이 없습니다. 택배사가 상품을 인수하면 표시됩니다.</p>';
+}
+//지윤 26.07.28 수정: 새로고침 버튼도 level 2 이상이면(자동승격 가능성 있으면) 노출되도록 조건 확장
+if (data.level >= 2) {
+ html += '<button type="button" class="biz-btn-primary" onclick="refreshDeliveryList(this)" style="margin-top:8px">목록 새로고침</button>';
+}
+box.innerHTML = html;
+    })
+    .catch(function () {
+      document.getElementById('trackResultBox').innerHTML = '<p style="color:#E24B4A">조회 중 오류가 발생했습니다.</p>';
+    });
+}
 
-  function closeTrack() {
-    document.getElementById('trackCard').style.display = 'none';
-  }
+  //지윤 26.07.27 추가: 배송완료 수동처리 (확인창 필수, orders.jsp와 동일 서버 엔드포인트 재사용)
+function forceComplete(orderId) {
+  if (!confirm('이 처리는 보통 스마트택배 API로 자동으로 이뤄집니다.\n실제로 배송이 완료된 것이 맞습니까?')) return;
+
+  fetch(contextPath + '/biz/store/orders/' + orderId + '/force-complete', { method: 'POST' })
+    .then(function (res) { return res.text(); })
+    .then(function (result) {
+      if (result === 'OK') {
+        alert('배송완료로 처리되었습니다.');
+        location.reload();
+      } else {
+        alert('처리에 실패했습니다.');
+      }
+    });
+}
+
+//지윤 26.07.27 수정: 반복 클릭 방지용 disabled 제거 - 이 새로고침은 DB 재조회일 뿐 API 호출이 아니라서 여러 번 눌러도 안전함
+function refreshDeliveryList(btn) {
+  if (btn) { btn.textContent = '새로고침 중...'; }
+  fetch(location.href)
+    .then(function (res) { return res.text(); })
+    .then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      document.getElementById('dlvSummaryBox').innerHTML = doc.getElementById('dlvSummaryBox').innerHTML;
+      document.getElementById('dlvListCard').innerHTML = doc.getElementById('dlvListCard').innerHTML;
+      if (btn) { btn.textContent = '목록 새로고침'; }
+    })
+    .catch(function () {
+      if (btn) { btn.textContent = '목록 새로고침'; }
+      //지윤 26.07.28 수정: 서버가 꺼져있으면 15초 자동타이머가 계속 실패해서 alert가 반복적으로 뜨는 문제
+      //-> 사람이 버튼(btn 존재)을 직접 눌렀을 때만 alert, 자동 타이머(btn 없음)일 땐 콘솔에만 조용히 로그
+      if (btn) {
+        alert('목록 갱신 중 오류가 발생했습니다.');
+      } else {
+        console.log('자동 새로고침 실패 (서버 연결 안 됨) - 15초 후 재시도');
+      }
+    });
+}
+
+function closeTrack() {
+  document.getElementById('trackCard').style.display = 'none';
+}
+
+//지윤 26.07.28 추가: 15초마다 자동으로 요약카드+목록 새로고침 (스케줄러가 DB 바꾼 걸 화면에도 자동 반영)    --> 자동새로고침api 불러오는거 
+//setInterval(function () {
+  //refreshDeliveryList();
+ //}, 15000);
 </script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

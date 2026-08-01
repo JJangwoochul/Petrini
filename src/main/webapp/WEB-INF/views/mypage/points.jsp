@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="mypage" />
 <c:set var="sec" value="points" />
@@ -15,35 +16,63 @@
 <div class="mp-section active">
     <h2 class="mp-title">포인트 / 쿠폰</h2>
     <p class="mp-desc">포인트 적립·사용 내역과 보유 쿠폰을 관리하세요.</p>
-    <div class="point-summary">
-        <div class="point-summary-item">
-            <span class="ps-label">보유 포인트</span>
-            <span class="ps-val">1,200</span>
-            <span class="ps-unit">P</span>
-        </div>
-        <div class="point-summary-item">
-            <span class="ps-label">이번 달 적립</span>
-            <span class="ps-val">+350</span>
-            <span class="ps-unit">P</span>
-        </div>
-        <div class="point-summary-item">
-            <span class="ps-label">보유 쿠폰</span>
-            <span class="ps-val">2</span>
-            <span class="ps-unit">장</span>
-        </div>
+    <%-- 지윤 26.07.29 수정: 하드코딩(1,200 / +350) -> Controller가 넘긴 pointBalance/thisMonthEarned 실데이터로 교체 --%>
+<%-- 지윤 26.07.29 수정: 보유 쿠폰(2장 하드코딩) -> 마이홈에서 쓰던 countUsableCoupon 재사용해서 실데이터(couponCount)로 교체 --%>
+<div class="point-summary">
+    <div class="point-summary-item">
+        <span class="ps-label">보유 포인트</span>
+        <span class="ps-val"><fmt:formatNumber value="${pointBalance}" pattern="#,###"/></span>
+        <span class="ps-unit">P</span>
+    </div>
+    <div class="point-summary-item">
+        <span class="ps-label">이번 달 적립</span>
+        <span class="ps-val">+<fmt:formatNumber value="${thisMonthEarned}" pattern="#,###"/></span>
+        <span class="ps-unit">P</span>
+    </div>
+    <div class="point-summary-item">
+        <span class="ps-label">보유 쿠폰</span>
+        <span class="ps-val">${couponCount}</span>
+        <span class="ps-unit">장</span>
+    </div>
     </div>
     <div class="mp-tab-bar">
         <button class="mp-tab on">포인트 내역</button>
         <button class="mp-tab">쿠폰함</button>
     </div>
+    <%-- 지윤 26.07.29 수정: 하드코딩 4줄 -> Controller가 넘긴 pointHistory(실데이터) JSTL 렌더링으로 교체 --%>
     <div id="tab-points">
         <table class="mp-table">
             <thead><tr><th>날짜</th><th>내용</th><th>구분</th><th style="text-align:right">포인트</th></tr></thead>
             <tbody>
-                <tr><td>2025.06.20</td><td>로얄캐닌 사료 구매 적립</td><td><span class="badge-status badge-done">적립</span></td><td style="text-align:right;color:var(--primary-dark);font-weight:700">+489 P</td></tr>
-                <tr><td>2025.06.10</td><td>간식·장난감 구매 적립</td><td><span class="badge-status badge-done">적립</span></td><td style="text-align:right;color:var(--primary-dark);font-weight:700">+445 P</td></tr>
-                <tr><td>2025.05.15</td><td>웰컴 포인트 지급</td><td><span class="badge-status badge-done">적립</span></td><td style="text-align:right;color:var(--primary-dark);font-weight:700">+500 P</td></tr>
-                <tr><td>2025.05.28</td><td>주문 취소 차감</td><td><span class="badge-status badge-cancel">차감</span></td><td style="text-align:right;color:var(--accent);font-weight:700">-234 P</td></tr>
+                <c:choose>
+                    <c:when test="${empty pointHistory}">
+                        <tr><td colspan="4" style="text-align:center;color:#999;padding:24px 0">포인트 내역이 없습니다.</td></tr>
+                    </c:when>
+                    <c:otherwise>
+                        <c:forEach var="p" items="${pointHistory}">
+                            <tr>
+                                <td>${p.regDate}</td>
+                                <td>${p.content}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${p.pointType == 'EARN'}"><span class="badge-status badge-done">적립</span></c:when>
+                                        <c:when test="${p.pointType == 'REFUND'}"><span class="badge-status badge-done">환급</span></c:when>
+                                        <c:when test="${p.pointType == 'USE'}"><span class="badge-status badge-cancel">사용</span></c:when>
+                                        <c:otherwise><span class="badge-status">${p.pointType}</span></c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <c:choose>
+                                    <c:when test="${p.pointType == 'USE'}">
+                                        <td style="text-align:right;color:var(--accent);font-weight:700">-<fmt:formatNumber value="${p.pointAmount}" pattern="#,###"/> P</td>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <td style="text-align:right;color:var(--primary-dark);font-weight:700">+<fmt:formatNumber value="${p.pointAmount}" pattern="#,###"/> P</td>
+                                    </c:otherwise>
+                                </c:choose>
+                            </tr>
+                        </c:forEach>
+                    </c:otherwise>
+                </c:choose>
             </tbody>
         </table>
     </div>

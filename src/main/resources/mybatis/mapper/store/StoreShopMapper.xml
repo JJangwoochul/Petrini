@@ -42,9 +42,13 @@
 </sql>
 
 <!-- 지윤 26.07.12 브랜드 필터는 브랜드 카운트 집계 쿼리와 별개 적용해야 해서 productFilter와 분리 -->
+<!-- 지윤 26.07.30 수정: 단일값(=) -> 리스트 다중선택(IN) -->
 <sql id="brandFilter">
-    <if test="brand != null and brand != ''">
-        AND p.BRAND_NAME = #{brand}
+    <if test="brand != null and brand.size() > 0">
+        AND p.BRAND_NAME IN
+        <foreach collection="brand" item="b" open="(" separator="," close=")">
+            #{b}
+        </foreach>
     </if>
 </sql>
 
@@ -204,7 +208,7 @@
     ORDER BY q.QNA_ID DESC
 </select>
 
-<!-- 지윤 26.07.09 수정: 썸네일 DESCRIPTION -> TB_FILE로 변경 -->
+<!-- 지윤 26.07.30 수정: BIZ_NO/BIZ_NAME 추가해서 사업자별 그룹핑 가능하게, ORDER BY도 BIZ_NO 기준으로 변경(같은 사업자 상품끼리 붙어서 나오게) -->
 <select id="selectCartItems" resultType="com.petcare.petcare.store.vo.CartItemVO">
     SELECT
         ci.CART_ITEM_ID,
@@ -213,6 +217,8 @@
         ci.OPTION_ID,
         p.PRODUCT_NAME,
         p.BRAND_NAME,
+        p.BIZ_NO,
+        b.BIZ_NAME,
         f.FILE_URL          AS THUMBNAIL_URL,
         o.OPTION_COLOR,
         o.OPTION_SIZE,
@@ -222,6 +228,7 @@
     FROM TB_CART_ITEM ci
     JOIN TB_CART c ON c.CART_ID = ci.CART_ID
     JOIN TB_PRODUCT p ON p.PRODUCT_ID = ci.PRODUCT_ID
+    JOIN TB_BUSINESS b ON b.BIZ_NO = p.BIZ_NO
     LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = ci.OPTION_ID
     LEFT JOIN (
         SELECT REF_ID, FILE_URL,
@@ -230,10 +237,11 @@
         WHERE REF_TYPE = 'PRODUCT'
     ) f ON f.REF_ID = ci.PRODUCT_ID AND f.RN = 1
     WHERE c.MEMBER_NO = #{memberNo}
-    ORDER BY ci.CART_ITEM_ID
+    ORDER BY p.BIZ_NO, ci.CART_ITEM_ID
 </select>
 
 <!-- 지윤 26.07.09 장바구니에서 체크한 항목들로 주문페이지 이동 -->
+<!-- 지윤 26.07.30 수정: BIZ_NAME 추가, BIZ_NO순 정렬로 주문서에서도 사업자별 그룹핑 가능하게 -->
 <select id="selectCartItemsByIds" resultType="com.petcare.petcare.store.vo.CartItemVO">
     SELECT
         ci.CART_ITEM_ID,
@@ -243,6 +251,7 @@
         p.PRODUCT_NAME,
         p.BRAND_NAME,
         p.BIZ_NO,
+        b.BIZ_NAME,
         f.FILE_URL          AS THUMBNAIL_URL,
         o.OPTION_COLOR,
         o.OPTION_SIZE,
@@ -252,6 +261,7 @@
     FROM TB_CART_ITEM ci
 
     JOIN TB_PRODUCT p ON p.PRODUCT_ID = ci.PRODUCT_ID
+    JOIN TB_BUSINESS b ON b.BIZ_NO = p.BIZ_NO
     LEFT JOIN TB_PRODUCT_OPTION o ON o.OPTION_ID = ci.OPTION_ID
     LEFT JOIN (
         SELECT REF_ID, FILE_URL,
@@ -263,26 +273,31 @@
     <foreach collection="cartItemIds" item="id" open="(" separator="," close=")">
         #{id}
     </foreach>
+    ORDER BY p.BIZ_NO
 </select>
 
 <!-- 지윤 26.07.09 바로구매 상품 1개 조회 -->
 <select id="selectDirectOrderItem"
         resultType="com.petcare.petcare.store.vo.CartItemVO">
 
+<!-- 지윤 26.07.30 수정: BIZ_NAME 추가 -->
 SELECT
         p.PRODUCT_ID,
         #{optionId, jdbcType=NUMERIC} AS OPTION_ID,
         p.PRODUCT_NAME,
         p.BRAND_NAME,
         p.BIZ_NO,
+        b.BIZ_NAME,
         f.FILE_URL AS THUMBNAIL_URL,
         o.OPTION_COLOR,
         o.OPTION_SIZE,
         TO_NUMBER(p.SALE_PRICE) + NVL(o.ADD_PRICE, 0) AS PRICE,
         NVL(o.STOCK_QTY, (SELECT NVL(SUM(STOCK_QTY),0) FROM TB_PRODUCT_OPTION WHERE PRODUCT_ID = p.PRODUCT_ID)) AS STOCK_QTY
+    
     FROM TB_PRODUCT p
-
+    JOIN TB_BUSINESS b ON b.BIZ_NO = p.BIZ_NO
     LEFT JOIN TB_PRODUCT_OPTION o
+
         ON o.PRODUCT_ID = p.PRODUCT_ID
         AND o.OPTION_ID = #{optionId, jdbcType=NUMERIC}
     LEFT JOIN (
@@ -368,10 +383,12 @@ SELECT
 </select>
 
 <!-- 지윤 26.07.09 회원 보유쿠폰 목록 조회 (미사용 상태만) -->
+<!-- 지윤 26.07.30 수정: 실제 컬럼명이 BIZ_NO라서 그대로 사용 (자바 필드명도 bizNo로 통일함) -->
 <select id="selectMemberCoupons" resultType="com.petcare.petcare.store.vo.CouponVO">
     SELECT mc.MEMBER_COUPON_ID, c.COUPON_ID, c.COUPON_NAME, c.COUPON_TYPE,
-           TO_NUMBER(c.DISCOUNT_VALUE) AS DISCOUNT_VALUE,
-           TO_NUMBER(c.MIN_ORDER_AMT)  AS MIN_ORDER_AMT
+           c.DISCOUNT_VALUE,
+           c.MIN_ORDER_AMT,
+           c.BIZ_NO
     FROM TB_MEMBER_COUPON mc
     JOIN TB_COUPON c ON c.COUPON_ID = mc.COUPON_ID
     WHERE mc.MEMBER_NO = #{memberNo} AND mc.STATUS_CD = 'UNUSED'
@@ -398,18 +415,24 @@ SELECT
 
 <!-- 지윤 26.07.13 주문 저장 (반품/취소 관련 컬럼은 NULL 허용으로 DDL 변경해둠 -> INSERT 시 생략 가능) -->
 <!-- 2026/07/14 장우철 — REQUESTED_AT 등 취소·반품 컬럼은 NULL 허용(주문 생성 시 미삽입) -->
+<!-- 2026/08/01 장우철 — ORDER_DATE가 DATE 타입이라 TO_CHAR 문자열 INSERT → ORA-01861, SYSDATE로 변경 -->
 <insert id="insertOrder">
     INSERT INTO TB_ORDER (
         ORDER_ID, ORDER_NO, MEMBER_NO, ORDER_STATUS, TOTAL_AMOUNT, DELIVERY_FEE,
         DISCOUNT_AMOUNT, POINT_USED, PAY_AMOUNT, ORDER_DATE,
         RECV_NAME, RECV_PHONE, ZIP_CODE, ADDR1, ADDR2, DELIVERY_MEMO, BIZ_NO, MEMBER_COUPON_ID
     ) VALUES (
-        (SELECT NVL(MAX(ORDER_ID), 0) + 1 FROM TB_ORDER), #{orderNo}, #{memberNo}, 'PAID',
+        #{orderId}, #{orderNo}, #{memberNo}, 'PAID',
         #{totalAmount}, #{deliveryFee}, #{discountAmount}, #{pointUsed}, #{payAmount},
-        TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI'),
+        SYSDATE,
        #{recvName}, #{recvPhone}, #{zipCode}, #{addr1}, #{addr2}, #{deliveryMemo}, #{bizNo}, #{memberCouponId, jdbcType=NUMERIC}
     )
 </insert>
+
+<!-- 지윤 26.07.29 추가: 주문번호 뒷자리로 쓸 다음 ORDER_ID 미리 조회 (프로젝트 공통 PK 채번 규칙 재사용) -->
+<select id="selectNextOrderId" resultType="Long">
+    SELECT NVL(MAX(ORDER_ID), 0) + 1 FROM TB_ORDER
+</select>
 
 <select id="selectOrderIdByOrderNo" resultType="Long">
     SELECT ORDER_ID FROM TB_ORDER WHERE ORDER_NO = #{orderNo}
