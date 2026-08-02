@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.petcare.petcare.admin.cms.service.AdminCMSService;
 import com.petcare.petcare.admin.controller.AdminBaseController;
-import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
 import jakarta.servlet.http.HttpSession;
 

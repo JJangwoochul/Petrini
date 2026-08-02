@@ -130,11 +130,15 @@ document.querySelectorAll('.btn-approve').forEach(function(btn) {
         xhr.open('POST', '${contextPath}/admin/cms/banner/approve');
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
         xhr.onload = function() {
-            if (xhr.responseText === 'OK') {
+            // 디버깅용 — 실제 응답 확인
+            console.log('status:', xhr.status);
+            console.log('response:', xhr.responseText.substring(0, 200));
+            
+            if (xhr.status === 200 && xhr.responseText.trim() === 'OK') {
                 alert('승인되었습니다.');
                 location.reload();
             } else {
-                alert('처리 실패: ' + xhr.responseText);
+                alert('처리 실패 (status: ' + xhr.status + ')');
             }
         };
         xhr.send('bannerId=' + bannerId);

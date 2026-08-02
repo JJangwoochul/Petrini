@@ -479,17 +479,17 @@
             TITLE, 
             LINK_URL,
             POSITION_CD, 
+            FILE_ID,
             START_DATE, 
-            END_DATE, 
-            STATUS_CD
+            END_DATE 
         ) VALUES (
             #{bizNo}, 
             #{title}, 
             #{linkUrl},
             #{positionCd}, 
+            #{fileId},
             #{startDate}, 
-            #{endDate}, 
-            'PENDING'
+            #{endDate}
         )
     </insert>
 

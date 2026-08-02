@@ -34,7 +34,7 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${mail.smtp-from}")
+    @Value("${spring.mail.username}")
     private String from;
 
     public EmailService(JavaMailSender mailSender) {
