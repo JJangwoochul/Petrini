@@ -288,7 +288,8 @@ public class BizStayServiceImpl implements BizStayService {
 
     @Override
     public List<MainBannerVO> getBannerList(Long bizNo) {
-        return bizStayMapper.selectBannerList(bizNo);
+        List<MainBannerVO> result = bizStayMapper.selectBannerList(bizNo);
+        return result;
     }
 
     // ── 사업자: 배너 신청 (INSERT + 이미지 업로드) ──

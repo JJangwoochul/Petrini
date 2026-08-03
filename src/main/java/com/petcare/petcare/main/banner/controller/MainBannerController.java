@@ -36,8 +36,8 @@ public class MainBannerController {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     @GetMapping("/api/banners")
     @ResponseBody
-    public List<MainBannerVO> getActiveBanners(
-            @RequestParam(defaultValue = "MAIN_HERO") String position) {
-        return mainBannerService.getBannersByPosition(position);
+    public List<MainBannerVO> getActiveBanners(@RequestParam(defaultValue = "MAIN_HERO") String position) {
+        List<MainBannerVO> result = mainBannerService.getBannersByPosition(position);
+        return result;
     }
 }

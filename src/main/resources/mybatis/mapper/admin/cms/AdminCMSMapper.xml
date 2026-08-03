@@ -66,7 +66,7 @@
     <update id="updateBannerStatus" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         UPDATE  TB_BANNER
         SET     STATUS_CD = #{statusCd},
-                REJECT_REASON = #{rejectReason},
+                <if test="rejectReason != null">REJECT_REASON = #{rejectReason},</if>
                 MOD_DATE = SYSDATE
         WHERE   BANNER_ID = #{bannerId}
     </update>

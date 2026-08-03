@@ -31,6 +31,7 @@ public class MainBannerServiceImpl implements MainBannerService {
     // ── 사용자: 위치별 활성 배너 ──
     @Override
     public List<MainBannerVO> getBannersByPosition(String positionCd) {
-        return mainBannerMapper.selectActiveBannersByPosition(positionCd);
+        List<MainBannerVO> result = mainBannerMapper.selectActiveBannersByPosition(positionCd);
+        return result;
     }
 }

@@ -20,7 +20,7 @@
                             ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
                     FROM    TB_FILE
                     WHERE   REF_TYPE = 'BANNER'
-                ) f ON f.REF_ID = b.BANNER_ID AND f.RN = 1
+                ) f ON f.REF_ID = b.BIZ_NO AND f.RN = 1
     </sql>
 
     <!-- ─── 사용자: 위치별 활성 배너 조회 ─── -->
