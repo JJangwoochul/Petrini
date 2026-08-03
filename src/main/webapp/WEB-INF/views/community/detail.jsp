@@ -262,7 +262,12 @@
       <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=U" alt="댓글러">
       <div class="comment-body">
         <div class="comment-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-          <span class="comment-name">${cmt.nickname}</span>
+          <span class="comment-name">
+            <c:choose>
+              <c:when test="${cmt.isDeleted eq 'Y'}">삭제된 댓글</c:when>
+              <c:otherwise>${cmt.nickname}</c:otherwise>
+            </c:choose>
+          </span>
           <div class="comment-head-meta" style="display:flex;align-items:center;gap:8px;margin-left:auto">
             <span class="comment-date">
               <c:choose>
@@ -272,9 +277,8 @@
                 <c:otherwise>-</c:otherwise>
               </c:choose>
             </span>
-            <%-- 2026-07-28 HYJ — 관리자 권한 수정/삭제 버튼 --%>
-            <%-- <c:if test="${loginMemberNo != null && loginMemberNo == cmt.memberNo}"> --%>
-            <c:if test="${(loginMemberNo != null && loginMemberNo == cmt.memberNo) || loginMemberRole eq 'ADMIN'}">
+            <%-- 2026/08/03 장우철 — 삭제된 댓글은 수정/삭제 숨김 --%>
+            <c:if test="${cmt.isDeleted ne 'Y' && ((loginMemberNo != null && loginMemberNo == cmt.memberNo) || loginMemberRole eq 'ADMIN')}">
               <span class="comment-meta-sep" style="color:#999">·</span>
               <button type="button" class="comment-edit-btn"
                       onclick="toggleEditForm(${cmt.commentId})">수정</button>
@@ -289,18 +293,25 @@
             </c:if>
           </div>
         </div>
-        <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
-        <div id="editForm-${cmt.commentId}" class="edit-form">
-          <form method="post" action="${contextPath}/community/comment/update">
-            <input type="hidden" name="commentId" value="${cmt.commentId}">
-            <input type="hidden" name="postId" value="${post.postId}">
-            <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
-            <div class="comment-submit">
-              <button type="button" class="reply-btn" onclick="toggleEditForm(${cmt.commentId})">취소</button>
-              <button type="submit">저장</button>
+        <c:choose>
+          <c:when test="${cmt.isDeleted eq 'Y'}">
+            <div class="comment-text" style="color:var(--text-muted)">삭제된 댓글입니다.</div>
+          </c:when>
+          <c:otherwise>
+            <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
+            <div id="editForm-${cmt.commentId}" class="edit-form">
+              <form method="post" action="${contextPath}/community/comment/update">
+                <input type="hidden" name="commentId" value="${cmt.commentId}">
+                <input type="hidden" name="postId" value="${post.postId}">
+                <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
+                <div class="comment-submit">
+                  <button type="button" class="reply-btn" onclick="toggleEditForm(${cmt.commentId})">취소</button>
+                  <button type="submit">저장</button>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
+          </c:otherwise>
+        </c:choose>
         <div class="comment-actions">
           <%-- 2026/07/11 장우철 — LIFE: 답글은 병원 사업자 또는 질문자만 (canWriteReply) --%>
           <c:if test="${canWriteReply}">
@@ -327,7 +338,12 @@
         <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=R" alt="답글러">
         <div class="comment-body">
           <div class="comment-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-            <span class="comment-name">${reply.nickname}</span>
+            <span class="comment-name">
+              <c:choose>
+                <c:when test="${reply.isDeleted eq 'Y'}">삭제된 댓글</c:when>
+                <c:otherwise>${reply.nickname}</c:otherwise>
+              </c:choose>
+            </span>
             <div class="comment-head-meta" style="display:flex;align-items:center;gap:8px;margin-left:auto">
               <span class="comment-date">
                 <c:choose>
@@ -337,9 +353,7 @@
                   <c:otherwise>-</c:otherwise>
                 </c:choose>
               </span>
-              <%-- 2026-07-28 HYJ — 관리자 권한 수정/삭제 버튼 --%>
-              <%-- <c:if test="${loginMemberNo != null && loginMemberNo == reply.memberNo}"> --%>
-              <c:if test="${(loginMemberNo != null && loginMemberNo == reply.memberNo) || loginMemberRole eq 'ADMIN'}">
+              <c:if test="${reply.isDeleted ne 'Y' && ((loginMemberNo != null && loginMemberNo == reply.memberNo) || loginMemberRole eq 'ADMIN')}">
                 <span class="comment-meta-sep" style="color:#999">·</span>
                 <button type="button" class="comment-edit-btn"
                         onclick="toggleEditForm(${reply.commentId})">수정</button>
@@ -354,18 +368,25 @@
               </c:if>
             </div>
           </div>
-          <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
-          <div id="editForm-${reply.commentId}" class="edit-form">
-            <form method="post" action="${contextPath}/community/comment/update">
-              <input type="hidden" name="commentId" value="${reply.commentId}">
-              <input type="hidden" name="postId" value="${post.postId}">
-              <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
-              <div class="comment-submit">
-                <button type="button" class="reply-btn" onclick="toggleEditForm(${reply.commentId})">취소</button>
-                <button type="submit">저장</button>
+          <c:choose>
+            <c:when test="${reply.isDeleted eq 'Y'}">
+              <div class="comment-text" style="color:var(--text-muted)">삭제된 댓글입니다.</div>
+            </c:when>
+            <c:otherwise>
+              <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
+              <div id="editForm-${reply.commentId}" class="edit-form">
+                <form method="post" action="${contextPath}/community/comment/update">
+                  <input type="hidden" name="commentId" value="${reply.commentId}">
+                  <input type="hidden" name="postId" value="${post.postId}">
+                  <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
+                  <div class="comment-submit">
+                    <button type="button" class="reply-btn" onclick="toggleEditForm(${reply.commentId})">취소</button>
+                    <button type="submit">저장</button>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
+            </c:otherwise>
+          </c:choose>
         </div>
       </div>
     </c:forEach>

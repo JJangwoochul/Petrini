@@ -90,6 +90,11 @@ public interface CommunityPostMapper {
     // 2026-07-23 HYJ — TOWN/SHARE 유저 삭제 (즉시 물리 삭제)
     int hardDeletePostByUser(@Param("postId") long postId, @Param("memberNo") long memberNo);
 
+    // 2026/08/03 장우철 — 물리 삭제 전 자식 정리 (FK_PTN65_0058 TB_POST_REPORT 등)
+    int deleteReportsByPostId(long postId);
+
+    int deleteLikesByPostId(long postId);
+
     // 2026-07-23 HYJ — 게시글 연결 파일 삭제
     int deleteFilesByPostId(long postId);
 

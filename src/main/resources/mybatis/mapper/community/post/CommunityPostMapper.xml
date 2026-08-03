@@ -250,6 +250,18 @@
       AND BOARD_TYPE IN ('TOWN', 'SHARE')
   </delete>
 
+  <!-- 2026/08/03 장우철 — 글 물리 삭제 전 TB_POST_REPORT (FK_PTN65_0058) -->
+  <delete id="deleteReportsByPostId">
+    DELETE FROM TB_POST_REPORT
+    WHERE POST_ID = #{postId}
+  </delete>
+
+  <!-- 2026/08/03 장우철 — 글 물리 삭제 전 TB_POST_LIKE -->
+  <delete id="deleteLikesByPostId">
+    DELETE FROM TB_POST_LIKE
+    WHERE POST_ID = #{postId}
+  </delete>
+
   <!-- 2026-07-23 HYJ — 게시글에 연결된 파일 삭제 -->
   <delete id="deleteFilesByPostId">
     DELETE FROM TB_FILE

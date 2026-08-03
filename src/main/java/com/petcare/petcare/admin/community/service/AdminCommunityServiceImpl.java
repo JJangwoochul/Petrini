@@ -88,34 +88,57 @@ public class AdminCommunityServiceImpl implements AdminCommunityService {
     }
 
     // 2026-07-15 박유정 STEP 7 — 삭제 (STATUS_CD = DELETED)
-    // 2026/07/22 장우철 — 삭제 시 첨부 사진 로컬/GCS + TB_FILE 도 정리 (복구 시 이미지는 복원되지 않음)
+    // 2026/08/03 장우철 — LIFE: soft 삭제만 (댓글·사진은 7일 후 purge). TOWN/SHARE: 즉시 물리 삭제
     @Override
+    @Transactional
     public void deletePost(long postId) {
-        int updated = adminCommunityMapper.updatePostStatus(postId, "DELETED");
-        if (updated == 0) {
+        CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
+        if (existing == null) {
             throw new IllegalArgumentException("POST_NOT_FOUND");
         }
+
+        boolean isLife = existing.getBoardType() != null
+                && "LIFE".equalsIgnoreCase(existing.getBoardType().trim());
+        if (isLife) {
+            int updated = adminCommunityMapper.updatePostStatus(postId, "DELETED");
+            if (updated == 0) {
+                throw new IllegalArgumentException("POST_NOT_FOUND");
+            }
+            return;
+        }
+
+        Long authorNo = existing.getMemberNo();
+        if (authorNo == null) {
+            throw new IllegalStateException("DELETE_FAILED");
+        }
+        communityPostMapper.deleteReportsByPostId(postId);
+        communityPostMapper.deleteLikesByPostId(postId);
+        communityCommentService.hardDeleteCommentsByPostId(postId);
         communityPostService.deletePhotosByPostId(postId);
+        int result = communityPostMapper.hardDeletePostByUser(postId, authorNo);
+        if (result == 0) {
+            throw new IllegalStateException("DELETE_FAILED");
+        }
     }
 
     @Override
     @Transactional
     public void deletePost(long postId, long memberNo) {
-        // int updated = adminCommunityMapper.updatePostStatus(postId, "DELETED");
-        // if (updated == 0) {
-        //     throw new IllegalArgumentException("POST_NOT_FOUND");
-        // }
-        // communityPostService.deletePhotosByPostId(postId);
-        
-        //HYJ 26.07.28 수의사상담 soft삭제
         CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
-        boolean isLife = "LIFE".equalsIgnoreCase(existing.getBoardType());
+        if (existing == null) {
+            throw new IllegalArgumentException("POST_NOT_FOUND");
+        }
+
+        boolean isLife = existing.getBoardType() != null
+                && "LIFE".equalsIgnoreCase(existing.getBoardType().trim());
         int result;
         if (isLife) {
-            // LIFE — STATUS_CD='DELETED' (관리자와 동일, 7일 후 스케줄러가 물리 삭제)
+            // LIFE — STATUS_CD='DELETED' + DELETED_DATE, 댓글·사진은 7일 후 스케줄러 정리
             result = communityPostMapper.softDeletePostByUser(postId, memberNo);
         } else {
             // TOWN, SHARE — 즉시 물리 삭제
+            communityPostMapper.deleteReportsByPostId(postId);
+            communityPostMapper.deleteLikesByPostId(postId);
             communityCommentService.hardDeleteCommentsByPostId(postId);
             communityPostService.deletePhotosByPostId(postId);
             result = communityPostMapper.hardDeletePostByUser(postId, memberNo);
@@ -125,7 +148,6 @@ public class AdminCommunityServiceImpl implements AdminCommunityService {
             throw new IllegalStateException("DELETE_FAILED");
         }
 
-        //HYJ 26.07.28 관리자 게시글삭제 회수반영
         adminCommunityMapper.updateMemberAdminPostDelCount(memberNo);
     }
 

@@ -213,7 +213,12 @@
           <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=U" alt="댓글러">
           <div class="comment-body-box">
             <div class="comment-head">
-              <span class="comment-name">${cmt.nickname}</span>
+              <span class="comment-name">
+                <c:choose>
+                  <c:when test="${cmt.isDeleted eq 'Y'}">삭제된 댓글</c:when>
+                  <c:otherwise>${cmt.nickname}</c:otherwise>
+                </c:choose>
+              </span>
               <div class="comment-head-meta">
                 <span class="comment-date">
                   <c:choose>
@@ -223,7 +228,8 @@
                     <c:otherwise>-</c:otherwise>
                   </c:choose>
                 </span>
-                <c:if test="${loginMemberNo != null && loginMemberNo == cmt.memberNo}">
+                <%-- 2026/08/03 장우철 — 삭제된 댓글은 수정/삭제 숨김 --%>
+                <c:if test="${cmt.isDeleted ne 'Y' && loginMemberNo != null && loginMemberNo == cmt.memberNo}">
                   <span class="comment-meta-sep">·</span>
                   <button type="button" class="comment-edit-btn"
                           onclick="toggleEditForm(${cmt.commentId})">수정</button>
@@ -237,18 +243,25 @@
                 </c:if>
               </div>
             </div>
-            <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
-            <div id="editForm-${cmt.commentId}" class="edit-form">
-              <form method="post" action="${contextPath}/give/report/comment/update">
-                <input type="hidden" name="commentId" value="${cmt.commentId}">
-                <input type="hidden" name="postId" value="${report.postId}">
-                <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
-                <div class="comment-submit-row">
-                  <button type="button" class="reply-btn" onclick="toggleEditForm(${cmt.commentId})">취소</button>
-                  <button type="submit">저장</button>
+            <c:choose>
+              <c:when test="${cmt.isDeleted eq 'Y'}">
+                <div class="comment-text" style="color:var(--text-muted)">삭제된 댓글입니다.</div>
+              </c:when>
+              <c:otherwise>
+                <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
+                <div id="editForm-${cmt.commentId}" class="edit-form">
+                  <form method="post" action="${contextPath}/give/report/comment/update">
+                    <input type="hidden" name="commentId" value="${cmt.commentId}">
+                    <input type="hidden" name="postId" value="${report.postId}">
+                    <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
+                    <div class="comment-submit-row">
+                      <button type="button" class="reply-btn" onclick="toggleEditForm(${cmt.commentId})">취소</button>
+                      <button type="submit">저장</button>
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
+              </c:otherwise>
+            </c:choose>
             <div class="comment-actions">
               <button type="button" class="reply-btn" onclick="toggleReplyForm(${cmt.commentId})">↳ 답글</button>
             </div>
@@ -268,7 +281,12 @@
             <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=R" alt="답글러">
             <div class="comment-body-box">
               <div class="comment-head">
-                <span class="comment-name">${reply.nickname}</span>
+                <span class="comment-name">
+                  <c:choose>
+                    <c:when test="${reply.isDeleted eq 'Y'}">삭제된 댓글</c:when>
+                    <c:otherwise>${reply.nickname}</c:otherwise>
+                  </c:choose>
+                </span>
                 <div class="comment-head-meta">
                   <span class="comment-date">
                     <c:choose>
@@ -278,7 +296,7 @@
                       <c:otherwise>-</c:otherwise>
                     </c:choose>
                   </span>
-                  <c:if test="${loginMemberNo != null && loginMemberNo == reply.memberNo}">
+                  <c:if test="${reply.isDeleted ne 'Y' && loginMemberNo != null && loginMemberNo == reply.memberNo}">
                     <span class="comment-meta-sep">·</span>
                     <button type="button" class="comment-edit-btn"
                             onclick="toggleEditForm(${reply.commentId})">수정</button>
@@ -292,18 +310,25 @@
                   </c:if>
                 </div>
               </div>
-              <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
-              <div id="editForm-${reply.commentId}" class="edit-form">
-                <form method="post" action="${contextPath}/give/report/comment/update">
-                  <input type="hidden" name="commentId" value="${reply.commentId}">
-                  <input type="hidden" name="postId" value="${report.postId}">
-                  <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
-                  <div class="comment-submit-row">
-                    <button type="button" class="reply-btn" onclick="toggleEditForm(${reply.commentId})">취소</button>
-                    <button type="submit">저장</button>
+              <c:choose>
+                <c:when test="${reply.isDeleted eq 'Y'}">
+                  <div class="comment-text" style="color:var(--text-muted)">삭제된 댓글입니다.</div>
+                </c:when>
+                <c:otherwise>
+                  <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
+                  <div id="editForm-${reply.commentId}" class="edit-form">
+                    <form method="post" action="${contextPath}/give/report/comment/update">
+                      <input type="hidden" name="commentId" value="${reply.commentId}">
+                      <input type="hidden" name="postId" value="${report.postId}">
+                      <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
+                      <div class="comment-submit-row">
+                        <button type="button" class="reply-btn" onclick="toggleEditForm(${reply.commentId})">취소</button>
+                        <button type="submit">저장</button>
+                      </div>
+                    </form>
                   </div>
-                </form>
-              </div>
+                </c:otherwise>
+              </c:choose>
             </div>
           </div>
         </c:forEach>

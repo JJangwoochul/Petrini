@@ -442,7 +442,9 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     /**
      * 2026-07-23 HYJ — 게시글 삭제 (본인 글만)
-     * - LIFE(수의사 상담): STATUS_CD='DELETED' + DELETED_DATE (관리자 방식 통일, 7일 보관)
+     * - LIFE(수의사 상담): STATUS_CD='DELETED' + DELETED_DATE (유저/관리자 동일, 7일 보관 후 purge)
+     * - TOWN·SHARE: 즉시 물리 삭제
+     * 2026/08/03 장우철 — LIFE soft 삭제 시 댓글·사진은 유지, purge 시 일괄 정리
      * - TOWN/SHARE: 즉시 물리 삭제 (댓글 → 파일 → 게시글 DELETE)
      */
     @Override
@@ -478,6 +480,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             result = communityPostMapper.softDeletePostByUser(postId, existing.getMemberNo());
         } else {
             // TOWN, SHARE — 즉시 물리 삭제
+            // 2026/08/03 장우철 — 신고·좋아요 → 댓글 → 파일 → 게시글 (ORA-02292 FK_PTN65_0058 방지)
+            clearPostChildRecords(postId);
             communityCommentService.hardDeleteCommentsByPostId(postId);
             deletePhotosByPostId(postId);
             result = communityPostMapper.hardDeletePostByUser(postId, existing.getMemberNo());
@@ -514,6 +518,8 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
         int purged = 0;
         for (Long postId : expiredPostIds) {
+            // 2026/08/03 장우철 — 물리 삭제 전 신고·좋아요 정리
+            clearPostChildRecords(postId);
             communityCommentService.hardDeleteCommentsByPostId(postId);
             deletePhotosByPostId(postId);
             int result = communityPostMapper.hardDeleteExpiredPost(postId);
@@ -522,5 +528,11 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             }
         }
         return purged;
+    }
+
+    /** 2026/08/03 장우철 — TB_POST 자식(신고·좋아요) 선삭제 */
+    private void clearPostChildRecords(long postId) {
+        communityPostMapper.deleteReportsByPostId(postId);
+        communityPostMapper.deleteLikesByPostId(postId);
     }
 }

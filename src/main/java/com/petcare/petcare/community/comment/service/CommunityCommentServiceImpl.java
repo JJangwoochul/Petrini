@@ -15,7 +15,7 @@
  *
  * [deleteComment — 댓글 삭제]
  * 1. 작성자 본인 확인 (memberNo)
- * 2. softDeleteComment → IS_DELETED='Y'
+ * 2. softDeleteComment → IS_DELETED='Y' (대댓글은 유지, 화면은 '삭제된 댓글입니다')
  *
  * [updateComment — 댓글 수정] 2026-07-14
  * 1. 작성자 본인 확인 (memberNo)
@@ -79,19 +79,36 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
                 parent.getReplies().add(reply);
             }
         }
-        return parents;
+
+        // 2026/08/03 장우철 — 삭제된 부모는 살아 있는 대댓글이 있을 때만 노출
+        List<CommunityCommentVO> visible = new ArrayList<>();
+        for (CommunityCommentVO parent : parents) {
+            boolean parentDeleted = isDeleted(parent);
+            boolean hasActiveReply = false;
+            if (parent.getReplies() != null) {
+                for (CommunityCommentVO reply : parent.getReplies()) {
+                    if (!isDeleted(reply)) {
+                        hasActiveReply = true;
+                        break;
+                    }
+                }
+            }
+            if (!parentDeleted || hasActiveReply) {
+                visible.add(parent);
+            }
+        }
+        return visible;
     }
 
     @Override
     public int getCommentCount(long postId) {
-        int count = 0;
-        for (CommunityCommentVO parent : getCommentList(postId)) {
-            count++;
-            if (parent.getReplies() != null) {
-                count += parent.getReplies().size();
-            }
-        }
-        return count;
+        return communityCommentMapper.selectCommentCountByPostId(postId);
+    }
+
+    private boolean isDeleted(CommunityCommentVO comment) {
+        return comment != null
+                && comment.getIsDeleted() != null
+                && "Y".equalsIgnoreCase(comment.getIsDeleted().trim());
     }
 
     @Override
@@ -213,6 +230,9 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         if (comment == null || !Long.valueOf(postId).equals(comment.getPostId())) {
             throw new IllegalArgumentException("COMMENT_NOT_FOUND");
         }
+        if (isDeleted(comment)) {
+            throw new IllegalArgumentException("COMMENT_ALREADY_DELETED");
+        }
 
         Long loginMemberNo = lookupMemberNo(loginMember);
         if (loginMemberNo == null || !loginMemberNo.equals(comment.getMemberNo())) {
@@ -222,25 +242,17 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
             }
         }
 
-        //HYJ 26.07.28 수의사상담 댓글 soft삭제
-        // communityCommentMapper.softDeleteComment(commentId);
-        CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
-        boolean isLife = "LIFE".equalsIgnoreCase(existing.getBoardType());
-        int result;
-        if (isLife) {
-            // LIFE — STATUS_CD='DELETED' (관리자와 동일, 7일 후 스케줄러가 물리 삭제)
-            result = communityCommentMapper.softDeleteComment(commentId);
-        } else {
-            // TOWN, SHARE — 즉시 물리 삭제
-            result = communityCommentMapper.hardDeleteComment(commentId);
-        }
-
+        // 2026/08/03 장우철 — 게시판 공통 soft 삭제 (대댓글 유지, '삭제된 댓글입니다' 표시)
+        int result = communityCommentMapper.softDeleteComment(commentId);
         if (result == 0) {
             throw new IllegalStateException("DELETE_FAILED");
         }
 
         if ("ADMIN".equals(loginMember.getRole())) {
-            adminCommunityMapper.updateMemberAdminCommentDelCount(existing.getMemberNo());
+            CommunityPostVO existing = communityPostMapper.selectPostDetail(postId);
+            if (existing != null) {
+                adminCommunityMapper.updateMemberAdminCommentDelCount(existing.getMemberNo());
+            }
         }
     }
 
@@ -257,6 +269,9 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
         CommunityCommentVO comment = communityCommentMapper.selectCommentById(commentId);
         if (comment == null || !Long.valueOf(postId).equals(comment.getPostId())) {
             throw new IllegalArgumentException("COMMENT_NOT_FOUND");
+        }
+        if (isDeleted(comment)) {
+            throw new IllegalStateException("COMMENT_ALREADY_DELETED");
         }
 
         Long loginMemberNo = lookupMemberNo(loginMember);
