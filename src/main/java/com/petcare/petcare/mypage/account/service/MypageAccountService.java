@@ -19,7 +19,12 @@
 
 package com.petcare.petcare.mypage.account.service;
 
+import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
+
 public interface MypageAccountService {
+
+    // 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 조회
+    MypageAccountVO getMemberProfile(Long memberNo);
 
     /**
      * HYJ 26.07.29 회원 탈퇴 — 비밀번호 확인 후 STATUS_CD = 'WITHDRAWN'

@@ -389,6 +389,10 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         if (vo.getPhone() == null || !vo.getPhone().matches("^01[0-9]-\\d{4}-\\d{4}$")) {
             return "phone";
         }
+        // 2026-07-28 박유정 — 생년월일 필수 (join.jsp Step2와 동일)
+        if (vo.getBirthDate() == null || vo.getBirthDate().isBlank()) {
+            return "birth";
+        }
         if (!isAgreed(vo.getAgreeService()) || !isAgreed(vo.getAgreePrivacy())) {
             return "terms";
         }

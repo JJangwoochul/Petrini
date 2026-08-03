@@ -86,7 +86,7 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-        <!-- API 결과 캐싱 -->
+        <!-- 2026-07-06 박유정 — API 결과 캐싱 (CacheConfig @EnableCaching) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>

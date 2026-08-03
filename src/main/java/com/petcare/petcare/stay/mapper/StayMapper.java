@@ -68,6 +68,9 @@ public interface StayMapper {
     int deductMemberPointBalance(Map<String, Object> param);
     void insertPointHistory(Map<String, Object> param);
 
+    // 2026-07-28 박유정 — 숙소 소유 사업자 회원번호 (예약 알림용)
+    Long selectStayMemberNo(Long stayId);
+
     // HYJ 26.07.20 스케줄러 — 체크아웃 지난 CONFIRMED → DONE 일괄 변경
     int updateConfirmedToDone();
     // HYJ 26.07.28 스케줄러 — 30분 경과 PENDING → CANCEL 자동 취소

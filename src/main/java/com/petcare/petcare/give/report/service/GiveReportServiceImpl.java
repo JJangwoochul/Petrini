@@ -2,6 +2,7 @@
  * 역할: GiveReportService 구현체 (@Service)
  *
  * - 박유정 / 2026-07-06~07
+ * - 박유정 / 2026-07-29 — insertReport 주소 geocode → LOST_LAT/LNG (Kakao REST)
  * - 2026/07/22 장우철 — 사진 저장/삭제 gcs.enabled 분기 (로컬 ↔ GCS)
  *
  * [insertReport — 등록]
@@ -37,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.file.mapper.FileMapper;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.give.report.mapper.GiveReportMapper;
@@ -49,6 +51,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -72,6 +75,10 @@ public class GiveReportServiceImpl implements GiveReportService {
     @Autowired
     private FileMapper fileMapper;
 
+    // 2026-07-29 박유정 — 주소 → 위·경도 변환 (insertReport, 병원 BizHospital 저장과 동일 패턴)
+    @Autowired
+    private KakaoMapService kakaoMapService;
+
     private static final int MAX_PHOTOS = 5; // write.jsp 최대 5장과 동일
 
     // 2. 생성자 주입 
@@ -91,7 +98,15 @@ public class GiveReportServiceImpl implements GiveReportService {
         vo.setLostFeature(truncate(buildLostFeature(vo), 500));
         vo.setTags(truncate(buildTags(vo), 500));
         vo.setRegion(truncate(extractRegion(vo.getAddress()), 50));
-        // 3) 위도·경도 없으면 기본값 (지도 연동 전)
+        // 2026-07-29 박유정 — 주소 → LOST_LAT/LNG (Kakao REST geocode, 병원 저장과 동일)
+        if (vo.getAddress() != null && !vo.getAddress().isBlank()) {
+            Map<String, Double> coords = kakaoMapService.geocodeAddress(vo.getAddress());
+            if (coords != null) {
+                vo.setLostLat(coords.get("lat"));
+                vo.setLostLng(coords.get("lng"));
+            }
+        }
+        // 2026-07-29 박유정 — geocode·폼 hidden 모두 실패 시 서울시청 기본 좌표 (write.jsp 기본값과 동일)
         if (vo.getLostLat() == null) {
             vo.setLostLat(37.5665);
         }

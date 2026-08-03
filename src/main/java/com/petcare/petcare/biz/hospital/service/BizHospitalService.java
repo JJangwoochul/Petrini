@@ -37,6 +37,7 @@ import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 
 public interface BizHospitalService {
 
@@ -78,6 +79,11 @@ public interface BizHospitalService {
     List<HospitalReviewVO> getBizHospitalReviews(Long hospitalId) throws Exception;
 
     void saveReviewBizReply(Long hospitalId, Long reviewId, String bizReply) throws Exception;
+
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 (사업자→관리자)
+    void requestReviewDelete(Long hospitalId, Long bizNo, Long reviewId, String requestReason) throws Exception;
+
+    List<ReviewDeleteRequestVO> getBizReviewDeleteRequests(Long hospitalId, Long bizNo) throws Exception;
 
     // 2026/07/16 장우철 고도화작업 — 병원 스케줄 CRUD
     List<HospitalTreatTypeVO> getTreatTypeList(Long hospitalId) throws Exception;

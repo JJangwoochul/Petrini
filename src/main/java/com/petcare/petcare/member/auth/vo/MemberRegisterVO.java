@@ -32,8 +32,8 @@ public class MemberRegisterVO {
     private String zipcode;          // 우편번호 (TB_MEMBER.ZIP_CODE)
     private String addr1;            // 기본 주소 (TB_MEMBER.ADDR1)
     private String addr2;            // 상세 주소 (TB_MEMBER.ADDR2)
-    private String birthDate;        // 회원 생년월일 — TB_MEMBER 컬럼 없음, 1차 미저장
-    private String gender;           // 회원 성별 — TB_MEMBER 컬럼 없음, 1차 미저장
+    private String birthDate;        // 2026-07-28 박유정 — TB_MEMBER.BIRTH_DATE (yyyy-MM-dd)
+    private String gender;           // 2026-07-28 박유정 — TB_MEMBER.GENDER (M/F, 선택)
 
     // ── 2026/07/07 장우철 — TB_MEMBER_AGREEMENT + MARKETING_YN ──
 

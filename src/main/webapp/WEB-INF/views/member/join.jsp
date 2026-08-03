@@ -1128,6 +1128,9 @@
     fd.append('password', document.getElementById('password').value);
     fd.append('passwordConfirm', document.getElementById('passwordConfirm').value);
     fd.append('phone', document.getElementById('phone').value.trim());
+    // 2026-07-28 박유정 — 생년월일·성별 TB_MEMBER 저장 (BIRTH_DATE, GENDER)
+    fd.append('birthDate', document.getElementById('birthDate').value);
+    fd.append('gender', document.getElementById('gender').value);
     fd.append('zipcode', document.getElementById('zipcode').value);
     fd.append('addr1', document.getElementById('addr1').value);
     fd.append('addr2', document.getElementById('addr2').value);
@@ -1160,6 +1163,7 @@
             password_mismatch: '비밀번호가 일치하지 않습니다.',
             terms: '필수 약관에 동의해 주세요.',
             phone: '전화번호 형식을 확인해 주세요.',
+            birth: '생년월일을 입력해 주세요.',
             email: '이메일 형식을 확인해 주세요.',
             name: '이름을 입력해 주세요.'
           };

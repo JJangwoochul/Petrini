@@ -11,6 +11,8 @@
   5. comments(TB_POST_COMMENT) 표시 + POST /give/report/comment (parentId → 대댓글)
   6. POST /give/report/comment/delete — 본인 댓글 삭제
   7. POST /give/report/comment/update — 본인 댓글 수정
+
+  - 박유정 / 2026-07-29 — 발견 위치 카카오맵 (TB_POST LOST_LAT/LNG, kakaomap.jsp)
 --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
@@ -41,7 +43,8 @@
   .rd-section h3{font-size:14px;font-weight:800;color:var(--text-main);margin:0 0 12px}
   .rd-desc{font-size:14px;color:var(--text-sub);line-height:1.8;margin:0;border-left:3px solid var(--primary);padding-left:14px;white-space:pre-line}
   .rd-map{border-radius:var(--radius-sm);overflow:hidden;height:180px}
-  .rd-map img{width:100%;height:100%;object-fit:cover;display:block}
+  /* 2026-07-29 박유정 — 상세 발견 위치 카카오맵 영역 */
+  #kakao-map{width:100%;height:180px}
   .comment-input-wrap{display:flex;gap:10px;margin-bottom:18px}
   .comment-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--primary-light)}
   .comment-flex{flex:1}
@@ -168,8 +171,10 @@
 
     <div class="rd-section">
       <h3>발견 위치</h3>
+      <%-- 2026-07-29 박유정 — 저장된 LOST_LAT/LNG 카카오맵 마커 --%>
       <div class="rd-map">
-        <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=860&q=70&auto=format&fit=crop" alt="지도" onerror="this.src='https://placehold.co/860x180/EAF7F2/2BAB82?text=카카오맵+위치'">
+        <div id="kakao-map"></div>
+        <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
       </div>
     </div>
 

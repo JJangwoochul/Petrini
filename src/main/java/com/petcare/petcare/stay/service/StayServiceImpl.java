@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.petcare.petcare.common.external.service.KakaoMessageService;
 import com.petcare.petcare.common.external.service.TossPaymentService;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.stay.vo.StayPetVO;
 import com.petcare.petcare.stay.mapper.StayMapper;
@@ -50,6 +51,9 @@ public class StayServiceImpl implements StayService {
 
     @Autowired
     private TossPaymentService tossPaymentService;
+
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     @Override
     public List<StayVO> getStayList() {
@@ -230,6 +234,17 @@ public class StayServiceImpl implements StayService {
         payParam.put("tossOrderId", tossOrderId);
         payParam.put("payStatus", "DONE");
         stayMapper.insertPayment(payParam);
+
+        // 2026-07-28 박유정 — 결제 완료 시 사업자에게 예약 접수 알림
+        try {
+            Long stayId = resv.getTargetId() != null ? Long.parseLong(resv.getTargetId()) : null;
+            Long bizMemberNo = stayId != null ? stayMapper.selectStayMemberNo(stayId) : null;
+            String stayName = resv.getStayName() != null ? resv.getStayName() : "숙소";
+            mypageNotifyService.sendStayReserveToBizNotification(
+                    bizMemberNo, stayName, resv.getCheckinDate(), resv.getCheckoutDate(), resvId);
+        } catch (Exception e) {
+            log.warn("[Stay] 사업자 예약 알림 발송 실패 — resvId={}, 예약은 정상 처리됨", resvId, e);
+        }
 
         // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림 발송
         // 카카오 로그인 사용자만 (accessToken 있을 때) + 실패해도 결제는 정상 유지

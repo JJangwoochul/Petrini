@@ -247,7 +247,13 @@
                   </div>
                 </c:if>
                 <div class="sc-foot">
-                  <span class="sc-rooms">객실 ${s.roomCount}개</span>
+                  <span class="sc-rooms">
+                    객실 ${s.roomCount}개
+                    <%-- 2026-07-28 박유정 — TB_STAY 평균별점·리뷰수 목록 표시 --%>
+                    <c:if test="${s.avgRating != null}">
+                      · ★ ${s.avgRating} (${empty s.reviewCnt ? 0 : s.reviewCnt})
+                    </c:if>
+                  </span>
                   <c:choose>
                     <c:when test="${s.minPrice > 0}">
                       <div class="sc-price">1박 <strong><fmt:formatNumber value="${s.minPrice}" type="number"/>원</strong>~</div>

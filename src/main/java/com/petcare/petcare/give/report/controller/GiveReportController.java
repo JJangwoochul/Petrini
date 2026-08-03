@@ -27,6 +27,8 @@
  * 3. POST /give/report/comment/delete → IS_DELETED='Y' (작성자 본인)
  * 4. POST /give/report/comment/update → BODY 수정 (작성자 본인)
  *
+ * - 박유정 / 2026-07-29 — 발견 위치 카카오맵 (write·detail, KakaoMapService)
+ *
  * 연결
  * - Service: GiveReportService
  * - 상속: GiveBaseController
@@ -48,7 +50,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-
+import java.util.Collections;
 import com.petcare.petcare.community.comment.service.CommunityCommentService;
 import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.give.controller.GiveBaseController;
@@ -58,20 +60,26 @@ import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
 
+import com.petcare.petcare.common.external.service.KakaoMapService;
+
 @Controller("giveReportController")
 @RequestMapping("/give/report")
 public class GiveReportController extends GiveBaseController {
 
     private static final Logger log = LoggerFactory.getLogger(GiveReportController.class);
-
+    // 2026-07-29 박유정 — kakaoJsApiKey·mapLat·mapLng JSP 전달 (common/kakaomap.jsp)
+    private final KakaoMapService kakaoMapService;
     private final GiveReportService giveReportService;
     private final CommunityCommentService communityCommentService;
 
+    // 2026-07-29 박유정 — KakaoMapService 생성자 주입 (write·detail 지도)
     public GiveReportController(
             GiveReportService giveReportService,
-            CommunityCommentService communityCommentService) {
+            CommunityCommentService communityCommentService,
+            KakaoMapService kakaoMapService){ 
         this.giveReportService = giveReportService;
         this.communityCommentService = communityCommentService;
+        this.kakaoMapService = kakaoMapService;
     }
     //@GetMapping("/write")   // 주소창 / 링크 클릭 → 화면만 보여줌
     @GetMapping("/list")
@@ -90,6 +98,19 @@ public class GiveReportController extends GiveBaseController {
         if (report == null) {
             return "redirect:/give/report/list";
         }
+        // 2026-07-29 박유정 — 상세 지도: TB_POST LOST_LAT/LNG + 마커 라벨(region)
+        kakaoMapService.addMapAttributes(model, Collections.emptyList());
+        if (report.getLostLat() != null && report.getLostLng() != null) {
+            // 2026-07-29 박유정 — kakaomap.jsp 가 mapLat·mapLng 로 중심·마커 표시
+            model.addAttribute("mapLat", report.getLostLat());
+            model.addAttribute("mapLng", report.getLostLng());
+            String mapLabel = report.getRegion();
+            if (mapLabel == null || mapLabel.isBlank()) {
+                mapLabel = "발견 위치";
+            }
+            // 2026-07-29 박유정 — bizName = 마커 위 라벨 (병원 지도와 kakaomap.jsp 공통 속성명)
+            model.addAttribute("bizName", mapLabel);
+        }
         MemberVO member = getMemberOrNull(session);
         List<CommunityCommentVO> comments = communityCommentService.getCommentList(id);
         model.addAttribute("report", report);
@@ -104,11 +125,13 @@ public class GiveReportController extends GiveBaseController {
         return "give/report/detail";
     }
 
+    // 2026-07-29 박유정 — 글작성 지도: kakaoJsApiKey·mapLat·mapLng JSP 전달
     @GetMapping("/write")
-    public String reportWrite(HttpSession session) {
+    public String reportWrite(HttpSession session, Model model) {
         if (getMemberOrNull(session) == null) {
             return "redirect:/login?redirect=/give/report/write";
         }
+        kakaoMapService.addMapAttributes(model, Collections.emptyList());
         return "give/report/write";
     }
 
@@ -311,5 +334,6 @@ public class GiveReportController extends GiveBaseController {
         }
         return null;
     }
+    
 }
 

@@ -23,8 +23,13 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
+
 @Mapper
 public interface MypageAccountMapper {
+
+    // 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 조회
+    MypageAccountVO selectMemberProfile(@Param("memberNo") Long memberNo);
 
     // HYJ 26.07.29 회원 탈퇴
 

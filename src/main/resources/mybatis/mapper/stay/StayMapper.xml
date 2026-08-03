@@ -24,6 +24,14 @@
                S.LAT,
                S.LNG,
                S.FACILITIES,
+               (SELECT ROUND(AVG(R.RATING), 1)
+                  FROM TB_REVIEW R
+                 WHERE R.REVIEW_TYPE = 'STAY'
+                   AND R.TARGET_ID = S.STAY_ID) AS avgRating,
+               (SELECT COUNT(*)
+                  FROM TB_REVIEW R
+                 WHERE R.REVIEW_TYPE = 'STAY'
+                   AND R.TARGET_ID = S.STAY_ID) AS reviewCnt,
                NVL(R.MIN_PRICE, 0) AS minPrice,
                NVL(R.ROOM_CNT,  0) AS roomCount,
                (SELECT   F.FILE_URL
@@ -54,6 +62,14 @@
                S.LAT,
                S.LNG,
                S.FACILITIES,
+               (SELECT ROUND(AVG(R.RATING), 1)
+                  FROM TB_REVIEW R
+                 WHERE R.REVIEW_TYPE = 'STAY'
+                   AND R.TARGET_ID = S.STAY_ID) AS avgRating,
+               (SELECT COUNT(*)
+                  FROM TB_REVIEW R
+                 WHERE R.REVIEW_TYPE = 'STAY'
+                   AND R.TARGET_ID = S.STAY_ID) AS reviewCnt,
                NVL(R.MIN_PRICE, 0) AS minPrice,
                NVL(R.ROOM_CNT,  0) AS roomCount,
                (SELECT   F.FILE_URL
@@ -113,7 +129,15 @@
                CHECK_IN,
                CHECK_OUT,
                DESCRIPTION,
-               PET_FEE
+               PET_FEE,
+               (SELECT ROUND(AVG(R.RATING), 1)
+                  FROM TB_REVIEW R
+                 WHERE R.REVIEW_TYPE = 'STAY'
+                   AND R.TARGET_ID = STAY_ID) AS avgRating,
+               (SELECT COUNT(*)
+                  FROM TB_REVIEW R
+                 WHERE R.REVIEW_TYPE = 'STAY'
+                   AND R.TARGET_ID = STAY_ID) AS reviewCnt
           FROM TB_STAY
          WHERE STAY_ID = #{stayId}
     </select>
@@ -305,6 +329,11 @@
     <!-- HYJ 26.07.21 회원 보유 포인트 조회 -->
     <select id="selectMemberPointBalance" parameterType="long" resultType="long">
         SELECT NVL(POINT_BALANCE, 0) FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}
+    </select>
+
+    <!-- 2026-07-28 박유정 — 숙소 소유 사업자 회원번호 (예약 알림용) -->
+    <select id="selectStayMemberNo" parameterType="long" resultType="long">
+        SELECT MEMBER_NO FROM TB_STAY WHERE STAY_ID = #{stayId}
     </select>
 
     <!-- HYJ 26.07.21 회원 포인트 차감 -->

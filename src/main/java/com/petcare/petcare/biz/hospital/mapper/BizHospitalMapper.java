@@ -33,6 +33,8 @@ import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.MedicalRecordVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 
+import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
+
 
 @Mapper
 public interface BizHospitalMapper {
@@ -87,7 +89,18 @@ public interface BizHospitalMapper {
                              @Param("reviewId") Long reviewId,
                              @Param("bizReply") String bizReply) throws Exception;
 
-    // 2026/07/16 장우철 고도화작업 — 병원 스케줄 (유형·의사·규칙·예외)
+    // 2026-07-24 박유정 — 리뷰 삭제 요청 INSERT
+    int insertReviewDeleteRequest(ReviewDeleteRequestVO vo) throws Exception;
+
+    // 2026-07-24 박유정 — 동일 리뷰 PENDING 중복 요청 방지
+    int countPendingReviewDeleteRequest(@Param("reviewId") Long reviewId,
+                                        @Param("bizNo") Long bizNo) throws Exception;
+
+    // 2026-07-24 박유정 — 사업자 리뷰관리 삭제요청 탭 목록
+    List<ReviewDeleteRequestVO> selectBizReviewDeleteRequests(@Param("hospitalId") Long hospitalId,
+                                                              @Param("bizNo") Long bizNo) throws Exception;
+
+    // 2026/07/16 ?μ슦泥?怨좊룄?붿옉????蹂묒썝 ?ㅼ?以?(?좏삎쨌?섏궗쨌洹쒖튃쨌?덉쇅)
     List<HospitalTreatTypeVO> selectTreatTypeList(@Param("hospitalId") Long hospitalId) throws Exception;
     HospitalTreatTypeVO selectTreatType(@Param("hospitalId") Long hospitalId,
                                         @Param("treatTypeId") Long treatTypeId) throws Exception;
@@ -104,12 +117,12 @@ public interface BizHospitalMapper {
     int deleteDoctor(@Param("hospitalId") Long hospitalId,
                      @Param("doctorId") Long doctorId) throws Exception;
 
-    // 2026/07/16 장우철 고도화작업 — 병원 예약 시작 간격
+    // 2026/07/16 ?μ슦泥?怨좊룄?붿옉????蹂묒썝 ?덉빟 ?쒖옉 媛꾧꺽
     Integer selectResvIntervalMin(@Param("hospitalId") Long hospitalId) throws Exception;
     int updateResvIntervalMin(@Param("hospitalId") Long hospitalId,
                               @Param("intervalMin") Integer intervalMin) throws Exception;
 
-    // 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 예외만 유지
+    // 2026/07/16 ?μ슦泥?怨좊룄?붿옉????RESV_RULE ?쒓굅, ?덉쇅留??좎?
     List<HospitalResvExceptionVO> selectResvExceptionList(@Param("hospitalId") Long hospitalId,
                                                           @Param("fromDate") String fromDate,
                                                           @Param("toDate") String toDate) throws Exception;

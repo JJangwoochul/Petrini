@@ -242,7 +242,8 @@
           🎉 리뷰 작성 시 결제 금액의 3% (<fmt:formatNumber value="${reservation.totalAmount * 0.03}" pattern="#,###" maxFractionDigits="0"/>P) 적립!
         </p>
       </c:if>
-      <form method="post" action="${contextPath}/mypage/reserve/stay-review">
+      <form method="post" action="${contextPath}/mypage/reserve/stay-review"
+            onsubmit="var b=this.querySelector('.btn-review'); if(b.disabled)return false; b.disabled=true; b.textContent='등록 중...'; return true;">
         <input type="hidden" name="resvId" value="${reservation.resvId}">
         <div class="rd-stars">
           <label><input type="radio" name="rating" value="5" checked> ★5</label>
@@ -257,6 +258,7 @@
     </div>
   </c:if>
   <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'DONE' and reservation.reviewedYn eq 'Y'}">
+    <%-- 2026-07-28 박유정 — 숙소 리뷰 포인트 적립 완료 안내 --%>
     <p style="font-size:14px;color:#166534;margin-bottom:16px">이 예약에 대한 리뷰를 작성하셨습니다. (포인트 적립 완료)</p>
   </c:if>
 

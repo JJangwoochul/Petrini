@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="adminPage"   value="dashboard" />
 <%@ include file="/WEB-INF/views/admin/common/header.jsp" %>
@@ -12,11 +13,11 @@
             <p class="adm-page-desc">PetCare 플랫폼 운영 현황을 한눈에 확인하세요.</p>
         </div>
         <div class="adm-page-actions">
-            <span style="font-size:13px;color:#999">2025.06.26 기준</span>
+            <span style="font-size:13px;color:#999">오늘 기준</span>
         </div>
     </div>
 
-    <%-- 통계 카드 4종 (ADMIN-01) --%>
+    <%-- 2026-07-30 박유정 — Phase 2: 상단 통계 카드 4종 (summary.todayXxx 실데이터) --%>
     <div class="adm-stats">
         <div class="adm-stat-card">
             <div class="adm-stat-icon blue">
@@ -24,8 +25,9 @@
             </div>
             <div class="adm-stat-body">
                 <div class="adm-stat-label">오늘 신규 가입자</div>
-                <div class="adm-stat-val">24<span class="adm-stat-unit">명</span></div>
-                <div class="adm-stat-diff up">▲ 어제 대비 +8명</div>
+                <%-- 2026-07-30 박유정 — TB_MEMBER.JOIN_DATE = 오늘 --%>
+                <div class="adm-stat-val">${summary.todayNewMemberCount}<span class="adm-stat-unit">명</span></div>
+                <div class="adm-stat-diff up">오늘 기준 실시간 집계</div>
             </div>
         </div>
         <div class="adm-stat-card">
@@ -34,8 +36,9 @@
             </div>
             <div class="adm-stat-body">
                 <div class="adm-stat-label">오늘 주문 수</div>
-                <div class="adm-stat-val">138<span class="adm-stat-unit">건</span></div>
-                <div class="adm-stat-diff up">▲ 어제 대비 +23건</div>
+                <%-- 2026-07-30 박유정 — TB_ORDER.ORDER_DATE = 오늘 --%>
+                <div class="adm-stat-val">${summary.todayOrderCount}<span class="adm-stat-unit">건</span></div>
+                <div class="adm-stat-diff up">오늘 기준 실시간 집계</div>
             </div>
         </div>
         <div class="adm-stat-card">
@@ -44,8 +47,13 @@
             </div>
             <div class="adm-stat-body">
                 <div class="adm-stat-label">오늘 매출</div>
-                <div class="adm-stat-val">4.2<span class="adm-stat-unit">백만원</span></div>
-                <div class="adm-stat-diff up">▲ 어제 대비 +12%</div>
+                <%-- 2026-07-30 박유정 — 오늘 매출 원 → 백만원 (÷1000000) --%>
+                <div class="adm-stat-val">
+                    <fmt:formatNumber value="${summary.todaySalesAmount / 1000000}"
+                                      maxFractionDigits="1" minFractionDigits="0" />
+                    <span class="adm-stat-unit">백만원</span>
+                </div>
+                <div class="adm-stat-diff up">오늘 기준 실시간 집계</div>
             </div>
         </div>
         <div class="adm-stat-card">
@@ -54,20 +62,25 @@
             </div>
             <div class="adm-stat-body">
                 <div class="adm-stat-label">미처리 예약</div>
-                <div class="adm-stat-val">17<span class="adm-stat-unit">건</span></div>
-                <div class="adm-stat-diff down">▼ 처리 필요</div>
+                <%-- 2026-07-30 박유정 — TB_RESERVATION PENDING + CONFIRMED --%>
+                <div class="adm-stat-val">${summary.pendingReservationCount}<span class="adm-stat-unit">건</span></div>
+                <c:if test="${summary.pendingReservationCount > 0}">
+                    <div class="adm-stat-diff down">▼ 처리 필요</div>
+                </c:if>
+                <c:if test="${summary.pendingReservationCount == 0}">
+                    <div class="adm-stat-diff up">처리할 예약 없음</div>
+                </c:if>
             </div>
         </div>
     </div>
-
     <div class="adm-grid-2">
-        <%-- 매출 차트 --%>
+        <%-- 2026-07-30 박유정 — Phase 3-C: 매출 차트 (주간 7일 / 월간 이번달 일별, switchSalesChart) --%>
         <div class="adm-card">
             <div class="adm-card-head">
-                <span class="adm-card-head-title">주간 매출 현황</span>
+                <span class="adm-card-head-title">매출 현황</span>
                 <div style="display:flex;gap:8px">
-                    <button class="adm-btn blue" style="font-size:11px;padding:3px 10px">주간</button>
-                    <button class="adm-btn gray" style="font-size:11px;padding:3px 10px">월간</button>
+                    <button type="button" id="btnSalesWeekly" class="adm-btn blue" style="font-size:11px;padding:3px 10px">주간</button>
+                    <button type="button" id="btnSalesMonthly" class="adm-btn gray" style="font-size:11px;padding:3px 10px">월간</button>
                 </div>
             </div>
             <div class="adm-card-body">
@@ -76,37 +89,53 @@
         </div>
 
         <%-- 회원 현황 도넛 차트 --%>
+        <%-- 2026-07-30 박유정 — Phase 3-B: 회원 합계 (도넛·% 계산용) --%>
+        <c:set var="memberTotal"
+               value="${summary.memberGeneralCount + summary.memberBizCount + summary.memberWithdrawnCount}" />
         <div class="adm-card">
             <div class="adm-card-head">
                 <span class="adm-card-head-title">회원 현황</span>
-                <span class="adm-card-head-sub">총 12,847명</span>
+                <span class="adm-card-head-sub">총 <fmt:formatNumber value="${memberTotal}" groupingUsed="true" />명</span>
             </div>
             <div class="adm-card-body" style="display:flex;align-items:center;gap:24px">
                 <canvas id="memberChart" width="160" height="160" style="flex-shrink:0"></canvas>
                 <div style="flex:1">
-                    <div style="display:flex;flex-direction:column;gap:10px">
                         <div style="display:flex;align-items:center;gap:10px;font-size:13px">
                             <span style="width:12px;height:12px;border-radius:3px;background:#3B5BDB;flex-shrink:0"></span>
                             <span style="flex:1;color:#555">일반회원</span>
-                            <span style="font-weight:700;color:#1A1A2E">11,240명</span>
-                            <span style="color:#999">87.5%</span>
+                            <span style="font-weight:700;color:#1A1A2E">
+                                <fmt:formatNumber value="${summary.memberGeneralCount}" groupingUsed="true" />명
+                            </span>
+                            <span style="color:#999">
+                                <fmt:formatNumber value="${memberTotal > 0 ? summary.memberGeneralCount * 100 / memberTotal : 0}"
+                                                  maxFractionDigits="1" minFractionDigits="0" />%
+                            </span>
                         </div>
                         <div style="display:flex;align-items:center;gap:10px;font-size:13px">
                             <span style="width:12px;height:12px;border-radius:3px;background:#2BAB82;flex-shrink:0"></span>
                             <span style="flex:1;color:#555">사업자</span>
-                            <span style="font-weight:700;color:#1A1A2E">1,482명</span>
-                            <span style="color:#999">11.5%</span>
+                            <span style="font-weight:700;color:#1A1A2E">
+                                <fmt:formatNumber value="${summary.memberBizCount}" groupingUsed="true" />명
+                            </span>
+                            <span style="color:#999">
+                                <fmt:formatNumber value="${memberTotal > 0 ? summary.memberBizCount * 100 / memberTotal : 0}"
+                                                  maxFractionDigits="1" minFractionDigits="0" />%
+                            </span>
                         </div>
                         <div style="display:flex;align-items:center;gap:10px;font-size:13px">
                             <span style="width:12px;height:12px;border-radius:3px;background:#E4E6ED;flex-shrink:0"></span>
                             <span style="flex:1;color:#555">탈퇴</span>
-                            <span style="font-weight:700;color:#1A1A2E">125명</span>
-                            <span style="color:#999">1.0%</span>
+                            <span style="font-weight:700;color:#1A1A2E">
+                                <fmt:formatNumber value="${summary.memberWithdrawnCount}" groupingUsed="true" />명
+                            </span>
+                            <span style="color:#999">
+                                <fmt:formatNumber value="${memberTotal > 0 ? summary.memberWithdrawnCount * 100 / memberTotal : 0}"
+                                                  maxFractionDigits="1" minFractionDigits="0" />%
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 
     <div class="adm-grid-2">
@@ -120,11 +149,47 @@
                 <table class="adm-table">
                     <thead><tr><th>주문번호</th><th>회원</th><th>금액</th><th>상태</th></tr></thead>
                     <tbody>
-                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0892'"><td>#ORD-2025-0892</td><td>김민준</td><td>74,900원</td><td><span class="adm-badge shipping">배송중</span></td></tr>
-                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0891'"><td>#ORD-2025-0891</td><td>이서연</td><td>18,500원</td><td><span class="adm-badge done">배송완료</span></td></tr>
-                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0890'"><td>#ORD-2025-0890</td><td>박지호</td><td>22,000원</td><td><span class="adm-badge done">배송완료</span></td></tr>
-                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0889'"><td>#ORD-2025-0889</td><td>최유나</td><td>26,000원</td><td><span class="adm-badge wait">결제완료</span></td></tr>
-                        <tr style="cursor:pointer" onclick="location.href='${contextPath}/admin/store/order-detail?id=ORD-2025-0888'"><td>#ORD-2025-0888</td><td>정태양</td><td>55,800원</td><td><span class="adm-badge cancel">취소</span></td></tr>
+                        <%-- 2026-07-30 박유정 — Phase 3-A: summary.recentOrderList 실데이터 --%>
+                        <c:choose>
+                            <c:when test="${empty summary.recentOrderList}">
+                                <tr>
+                                    <td colspan="4" style="text-align:center;color:#999;padding:32px 0">
+                                        최근 주문이 없습니다.
+                                    </td>
+                                </tr>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach var="order" items="${summary.recentOrderList}">
+                                    <tr style="cursor:pointer"
+                                        onclick="location.href='${contextPath}/admin/store/order-detail?id=${order.orderId}'">
+                                        <td>#${order.orderNo}</td>
+                                        <td>${order.memberName}</td>
+                                        <td>
+                                            <fmt:formatNumber value="${order.payAmount}" groupingUsed="true" />원
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${order.orderStatus eq 'SHIPPING'}">
+                                                    <span class="adm-badge shipping">배송중</span>
+                                                </c:when>
+                                                <c:when test="${order.orderStatus eq 'DELIVERED' or order.orderStatus eq 'DONE'}">
+                                                    <span class="adm-badge done">배송완료</span>
+                                                </c:when>
+                                                <c:when test="${order.orderStatus eq 'CANCEL'}">
+                                                    <span class="adm-badge cancel">취소</span>
+                                                </c:when>
+                                                <c:when test="${order.orderStatus eq 'PAID'}">
+                                                    <span class="adm-badge wait">결제완료</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="adm-badge">${order.orderStatus}</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
                     </tbody>
                 </table>
             </div>
@@ -143,24 +208,29 @@
                 <table class="adm-table">
                     <thead><tr><th>업체명</th><th>업종</th><th>신청일</th><th>처리</th></tr></thead>
                     <tbody>
-                        <tr>
-                            <td><strong>행복 동물병원</strong></td>
-                            <td>동물병원</td>
-                            <td>06.25</td>
-                            <td><a href="${contextPath}/admin/biz/detail?id=1" class="adm-btn blue">검토</a></td>
-                        </tr>
-                        <tr>
-                            <td><strong>강아지숲 펫호텔</strong></td>
-                            <td>반려동물 숙소</td>
-                            <td>06.24</td>
-                            <td><a href="${contextPath}/admin/biz/detail?id=2" class="adm-btn blue">검토</a></td>
-                        </tr>
-                        <tr>
-                            <td><strong>냥냥 그루밍샵</strong></td>
-                            <td>애견미용실</td>
-                            <td>06.23</td>
-                            <td><a href="${contextPath}/admin/biz/detail?id=3" class="adm-btn blue">검토</a></td>
-                        </tr>
+                        <%-- 2026-07-30 박유정 — Phase 1: summary.pendingBizList 실데이터 (더미 3행 제거) --%>
+                        <c:choose>
+                            <c:when test="${empty summary.pendingBizList}">
+                                <tr>
+                                    <td colspan="4" style="text-align:center;color:#999;padding:32px 0">
+                                        승인 대기 사업자가 없습니다.
+                                    </td>
+                                </tr>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach var="item" items="${summary.pendingBizList}">
+                                    <tr>
+                                        <td><strong>${item.bizName}</strong></td>
+                                        <td>${item.bizType}</td>
+                                        <td>${item.applyDate}</td>
+                                        <td>
+                                            <a href="${contextPath}/admin/biz/detail?bizNo=${item.bizNo}"
+                                               class="adm-btn blue">검토</a>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
                     </tbody>
                 </table>
             </div>
@@ -170,14 +240,35 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-/* 매출 차트 */
-new Chart(document.getElementById('salesChart'), {
+/* 2026-07-30 박유정 — Phase 3-C: 매출 차트 데이터 (원 → 만원 ÷10000) */
+const weeklyLabels = [
+    <c:forEach var="day" items="${summary.weeklySalesList}" varStatus="st">
+        '${day.dayLabel}'<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+];
+const weeklyData = [
+    <c:forEach var="day" items="${summary.weeklySalesList}" varStatus="st">
+        ${day.salesAmount / 10000}<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+];
+const monthlyLabels = [
+    <c:forEach var="day" items="${summary.monthlySalesList}" varStatus="st">
+        '${day.dayLabel}'<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+];
+const monthlyData = [
+    <c:forEach var="day" items="${summary.monthlySalesList}" varStatus="st">
+        ${day.salesAmount / 10000}<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+];
+
+let salesChart = new Chart(document.getElementById('salesChart'), {
     type: 'bar',
     data: {
-        labels: ['월', '화', '수', '목', '금', '토', '일'],
+        labels: weeklyLabels,
         datasets: [{
             label: '매출 (만원)',
-            data: [320, 410, 380, 490, 520, 680, 420],
+            data: weeklyData,
             backgroundColor: 'rgba(59,91,219,.18)',
             borderColor: '#3B5BDB',
             borderWidth: 2,
@@ -194,13 +285,43 @@ new Chart(document.getElementById('salesChart'), {
     }
 });
 
-/* 회원 도넛 차트 */
+/* 2026-07-30 박유정 — 주간/월간 버튼 전환 */
+function switchSalesChart(mode) {
+    const btnWeekly = document.getElementById('btnSalesWeekly');
+    const btnMonthly = document.getElementById('btnSalesMonthly');
+
+    if (mode === 'weekly') {
+        salesChart.data.labels = weeklyLabels;
+        salesChart.data.datasets[0].data = weeklyData;
+        salesChart.options.scales.x.ticks = { autoSkip: false };
+        btnWeekly.className = 'adm-btn blue';
+        btnMonthly.className = 'adm-btn gray';
+    } else {
+        salesChart.data.labels = monthlyLabels;
+        salesChart.data.datasets[0].data = monthlyData;
+        salesChart.options.scales.x.ticks = { autoSkip: false, font: { size: 10 } };
+        btnWeekly.className = 'adm-btn gray';
+        btnMonthly.className = 'adm-btn blue';
+    }
+    btnWeekly.style.cssText = 'font-size:11px;padding:3px 10px';
+    btnMonthly.style.cssText = 'font-size:11px;padding:3px 10px';
+    salesChart.update();
+}
+
+document.getElementById('btnSalesWeekly').addEventListener('click', function() {
+    switchSalesChart('weekly');
+});
+document.getElementById('btnSalesMonthly').addEventListener('click', function() {
+    switchSalesChart('monthly');
+});
+
+/* 2026-07-30 박유정 — Phase 3-B: 회원 도넛 차트 (일반/사업자/탈퇴) */
 new Chart(document.getElementById('memberChart'), {
     type: 'doughnut',
     data: {
         labels: ['일반회원', '사업자', '탈퇴'],
         datasets: [{
-            data: [11240, 1482, 125],
+            data: [${summary.memberGeneralCount}, ${summary.memberBizCount}, ${summary.memberWithdrawnCount}],
             backgroundColor: ['#3B5BDB', '#2BAB82', '#E4E6ED'],
             borderWidth: 0
         }]

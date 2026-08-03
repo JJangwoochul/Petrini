@@ -87,6 +87,14 @@
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
             쿠폰 승인
         </a>
+        <%-- 2026-07-24 박유정 — 사업자 리뷰 삭제 요청 --%>
+        <a href="${contextPath}/admin/review/list?statusCd=PENDING" class="adm-nav-link ${adminPage eq 'review-list' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>
+            사업자 리뷰
+            <c:if test="${pendingReviewDeleteCount > 0}">
+              <span class="adm-nav-badge">${pendingReviewDeleteCount}</span>
+            </c:if>
+        </a>
         <a href="${contextPath}/admin/community/list" class="adm-nav-link ${adminPage eq 'community-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             커뮤니티 관리

@@ -38,10 +38,6 @@ public class EmailService {
     @Value("${mail.smtp-from:${spring.mail.username}}")
     private String from;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
     /**
      * HYJ 26.07.28 공통 메일 발송
      */

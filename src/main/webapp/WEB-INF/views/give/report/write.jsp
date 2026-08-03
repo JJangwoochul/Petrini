@@ -74,8 +74,9 @@
   <form method="post" action="${contextPath}/give/report/write" enctype="multipart/form-data" onsubmit="return collectFeatureTags()">
   <input type="hidden" name="reportKind" value="FOUND">
   <input type="hidden" name="featureTags" id="featureTags">
-  <input type="hidden" name="lostLat" value="37.5665">
-  <input type="hidden" name="lostLng" value="126.9780">
+  <%-- 2026-07-29 박유정 — 주소 검색·지도 클릭 시 갱신, POST 시 TB_POST LOST_LAT/LNG 저장 --%>
+  <input type="hidden" name="lostLat" id="lostLat" value="37.5665">
+  <input type="hidden" name="lostLng" id="lostLng" value="126.9780">
   <!-- 기존 섹션들 (동물정보, 위치, 사진, 연락처) -->
 
   <%-- 기본 정보 --%>
@@ -151,14 +152,9 @@
       </div>
     </div>
     <%-- 카카오맵 자리 --%>
-    <div class="map-area" onclick="alert('카카오맵 API 연동 예정\n지도를 클릭하여 위치를 지정하세요.')">
-      <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=720&q=70&auto=format&fit=crop"
-           alt="지도" onerror="this.style.display='none'">
-      <div class="map-pin-overlay">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        클릭하여 발견 위치 지정 (카카오맵 API 연동 예정)
-      </div>
-    </div>
+  <%-- 2026-07-29 박유정 — 발견 위치 카카오맵 (Controller에서 kakaoJsApiKey 전달) --%>
+  <div id="kakao-map" style="width:100%;height:220px;border-radius:8px;border:1px solid var(--border)"></div>
+  <%@ include file="/WEB-INF/views/common/kakaomap.jsp" %>
   </div>
 
   <%-- 사진 업로드 --%>
@@ -214,6 +210,7 @@ function collectFeatureTags() {
   return true;
 }
 
+// 2026-07-29 박유정 — 다음 주소 검색 → Kakao Geocoder → 지도 중심·마커·lostLat/lostLng hidden 갱신
 document.getElementById('btnSearchAddr').addEventListener('click', function () {
   if (typeof daum === 'undefined' || !daum.Postcode) {
     alert('주소 API를 불러오지 못했습니다.');
@@ -221,8 +218,36 @@ document.getElementById('btnSearchAddr').addEventListener('click', function () {
   }
   new daum.Postcode({
     oncomplete: function (data) {
-      document.getElementById('address').value = data.roadAddress || data.jibunAddress;
+      var addr = data.roadAddress || data.jibunAddress;
+  document.getElementById('address').value = addr;
+
+  if (!window.kakaoMap) {
+  alert('지도를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+  return;
+  }
+  var geocoder = new kakao.maps.services.Geocoder();
+  geocoder.addressSearch(addr, function (result, status) {
+    if (status !== kakao.maps.services.Status.OK) {
+      alert('주소를 지도에서 찾지 못했습니다. 지도를 클릭해 위치를 지정해 주세요.');
+      return;
     }
+    var lat = parseFloat(result[0].y);
+    var lng = parseFloat(result[0].x);
+    var pos = new kakao.maps.LatLng(lat, lng);
+
+    window.kakaoMap.setCenter(pos);
+    window.kakaoMap.setLevel(3);
+
+    if (!window.reportMarker) {
+      window.reportMarker = new kakao.maps.Marker({ position: pos, map: window.kakaoMap });
+    } else {
+      window.reportMarker.setPosition(pos);
+    }
+
+    document.getElementById('lostLat').value = lat;
+    document.getElementById('lostLng').value = lng;
+  });
+}
   }).open();
 });
 

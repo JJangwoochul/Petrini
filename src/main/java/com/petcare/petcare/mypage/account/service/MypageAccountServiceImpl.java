@@ -1,16 +1,5 @@
 /**
  * 역할: MypageAccountService 구현체 (@Service)
- *
- * 구현 내용
- * - Controller에서 넘어온 요청 처리
- * - Mapper 호출하여 DB 조회·수정
- * - 비즈니스 규칙 검증 및 결과 반환
- *
- * 연결
- * - implements: MypageAccountService
- * - 사용: MypageAccountMapper
- *
- * 비즈니스 로직은 여기에 작성 (Controller, Mapper에 직접 작성 X)
  */
 
 package com.petcare.petcare.mypage.account.service;
@@ -24,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.mypage.account.mapper.MypageAccountMapper;
+import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
 
 @Service
 public class MypageAccountServiceImpl implements MypageAccountService {
@@ -37,6 +27,16 @@ public class MypageAccountServiceImpl implements MypageAccountService {
                                      BCryptPasswordEncoder passwordEncoder) {
         this.mypageAccountMapper = mypageAccountMapper;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    // 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 조회
+    @Override
+    @Transactional(readOnly = true)
+    public MypageAccountVO getMemberProfile(Long memberNo) {
+        if (memberNo == null) {
+            return null;
+        }
+        return mypageAccountMapper.selectMemberProfile(memberNo);
     }
 
     /**

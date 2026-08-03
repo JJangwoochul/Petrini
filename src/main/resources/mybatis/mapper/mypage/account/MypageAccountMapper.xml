@@ -29,6 +29,22 @@
         WHERE MEMBER_NO = #{memberNo}
     </insert>
 
+  <!-- 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 1건 -->
+  <select id="selectMemberProfile" resultType="com.petcare.petcare.mypage.account.vo.MypageAccountVO">
+    SELECT MEMBER_NO   AS memberNo,
+           MEMBER_ID   AS memberId,
+           MEMBER_NAME AS memberName,
+           EMAIL       AS email,
+           PHONE       AS phone,
+           ZIP_CODE    AS zipcode,
+           ADDR1       AS addr1,
+           ADDR2       AS addr2,
+           TO_CHAR(BIRTH_DATE, 'YYYY-MM-DD') AS birthDate,
+           GENDER      AS gender
+      FROM TB_MEMBER
+     WHERE MEMBER_NO = #{memberNo}
+  </select>
+
     <!-- ══════════════════════════════════════════════
          7일 경과 탈퇴 회원 개인정보 삭제 (스케줄러용)
     ══════════════════════════════════════════════ -->

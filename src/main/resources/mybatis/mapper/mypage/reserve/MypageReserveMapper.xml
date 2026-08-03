@@ -56,7 +56,8 @@
       LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
       LEFT JOIN TB_REVIEW RV
              ON RV.RESV_ID = R.RESV_ID
-            AND RV.REVIEW_TYPE = 'HOSPITAL'
+            AND RV.MEMBER_NO = R.MEMBER_NO
+            AND RV.REVIEW_TYPE = R.RESV_TYPE
       LEFT JOIN TB_STAY S
              ON R.RESV_TYPE = 'STAY'
             AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
@@ -194,6 +195,24 @@
                 AND R.TARGET_ID = #{hospitalId}
            )
      WHERE H.HOSPITAL_ID = #{hospitalId}
+  </update>
+
+  <!-- 2026-07-28 박유정 — 숙소 평균별점·리뷰수 재계산 (병원 updateHospitalRatingSummary와 동일 패턴) -->
+  <update id="updateStayRatingSummary">
+    UPDATE TB_STAY S
+       SET AVG_RATING = (
+             SELECT ROUND(AVG(R.RATING), 1)
+               FROM TB_REVIEW R
+              WHERE R.REVIEW_TYPE = 'STAY'
+                AND R.TARGET_ID = #{stayId}
+           ),
+           REVIEW_CNT = (
+             SELECT COUNT(*)
+               FROM TB_REVIEW R
+              WHERE R.REVIEW_TYPE = 'STAY'
+                AND R.TARGET_ID = #{stayId}
+           )
+     WHERE S.STAY_ID = #{stayId}
   </update>
 
   <!-- 2026/07/13 장우철 — 리뷰 알림 대상 사업자 회원 -->
