@@ -308,18 +308,20 @@
     fetch('/api/banners')
     .then(function(result) { return result.json(); })
     .then(function(list) {
-        let slider = document.getElementById('bannerSlider');
-        for (let i = 0; i < list.length; i++) {
-            let banner = list[i];
-            let div = document.createElement('div');
+        var slider = document.querySelector('.hero-slides');
+        for (var i = 0; i < list.length; i++) {
+            var banner = list[i];
+            console.log(banner);
+            console.log(banner.imageUrl);
+            var div = document.createElement('div');
             div.className = 'hero-slide' + (i === 0 ? ' active' : '');
             div.innerHTML =
-                '<a href="' + (b.linkUrl || '#') + '">' +
-                '  <img src="/upload/' + b.imageUrl + '" alt="' + b.title + '">' +
+                '<a href="' + (banner.linkUrl || '#') + '">' +
+                '  <img src="' + '${contextPath}' + '/upload/' + banner.imageUrl + '" alt="' + banner.title + '">' +
                 '</a>' +
                 '<div class="hero-text">' +
-                '  <span class="hero-badge">' + (b.bizName || '') + '</span>' +
-                '  <h2 class="hero-title">' + b.title + '</h2>' +
+                '  <span class="hero-badge">' + (banner.bizName || '') + '</span>' +
+                '  <h2 class="hero-title">' + banner.title + '</h2>' +
                 '</div>';
             slider.appendChild(div);
         }

@@ -881,4 +881,65 @@ public class BizHospitalController extends BizBaseController {
         }
         return "redirect:/biz/hospital/coupon";
     }
+
+    // ─────────────────────────────────────────────
+    // 2026/08/03 장우철 — 병원 배너 (yeju JSP·사이드바 추가, stay 공용 BizStayService)
+    // ─────────────────────────────────────────────
+    @GetMapping({"/banner", "/banner/"})
+    public String bannerList(HttpSession session, Model model) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        Long bizNo = bizStayService.getBizNo(member.getMemberId());
+        if (bizNo == null) {
+            model.addAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+            model.addAttribute("bannerList", java.util.Collections.emptyList());
+            model.addAttribute("bizPage", "banner");
+            return "biz/hospital/banner";
+        }
+        model.addAttribute("bannerList", bizStayService.getBannerList(bizNo));
+        model.addAttribute("bizPage", "banner");
+        return "biz/hospital/banner";
+    }
+
+    @GetMapping("/banner/form")
+    public String bannerForm(HttpSession session, Model model) {
+        if (getBizMember(session) == null) return "redirect:/login";
+        model.addAttribute("bizPage", "banner");
+        return "biz/hospital/banner-form";
+    }
+
+    @PostMapping("/banner")
+    public String bannerSubmit(@RequestParam String title,
+                               @RequestParam(required = false) String linkUrl,
+                               @RequestParam String positionCd,
+                               @RequestParam String startDate,
+                               @RequestParam String endDate,
+                               @RequestParam(required = false) MultipartFile bannerImage,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+        try {
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/hospital/banner";
+            }
+            com.petcare.petcare.main.banner.vo.MainBannerVO banner =
+                    new com.petcare.petcare.main.banner.vo.MainBannerVO();
+            banner.setBizNo(bizNo);
+            banner.setTitle(title);
+            banner.setLinkUrl(linkUrl);
+            banner.setPositionCd(positionCd);
+            banner.setStartDate(startDate);
+            banner.setEndDate(endDate);
+            banner.setStatusCd("PENDING");
+            bizStayService.applyBanner(banner, bannerImage);
+            rttr.addFlashAttribute("msg", "배너 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.");
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "배너 신청 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/hospital/banner";
+    }
 }

@@ -450,18 +450,14 @@
       SELECT BIZ_NO FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
   </select>
 
-  <!--HYJ 26.07.31 배너 신청-->
+    <!--HYJ 26.07.31 배너 신청-->
+    <!-- 2026/08/03 장우철 — 이미지 JOIN을 FILE_ID로 (신청 시 banner.fileId 저장) -->
     <sql id="bannerImageJoin">
-        LEFT JOIN (
-                    SELECT  REF_ID, 
-                            FILE_URL,
-                            ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
-                    FROM    TB_FILE
-                    WHERE   REF_TYPE = 'BANNER'
-                ) f ON f.REF_ID = b.BANNER_ID AND f.RN = 1
+        LEFT JOIN TB_FILE f ON f.FILE_ID = b.FILE_ID
     </sql>
 
     <!-- ─── 사업자: 내 배너 목록 ─── -->
+    <!-- 2026/08/03 장우철 — DATE → TO_CHAR (VO String 매핑) -->
     <select id="selectBannerList" parameterType="Long" resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         SELECT
                 b.BANNER_ID, 
@@ -469,8 +465,8 @@
                 b.TITLE, 
                 b.LINK_URL,
                 b.POSITION_CD, 
-                b.START_DATE, 
-                b.END_DATE, 
+                TO_CHAR(b.START_DATE, 'YYYY-MM-DD') AS startDate, 
+                TO_CHAR(b.END_DATE, 'YYYY-MM-DD') AS endDate, 
                 b.STATUS_CD,
                 b.REJECT_REASON, 
                 b.REG_DATE,
@@ -482,23 +478,26 @@
     </select>
 
     <!-- ─── 사업자: 배너 신청 INSERT ─── -->
+    <!-- 2026/08/03 장우철 — START/END_DATE가 DATE 타입 → TO_DATE로 바인딩 (문자열 INSERT ORA-01861 방지) -->
     <insert id="insertBanner" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         INSERT INTO TB_BANNER (
             BIZ_NO, 
             TITLE, 
             LINK_URL,
             POSITION_CD, 
+            FILE_ID,
             START_DATE, 
-            END_DATE, 
+            END_DATE,
             STATUS_CD
         ) VALUES (
             #{bizNo}, 
             #{title}, 
             #{linkUrl},
             #{positionCd}, 
-            #{startDate}, 
-            #{endDate}, 
-            'PENDING'
+            #{fileId},
+            TO_DATE(#{startDate}, 'YYYY-MM-DD'), 
+            TO_DATE(#{endDate}, 'YYYY-MM-DD'),
+            NVL(#{statusCd}, 'PENDING')
         )
     </insert>
 

@@ -25,17 +25,13 @@
   - TB_NOTICE
   - TB_FAQ
 -->
+    <!-- 2026/08/03 장우철 — 이미지 JOIN을 FILE_ID로 -->
     <sql id="bannerImageJoin">
-        LEFT JOIN (
-                    SELECT  REF_ID, 
-                            FILE_URL,
-                            ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
-                    FROM    TB_FILE
-                    WHERE   REF_TYPE = 'BANNER'
-                ) f ON f.REF_ID = b.BANNER_ID AND f.RN = 1
+        LEFT JOIN TB_FILE f ON f.FILE_ID = b.FILE_ID
     </sql>
     
     <!-- ─── 관리자: 전체 배너 목록 (PENDING 우선) ─── -->
+    <!-- 2026/08/03 장우철 — DATE → TO_CHAR, 이미지 JOIN REF_ID=BIZ_NO -->
     <select id="selectAllBannerList" resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         SELECT
                     b.BANNER_ID, 
@@ -43,8 +39,8 @@
                     b.TITLE, 
                     b.LINK_URL,
                     b.POSITION_CD, 
-                    b.START_DATE, 
-                    b.END_DATE, 
+                    TO_CHAR(b.START_DATE, 'YYYY-MM-DD') AS startDate, 
+                    TO_CHAR(b.END_DATE, 'YYYY-MM-DD') AS endDate, 
                     b.STATUS_CD,
                     b.REJECT_REASON, 
                     b.REG_DATE,
@@ -66,7 +62,7 @@
     <update id="updateBannerStatus" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         UPDATE  TB_BANNER
         SET     STATUS_CD = #{statusCd},
-                REJECT_REASON = #{rejectReason},
+                <if test="rejectReason != null">REJECT_REASON = #{rejectReason},</if>
                 MOD_DATE = SYSDATE
         WHERE   BANNER_ID = #{bannerId}
     </update>

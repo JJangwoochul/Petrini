@@ -1,11 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- ===================================================================
-     광고 배너 (입점/제휴사 배너광고 노출 영역)
+     광고 배너 (DB 연동 버전)
      - 다른 JSP에서 <%@ include file="/WEB-INF/views/common/ad-banner.jsp" %> 로 삽입
-     - 광고가 여러 건이면 자동 슬라이드 + 점 네비게이션으로 순환 노출
-     - 추후 관리자 CMS(배너 관리)에서 등록한 데이터를 모델로 받으면
-       아래 하드코딩된 .adv-slide 블록을 <c:forEach>로 교체하면 됨
+     - pageId 변수(store, hospital, stay, grooming)를 POSITION_CD로 매핑
+     - /api/banners?position=STORE 등으로 해당 위치 배너만 조회
 ==================================================================== --%>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
@@ -36,74 +35,92 @@
   }
 </style>
 
-<div class="adv-wrap">
+<div class="adv-wrap" id="advWrap" style="display:none">
   <div class="adv-banner" id="advBanner">
     <span class="adv-label">광고</span>
-    <div class="adv-track" id="advTrack">
-
-      <a class="adv-slide" href="https://www.royalcanin.com" target="_blank" rel="noopener sponsored" style="background:linear-gradient(120deg,#0F2C4C 0%,rgba(15,44,76,.35) 55%,rgba(15,44,76,0) 100%)">
-        <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=1000&q=70&auto=format&fit=crop" alt="로얄캐닌 광고" onerror="this.src='https://placehold.co/1000x280/0F2C4C/ffffff?text=AD'">
-        <div class="adv-slide-overlay">
-          <span class="adv-eyebrow">로얄캐닌 공식 파트너</span>
-          <p class="adv-headline">우리 아이 맞춤 사료,<br>지금 PetCare 단독 15% 할인</p>
-        </div>
-        <span class="adv-sponsor">제공 · 로얄캐닌코리아</span>
-      </a>
-
-      <a class="adv-slide" href="https://www.example-petinsurance.com" target="_blank" rel="noopener sponsored" style="background:linear-gradient(120deg,#1F8464 0%,rgba(31,132,100,.35) 55%,rgba(31,132,100,0) 100%)">
-        <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=1000&q=70&auto=format&fit=crop" alt="펫보험 광고" onerror="this.src='https://placehold.co/1000x280/1F8464/ffffff?text=AD'">
-        <div class="adv-slide-overlay">
-          <span class="adv-eyebrow">하나펫 보험</span>
-          <p class="adv-headline">월 9,900원부터,<br>우리 아이 의료비 걱정 끝</p>
-        </div>
-        <span class="adv-sponsor">제공 · 하나손해보험</span>
-      </a>
-
-      <a class="adv-slide" href="https://www.example-petairline.com" target="_blank" rel="noopener sponsored" style="background:linear-gradient(120deg,#831843 0%,rgba(131,24,67,.35) 55%,rgba(131,24,67,0) 100%)">
-        <img src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=1000&q=70&auto=format&fit=crop" alt="펫동반 항공권 광고" onerror="this.src='https://placehold.co/1000x280/831843/ffffff?text=AD'">
-        <div class="adv-slide-overlay">
-          <span class="adv-eyebrow">펫프렌들리 항공권</span>
-          <p class="adv-headline">반려동물과 떠나는 여행,<br>동반 항공권 최대 20% 할인</p>
-        </div>
-        <span class="adv-sponsor">제공 · 트래블펫</span>
-      </a>
-
-    </div>
-
+    <div class="adv-track" id="advTrack"></div>
     <button class="adv-nav prev" id="advPrev" aria-label="이전 광고">&#8249;</button>
     <button class="adv-nav next" id="advNext" aria-label="다음 광고">&#8250;</button>
-    <div class="adv-dots" id="advDots">
-      <span class="adv-dot active" data-i="0"></span>
-      <span class="adv-dot" data-i="1"></span>
-      <span class="adv-dot" data-i="2"></span>
-    </div>
+    <div class="adv-dots" id="advDots"></div>
   </div>
 </div>
 
 <script>
 (function(){
-  var track = document.getElementById('advTrack');
-  var dots  = document.querySelectorAll('#advDots .adv-dot');
-  var total = dots.length;
-  var idx = 0, timer;
+  // pageId → POSITION_CD 매핑
+  var pageMap = {
+    'store':    'STORE',
+    'hospital': 'HOSPITAL',
+    'stay':     'STAY',
+    'grooming': 'GROOMING'
+  };
+  var pageId = '${pageId}';
+  var position = pageMap[pageId] || pageId.toUpperCase();
+  var ctx = '${contextPath}';
 
-  function go(n){
-    idx = (n + total) % total;
-    track.style.transform = 'translateX(-' + (idx * 100) + '%)';
-    dots.forEach(function(d,i){ d.classList.toggle('active', i === idx); });
-  }
-  function next(){ go(idx + 1); }
-  function startAuto(){ timer = setInterval(next, 5000); }
-  function stopAuto(){ clearInterval(timer); }
+  fetch(ctx + '/api/banners?position=' + position)
+    .then(function(res) { return res.json(); })
+    .then(function(list) {
+      if (!list || list.length === 0) return;
 
-  document.getElementById('advPrev').addEventListener('click', function(){ go(idx - 1); stopAuto(); startAuto(); });
-  document.getElementById('advNext').addEventListener('click', function(){ go(idx + 1); stopAuto(); startAuto(); });
-  dots.forEach(function(d){ d.addEventListener('click', function(){ go(parseInt(d.dataset.i,10)); stopAuto(); startAuto(); }); });
+      var track = document.getElementById('advTrack');
+      var dots  = document.getElementById('advDots');
 
-  var banner = document.getElementById('advBanner');
-  banner.addEventListener('mouseenter', stopAuto);
-  banner.addEventListener('mouseleave', startAuto);
+      // 슬라이드 생성
+      for (var i = 0; i < list.length; i++) {
+        var b = list[i];
+        var slide = document.createElement('a');
+        slide.className = 'adv-slide';
+        slide.href = b.linkUrl || '#';
+        slide.style.background = 'linear-gradient(120deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.15) 55%,rgba(0,0,0,0) 100%)';
+        slide.innerHTML =
+          '<img src="' + ctx + '/upload/' + (b.imageUrl || '') + '" alt="' + (b.title || '') + '" onerror="this.src=\'https://placehold.co/1000x280/2BAB82/ffffff?text=AD\'">' +
+          '<div class="adv-slide-overlay">' +
+          '  <span class="adv-eyebrow">' + (b.bizName || '') + '</span>' +
+          '  <p class="adv-headline">' + (b.title || '') + '</p>' +
+          '</div>' +
+          '<span class="adv-sponsor">제공 · ' + (b.bizName || '') + '</span>';
+        track.appendChild(slide);
 
-  if (total > 1) startAuto();
+        // 도트 생성
+        var dot = document.createElement('span');
+        dot.className = 'adv-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('data-i', i);
+        dots.appendChild(dot);
+      }
+
+      // 배너 영역 표시
+      document.getElementById('advWrap').style.display = 'block';
+
+      // 슬라이더 로직
+      var allDots = dots.querySelectorAll('.adv-dot');
+      var total = list.length;
+      var idx = 0;
+      var timer;
+
+      function go(n) {
+        idx = (n + total) % total;
+        track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+        for (var j = 0; j < allDots.length; j++) {
+          if (j === idx) { allDots[j].classList.add('active'); }
+          else { allDots[j].classList.remove('active'); }
+        }
+      }
+      function next() { go(idx + 1); }
+      function startAuto() { timer = setInterval(next, 5000); }
+      function stopAuto() { clearInterval(timer); }
+
+      document.getElementById('advPrev').addEventListener('click', function() { go(idx - 1); stopAuto(); startAuto(); });
+      document.getElementById('advNext').addEventListener('click', function() { go(idx + 1); stopAuto(); startAuto(); });
+      for (var k = 0; k < allDots.length; k++) {
+        allDots[k].addEventListener('click', function() { go(parseInt(this.getAttribute('data-i'), 10)); stopAuto(); startAuto(); });
+      }
+
+      var banner = document.getElementById('advBanner');
+      banner.addEventListener('mouseenter', stopAuto);
+      banner.addEventListener('mouseleave', startAuto);
+
+      if (total > 1) startAuto();
+    });
 })();
 </script>

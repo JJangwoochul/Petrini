@@ -28,6 +28,7 @@ import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
 import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
@@ -293,19 +294,34 @@ public class BizStayServiceImpl implements BizStayService {
 
     @Override
     public List<MainBannerVO> getBannerList(Long bizNo) {
-        return bizStayMapper.selectBannerList(bizNo);
+        List<MainBannerVO> result = bizStayMapper.selectBannerList(bizNo);
+        return result;
     }
 
     // ── 사업자: 배너 신청 (INSERT + 이미지 업로드) ──
     @Override
     @Transactional
     public void applyBanner(MainBannerVO banner, MultipartFile image) throws Exception {
-        // 1) 배너 INSERT (selectKey로 bannerId 자동 세팅)
-        bizStayMapper.insertBanner(banner);
-
         // 2) 이미지 업로드 (기존 FileService 활용, REF_TYPE = 'BANNER')
+        FileVO file = null;
         if (image != null && !image.isEmpty()) {
-            fileService.uploadFile(image, "BANNER", banner.getBannerId());
+            file = fileService.uploadFile(image, "BANNER", banner.getBizNo());
+            banner.setFileId(file.getFileId());
+        }
+
+        try {
+            // 1) 배너 INSERT (selectKey로 bannerId 자동 세팅)
+            bizStayMapper.insertBanner(banner);
+
+        }
+        catch(Exception e) {
+            // DB는 @Transactional이 롤백해주지만
+            // 디스크/GCS에 올라간 물리 파일은 직접 삭제
+            if (file != null) {
+                fileService.deleteFile(file.getFileId());
+            }
+
+            throw e;  // 예외를 다시 던져야 @Transactional 롤백이 동작            
         }
     }
 

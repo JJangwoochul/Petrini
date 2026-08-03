@@ -13,7 +13,7 @@ public class MainBannerVO {
     private String positionCd;
     private Long fileId;
     private String linkUrl;
-    // 2026/08/01 장우철 — DDL START_DATE/END_DATE = VARCHAR2(YYYY-MM-DD)
+    // 2026/08/03 장우철 — 로컬 DDL START/END_DATE = DATE (VARCHAR2 아님). INSERT는 Mapper TO_DATE 사용
     private String startDate;
     private String endDate;
     private String statusCd;        // PENDING / ACTIVE / REJECTED / EXPIRED

@@ -772,6 +772,7 @@ public class BizStayController extends BizBaseController {
             // 2026/08/01 장우철 — DDL VARCHAR2(YYYY-MM-DD), input type=date 값 그대로 저장
             banner.setStartDate(startDate);
             banner.setEndDate(endDate);
+            banner.setStatusCd("PENDING");
 
             bizStayService.applyBanner(banner, bannerImage);
             rttr.addFlashAttribute("msg", "배너 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.");
