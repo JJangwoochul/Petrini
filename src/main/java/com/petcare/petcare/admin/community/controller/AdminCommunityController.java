@@ -19,11 +19,14 @@ import com.petcare.petcare.admin.controller.AdminBaseController;
 
 import jakarta.servlet.http.HttpSession;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.admin.community.service.AdminCommunityService;
+import com.petcare.petcare.admin.community.vo.AdminCommunityVO;
 
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.petcare.petcare.community.post.vo.CommunityPostVO;
@@ -49,8 +52,8 @@ public class AdminCommunityController extends AdminBaseController {
         if (getAdmin(session) == null)
             return redirectToLogin();
 
-        model.addAttribute("list",
-                adminCommunityService.getAdminPostList(keyword, boardType, statusCd, page));
+        List<CommunityPostVO> list = adminCommunityService.getAdminPostList(keyword, boardType, statusCd, page);
+        model.addAttribute("list", list);
         model.addAttribute("totalCount",
                 adminCommunityService.getAdminPostCount(keyword, boardType, statusCd));
         model.addAttribute("keyword", keyword);

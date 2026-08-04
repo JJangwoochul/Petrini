@@ -65,6 +65,7 @@
                     <form method="post" action="${contextPath}/admin/community/delete"
                           onsubmit="return confirm('삭제하시겠습니까?')">
                         <input type="hidden" name="postId" value="${post.postId}">
+                        <input type="hidden" name="memberNo" value="${post.memberNo}">
                         <button type="submit" class="adm-btn red">삭제</button>
                     </form>
                 </c:when>
@@ -84,6 +85,7 @@
                     <form method="post" action="${contextPath}/admin/community/delete"
                           onsubmit="return confirm('삭제하시겠습니까?')">
                         <input type="hidden" name="postId" value="${post.postId}">
+                        <input type="hidden" name="memberNo" value="${post.memberNo}">
                         <button type="submit" class="adm-btn red">삭제</button>
                     </form>
                 </c:otherwise>
@@ -179,6 +181,7 @@
                             <form method="post" action="${contextPath}/admin/community/delete"
                                   onsubmit="return confirm('삭제하시겠습니까?')">
                                 <input type="hidden" name="postId" value="${post.postId}">
+                                <input type="hidden" name="memberNo" value="${post.memberNo}">
                                 <button type="submit" class="adm-btn red">삭제</button>
                             </form>
                         </c:when>
@@ -198,6 +201,7 @@
                             <form method="post" action="${contextPath}/admin/community/delete"
                                   onsubmit="return confirm('삭제하시겠습니까?')">
                                 <input type="hidden" name="postId" value="${post.postId}">
+                                <input type="hidden" name="memberNo" value="${post.memberNo}">
                                 <button type="submit" class="adm-btn red">삭제</button>
                             </form>
                         </c:otherwise>

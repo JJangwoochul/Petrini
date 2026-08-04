@@ -29,6 +29,7 @@
         P.STATUS_CD    AS statusCd,
         P.REG_DATE     AS regDate,
         M.NICKNAME     AS authorName,
+        M.MEMBER_NO,
         (SELECT COUNT(*) FROM TB_POST_REPORT R WHERE R.POST_ID = P.POST_ID) AS reportCount,
         (SELECT COUNT(*) FROM TB_POST_REPORT R
          WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'PENDING') AS pendingReportCount,
