@@ -88,6 +88,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
             sessionMember.setZipcode(found.getZipcode());
             sessionMember.setAddr1(found.getAddr1());
             sessionMember.setAddr2(found.getAddr2());
+            // 2026-08-04 박유정 — 프로필 사진 URL 세션 반영 (사이드바 표시)
+            sessionMember.setProfileImgUrl(found.getProfileImgUrl());
 
             // 2026-07-09 장우철 — [변경 후] 승인된 사업자면 role=BIZ + bizType 세팅
             // 이유: TB_BUSINESS.STATUS_CD=APPROVED 일 때 신청 시 저장한 BIZ_TYPE 으로
@@ -232,6 +234,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         sessionMember.setZipcode(found.getZipcode());
         sessionMember.setAddr1(found.getAddr1());
         sessionMember.setAddr2(found.getAddr2());
+        // 2026-08-04 박유정 — 프로필 사진 URL 세션 반영 (카카오 로그인·사이드바 표시)
+        sessionMember.setProfileImgUrl(found.getProfileImgUrl());
 
         // 사업자 승인 여부 확인
         // 2026-07-22 박유정 — 정지 회원은 사업자 권한 안 줌

@@ -1,5 +1,7 @@
 /**
  * 역할: MypageAccountService 구현체 (@Service)
+ *
+ * - 2026-08-04 박유정 — 프로필 사진 로컬 저장 (C:/upload/member/profile/) + DB URL UPDATE
  */
 
 package com.petcare.petcare.mypage.account.service;
@@ -15,6 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.petcare.petcare.mypage.account.mapper.MypageAccountMapper;
 import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
+
 @Service
 public class MypageAccountServiceImpl implements MypageAccountService {
 
@@ -22,6 +33,9 @@ public class MypageAccountServiceImpl implements MypageAccountService {
 
     private final MypageAccountMapper mypageAccountMapper;
     private final BCryptPasswordEncoder passwordEncoder;
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;   // application.properties → C:/upload/
 
     public MypageAccountServiceImpl(MypageAccountMapper mypageAccountMapper,
                                      BCryptPasswordEncoder passwordEncoder) {
@@ -38,6 +52,47 @@ public class MypageAccountServiceImpl implements MypageAccountService {
         }
         return mypageAccountMapper.selectMemberProfile(memberNo);
     }
+
+    // 2026-08-04 박유정 — 프로필 사진 저장 + DB URL UPDATE
+    @Override
+    @Transactional
+    public String updateProfileImage(Long memberNo, MultipartFile file) {
+
+    // 2026-08-04 박유정 — [1] 회원번호·파일 기본 검증
+    if (memberNo == null) {
+        throw new IllegalArgumentException("회원 정보가 없습니다.");
+    }
+    if (file == null || file.isEmpty()) {
+        throw new IllegalArgumentException("업로드할 사진을 선택해 주세요.");
+    }
+
+    // 2026-08-04 박유정 — [2] 이미지 MIME 타입 검증
+    String contentType = file.getContentType();
+    if (contentType == null || !contentType.startsWith("image/")) {
+        throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
+    }
+
+    // 2026-08-04 박유정 — [3] 로컬 저장 (분실신고 사진과 동일 uploadDir 패턴)
+    String savedName = UUID.randomUUID() + resolveExtension(file.getOriginalFilename());
+    String objectPath = "member/profile/" + memberNo + "/" + savedName;
+    String fileUrl = "/upload/" + objectPath;
+
+    Path dir = Paths.get(uploadDir, "member", "profile", String.valueOf(memberNo));
+    try {
+        Files.createDirectories(dir);
+        file.transferTo(dir.resolve(savedName));
+    } catch (IOException e) {
+        throw new IllegalStateException("FILE_SAVE_FAILED", e);
+    }
+
+    // 2026-08-04 박유정 — [4] TB_MEMBER.PROFILE_IMG_URL UPDATE
+    MypageAccountVO vo = new MypageAccountVO();
+    vo.setMemberNo(memberNo);
+    vo.setProfileImgUrl(fileUrl);
+    mypageAccountMapper.updateMemberProfile(vo);
+
+    return fileUrl;
+}
 
     /**
      * HYJ 26.07.29 회원 탈퇴
@@ -103,5 +158,20 @@ public class MypageAccountServiceImpl implements MypageAccountService {
 
         log.info("총 {}명의 탈퇴 회원 개인정보 삭제 완료", memberNos.size());
         return memberNos.size();
+    }
+    // 2026-08-04 박유정 — 업로드 파일 확장자 정규화 (.jpg/.jpeg/.png/.webp)
+    private String resolveExtension(String originalName) {
+        if (originalName == null) {
+            return ".jpg";
+        }
+        int dot = originalName.lastIndexOf('.');
+        if (dot < 0) {
+            return ".jpg";
+        }
+        String ext = originalName.substring(dot).toLowerCase();
+        if (".jpg".equals(ext) || ".jpeg".equals(ext) || ".png".equals(ext) || ".webp".equals(ext)) {
+            return ext;
+        }
+        return ".jpg";
     }
 }
