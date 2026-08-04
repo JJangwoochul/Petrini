@@ -117,9 +117,15 @@
           <p class="join-card-sub">회원 정보를 입력해 주세요.</p>
 
           <form id="joinForm" novalidate>
+            <!--HYJ 26.08.04 아이디 중복확인-->
             <div class="form-field">
               <label class="form-label" for="id">아이디 <span class="req">*</span></label>
+              <div class="field-btn-wrap">
                 <input type="text" id="id" name="id" class="form-input no-icon">
+                <button type="button" class="btn-check" id="btnCheckId">중복 확인</button>
+              </div>
+              <p class="field-ok" id="okId">사용 가능한 아이디입니다.</p>
+              <p class="field-error" id="errId">다른 아이디를 입력해 주세요.</p>
             </div>
             <!-- 이메일 + 중복 확인 + 인증 -->
             <div class="form-field">
@@ -505,6 +511,7 @@
   /* ── 현재 스텝 상태 ── */
   // 2026/07/27 장우철 — 토스 복귀면 Step2 부터
   var cur = ${joinFromCard ? 2 : 1};
+  var idChecked = false;      //HYJ 26.08.04 id 중복확인
   var emailChecked = false;
   var emailVerified = false;
   var timerInterval = null;
@@ -605,6 +612,46 @@
   /* ──────────────────────────────
      STEP 2 : 기본 정보 입력
   ────────────────────────────── */
+    //HYJ 26.08.04 id 중복체크
+    document.getElementById('btnCheckId').addEventListener('click', function () {
+      var id = document.getElementById('id');
+      if (!id.value.trim()) {
+        id.textContent = '아이디를 입력해 주세요.';
+        err('errId', 'okId');
+        console.log("중복확인");
+        return;
+      }
+
+      fetch('${contextPath}/join/check-id?id=' + id.value.trim())
+      .then(function(result) { 
+        return result.json(); 
+      })
+      .then(function(data) {
+        if (data.available) {
+          document.getElementById('okId').textContent = '사용 가능한 아이디입니다.';
+          ok('errId', 'okId');
+          idChecked = true;
+          id.classList.add('is-valid');
+        }
+        else {
+          document.getElementById('errId').textContent = data.message;
+          err('errId', 'okId');
+          idChecked = false;
+          id.classList.remove('is-valid');
+        }
+      }).
+      catch(function () {
+        document.getElementById('errId').textContent = '중복 확인 중 오류가 발생했습니다.';
+        err('errId', 'okId');        
+      })      
+    });
+
+    /* 아이디 변경 시 중복 확인 초기화 */
+    document.getElementById('id').addEventListener('input', function () {
+      idChecked = false;
+      this.classList.remove('is-valid');
+      clearMsg('errId', 'okId');
+    });
 
   /* 비밀번호 토글 */
   function makePwToggle(toggleId, inputId, eyeId) {
@@ -891,7 +938,9 @@
         addr1: val('addr1'),
         addr2: val('addr2'),
         emailChecked: !!emailChecked,
-        emailVerified: !!emailVerified
+        emailVerified: !!emailVerified,
+        //HYJ 26.08.04
+        idChecked: !!idChecked
       };
     }
 
@@ -923,6 +972,8 @@
 
       emailChecked = !!d.emailChecked;
       emailVerified = !!d.emailVerified;
+      //HYJ 26.08.04
+      idChecked = !!d.idChecked;
 
       var emailEl = document.getElementById('email');
       if (emailChecked) {
@@ -937,6 +988,12 @@
         var timerEl = document.getElementById('emailTimer');
         if (timerEl) timerEl.textContent = '';
         if (timerInterval) clearInterval(timerInterval);
+      }
+
+      if (idChecked) {
+        document.getElementById('okId').textContent = '사용 가능한 이메일입니다.';
+        ok('errId', 'okId');
+        if (emailEl) emailEl.classList.add('is-valid');       
       }
     }
 
@@ -1047,6 +1104,16 @@
       err('errVerify', 'okVerify'); valid = false;
     } else {
       clearMsg('errEmail', 'okEmail');
+    }
+
+    //HYJ 26.08.04
+    if (!idChecked) {
+      document.getElementById('errId').textContent = '아이디 중복 확인을 해주세요.';
+      err('errId', 'okId'); 
+      valid = false;
+    } 
+    else {
+      clearMsg('errId', 'okId');
     }
 
     var pw  = document.getElementById('password').value;

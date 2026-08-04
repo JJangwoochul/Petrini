@@ -139,4 +139,11 @@
           AND  STATUS_CD IN ('PENDING', 'APPROVED')
           AND  BIZ_ID != #{bizId}
     </select>
+
+    <select id="countBizRegNo" resultType="int">
+        SELECT COUNT(*)
+        FROM   TB_BUSINESS
+        WHERE  REPLACE(BIZ_REG_NO, '-', '') = #{bizRegNo}
+          AND  STATUS_CD IN ('PENDING', 'APPROVED')
+    </select>
 </mapper>

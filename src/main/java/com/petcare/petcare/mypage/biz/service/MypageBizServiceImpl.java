@@ -4,7 +4,9 @@
 
 package com.petcare.petcare.mypage.biz.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -87,5 +89,13 @@ public class MypageBizServiceImpl implements MypageBizService {
     @Override
     public BusinessVO getBizAuthStatus(String bizId) throws Exception {
         return mypageBizMapper.selectBizAuthStatus(bizId);
+    }
+
+    @Override
+    public boolean checkBizRegNo(String bizRegNo) throws Exception {
+        if (mypageBizMapper.countBizRegNo(bizRegNo) <= 0) {
+            return true;
+        }
+        return false;
     }
 }

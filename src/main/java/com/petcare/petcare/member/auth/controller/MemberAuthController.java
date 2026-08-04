@@ -308,8 +308,8 @@ public class MemberAuthController {
      */
     @GetMapping("/join/check-id")
     @ResponseBody
-    public EmailCheckResultVO checkMemberId(@RequestParam String memberId) {
-        return memberAuthService.checkMemberId(memberId);
+    public EmailCheckResultVO checkMemberId(@RequestParam String id) {
+        return memberAuthService.checkMemberId(id);
     }
 
        // 2026/07/15 — 이메일 인증

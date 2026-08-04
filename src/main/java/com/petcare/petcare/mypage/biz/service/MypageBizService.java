@@ -28,4 +28,5 @@ import com.petcare.petcare.file.vo.FileVO;
 public interface MypageBizService {
     public void applyBusiness(BusinessVO vo, List<FileVO> fileList) throws Exception;
     public BusinessVO getBizAuthStatus(String bizId) throws Exception;
+    public boolean checkBizRegNo(String bizRegNo) throws Exception;
 }

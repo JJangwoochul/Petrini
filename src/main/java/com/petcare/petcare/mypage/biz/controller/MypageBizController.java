@@ -60,7 +60,7 @@ public class MypageBizController extends CommonConfigController {
 
     @Autowired(required = false)
     private Storage storage;
-    
+
     @Autowired
     private MypageBizService mypageBizService;
 
@@ -173,6 +173,13 @@ public class MypageBizController extends CommonConfigController {
         Map<String, Object> result = new HashMap<>();
 
         try {
+            //HYJ 26.08.04
+            if (!mypageBizService.checkBizRegNo(bizRegNo)) {
+                result.put("success", false);
+                result.put("message", "이미 등록된 사업자 번호 입니다.");
+                return result;
+            }
+
             String baseUrl = "https://api.odcloud.kr/api/nts-businessman/v1/status";
             StringBuilder sb = new StringBuilder(baseUrl);
             sb.append("?serviceKey=").append(URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8"));
