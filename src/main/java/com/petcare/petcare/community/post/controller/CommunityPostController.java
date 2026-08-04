@@ -377,7 +377,7 @@ public class CommunityPostController {
         if (member == null) {
             return "redirect:/login?redirect=/community/edit?id=" + id;
         }
-        CommunityPostVO post = communityPostService.getPostDetail(id);
+        CommunityPostVO post = communityPostService.getPostDetailForEdit(id);
         if (post == null) {
             return "redirect:/community?error=notfound";
         }

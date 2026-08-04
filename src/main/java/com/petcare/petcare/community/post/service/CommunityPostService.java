@@ -41,6 +41,9 @@ public interface CommunityPostService {
     // 게시글 상세 1건 (TB_POST + 사진 URL 목록)
     CommunityPostVO getPostDetail(long postId);
 
+    //HYJ 26.08.04 게시물 수정용
+    CommunityPostVO getPostDetailForEdit(long postId);
+
     // 게시글 등록 (TB_POST + 사진 TB_FILE)
     void insertPost(CommunityPostVO vo, MemberVO loginMember, MultipartFile[] photos);
 

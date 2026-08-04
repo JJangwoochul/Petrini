@@ -16,4 +16,5 @@ public class MainCommunityPreviewVO {
     private String nickname;
     private String regDateLabel;
     private int commentCount;
+    private String thumbUrl;           // FILE_URL — 목록 썸네일, TB_FILE 첫 사진
 }

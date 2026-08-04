@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.petcare.petcare.community.post.mapper.CommunityPostMapper;
 import com.petcare.petcare.main.section.mapper.MainSectionMapper;
 import com.petcare.petcare.main.section.vo.MainCommunityPreviewVO;
 import com.petcare.petcare.main.section.vo.MainPopularProductVO;
@@ -18,9 +19,12 @@ import com.petcare.petcare.main.section.vo.MainPopularProductVO;
 public class MainSectionServiceImpl implements MainSectionService {
 
     private final MainSectionMapper mainSectionMapper;
+    private final CommunityPostMapper communityPostMapper;
 
-    public MainSectionServiceImpl(MainSectionMapper mainSectionMapper) {
+    public MainSectionServiceImpl(MainSectionMapper mainSectionMapper,
+                                  CommunityPostMapper communityPostMapper) {
         this.mainSectionMapper = mainSectionMapper;
+        this.communityPostMapper = communityPostMapper;
     }
 
     // DB 조회 -> 각 상품마다 할인율 계산 -> 리스트 반환
@@ -36,7 +40,15 @@ public class MainSectionServiceImpl implements MainSectionService {
     // Mapper 결과 반환
     @Override
     public List<MainCommunityPreviewVO> getLatestPosts(int limit) {
-        return mainSectionMapper.selectCommunityPreview(limit);
+        List<MainCommunityPreviewVO> list = mainSectionMapper.selectCommunityPreview(limit);
+        //HYJ 26.08.04 메인 커뮤니티 썸네일
+        for (MainCommunityPreviewVO item : list) {
+            List<String> urls = communityPostMapper.selectFileUrlsByPostId(item.getPostId());
+            if (urls != null && !urls.isEmpty()) {
+                item.setThumbUrl(urls.get(0));
+            }
+        }        
+        return list;
     }
 
     // 할인율 계산 

@@ -234,7 +234,7 @@
   <update id="softDeletePostByUser">
     UPDATE TB_POST
     SET STATUS_CD    = 'DELETED',
-        DELETED_DATE = SYSDATE
+        DELETE_DATE = SYSDATE
     WHERE POST_ID = #{postId}
       AND MEMBER_NO = #{memberNo}
       AND NVL(STATUS_CD, 'ACTIVE') = 'ACTIVE'
@@ -262,7 +262,7 @@
     SELECT POST_ID
     FROM TB_POST
     WHERE STATUS_CD = 'DELETED'
-      AND DELETED_DATE &lt;= SYSDATE - #{days}
+      AND DELETE_DATE &lt;= SYSDATE - #{days}
       AND BOARD_TYPE = 'LIFE'
   </select>
 

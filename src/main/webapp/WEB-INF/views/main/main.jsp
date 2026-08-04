@@ -271,9 +271,9 @@
                 <c:forEach var="post" items="${communityPreview}">
                     <a href="${contextPath}/community/detail?id=${post.postId}" class="community-item">
                         <div class="community-thumb">
-                            <img src="https://placehold.co/120x120/EAF7F2/2BAB82?text=💬"
+                            <img src="${not empty post.thumbUrl ? contextPath.concat(post.thumbUrl) : 'https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'}"
                                  alt="커뮤니티"
-                                 onerror="this.src='https://placehold.co/120x120/EAF7F2/2BAB82?text=💬'">
+                                 onerror="this.src='https://placehold.co/96x96/EAF7F2/2BAB82?text=IMG'">
                         </div>
                         <div class="community-content">
                             <p class="community-title">${post.title}</p>

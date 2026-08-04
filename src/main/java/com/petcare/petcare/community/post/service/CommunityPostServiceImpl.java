@@ -187,6 +187,16 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         return post;
     }
 
+    //HYJ 26.08.04 게시물 수정용(조회수X)
+    public CommunityPostVO getPostDetailForEdit(long postId) {
+        CommunityPostVO post = communityPostMapper.selectPostDetail(postId);
+        if (post == null) {
+            return null;
+        }
+        post.setPhotoUrls(communityPostMapper.selectFileUrlsByPostId(postId));
+        return post;
+    }
+
     @Override
     @Transactional
     public void insertPost(CommunityPostVO vo, MemberVO loginMember, MultipartFile[] photos) {
@@ -442,7 +452,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     /**
      * 2026-07-23 HYJ — 게시글 삭제 (본인 글만)
-     * - LIFE(수의사 상담): STATUS_CD='DELETED' + DELETED_DATE (관리자 방식 통일, 7일 보관)
+     * - LIFE(수의사 상담): STATUS_CD='DELETED' + DELETE_DATE (관리자 방식 통일, 7일 보관)
      * - TOWN/SHARE: 즉시 물리 삭제 (댓글 → 파일 → 게시글 DELETE)
      */
     @Override
@@ -502,7 +512,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
 
     /**
      * 2026-07-23 HYJ — LIFE 7일 경과 DELETED 게시글 물리 삭제 (스케줄러)
-     * STATUS_CD='DELETED' + DELETED_DATE 기준
+     * STATUS_CD='DELETED' + DELETE_DATE 기준
      * 삭제 순서: 댓글 → 파일 → 게시글
      */
     @Override
