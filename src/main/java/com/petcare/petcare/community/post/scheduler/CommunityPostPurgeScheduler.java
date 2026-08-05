@@ -4,7 +4,7 @@
  *
  * [동작]
  * - 매일 새벽 3시 실행 (cron)
- * - DELETED_DATE 기준 7일 경과한 STATUS_CD='DELETED' LIFE 게시글 조회
+ * - DELETE_DATE 기준 7일 경과한 STATUS_CD='DELETED' LIFE 게시글 조회
  * - 댓글 → 파일 → 게시글 순으로 물리 삭제
  *
  * 연결

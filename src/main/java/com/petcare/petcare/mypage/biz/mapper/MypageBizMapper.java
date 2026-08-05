@@ -35,4 +35,7 @@ public interface MypageBizMapper {
     // 이유: 본인(bizId) 제외, PENDING/APPROVED 만 중복 체크
     int countActiveBizRegNo(@Param("bizRegNo") String bizRegNo,
                             @Param("bizId") String bizId) throws Exception;
+
+    //HYJ 26.08.04 사업자번호 중복검사
+    int countBizRegNo(@Param("bizRegNo") String bizRegNo) throws Exception;
 }

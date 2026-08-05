@@ -133,7 +133,7 @@ public class AdminCommunityServiceImpl implements AdminCommunityService {
                 && "LIFE".equalsIgnoreCase(existing.getBoardType().trim());
         int result;
         if (isLife) {
-            // LIFE — STATUS_CD='DELETED' + DELETED_DATE, 댓글·사진은 7일 후 스케줄러 정리
+            // LIFE — STATUS_CD='DELETED' + DELETE_DATE, 댓글·사진은 7일 후 스케줄러 정리
             result = communityPostMapper.softDeletePostByUser(postId, memberNo);
         } else {
             // TOWN, SHARE — 즉시 물리 삭제

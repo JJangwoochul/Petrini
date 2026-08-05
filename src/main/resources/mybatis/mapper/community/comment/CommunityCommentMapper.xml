@@ -130,7 +130,7 @@
   <update id="softDeleteComment">
     UPDATE TB_POST_COMMENT
     SET IS_DELETED   = 'Y',
-        DELETED_DATE = SYSDATE
+        DELETE_DATE = SYSDATE
     WHERE COMMENT_ID = #{commentId}
       AND NVL(IS_DELETED, 'N') = 'N'
   </update>
@@ -153,7 +153,7 @@
   <update id="softDeleteCommentsByPostId">
     UPDATE TB_POST_COMMENT
     SET IS_DELETED   = 'Y',
-        DELETED_DATE = SYSDATE
+        DELETE_DATE = SYSDATE
     WHERE POST_ID = #{postId}
       AND NVL(IS_DELETED, 'N') = 'N'
   </update>

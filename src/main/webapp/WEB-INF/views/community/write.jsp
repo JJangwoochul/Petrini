@@ -82,8 +82,16 @@
     <label>이미지 첨부 (최대 5장)</label>
     <label class="write-img-upload" style="cursor:pointer">
   <input type="file" name="photos" accept="image/*" multiple style="display:none"
-         onchange="this.closest('.write-form-group').querySelector('.upload-label').textContent =
-         this.files.length ? this.files.length + '장 선택됨' : '클릭하여 이미지 업로드'">
+          onchange="
+            if(this.files.length > 5){
+                alert('사진은 최대 5장까지 업로드 가능합니다.');
+                this.value='';
+                this.closest('.write-form-group').querySelector('.upload-label').textContent='클릭하여 이미지 업로드';
+                return;
+            }
+
+            this.closest('.write-form-group').querySelector('.upload-label').textContent =
+            this.files.length ? this.files.length + '장 선택됨' : '클릭하여 이미지 업로드';">
   <svg viewBox="0 0 24 24">...</svg>
   <span class="upload-label">클릭하여 이미지 업로드</span>
   <small>JPG, PNG, GIF (최대 5장)</small>

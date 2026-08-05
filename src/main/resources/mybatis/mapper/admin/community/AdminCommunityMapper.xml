@@ -29,6 +29,7 @@
         P.STATUS_CD    AS statusCd,
         P.REG_DATE     AS regDate,
         M.NICKNAME     AS authorName,
+        M.MEMBER_NO,
         (SELECT COUNT(*) FROM TB_POST_REPORT R WHERE R.POST_ID = P.POST_ID) AS reportCount,
         (SELECT COUNT(*) FROM TB_POST_REPORT R
          WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'PENDING') AS pendingReportCount,
@@ -90,16 +91,16 @@
   </select>
 
     <!-- 2026-07-15 박유정 STEP 7 — 게시글 상태 변경 (HIDDEN / DELETED / ACTIVE) -->
-  <!-- 2026/08/03 장우철 — DELETED 시 DELETED_DATE 설정, ACTIVE 복구 시 초기화 (LIFE 7일 보관) -->
+  <!-- 2026/08/03 장우철 — DELETED 시 DELETE_DATE 설정, ACTIVE 복구 시 초기화 (LIFE 7일 보관) -->
   <update id="updatePostStatus">
     UPDATE TB_POST
     SET STATUS_CD = #{statusCd}
     <choose>
       <when test="statusCd == 'DELETED'">
-        , DELETED_DATE = SYSDATE
+        , DELETE_DATE = SYSDATE
       </when>
       <when test="statusCd == 'ACTIVE'">
-        , DELETED_DATE = NULL
+        , DELETE_DATE = NULL
       </when>
     </choose>
     WHERE POST_ID = #{postId}

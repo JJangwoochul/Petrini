@@ -52,7 +52,8 @@
                                     <td>
                                         <c:choose>
                                             <c:when test="${not empty banner.imageUrl}">
-                                                <img src="/upload/${banner.imageUrl}" alt=""
+                                                <%-- 2026/08/05 장우철 — contextPath 누락 수정 --%>
+                                                <img src="${contextPath}/upload/${banner.imageUrl}" alt=""
                                                      style="width:120px;height:50px;object-fit:cover;border-radius:6px"
                                                      onerror="this.src='https://placehold.co/120x50/EAF7F2/2BAB82?text=배너'">
                                             </c:when>
@@ -66,9 +67,8 @@
                                         <span class="biz-badge">${banner.positionLabel}</span>
                                     </td>
                                     <td>
-                                        <fmt:formatDate value="${banner.startDate}" pattern="yyyy.MM.dd"/>
-                                        ~
-                                        <fmt:formatDate value="${banner.endDate}" pattern="yyyy.MM.dd"/>
+                                        <%-- 2026/08/05 장우철 — VO start/endDate=String(TO_CHAR). fmt:formatDate는 Date만 가능 → 500 방지 --%>
+                                        ${banner.startDate} ~ ${banner.endDate}
                                     </td>
                                     <td>
                                         <c:choose>

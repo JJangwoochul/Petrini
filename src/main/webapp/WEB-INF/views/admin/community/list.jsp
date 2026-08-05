@@ -151,6 +151,7 @@
                                                       style="display:inline;margin:0"
                                                       onsubmit="return confirm('삭제하시겠습니까?')">
                                                     <input type="hidden" name="postId" value="${item.postId}">
+                                                    <input type="hidden" name="memberNo" value="${item.memberNo}">
                                                     <button type="submit" class="adm-btn red" style="margin-left:4px">삭제</button>
                                                 </form>
                                             </c:otherwise>

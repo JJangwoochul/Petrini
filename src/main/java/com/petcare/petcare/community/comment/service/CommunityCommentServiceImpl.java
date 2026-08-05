@@ -302,7 +302,7 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
 
     /**
      * 2026-07-23 HYJ — LIFE 게시글 삭제 시 댓글·대댓글 일괄 소프트 삭제
-     * IS_DELETED='Y', DELETED_DATE=SYSDATE
+     * IS_DELETED='Y', DELETE_DATE=SYSDATE
      */
     @Override
     public void softDeleteCommentsByPostId(long postId) {

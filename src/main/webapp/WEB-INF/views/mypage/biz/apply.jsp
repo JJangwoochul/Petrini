@@ -384,33 +384,30 @@
             return;
         }
 
-        //테스트시 주석
-        // $.ajax({
-        //     url : "/mypage/biz/checkBizNo",
-        //     type : "POST",
-        //     data : {
-        //         bizRegNo : bizRegNo
-        //     },
-        //     success : function(res){
-        //         if(res.success){
-        //             bizVerified = true;
-        //             $("#checkResult")
-        //                 .css("color","blue")
-        //                 .text("사업자 인증 완료");
-        //         }
-        //         else{
-        //             bizVerified = false;
-        //             $("#checkResult")
-        //                 .css("color","red")
-        //                 .text(res.message);
-        //         }
-        //     },
-        //     error : function(){
-        //         alert("서버 오류");
-        //     }
-        // });
-        $("#checkResult").css("color","blue").text("사업자 인증 완료");
-        bizVerified = true;
+        $.ajax({
+            url : "/mypage/biz/checkBizNo",
+            type : "POST",
+            data : {
+                bizRegNo : bizRegNo
+            },
+            success : function(res){
+                if(res.success){
+                    bizVerified = true;
+                    $("#checkResult")
+                        .css("color","blue")
+                        .text("사업자 인증 완료");
+                }
+                else{
+                    bizVerified = false;
+                    $("#checkResult")
+                        .css("color","red")
+                        .text(res.message);
+                }
+            },
+            error : function(){
+                alert("서버 오류");
+            }
+        });
     });
 
     $(".biz-upload-box").click(function(e){
