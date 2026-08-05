@@ -19,4 +19,17 @@ public class BizOrderItemVO {
     private Integer qty;
     private Integer unitPrice;
     private Integer totalPrice;
+
+    // 2026/08/04 장우철 — 상품단위 환불
+    private String returnStatusCd;
+    private String returnReasonCd;
+    private String claimReason;
+    private Integer returnFeeAmount;
+    private String returnFeePayer;
+    private Integer refundAmount;
+    private String returnRejectReason;
+    private java.util.Date returnRequestedAt;
+    private java.util.Date returnApprovedAt;
+    private java.util.Date returnRejectedAt;
+    private java.util.Date returnDoneAt;
 }

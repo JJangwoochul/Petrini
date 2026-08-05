@@ -127,7 +127,8 @@ public class MypageOrderController {
 
         boolean ok = mypageOrderService.requestCancel(member.getMemberNo(), orderId, reason);
         rttr.addFlashAttribute(ok ? "msg" : "errorMsg",
-                ok ? "취소 신청이 접수되었습니다. 사업자 확인 후 처리됩니다." : "취소 신청에 실패했습니다. 이미 배송이 시작되었거나 신청 이력이 있습니다.");
+                ok ? "취소 신청이 접수되었습니다. 사업자 확인 후 처리됩니다."
+                   : "취소 신청에 실패했습니다. 배송중이거나 이미 신청·환불 진행 중인 주문입니다.");
         return "redirect:/mypage/orders/detail?orderId=" + orderId;
     }
     
@@ -147,8 +148,44 @@ public class MypageOrderController {
                 session.setAttribute("memberInfo", sessionMember);
             }
         } else {
-            rttr.addFlashAttribute("errorMsg", "이미 구매확정했거나 배송완료 상태가 아닙니다.");
+            rttr.addFlashAttribute("errorMsg", "확정할 상품이 없거나 배송완료 상태가 아닙니다. (환불 진행·완료 상품은 제외됩니다.)");
         }
+        return "redirect:/mypage/orders";
+    }
+
+    // 2026/08/04 장우철 — 환불 신청 폼
+    @GetMapping("/orders/refund")
+    public String refundForm(@RequestParam("orderItemId") Long orderItemId,
+                             HttpSession session, Model model, RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        var item = mypageOrderService.getRefundableItem(member.getMemberNo(), orderItemId);
+        if (item == null) {
+            rttr.addFlashAttribute("errorMsg", "환불 신청할 수 없는 상품입니다.");
+            return "redirect:/mypage/orders";
+        }
+        model.addAttribute("item", item);
+        return "mypage/orders-refund";
+    }
+
+    // 2026/08/04 장우철 — 환불 신청 제출
+    @PostMapping("/orders/refund")
+    public String refundSubmit(@RequestParam("orderItemId") Long orderItemId,
+                               @RequestParam("reasonCd") String reasonCd,
+                               @RequestParam("content") String content,
+                               @RequestParam(value = "images", required = false) List<MultipartFile> images,
+                               HttpSession session, RedirectAttributes rttr) throws Exception {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null) return "redirect:/login";
+
+        String error = mypageOrderService.requestRefund(
+                member.getMemberNo(), orderItemId, reasonCd, content, images);
+        if (error != null) {
+            rttr.addFlashAttribute("errorMsg", error);
+            return "redirect:/mypage/orders/refund?orderItemId=" + orderItemId;
+        }
+        rttr.addFlashAttribute("msg", "환불 신청이 접수되었습니다. 사업자 확인 후 처리됩니다.");
         return "redirect:/mypage/orders";
     }
 }

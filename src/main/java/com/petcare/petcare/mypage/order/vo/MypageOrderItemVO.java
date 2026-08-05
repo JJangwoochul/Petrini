@@ -19,4 +19,15 @@ public class MypageOrderItemVO {
     private Integer totalPrice;
     private String thumbnailUrl;
     private boolean reviewed;     //지윤 26.07.20 추가: 이미 리뷰 작성했는지 (버튼 상태 분기용)
+
+    // 2026/08/04 장우철 — 송장 이후 상품단위 환불(RETURN_*)
+    private String returnStatusCd;   // NONE/REQUESTED/REJECTED/RETURNING/DONE
+    private String returnReasonCd;   // CHANGE_OF_MIND / DEFECT
+    private String claimReason;      // 신청 본문
+    private String confirmHoldYn;    // 환불중 확정 보류
+    private Integer refundAmount;    // 실환불액
+    private Integer returnFeeAmount; // 반품택배비
+    private String returnRejectReason;
+    // 2026/08/04 장우철 — 상품단위 구매확정 시각 (부분 확정·정산용)
+    private java.util.Date confirmedAt;
 }

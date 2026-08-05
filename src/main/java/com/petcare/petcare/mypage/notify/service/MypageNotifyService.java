@@ -73,6 +73,14 @@ public interface MypageNotifyService {
     // 2026-07-23 지윤 추가 — 주문취소 신청 알림 → 사업자 회원 알림함 "주문" 탭
     void sendCancelRequestNotification(Long bizMemberNo, String orderNo, String reason);
 
+    // 2026/08/04 장우철 — 상품 환불 신청 알림 → 사업자 (환불신청 페이지)
+    void sendRefundRequestNotification(Long bizMemberNo, String orderNo, String productName, String reasonCd);
+
+    // 2026/08/04 장우철 — 환불 승인/거절/완료 → 구매자 알림
+    void sendRefundApproveToBuyerNotification(Long memberNo, String orderNo, String productName);
+    void sendRefundRejectToBuyerNotification(Long memberNo, String orderNo, String productName, String rejectReason);
+    void sendRefundDoneToBuyerNotification(Long memberNo, String orderNo, String productName, int refundAmount);
+
     // 2026-07-09 장우철 — 알림함 목록·상세 (DB only, 이메일/FCM 은 후속 API)
     List<MypageNotifyVO> getNotificationList(Long memberNo);
 
@@ -104,6 +112,21 @@ public interface MypageNotifyService {
     void sendStaySettlementPaidNotification(Long memberNo, String bizName,
                                             String periodStart, String periodEnd,
                                             String requestType, Long settleAmount);
+
+    /**
+     * 2026/08/05 장우철 — 쇼핑 중간정산 승인/거절 · 더미 지급 알림
+     */
+    void sendStoreMidSettleApproveNotification(Long memberNo, String bizName,
+                                               String periodStart, String periodEnd,
+                                               String requestScope, Long settleAmount);
+
+    void sendStoreMidSettleRejectNotification(Long memberNo, String bizName,
+                                              String periodStart, String periodEnd,
+                                              String rejectReason);
+
+    void sendStoreSettlementPaidNotification(Long memberNo, String bizName,
+                                             String periodStart, String periodEnd,
+                                             String requestType, Long settleAmount);
 
     // 2026-07-24 박유정 — 리뷰 삭제 요청 반려 알림 (사업자)
     void sendReviewDeleteRejectNotification(Long bizMemberNo, String targetName,

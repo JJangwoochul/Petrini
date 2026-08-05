@@ -73,7 +73,7 @@ public class AdminSidebarAdvice {
         }
     }
 
-    // 2026/07/30 장우철 — 숙소 중간정산 요청 REQUESTED 배지
+    // 2026/07/30 장우철 — 숙소+쇼핑 중간정산 REQUESTED 배지
     @ModelAttribute("pendingStaySettleRequestCount")
     public int pendingStaySettleRequestCount(HttpSession session) {
         MemberVO m = (MemberVO) session.getAttribute("memberInfo");
@@ -81,7 +81,8 @@ public class AdminSidebarAdvice {
             return 0;
         }
         try {
-            return adminSettlementService.countStayMidRequestsRequested();
+            return adminSettlementService.countStayMidRequestsRequested()
+                    + adminSettlementService.countStoreMidRequestsRequested();
         } catch (Exception e) {
             return 0;
         }

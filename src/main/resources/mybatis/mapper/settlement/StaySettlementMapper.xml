@@ -259,6 +259,9 @@
         <if test="statusCd == 'pending'">
            AND  NVL(ST.PAY_STATUS, 'WAIT') = 'WAIT'
         </if>
+        <if test="statusCd == 'fail'">
+           AND  ST.PAY_STATUS = 'FAIL'
+        </if>
         <if test="statusCd == 'done'">
            AND  ST.PAY_STATUS = 'DONE'
         </if>
@@ -622,5 +625,24 @@
                        AND SI2.RESV_ID = #{resvId}
                 )
     </update>
+
+    <!-- 2026/08/05 장우철 — S12 월정산 배치: 승인 숙소 사업자 -->
+    <select id="selectApprovedStayBizNos" resultType="long">
+        SELECT B.BIZ_NO
+          FROM TB_BUSINESS B
+         WHERE B.BIZ_TYPE = 'STAY'
+           AND B.STATUS_CD = 'APPROVED'
+         ORDER BY B.BIZ_NO
+    </select>
+
+    <!-- 2026/08/05 장우철 — S12: 동일 월 REGULAR 월정산 중복 방지 -->
+    <select id="countRegularByBizAndMonth" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_SETTLEMENT
+         WHERE BIZ_NO = #{bizNo}
+           AND BIZ_TYPE = 'STAY'
+           AND NVL(REQUEST_TYPE, 'REGULAR') = 'REGULAR'
+           AND SETTLE_MONTH = #{settleMonth}
+    </select>
 
 </mapper>

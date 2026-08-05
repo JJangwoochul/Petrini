@@ -145,6 +145,77 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
        mypageNotifyMapper.insertNotification(vo);
    }
 
+   // 2026/08/04 장우철 — 상품 환불 신청 → 사업자
+   @Override
+   @Transactional
+   public void sendRefundRequestNotification(Long bizMemberNo, String orderNo, String productName, String reasonCd) {
+       if (bizMemberNo == null) {
+           return;
+       }
+       String reasonLabel = "DEFECT".equals(reasonCd) ? "상품이상" : "단순변심";
+       String safeProduct = productName != null ? productName : "상품";
+       String content = "주문번호 " + orderNo + " / " + safeProduct
+               + "\n환불 유형: " + reasonLabel
+               + "\n\n주문 관리 > 환불신청에서 승인·거절해 주세요.";
+
+       MypageNotifyVO vo = new MypageNotifyVO();
+       vo.setMemberNo(bizMemberNo);
+       vo.setNotiType("ORDER");
+       vo.setTitle("환불 신청이 접수되었습니다");
+       vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+       vo.setLinkUrl("/biz/store/refunds?statusCd=REQUESTED");
+       vo.setIsRead("N");
+       mypageNotifyMapper.insertNotification(vo);
+   }
+
+   @Override
+   @Transactional
+   public void sendRefundApproveToBuyerNotification(Long memberNo, String orderNo, String productName) {
+       if (memberNo == null) return;
+       String safeProduct = productName != null ? productName : "상품";
+       MypageNotifyVO vo = new MypageNotifyVO();
+       vo.setMemberNo(memberNo);
+       vo.setNotiType("ORDER");
+       vo.setTitle("환불이 승인되었습니다");
+       vo.setContent("주문 " + orderNo + " / " + safeProduct
+               + "\n상품을 반송해 주세요. 사업자가 회수 확인 후 환불됩니다. (반품택배비 유저 부담)");
+       vo.setLinkUrl("/mypage/orders");
+       vo.setIsRead("N");
+       mypageNotifyMapper.insertNotification(vo);
+   }
+
+   @Override
+   @Transactional
+   public void sendRefundRejectToBuyerNotification(Long memberNo, String orderNo, String productName, String rejectReason) {
+       if (memberNo == null) return;
+       String safeProduct = productName != null ? productName : "상품";
+       String reason = (rejectReason != null && !rejectReason.isBlank()) ? rejectReason : "사유 없음";
+       MypageNotifyVO vo = new MypageNotifyVO();
+       vo.setMemberNo(memberNo);
+       vo.setNotiType("ORDER");
+       vo.setTitle("환불 신청이 거절되었습니다");
+       vo.setContent("주문 " + orderNo + " / " + safeProduct + "\n거절 사유: " + reason);
+       vo.setLinkUrl("/mypage/orders");
+       vo.setIsRead("N");
+       mypageNotifyMapper.insertNotification(vo);
+   }
+
+   @Override
+   @Transactional
+   public void sendRefundDoneToBuyerNotification(Long memberNo, String orderNo, String productName, int refundAmount) {
+       if (memberNo == null) return;
+       String safeProduct = productName != null ? productName : "상품";
+       MypageNotifyVO vo = new MypageNotifyVO();
+       vo.setMemberNo(memberNo);
+       vo.setNotiType("ORDER");
+       vo.setTitle("환불이 완료되었습니다");
+       vo.setContent("주문 " + orderNo + " / " + safeProduct
+               + "\n환불금액: " + String.format("%,d", refundAmount) + "원");
+       vo.setLinkUrl("/mypage/orders");
+       vo.setIsRead("N");
+       mypageNotifyMapper.insertNotification(vo);
+   }
+
     // 2026/07/11 장우철 — 병원 예약 확정 알림
     @Override
     @Transactional
@@ -551,6 +622,89 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         vo.setTitle(typeLabel + " 지급이 완료되었습니다");
         vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
         vo.setLinkUrl("/biz/stay/settlement");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/08/05 장우철 — 쇼핑 중간정산 승인 알림
+    @Override
+    @Transactional
+    public void sendStoreMidSettleApproveNotification(Long memberNo, String bizName,
+                                                      String periodStart, String periodEnd,
+                                                      String requestScope, Long settleAmount) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeBiz = bizName != null ? bizName : "쇼핑몰";
+        String scopeLabel = "PRODUCT".equalsIgnoreCase(requestScope) ? "특정 상품" : "상품 전체";
+        String amountText = settleAmount == null ? "-" : String.format("%,d원", settleAmount);
+        String content = "[" + safeBiz + "] 중간정산 요청이 승인되었습니다.\n\n"
+                + "기간: " + nullToDash(periodStart) + " ~ " + nullToDash(periodEnd) + "\n"
+                + "범위: " + scopeLabel + "\n"
+                + "정산금: " + amountText + "\n"
+                + "지급은 관리자 처리 후 정산 내역에서 확인할 수 있습니다.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle("중간정산 요청이 승인되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/store/settlement");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/08/05 장우철 — 쇼핑 중간정산 거절 알림
+    @Override
+    @Transactional
+    public void sendStoreMidSettleRejectNotification(Long memberNo, String bizName,
+                                                     String periodStart, String periodEnd,
+                                                     String rejectReason) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeBiz = bizName != null ? bizName : "쇼핑몰";
+        String safeReason = rejectReason != null ? rejectReason.trim() : "";
+        if (safeReason.length() > 400) {
+            safeReason = safeReason.substring(0, 400) + "...";
+        }
+        String content = "[" + safeBiz + "] 중간정산 요청이 거절되었습니다.\n\n"
+                + "기간: " + nullToDash(periodStart) + " ~ " + nullToDash(periodEnd) + "\n"
+                + "거절 사유:\n" + safeReason;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle("중간정산 요청이 거절되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/store/settlement");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026/08/05 장우철 — 쇼핑 정산 더미 지급 완료 알림
+    @Override
+    @Transactional
+    public void sendStoreSettlementPaidNotification(Long memberNo, String bizName,
+                                                    String periodStart, String periodEnd,
+                                                    String requestType, Long settleAmount) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeBiz = bizName != null ? bizName : "쇼핑몰";
+        String typeLabel = "ADHOC".equalsIgnoreCase(requestType) ? "중간정산" : "월정산";
+        String amountText = settleAmount == null ? "-" : String.format("%,d원", settleAmount);
+        String content = "[" + safeBiz + "] " + typeLabel + " 지급이 완료 처리되었습니다.\n\n"
+                + "기간: " + nullToDash(periodStart) + " ~ " + nullToDash(periodEnd) + "\n"
+                + "지급액: " + amountText + "\n"
+                + "정산 내역에서 확인해 주세요.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle(typeLabel + " 지급이 완료되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/store/settlement");
         vo.setIsRead("N");
         mypageNotifyMapper.insertNotification(vo);
     }

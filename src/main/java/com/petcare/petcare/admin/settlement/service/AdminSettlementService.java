@@ -1,12 +1,9 @@
 /**
  * 역할: 관리자 정산 비즈니스 로직 (interface)
- * 2026/07/30 장우철 — 숙소 정산 구현순서 3-1 ~ 3-5 / 4-3 ~ 4-5
+ * 2026/07/30 장우철 — 숙소 STAY
+ * 2026/08/05 장우철 — 쇼핑 STORE S11
  *
- * 담당 화면: admin/settlement/list.jsp (STAY 탭)
- * 구현: AdminSettlementServiceImpl
- * DB: AdminSettlementMapper + StaySettlementService(승인 시 부분정산)
- *
- * 3-6 처리자 이력은 로그인 ADMIN_NO 보완 후 진행
+ * 담당 화면: admin/settlement/list.jsp
  */
 package com.petcare.petcare.admin.settlement.service;
 
@@ -14,8 +11,12 @@ import java.util.List;
 
 import com.petcare.petcare.admin.settlement.vo.AdminStayRequestVO;
 import com.petcare.petcare.admin.settlement.vo.AdminStaySettlementVO;
+import com.petcare.petcare.admin.settlement.vo.AdminStoreRequestVO;
+import com.petcare.petcare.settlement.vo.SettlementBatchResultVO;
 import com.petcare.petcare.settlement.vo.StaySettlementItemVO;
 import com.petcare.petcare.settlement.vo.StaySettlementVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementItemVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementVO;
 
 public interface AdminSettlementService {
 
@@ -31,15 +32,39 @@ public interface AdminSettlementService {
 
     int payStaySettlements(List<Long> settleIds);
 
-    /** 사이드바 배지용 REQUESTED 건수 */
     int countStayMidRequestsRequested();
 
-    /** 중간정산 요청 목록 (requested|approved|rejected|all) */
     List<AdminStayRequestVO> getStayRequestList(String statusCd);
 
-    /** 4-3+4-4 승인 → 부분 정산 생성 */
     StaySettlementVO approveStayMidRequest(Long requestId);
 
-    /** 4-3 거절 */
     void rejectStayMidRequest(Long requestId, String rejectReason);
+
+    // ===== STORE =====
+    int countStoreSettlements(Long bizNo);
+
+    List<AdminStaySettlementVO> getStoreSettlementList(String statusCd);
+
+    List<StoreSettlementItemVO> getStoreSettlementItems(Long settleId);
+
+    int payStoreSettlement(Long settleId);
+
+    int payStoreSettlements(List<Long> settleIds);
+
+    int countStoreMidRequestsRequested();
+
+    List<AdminStoreRequestVO> getStoreRequestList(String statusCd);
+
+    StoreSettlementVO approveStoreMidRequest(Long requestId);
+
+    void rejectStoreMidRequest(Long requestId, String rejectReason);
+
+    // ===== S12 배치 / FAIL =====
+    SettlementBatchResultVO createMonthlySettlements(String settleMonth);
+
+    SettlementBatchResultVO autoPayWaitingSettlements();
+
+    int markStaySettlementFail(Long settleId);
+
+    int markStoreSettlementFail(Long settleId);
 }

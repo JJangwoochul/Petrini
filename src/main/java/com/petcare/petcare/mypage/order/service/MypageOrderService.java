@@ -45,4 +45,15 @@ public interface MypageOrderService {
 
     //지윤 26.07.23 추가: 구매확정 처리. 반환값: null=실패, 아니면 적립된 포인트
     Integer confirmPurchase(Long memberNo, Long orderId);
+
+    // 2026/08/04 장우철 — 상품단위 환불 신청
+    /** 신청 폼용 상품 조회 (불가하면 null) */
+    com.petcare.petcare.mypage.order.vo.MypageOrderItemVO getRefundableItem(Long memberNo, Long orderItemId);
+
+    /**
+     * 환불 신청. null=성공, 아니면 에러 메시지.
+     * reasonCd: CHANGE_OF_MIND | DEFECT
+     */
+    String requestRefund(Long memberNo, Long orderItemId, String reasonCd, String content,
+                         java.util.List<org.springframework.web.multipart.MultipartFile> images) throws Exception;
 }

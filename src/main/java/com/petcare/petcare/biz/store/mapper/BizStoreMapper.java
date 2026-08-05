@@ -219,6 +219,20 @@ public interface BizStoreMapper {
                              @Param("bizRegNo") String bizRegNo, @Param("bizType") String bizType,
                              @Param("addr") String addr, @Param("addrDetail") String addrDetail,
                              @Param("phone") String phone);
+
+    // 2026/08/04 장우철 — 상품단위 환불
+    java.util.List<com.petcare.petcare.biz.store.vo.BizReturnVO> selectReturnList(
+            @Param("bizNo") Long bizNo, @Param("statusCd") String statusCd);
+    int selectReturnRequestedCount(@Param("bizNo") Long bizNo);
+    com.petcare.petcare.biz.store.vo.BizReturnVO selectReturnDetail(
+            @Param("orderItemId") Long orderItemId, @Param("bizNo") Long bizNo);
+    java.util.List<String> selectReturnPhotoUrls(@Param("orderItemId") Long orderItemId);
+    int approveReturn(@Param("orderItemId") Long orderItemId, @Param("bizNo") Long bizNo);
+    int rejectReturn(@Param("orderItemId") Long orderItemId, @Param("bizNo") Long bizNo,
+                     @Param("rejectReason") String rejectReason);
+    int completeReturn(@Param("orderItemId") Long orderItemId, @Param("bizNo") Long bizNo,
+                       @Param("refundAmount") Integer refundAmount);
+    void addPaymentRefundAmt(@Param("orderId") Long orderId, @Param("refundAmount") Integer refundAmount);
 }
 
 

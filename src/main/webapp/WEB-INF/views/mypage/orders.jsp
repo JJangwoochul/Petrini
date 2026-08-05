@@ -55,7 +55,15 @@
                         <span>🏪 ${o.bizName}</span>
                         <div style="display:flex;align-items:center;gap:10px">
                             <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
+                            <%-- 2026/08/04 장우철 — 환불신청/진행 중이면 '환불진행중' 표시 --%>
+                            <c:set var="refundInProgress" value="false" />
+                            <c:forEach var="itBadge" items="${o.itemList}">
+                              <c:if test="${itBadge.returnStatusCd == 'REQUESTED' || itBadge.returnStatusCd == 'RETURNING'}">
+                                <c:set var="refundInProgress" value="true" />
+                              </c:if>
+                            </c:forEach>
                             <c:choose>
+                                <c:when test="${refundInProgress}"><span class="badge-status badge-cancel">환불진행중</span></c:when>
                                 <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
                                 <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
                                 <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
@@ -101,8 +109,25 @@
                        <c:if test="${o.orderStatus == 'SHIPPING' || o.orderStatus == 'DONE'}">
                        <button class="btn-sm" onclick="trackDelivery(${o.orderId}, '${o.courierCode}', '${o.trackingNo}')">배송조회</button>
                         </c:if>
+                       <%-- 2026/08/04 장우철 — 상품단위: 미확정 + 송장 이후만 환불 (주문 전체 확정과 무관) --%>
+                       <c:if test="${(o.orderStatus == 'SHIPPING' || o.orderStatus == 'DONE') && empty it.confirmedAt}">
+                         <c:choose>
+                           <c:when test="${it.returnStatusCd == 'REQUESTED'}">
+                             <button class="btn-sm" disabled>환불신청중</button>
+                           </c:when>
+                           <c:when test="${it.returnStatusCd == 'RETURNING'}">
+                             <button class="btn-sm" disabled>환불진행중</button>
+                           </c:when>
+                           <c:when test="${it.returnStatusCd == 'DONE'}">
+                             <button class="btn-sm" disabled>환불완료</button>
+                           </c:when>
+                           <c:otherwise>
+                             <button class="btn-sm danger"
+                                     onclick="location.href='${contextPath}/mypage/orders/refund?orderItemId=${it.orderItemId}'">환불</button>
+                           </c:otherwise>
+                         </c:choose>
+                       </c:if>
                        <c:if test="${o.orderStatus == 'DONE'}">
-                           <button class="btn-sm danger" onclick="alert('교환/반품 기능은 준비 중입니다.')">교환/반품</button>
                                 <c:choose>
                                     <c:when test="${it.reviewed}">
                                         <button class="btn-sm" disabled>리뷰완료</button>
@@ -124,18 +149,32 @@
                             <c:if test="${o.orderStatus == 'CANCEL'}">
                                 <button class="btn-sm" onclick="alert('환불내역 기능은 준비 중입니다.')">환불내역</button>
                             </c:if>
-                            <%-- 지윤 26.07.23 추가: 구매확정 버튼 (배송완료 + 아직 확정 안 한 주문만) --%>
+                            <%-- 지윤 26.07.23 추가: 구매확정 버튼 --%>
+                            <%-- 2026/08/04 장우철 — 부분 확정: 환불중 아닌 미확정 상품이 있으면 확정 가능 --%>
                             <c:if test="${o.orderStatus == 'DONE'}">
+                                <c:set var="hasConfirmable" value="false" />
+                                <c:set var="hasConfirmed" value="false" />
+                                <c:forEach var="it2" items="${o.itemList}">
+                                  <c:if test="${not empty it2.confirmedAt}">
+                                    <c:set var="hasConfirmed" value="true" />
+                                  </c:if>
+                                  <c:if test="${empty it2.confirmedAt
+                                      && it2.returnStatusCd != 'REQUESTED'
+                                      && it2.returnStatusCd != 'RETURNING'
+                                      && it2.returnStatusCd != 'DONE'}">
+                                    <c:set var="hasConfirmable" value="true" />
+                                  </c:if>
+                                </c:forEach>
                                 <c:choose>
-                                    <c:when test="${o.confirmYn == 'Y'}">
-                                        <span class="confirm-done-badge">✓ 구매확정 완료</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <form method="post" action="${contextPath}/mypage/orders/confirm" style="display:inline" onsubmit="return confirm('구매확정 하시겠습니까?\n적립금은 확정 즉시 지급되며 취소할 수 없습니다.')">
+                                    <c:when test="${hasConfirmable}">
+                                        <form method="post" action="${contextPath}/mypage/orders/confirm" style="display:inline" onsubmit="return confirm('구매확정 하시겠습니까?\n환불 진행 중인 상품은 제외되고, 나머지 상품 금액 기준으로 적립됩니다.')">
                                             <input type="hidden" name="orderId" value="${o.orderId}">
                                             <button type="submit" class="btn-confirm-purchase">🎁 구매확정하고 적립받기</button>
                                         </form>
-                                    </c:otherwise>
+                                    </c:when>
+                                    <c:when test="${hasConfirmed || o.confirmYn == 'Y'}">
+                                        <span class="confirm-done-badge">✓ 구매확정 완료</span>
+                                    </c:when>
                                 </c:choose>
                             </c:if>
                         </div>

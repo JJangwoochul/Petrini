@@ -65,5 +65,21 @@ public interface MypageOrderMapper {
                                  @Param("refType") String refType, @Param("refId") Long refId);
 
     // 지윤 26.07.30 추가: 자동확정 스케줄러가 순회할 대상 (배송완료 7일 경과 + 미확정)
-    List<Map<String, Object>> selectOrdersNeedingAutoConfirm();                             
+    List<Map<String, Object>> selectOrdersNeedingAutoConfirm();
+
+    // 2026/08/04 장우철 — 상품단위 환불 신청
+    MypageOrderItemVO selectRefundableItem(@Param("orderItemId") Long orderItemId, @Param("memberNo") Long memberNo);
+    int requestItemRefund(@Param("orderItemId") Long orderItemId,
+                          @Param("returnReasonCd") String returnReasonCd,
+                          @Param("claimReason") String claimReason,
+                          @Param("returnFeeAmount") Integer returnFeeAmount);
+    Long selectBizMemberNoByOrderItemId(@Param("orderItemId") Long orderItemId);
+    String selectOrderNoByOrderItemId(@Param("orderItemId") Long orderItemId);
+    int confirmPurchaseItems(@Param("orderId") Long orderId);
+    // 2026/08/04 장우철 — 부분 확정 시 적립 기준 금액
+    int selectConfirmableItemsAmount(@Param("orderId") Long orderId);
+
+    // 2026/08/04 장우철 — 정산 제외 가드 / 정산 후보 조회
+    int countActiveReturnByOrderId(@Param("orderId") Long orderId);
+    List<MypageOrderItemVO> selectSettlementEligibleItems(@Param("orderId") Long orderId);
 }

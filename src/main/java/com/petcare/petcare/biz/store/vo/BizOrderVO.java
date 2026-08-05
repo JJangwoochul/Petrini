@@ -46,4 +46,7 @@ public class BizOrderVO {
     private Integer pointUsed;
     private Long memberCouponId;
     private String tossPaymentKey;
+
+    // 2026/08/04 장우철 — 환불신청/진행 상품 수 (목록 뱃지용)
+    private Integer activeReturnCount;
 }

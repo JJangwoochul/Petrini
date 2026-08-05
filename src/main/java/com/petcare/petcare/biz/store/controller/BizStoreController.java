@@ -12,7 +12,9 @@
 package com.petcare.petcare.biz.store.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -32,6 +35,11 @@ import com.petcare.petcare.biz.store.service.BizStoreService;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.biz.store.vo.BizReviewVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.settlement.service.StoreSettlementService;
+import com.petcare.petcare.settlement.vo.StoreSettlementItemVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementRequestVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementSummaryVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementVO;
 import com.petcare.petcare.store.vo.OptionVO;
 
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -50,6 +58,10 @@ public class BizStoreController extends BizBaseController {
     @Autowired
     private ObjectMapper objectMapper;
 
+    // 2026/08/05 장우철 — 쇼핑 정산 S9
+    @Autowired
+    private StoreSettlementService storeSettlementService;
+
     //지윤 26.07.24 추가: 택배사 API 연동용
     @Autowired
     private com.petcare.petcare.common.external.service.SmartTrackerService smartTrackerService;
@@ -59,9 +71,15 @@ public class BizStoreController extends BizBaseController {
     @ModelAttribute
     public void addPaidOrderCount(HttpSession session, Model model) {
         MemberVO biz = getBizMember(session);
-        if (biz == null) { model.addAttribute("paidOrderCount", 0); return; }
+        if (biz == null) {
+            model.addAttribute("paidOrderCount", 0);
+            model.addAttribute("returnRequestedCount", 0);
+            return;
+        }
         Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
         model.addAttribute("paidOrderCount", bizStoreService.getPaidOrderCount(bizNo));
+        // 2026/08/04 장우철 — 환불신청 대기 뱃지
+        model.addAttribute("returnRequestedCount", bizStoreService.getReturnRequestedCount(bizNo));
     }
 
    //지윤 26.07.23 수정: 목업 -> 실데이터 연동 (매출 통계 라인차트/이번달매출은 패스, 나머지는 실데이터)
@@ -108,16 +126,97 @@ public class BizStoreController extends BizBaseController {
     }
 
     //지윤 26.07.20 수정: 목업 -> 실데이터 연동 (상태 탭 필터)
+    // 2026/08/04 장우철 — RETURN_DONE 탭은 환불완료(상품단위) 조회 전용
     @GetMapping("/orders")
     public String storeOrders(@RequestParam(required = false) String statusCd, HttpSession session, Model model) {
         MemberVO biz = getBizMember(session);
         if (biz == null) return "redirect:/login";
         Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
 
-        model.addAttribute("orderList", bizStoreService.getOrderList(bizNo, statusCd));
         model.addAttribute("statusCounts", bizStoreService.getOrderStatusCounts(bizNo));
         model.addAttribute("selectedStatusCd", statusCd);
+        model.addAttribute("returnDoneCount", bizStoreService.getReturnList(bizNo, "DONE").size());
+
+        if ("RETURN_DONE".equals(statusCd)) {
+            model.addAttribute("returnList", bizStoreService.getReturnList(bizNo, "DONE"));
+            model.addAttribute("orderList", java.util.Collections.emptyList());
+        } else {
+            model.addAttribute("orderList", bizStoreService.getOrderList(bizNo, statusCd));
+        }
         return "biz/store/orders";
+    }
+
+    // 2026/08/04 장우철 — 환불신청 목록 (처리용: REQUESTED / RETURNING)
+    @GetMapping("/refunds")
+    public String storeRefunds(@RequestParam(required = false, defaultValue = "REQUESTED") String statusCd,
+                               HttpSession session, Model model) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        if (!"RETURNING".equals(statusCd) && !"REQUESTED".equals(statusCd)) {
+            statusCd = "REQUESTED";
+        }
+        model.addAttribute("returnList", bizStoreService.getReturnList(bizNo, statusCd));
+        model.addAttribute("selectedStatusCd", statusCd);
+        model.addAttribute("requestedCount", bizStoreService.getReturnRequestedCount(bizNo));
+        model.addAttribute("returningCount", bizStoreService.getReturnList(bizNo, "RETURNING").size());
+        return "biz/store/refunds";
+    }
+
+    @GetMapping("/refunds/detail")
+    public String storeRefundDetail(@RequestParam("orderItemId") Long orderItemId,
+                                    HttpSession session, Model model, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        var detail = bizStoreService.getReturnDetail(orderItemId, bizNo);
+        if (detail == null) {
+            rttr.addFlashAttribute("errorMsg", "환불 신청을 찾을 수 없습니다.");
+            return "redirect:/biz/store/refunds";
+        }
+        model.addAttribute("refund", detail);
+        return "biz/store/refund-detail";
+    }
+
+    @PostMapping("/refunds/approve")
+    public String approveRefund(@RequestParam("orderItemId") Long orderItemId,
+                                HttpSession session, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        String err = bizStoreService.approveReturn(orderItemId, bizNo);
+        rttr.addFlashAttribute(err == null ? "msg" : "errorMsg",
+                err == null ? "승인되었습니다. 회수 확인 후 회수완료를 눌러 주세요." : err);
+        return "redirect:/biz/store/refunds/detail?orderItemId=" + orderItemId;
+    }
+
+    @PostMapping("/refunds/reject")
+    public String rejectRefund(@RequestParam("orderItemId") Long orderItemId,
+                               @RequestParam("rejectReason") String rejectReason,
+                               HttpSession session, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        String err = bizStoreService.rejectReturn(orderItemId, bizNo, rejectReason);
+        rttr.addFlashAttribute(err == null ? "msg" : "errorMsg",
+                err == null ? "거절 처리되었습니다." : err);
+        return err == null
+                ? "redirect:/biz/store/refunds?statusCd=REQUESTED"
+                : "redirect:/biz/store/refunds/detail?orderItemId=" + orderItemId;
+    }
+
+    @PostMapping("/refunds/complete")
+    public String completeRefund(@RequestParam("orderItemId") Long orderItemId,
+                                 HttpSession session, RedirectAttributes rttr) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) return "redirect:/login";
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        String err = bizStoreService.completeReturn(orderItemId, bizNo);
+        rttr.addFlashAttribute(err == null ? "msg" : "errorMsg",
+                err == null ? "회수완료 및 환불이 처리되었습니다." : err);
+        return err == null
+                ? "redirect:/biz/store/orders?statusCd=RETURN_DONE"
+                : "redirect:/biz/store/refunds/detail?orderItemId=" + orderItemId;
     }
 
     //지윤 26.07.20 추가: 주문 상세 조회 (모달/상세영역 프리필용 AJAX)
@@ -338,11 +437,120 @@ return json;
         return "redirect:/biz/store/qna";
     }
 
+    /* 사업자(쇼핑) 정산관리 — 2026/08/05 장우철 S9 2-1 요약 / 2-2 목록 / 2-3·2-4 상세 */
     @GetMapping("/settlement")
-    public String storeSettlement(HttpSession session) {
-        if (getBizMember(session) == null)
+    public String storeSettlement(HttpSession session, Model model,
+                                  @RequestParam(value = "month", required = false, defaultValue = "all") String month,
+                                  @RequestParam(value = "status", required = false, defaultValue = "all") String status) {
+        MemberVO biz = getBizMember(session);
+        if (biz == null) {
             return "redirect:/login";
+        }
+
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        if (bizNo == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        StoreSettlementSummaryVO summary = storeSettlementService.getStoreSettlementSummary(bizNo);
+        List<StoreSettlementVO> settlements = storeSettlementService.getStoreSettlementList(bizNo, month, status);
+        List<String> settleMonths = storeSettlementService.getStoreSettlementMonths(bizNo);
+        List<BizProductVO> productList = storeSettlementService.getProductsForSettlement(bizNo);
+
+        model.addAttribute("summary", summary);
+        model.addAttribute("settlements", settlements);
+        model.addAttribute("settleMonths", settleMonths);
+        model.addAttribute("filterMonth", month);
+        model.addAttribute("filterStatus", status);
+        model.addAttribute("productList", productList);
         return "biz/store/settlement";
+    }
+
+    /**
+     * 2026/08/05 장우철 — S9 2-3 정산 상세 ITEM JSON
+     * GET /biz/store/settlement/items?settleId=
+     */
+    @GetMapping("/settlement/items")
+    @ResponseBody
+    public Map<String, Object> storeSettlementItems(HttpSession session,
+                                                    @RequestParam("settleId") Long settleId) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO biz = getBizMember(session);
+        if (biz == null) {
+            result.put("ok", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        if (bizNo == null) {
+            result.put("ok", false);
+            result.put("message", "쇼핑 사업자 정보가 없습니다.");
+            return result;
+        }
+
+        List<StoreSettlementItemVO> items =
+                storeSettlementService.getStoreSettlementItems(bizNo, settleId);
+        result.put("ok", true);
+        result.put("items", items);
+        return result;
+    }
+
+    /**
+     * 2026/08/05 장우철 — S10 중간정산 요청
+     * POST /biz/store/settlement/request
+     */
+    @PostMapping("/settlement/request")
+    @ResponseBody
+    public Map<String, Object> storeSettlementRequest(HttpSession session,
+                                                      @RequestBody Map<String, Object> body) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO biz = getBizMember(session);
+        if (biz == null) {
+            result.put("ok", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        if (bizNo == null) {
+            result.put("ok", false);
+            result.put("message", "쇼핑 사업자 정보가 없습니다.");
+            return result;
+        }
+
+        try {
+            String scope = body.get("requestScope") == null
+                    ? null : String.valueOf(body.get("requestScope"));
+            Long productId = null;
+            if (body.get("productId") != null && !String.valueOf(body.get("productId")).isBlank()) {
+                productId = Long.parseLong(String.valueOf(body.get("productId")));
+            }
+            String endStr = body.get("targetEnd") == null
+                    ? null : String.valueOf(body.get("targetEnd"));
+            if (endStr == null || endStr.isBlank()) {
+                throw new IllegalArgumentException("대상 종료일(컷오프)을 입력하세요.");
+            }
+            java.util.Date targetEnd = java.sql.Date.valueOf(endStr.substring(0, 10));
+            String memo = body.get("requestMemo") == null
+                    ? null : String.valueOf(body.get("requestMemo"));
+
+            StoreSettlementRequestVO saved = storeSettlementService.createMidSettlementRequest(
+                    bizNo, scope, productId, targetEnd, memo);
+
+            result.put("ok", true);
+            result.put("requestId", saved.getRequestId());
+            result.put("targetStart", saved.getTargetStart());
+            result.put("targetEnd", saved.getTargetEnd());
+            result.put("message", "중간정산 요청이 접수되었습니다. 관리자 승인 후 지급 예정입니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            result.put("ok", false);
+            result.put("message", e.getMessage());
+        } catch (Exception e) {
+            result.put("ok", false);
+            result.put("message", "요청 처리 중 오류가 발생했습니다.");
+        }
+        return result;
     }
 
     //지윤 26.07.23 수정: 목업 -> 실데이터 연동

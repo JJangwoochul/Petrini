@@ -178,7 +178,10 @@
         o.ORDER_ID, o.ORDER_NO, o.ORDER_STATUS, o.PAY_AMOUNT, o.ORDER_DATE,
         m.NICKNAME AS BUYER_NAME,
         (SELECT oi.PRODUCT_NAME FROM TB_ORDER_ITEM oi WHERE oi.ORDER_ID = o.ORDER_ID AND ROWNUM = 1) AS FIRST_PRODUCT_NAME,
-        (SELECT COUNT(*) FROM TB_ORDER_ITEM oi WHERE oi.ORDER_ID = o.ORDER_ID) AS ITEM_COUNT
+        (SELECT COUNT(*) FROM TB_ORDER_ITEM oi WHERE oi.ORDER_ID = o.ORDER_ID) AS ITEM_COUNT,
+        (SELECT COUNT(*) FROM TB_ORDER_ITEM oi
+          WHERE oi.ORDER_ID = o.ORDER_ID
+            AND oi.RETURN_STATUS_CD IN ('REQUESTED', 'RETURNING')) AS ACTIVE_RETURN_COUNT
     FROM TB_ORDER o
     JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     WHERE o.BIZ_NO = #{bizNo}
@@ -231,7 +234,11 @@
 <!-- 지윤 26.07.20 추가: 주문 상세 - 상품 목록 -->
 <!-- 지윤 26.07.22 수정: OPTION_ID 추가 (취소승인 시 재고복구용) -->
 <select id="selectOrderItems" resultType="com.petcare.petcare.biz.store.vo.BizOrderItemVO">
-    SELECT ORDER_ITEM_ID, PRODUCT_ID, OPTION_ID, PRODUCT_NAME, OPTION_COLOR, OPTION_SIZE, QTY, UNIT_PRICE, TOTAL_PRICE
+    SELECT ORDER_ITEM_ID, PRODUCT_ID, OPTION_ID, PRODUCT_NAME, OPTION_COLOR, OPTION_SIZE,
+           QTY, UNIT_PRICE, TOTAL_PRICE,
+           RETURN_STATUS_CD, RETURN_REASON_CD, CLAIM_REASON,
+           RETURN_FEE_AMOUNT, RETURN_FEE_PAYER, REFUND_AMOUNT, RETURN_REJECT_REASON,
+           RETURN_REQUESTED_AT, RETURN_APPROVED_AT, RETURN_REJECTED_AT, RETURN_DONE_AT
     FROM TB_ORDER_ITEM
     WHERE ORDER_ID = #{orderId}
     ORDER BY ORDER_ITEM_ID
@@ -530,6 +537,106 @@
     SET BIZ_NAME = #{shopName}, CEO_NAME = #{ceoName}, BIZ_REG_NO = #{bizRegNo}, BIZ_TYPE = #{bizType},
         ADDR = #{addr}, ADDR_DETAIL = #{addrDetail}, PHONE = #{phone}
     WHERE BIZ_NO = #{bizNo}
+</update>
+
+<!-- ========== 2026/08/04 장우철 — 상품단위 환불(RETURN_*) ========== -->
+
+<!-- 환불신청/진행/완료 목록 (statusCd: REQUESTED | RETURNING | DONE) -->
+<select id="selectReturnList" resultType="com.petcare.petcare.biz.store.vo.BizReturnVO">
+    SELECT oi.ORDER_ITEM_ID, oi.ORDER_ID, o.ORDER_NO, o.ORDER_STATUS, o.MEMBER_NO,
+           m.NICKNAME AS BUYER_NAME, m.PHONE AS BUYER_PHONE, o.ORDER_DATE,
+           oi.PRODUCT_ID, oi.OPTION_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
+           oi.QTY, oi.UNIT_PRICE, oi.TOTAL_PRICE,
+           oi.RETURN_STATUS_CD, oi.RETURN_REASON_CD, oi.CLAIM_REASON,
+           oi.RETURN_FEE_AMOUNT, oi.RETURN_FEE_PAYER, oi.REFUND_AMOUNT, oi.RETURN_REJECT_REASON,
+           oi.RETURN_REQUESTED_AT, oi.RETURN_APPROVED_AT, oi.RETURN_REJECTED_AT, oi.RETURN_DONE_AT,
+           d.COURIER_NAME, d.TRACKING_NO
+      FROM TB_ORDER_ITEM oi
+      JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
+      JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
+      LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+     WHERE o.BIZ_NO = #{bizNo}
+       AND oi.RETURN_STATUS_CD = #{statusCd}
+     ORDER BY oi.RETURN_REQUESTED_AT DESC NULLS LAST, oi.ORDER_ITEM_ID DESC
+</select>
+
+<select id="selectReturnRequestedCount" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_ORDER_ITEM oi
+      JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
+     WHERE o.BIZ_NO = #{bizNo}
+       AND oi.RETURN_STATUS_CD = 'REQUESTED'
+</select>
+
+<select id="selectReturnDetail" resultType="com.petcare.petcare.biz.store.vo.BizReturnVO">
+    SELECT oi.ORDER_ITEM_ID, oi.ORDER_ID, o.ORDER_NO, o.ORDER_STATUS, o.MEMBER_NO,
+           m.NICKNAME AS BUYER_NAME, m.PHONE AS BUYER_PHONE, o.ORDER_DATE,
+           oi.PRODUCT_ID, oi.OPTION_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
+           oi.QTY, oi.UNIT_PRICE, oi.TOTAL_PRICE,
+           oi.RETURN_STATUS_CD, oi.RETURN_REASON_CD, oi.CLAIM_REASON,
+           oi.RETURN_FEE_AMOUNT, oi.RETURN_FEE_PAYER, oi.REFUND_AMOUNT, oi.RETURN_REJECT_REASON,
+           oi.RETURN_REQUESTED_AT, oi.RETURN_APPROVED_AT, oi.RETURN_REJECTED_AT, oi.RETURN_DONE_AT,
+           p.TOSS_PAYMENT_KEY, o.PAY_AMOUNT, o.POINT_USED, o.MEMBER_COUPON_ID,
+           d.COURIER_NAME, d.TRACKING_NO
+      FROM TB_ORDER_ITEM oi
+      JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
+      JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
+      LEFT JOIN TB_PAYMENT p ON p.ORDER_ID = o.ORDER_ID
+      LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+     WHERE oi.ORDER_ITEM_ID = #{orderItemId}
+       AND o.BIZ_NO = #{bizNo}
+</select>
+
+<select id="selectReturnPhotoUrls" resultType="String">
+    SELECT FILE_URL FROM TB_FILE
+     WHERE REF_TYPE = 'ORDER_RETURN' AND REF_ID = #{orderItemId}
+     ORDER BY FILE_ID
+</select>
+
+<!-- 승인 → 환불진행 -->
+<update id="approveReturn">
+    UPDATE TB_ORDER_ITEM
+       SET RETURN_STATUS_CD   = 'RETURNING',
+           RETURN_APPROVED_AT = SYSDATE,
+           CONFIRM_HOLD_YN    = 'Y'
+     WHERE ORDER_ITEM_ID = #{orderItemId}
+       AND RETURN_STATUS_CD = 'REQUESTED'
+       AND ORDER_ID IN (SELECT ORDER_ID FROM TB_ORDER WHERE BIZ_NO = #{bizNo})
+</update>
+
+<!-- 거절 -->
+<update id="rejectReturn">
+    UPDATE TB_ORDER_ITEM
+       SET RETURN_STATUS_CD     = 'REJECTED',
+           RETURN_REJECT_REASON = #{rejectReason},
+           RETURN_REJECTED_AT   = SYSDATE,
+           CONFIRM_HOLD_YN      = 'N'
+     WHERE ORDER_ITEM_ID = #{orderItemId}
+       AND RETURN_STATUS_CD = 'REQUESTED'
+       AND ORDER_ID IN (SELECT ORDER_ID FROM TB_ORDER WHERE BIZ_NO = #{bizNo})
+</update>
+
+<!-- 회수완료 + 환불액 기록 -->
+<update id="completeReturn">
+    UPDATE TB_ORDER_ITEM
+       SET RETURN_STATUS_CD = 'DONE',
+           RETURN_DONE_AT   = SYSDATE,
+           REFUND_AMOUNT    = #{refundAmount},
+           CONFIRM_HOLD_YN  = 'N'
+     WHERE ORDER_ITEM_ID = #{orderItemId}
+       AND RETURN_STATUS_CD = 'RETURNING'
+       AND ORDER_ID IN (SELECT ORDER_ID FROM TB_ORDER WHERE BIZ_NO = #{bizNo})
+</update>
+
+<!-- 결제 환불누적액 (부분환불) -->
+<update id="addPaymentRefundAmt">
+    UPDATE TB_PAYMENT
+       SET REFUND_AMT = NVL(REFUND_AMT, 0) + #{refundAmount},
+           PAY_STATUS = CASE
+               WHEN NVL(REFUND_AMT, 0) + #{refundAmount} &gt;= PAY_AMOUNT THEN 'CANCEL'
+               ELSE PAY_STATUS
+           END
+     WHERE ORDER_ID = #{orderId}
 </update>
 
 </mapper>

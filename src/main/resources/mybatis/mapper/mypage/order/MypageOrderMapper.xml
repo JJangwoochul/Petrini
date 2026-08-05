@@ -42,14 +42,21 @@
     SELECT POLICY_VALUE FROM TB_POLICY WHERE POLICY_TYPE = 'POINT' AND POLICY_KEY = #{policyKey}
 </select>
 
-<!-- 지윤 26.07.23 추가: 구매확정 처리. DONE 상태 + 아직 확정 안 한 주문만 대상 (조건 안 맞으면 0건 UPDATE) -->
+<!-- 지윤 26.07.23 추가: 구매확정 처리. DONE + 확정 가능한 ITEM이 있으면 대상 -->
+<!-- 2026/08/04 장우철 — 부분 확정: 환불중인 상품이 있어도 나머지 확정 가능 / 재확정(거절 후) 허용 -->
 <update id="confirmPurchaseOrder">
     UPDATE TB_ORDER
-       SET CONFIRM_YN = 'Y', CONFIRMED_AT = SYSDATE
+       SET CONFIRM_YN = 'Y',
+           CONFIRMED_AT = NVL(CONFIRMED_AT, SYSDATE)
      WHERE ORDER_ID = #{orderId}
        AND MEMBER_NO = #{memberNo}
        AND ORDER_STATUS = 'DONE'
-       AND CONFIRM_YN = 'N'
+       AND EXISTS (
+           SELECT 1 FROM TB_ORDER_ITEM oi
+            WHERE oi.ORDER_ID = TB_ORDER.ORDER_ID
+              AND oi.CONFIRMED_AT IS NULL
+              AND NVL(oi.RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+       )
 </update>
 
 <!-- 지윤 26.07.23 추가: 포인트 적립 전 현재 잔액 조회 (새 잔액 계산용) -->
@@ -120,6 +127,7 @@
 </select>
 
 <!-- 지윤 26.07.22 추가: 주문취소 신청. PAID 상태 + 아직 신청 안 한 주문만 대상 (조건 안 맞으면 0건 UPDATE) -->
+<!-- 2026/08/04 장우철 — 배송준비(READY)도 송장 전·배송중 전이므로 주문취소 허용 (환불 아님) -->
 <update id="requestCancel">
     UPDATE TB_ORDER
        SET CLAIM_TYPE = 'CANCEL',
@@ -128,7 +136,7 @@
            REQUESTED_AT = SYSDATE
      WHERE ORDER_ID = #{orderId}
        AND MEMBER_NO = #{memberNo}
-       AND ORDER_STATUS = 'PAID'
+       AND ORDER_STATUS IN ('PAID', 'READY')
        AND CLAIM_STATUS IS NULL
 </update>
 
@@ -137,7 +145,9 @@
 <select id="selectOrderItems" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderItemVO">
     SELECT
         oi.ORDER_ITEM_ID, oi.PRODUCT_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
-        oi.QTY, oi.TOTAL_PRICE,
+        oi.QTY, oi.TOTAL_PRICE, oi.CONFIRMED_AT,
+        oi.RETURN_STATUS_CD, oi.RETURN_REASON_CD, oi.CLAIM_REASON, oi.CONFIRM_HOLD_YN,
+        oi.REFUND_AMOUNT, oi.RETURN_FEE_AMOUNT, oi.RETURN_REJECT_REASON,
         f.FILE_URL AS THUMBNAIL_URL,
         CASE WHEN EXISTS (
             SELECT 1 FROM TB_REVIEW r WHERE r.ORDER_ITEM_ID = oi.ORDER_ITEM_ID
@@ -175,14 +185,127 @@
 </insert>
 
 <!-- 7일 후 구매확정 자동) -->
+<!-- 2026/08/04 장우철 — 부분 확정: 확정 가능 ITEM이 1건이라도 있으면 대상 (환불중 상품은 confirmPurchaseItems에서 제외) -->
 <select id="selectOrdersNeedingAutoConfirm" resultType="map">
     SELECT o.ORDER_ID AS ORDER_ID, o.MEMBER_NO AS MEMBER_NO
     FROM TB_ORDER o
     JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
     WHERE o.ORDER_STATUS = 'DONE'
-      AND o.CONFIRM_YN = 'N'
       AND d.DELIVERED_AT IS NOT NULL
       AND d.DELIVERED_AT &lt;= SYSDATE - 7
+      AND EXISTS (
+          SELECT 1 FROM TB_ORDER_ITEM oi
+           WHERE oi.ORDER_ID = o.ORDER_ID
+             AND oi.CONFIRMED_AT IS NULL
+             AND NVL(oi.RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+      )
+</select>
+
+<!-- 2026/08/04 장우철 — 환불 신청 대상 상품 1건 (본인 + 송장 이후 + 상품 미확정 + 진행중 환불 없음) -->
+<select id="selectRefundableItem" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderItemVO">
+    SELECT oi.ORDER_ITEM_ID, oi.PRODUCT_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
+           oi.QTY, oi.TOTAL_PRICE, oi.CONFIRMED_AT,
+           oi.RETURN_STATUS_CD, oi.RETURN_REASON_CD, oi.CLAIM_REASON,
+           oi.CONFIRM_HOLD_YN, oi.REFUND_AMOUNT, oi.RETURN_FEE_AMOUNT, oi.RETURN_REJECT_REASON,
+           f.FILE_URL AS THUMBNAIL_URL,
+           0 AS REVIEWED
+      FROM TB_ORDER_ITEM oi
+      JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
+      JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+      LEFT JOIN (
+          SELECT REF_ID, FILE_URL,
+                 ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+            FROM TB_FILE WHERE REF_TYPE = 'PRODUCT'
+      ) f ON f.REF_ID = oi.PRODUCT_ID AND f.RN = 1
+     WHERE oi.ORDER_ITEM_ID = #{orderItemId}
+       AND o.MEMBER_NO = #{memberNo}
+       AND o.ORDER_STATUS IN ('SHIPPING', 'DONE')
+       AND oi.CONFIRMED_AT IS NULL
+       AND d.TRACKING_NO IS NOT NULL
+       AND NVL(oi.RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+</select>
+
+<!-- 2026/08/04 장우철 — 이번 확정으로 적립할 대상 상품 금액 합계 -->
+<select id="selectConfirmableItemsAmount" resultType="int">
+    SELECT NVL(SUM(oi.TOTAL_PRICE), 0)
+      FROM TB_ORDER_ITEM oi
+     WHERE oi.ORDER_ID = #{orderId}
+       AND oi.CONFIRMED_AT IS NULL
+       AND NVL(oi.RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+</select>
+
+<!-- 2026/08/04 장우철 — 상품단위 환불 신청 -->
+<update id="requestItemRefund">
+    UPDATE TB_ORDER_ITEM
+       SET RETURN_STATUS_CD    = 'REQUESTED',
+           RETURN_REASON_CD    = #{returnReasonCd},
+           CLAIM_REASON        = #{claimReason},
+           RETURN_FEE_PAYER    = 'USER',
+           RETURN_FEE_AMOUNT   = #{returnFeeAmount},
+           CONFIRM_HOLD_YN     = 'Y',
+           RETURN_REQUESTED_AT = SYSDATE,
+           RETURN_APPROVED_AT  = NULL,
+           RETURN_REJECTED_AT  = NULL,
+           RETURN_DONE_AT      = NULL,
+           RETURN_REJECT_REASON = NULL,
+           REFUND_AMOUNT       = NULL
+     WHERE ORDER_ITEM_ID = #{orderItemId}
+       AND CONFIRMED_AT IS NULL
+       AND NVL(RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+</update>
+
+<select id="selectBizMemberNoByOrderItemId" resultType="Long">
+    SELECT M.MEMBER_NO
+      FROM TB_ORDER_ITEM OI
+      JOIN TB_ORDER O ON O.ORDER_ID = OI.ORDER_ID
+      JOIN TB_BUSINESS B ON B.BIZ_NO = O.BIZ_NO
+      JOIN TB_MEMBER M ON M.MEMBER_ID = B.BIZ_ID
+     WHERE OI.ORDER_ITEM_ID = #{orderItemId}
+</select>
+
+<select id="selectOrderNoByOrderItemId" resultType="String">
+    SELECT O.ORDER_NO
+      FROM TB_ORDER_ITEM OI
+      JOIN TB_ORDER O ON O.ORDER_ID = OI.ORDER_ID
+     WHERE OI.ORDER_ITEM_ID = #{orderItemId}
+</select>
+
+<!-- 2026/08/04 장우철 — 구매확정 시 ITEM에도 CONFIRMED_AT 기록 (정산 집계용) -->
+<!-- 환불신청/진행/완료 상품은 확정·정산 대상에서 제외 -->
+<update id="confirmPurchaseItems">
+    UPDATE TB_ORDER_ITEM
+       SET CONFIRMED_AT = SYSDATE,
+           CONFIRM_HOLD_YN = 'N'
+     WHERE ORDER_ID = #{orderId}
+       AND CONFIRMED_AT IS NULL
+       AND NVL(RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+</update>
+
+<!--
+  2026/08/04 장우철 — STORE 정산 대상 후보 (5단계 엔진에서 재사용)
+  조건: 구매확정됨 + 환불신청/진행/완료 아님 + (추후) 미정산은 SETTLEMENT_ITEM NOT EXISTS 로 추가
+-->
+<select id="selectSettlementEligibleItems" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderItemVO">
+    SELECT oi.ORDER_ITEM_ID, oi.PRODUCT_ID, oi.PRODUCT_NAME, oi.OPTION_COLOR, oi.OPTION_SIZE,
+           oi.QTY, oi.TOTAL_PRICE,
+           oi.RETURN_STATUS_CD, oi.RETURN_REASON_CD, oi.CLAIM_REASON,
+           oi.CONFIRM_HOLD_YN, oi.REFUND_AMOUNT, oi.RETURN_FEE_AMOUNT, oi.RETURN_REJECT_REASON,
+           CAST(NULL AS VARCHAR2(500)) AS THUMBNAIL_URL,
+           0 AS REVIEWED
+      FROM TB_ORDER_ITEM oi
+      JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
+     WHERE o.ORDER_ID = #{orderId}
+       AND oi.CONFIRMED_AT IS NOT NULL
+       AND NVL(oi.RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
+       AND o.ORDER_STATUS &lt;&gt; 'CANCEL'
+     ORDER BY oi.ORDER_ITEM_ID
+</select>
+
+<select id="countActiveReturnByOrderId" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_ORDER_ITEM
+     WHERE ORDER_ID = #{orderId}
+       AND RETURN_STATUS_CD IN ('REQUESTED', 'RETURNING')
 </select>
 
 </mapper>

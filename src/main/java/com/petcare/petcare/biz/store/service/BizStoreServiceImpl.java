@@ -25,7 +25,9 @@ import com.petcare.petcare.biz.store.mapper.BizStoreMapper;
 import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
 import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
+import com.petcare.petcare.biz.store.vo.BizReturnVO;
 import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.store.vo.CategoryVO;
 import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.common.external.service.TossPaymentService;
@@ -46,6 +48,10 @@ public class BizStoreServiceImpl implements BizStoreService {
     //지윤 26.07.22 추가: 취소승인 DB반영 트랜잭션 전용 (self-invocation 문제로 별도 빈 분리)
     @Autowired
     private OrderCancelTxService orderCancelTxService;
+
+    // 2026/08/04 장우철 — 환불 처리 알림
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     //지윤 26.07.14 페이지당 상품 개수 (요청대로 10개)
     private static final int PAGE_SIZE = 10;
@@ -461,4 +467,107 @@ public class BizStoreServiceImpl implements BizStoreService {
            fileService.uploadFile(certFile, "BIZ_AUTH", bizNo);
        }
    }
+
+    // 2026/08/04 장우철 — 환불 목록
+    @Override
+    public List<BizReturnVO> getReturnList(Long bizNo, String statusCd) {
+        if (statusCd == null || statusCd.isBlank()) {
+            statusCd = "REQUESTED";
+        }
+        return bizStoreMapper.selectReturnList(bizNo, statusCd);
+    }
+
+    @Override
+    public int getReturnRequestedCount(Long bizNo) {
+        return bizStoreMapper.selectReturnRequestedCount(bizNo);
+    }
+
+    @Override
+    public BizReturnVO getReturnDetail(Long orderItemId, Long bizNo) {
+        BizReturnVO vo = bizStoreMapper.selectReturnDetail(orderItemId, bizNo);
+        if (vo != null) {
+            vo.setPhotoUrls(bizStoreMapper.selectReturnPhotoUrls(orderItemId));
+        }
+        return vo;
+    }
+
+    @Override
+    public String approveReturn(Long orderItemId, Long bizNo) {
+        BizReturnVO detail = bizStoreMapper.selectReturnDetail(orderItemId, bizNo);
+        if (detail == null || !"REQUESTED".equals(detail.getReturnStatusCd())) {
+            return "환불 신청 대기 건이 아닙니다.";
+        }
+        int updated = bizStoreMapper.approveReturn(orderItemId, bizNo);
+        if (updated == 0) {
+            return "승인 처리에 실패했습니다.";
+        }
+        mypageNotifyService.sendRefundApproveToBuyerNotification(
+                detail.getMemberNo(), detail.getOrderNo(), detail.getProductName());
+        return null;
+    }
+
+    @Override
+    public String rejectReturn(Long orderItemId, Long bizNo, String rejectReason) {
+        if (rejectReason == null || rejectReason.isBlank()) {
+            return "거절 사유를 입력해 주세요.";
+        }
+        BizReturnVO detail = bizStoreMapper.selectReturnDetail(orderItemId, bizNo);
+        if (detail == null || !"REQUESTED".equals(detail.getReturnStatusCd())) {
+            return "환불 신청 대기 건이 아닙니다.";
+        }
+        int updated = bizStoreMapper.rejectReturn(orderItemId, bizNo, rejectReason.trim());
+        if (updated == 0) {
+            return "거절 처리에 실패했습니다.";
+        }
+        mypageNotifyService.sendRefundRejectToBuyerNotification(
+                detail.getMemberNo(), detail.getOrderNo(), detail.getProductName(), rejectReason.trim());
+        return null;
+    }
+
+    /**
+     * 회수완료 → 토스 부분환불 → DB DONE + 재고복구
+     * 환불액 = max(0, 상품합계 - 반품택배비)
+     */
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public String completeReturn(Long orderItemId, Long bizNo) {
+        BizReturnVO detail = bizStoreMapper.selectReturnDetail(orderItemId, bizNo);
+        if (detail == null || !"RETURNING".equals(detail.getReturnStatusCd())) {
+            return "환불 진행 중인 건이 아닙니다.";
+        }
+        if (detail.getTossPaymentKey() == null || detail.getTossPaymentKey().isBlank()) {
+            return "결제 정보를 찾을 수 없습니다.";
+        }
+
+        int itemPrice = detail.getTotalPrice() != null ? detail.getTotalPrice() : 0;
+        int returnFee = detail.getReturnFeeAmount() != null ? detail.getReturnFeeAmount() : 0;
+        int refundAmount = Math.max(0, itemPrice - returnFee);
+        if (refundAmount <= 0) {
+            return "환불 금액이 0원 이하입니다. 반품택배비를 확인해 주세요.";
+        }
+
+        String tossError = tossPaymentService.cancelPayment(
+                detail.getTossPaymentKey(),
+                "상품 환불(회수완료)",
+                (long) refundAmount);
+        if (tossError != null) {
+            return tossError;
+        }
+
+        int updated = bizStoreMapper.completeReturn(orderItemId, bizNo, refundAmount);
+        if (updated == 0) {
+            return "환불 완료 DB 반영에 실패했습니다. 토스 환불은 이미 되었을 수 있으니 확인해 주세요.";
+        }
+
+        bizStoreMapper.addPaymentRefundAmt(detail.getOrderId(), refundAmount);
+
+        if (detail.getOptionId() != null && detail.getQty() != null) {
+            bizStoreMapper.restoreStock(detail.getOptionId(), detail.getQty());
+            bizStoreMapper.restoreProductStatusIfNeeded(detail.getProductId());
+        }
+
+        mypageNotifyService.sendRefundDoneToBuyerNotification(
+                detail.getMemberNo(), detail.getOrderNo(), detail.getProductName(), refundAmount);
+        return null;
+    }
 }

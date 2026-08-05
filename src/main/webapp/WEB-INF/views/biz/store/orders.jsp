@@ -30,7 +30,7 @@
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">주문 관리</h1>
-    <p class="biz-page-desc">주문 확인·출고 처리·취소/반품 처리</p>
+    <p class="biz-page-desc">주문 확인·출고 처리 · 환불 완료 조회</p>
   </div>
 
   <div class="biz-card" style="margin-bottom:16px">
@@ -43,11 +43,39 @@
         <a href="${contextPath}/biz/store/orders?statusCd=READY" class="biz-tab ${selectedStatusCd == 'READY' ? 'active' : ''}">배송준비<span class="biz-tab-count">${statusCounts.READY}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=SHIPPING" class="biz-tab ${selectedStatusCd == 'SHIPPING' ? 'active' : ''}">배송중<span class="biz-tab-count">${statusCounts.SHIPPING}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=DONE" class="biz-tab ${selectedStatusCd == 'DONE' ? 'active' : ''}">배송완료<span class="biz-tab-count">${statusCounts.DONE}</span></a>
-        <a href="${contextPath}/biz/store/orders?statusCd=CANCEL" class="biz-tab ${selectedStatusCd == 'CANCEL' ? 'active' : ''}">취소/반품<span class="biz-tab-count">${statusCounts.CANCEL}</span></a>
+        <%-- 2026/08/04 장우철 — 취소/반품 → 환불(완료 조회). 발송전 취소는 배송전취소 탭 유지 --%>
+        <a href="${contextPath}/biz/store/orders?statusCd=RETURN_DONE" class="biz-tab ${selectedStatusCd == 'RETURN_DONE' ? 'active' : ''}">환불<span class="biz-tab-count">${returnDoneCount}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=CLAIM_PENDING" class="biz-tab ${selectedStatusCd == 'CLAIM_PENDING' ? 'active' : ''}" style="color:#E2445C;">배송전취소<span class="biz-tab-count">${statusCounts.CLAIM_PENDING}</span></a>
       </div>
     </div>
 
+    <c:choose>
+      <c:when test="${selectedStatusCd == 'RETURN_DONE'}">
+        <table class="biz-table">
+          <thead><tr><th>완료일</th><th>주문번호</th><th>구매자</th><th>상품</th><th>유형</th><th>환불액</th><th>관리</th></tr></thead>
+          <tbody>
+            <c:choose>
+              <c:when test="${empty returnList}">
+                <tr><td colspan="7" style="text-align:center;color:#999;padding:24px 0">환불 완료 건이 없습니다.</td></tr>
+              </c:when>
+              <c:otherwise>
+                <c:forEach var="r" items="${returnList}">
+                  <tr>
+                    <td><fmt:formatDate value="${r.returnDoneAt}" pattern="yyyy-MM-dd"/></td>
+                    <td>#${r.orderNo}</td>
+                    <td>${r.buyerName}</td>
+                    <td>${r.productName}</td>
+                    <td><c:choose><c:when test="${r.returnReasonCd == 'DEFECT'}">상품이상</c:when><c:otherwise>단순변심</c:otherwise></c:choose></td>
+                    <td><fmt:formatNumber value="${r.refundAmount}" pattern="#,###"/>원</td>
+                    <td><a class="biz-btn" style="text-decoration:none" href="${contextPath}/biz/store/refunds/detail?orderItemId=${r.orderItemId}">상세</a></td>
+                  </tr>
+                </c:forEach>
+              </c:otherwise>
+            </c:choose>
+          </tbody>
+        </table>
+      </c:when>
+      <c:otherwise>
     <table class="biz-table">
       <thead><tr><th>주문번호</th><th>구매자</th><th>상품명</th><th>결제금액</th><th>상태</th><th>관리</th></tr></thead>
       <%-- 지윤 26.07.20 수정: <tbody id="orderBody"></tbody> (JS render()가 채워넣던 빈 껍데기)
@@ -70,11 +98,12 @@
                 <%-- 지윤 26.07.20 수정: JS statusBadgeClass 딕셔너리 조회 -> JSTL c:choose로 상태별 배지 클래스 직접 분기 --%>
                 <td>
                   <c:choose>
+                    <c:when test="${o.activeReturnCount != null && o.activeReturnCount > 0}"><span class="bs-badge bs-cancel">환불진행중</span></c:when>
                     <c:when test="${o.orderStatus == 'PAID'}"><span class="bs-badge bs-wait">결제완료</span></c:when>
                     <c:when test="${o.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
                     <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
                     <c:when test="${o.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
-                    <c:when test="${o.orderStatus == 'CANCEL'}"><span class="bs-badge bs-cancel">취소/반품</span></c:when>
+                    <c:when test="${o.orderStatus == 'CANCEL'}"><span class="bs-badge bs-cancel">취소완료</span></c:when>
                     <c:otherwise><span class="bs-badge bs-empty">${o.orderStatus}</span></c:otherwise>
                   </c:choose>
                 </td>
@@ -87,6 +116,8 @@
         </c:choose>
       </tbody>
     </table>
+      </c:otherwise>
+    </c:choose>
   </div>
 
   <%-- 아래 상세보기 HTML 뼈대(레이아웃)는 원본 그대로, 안 건드림 --%>
@@ -184,7 +215,7 @@
 
   //지윤 26.07.20 수정: statusLabel 딕셔너리는 그대로 유지(상세보기 라벨 표시용), key만 소문자(paid) -> 대문자(PAID)로 변경
   //지윤 26.07.20 삭제: statusBadgeClass 딕셔너리 - 목록 배지는 이제 JSTL c:choose로 서버에서 렌더링해서 JS에서 더 이상 안 씀
-  var statusLabel = { PAID:'결제완료', READY:'배송준비', SHIPPING:'배송중', DONE:'배송완료', CANCEL:'취소/반품' };
+  var statusLabel = { PAID:'결제완료', READY:'배송준비', SHIPPING:'배송중', DONE:'배송완료', CANCEL:'취소완료' };
 
   //지윤 26.07.20 삭제: var orders = [ {...}, {...}, ... ] 하드코딩 배열 5건 통째로 삭제 (이제 서버가 실데이터를 줌)
   //지윤 26.07.20 삭제: var currentTab = 'all' - 탭 필터링이 서버 GET 파라미터 방식으로 바뀌면서 필요없어짐
@@ -231,7 +262,14 @@ function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
         document.getElementById('dPayAmount').textContent  = fmtWon(o.payAmount);
         //지윤 26.07.20 수정: 결제방법 - 원본은 o.payMethod 목업 문자열, 지금은 TB_PAYMENT.PAY_METHOD 조인값
         document.getElementById('dPayMethod').textContent  = o.payMethod || '-';
-        document.getElementById('dStatusLabel').textContent = statusLabel[o.orderStatus] || o.orderStatus;
+        document.getElementById('dStatusLabel').textContent = (function() {
+          var items = o.itemList || [];
+          for (var i = 0; i < items.length; i++) {
+            var rs = items[i].returnStatusCd;
+            if (rs === 'REQUESTED' || rs === 'RETURNING') return '환불진행중';
+          }
+          return statusLabel[o.orderStatus] || o.orderStatus;
+        })();
 
         document.getElementById('dReceiver').textContent      = o.recvName;
         document.getElementById('dReceiverPhone').textContent = o.recvPhone;

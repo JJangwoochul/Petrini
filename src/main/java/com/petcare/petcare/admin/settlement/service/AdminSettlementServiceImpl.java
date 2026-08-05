@@ -1,10 +1,7 @@
 /**
  * 역할: 관리자 정산 서비스 구현체
- * 2026/07/30 장우철 — 숙소 정산 구현순서 3-1 ~ 3-5 / 4-3 ~ 4-5 / 5-4 D
- *
- * - 지급은 DB 상태만 변경 (토스 실이체 없음)
- * - 중간정산 승인은 StaySettlementService 에 위임
- * - 더미 지급 완료 시 사업자 사이트 알림 (5-4 D)
+ * 2026/07/30 장우철 — 숙소
+ * 2026/08/05 장우철 — 쇼핑 STORE S11
  */
 package com.petcare.petcare.admin.settlement.service;
 
@@ -14,17 +11,25 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.admin.settlement.mapper.AdminSettlementMapper;
 import com.petcare.petcare.admin.settlement.vo.AdminStayRequestVO;
 import com.petcare.petcare.admin.settlement.vo.AdminStaySettlementVO;
+import com.petcare.petcare.admin.settlement.vo.AdminStoreRequestVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.settlement.mapper.StaySettlementMapper;
+import com.petcare.petcare.settlement.mapper.StoreSettlementMapper;
+import com.petcare.petcare.settlement.service.SettlementBatchService;
 import com.petcare.petcare.settlement.service.StaySettlementService;
+import com.petcare.petcare.settlement.service.StoreSettlementService;
+import com.petcare.petcare.settlement.vo.SettlementBatchResultVO;
 import com.petcare.petcare.settlement.vo.StaySettlementItemVO;
 import com.petcare.petcare.settlement.vo.StaySettlementVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementItemVO;
+import com.petcare.petcare.settlement.vo.StoreSettlementVO;
 
 @Service
 public class AdminSettlementServiceImpl implements AdminSettlementService {
@@ -36,10 +41,20 @@ public class AdminSettlementServiceImpl implements AdminSettlementService {
     private StaySettlementService staySettlementService;
 
     @Autowired
+    private StoreSettlementService storeSettlementService;
+
+    @Autowired
     private StaySettlementMapper staySettlementMapper;
 
     @Autowired
+    private StoreSettlementMapper storeSettlementMapper;
+
+    @Autowired
     private MypageNotifyService mypageNotifyService;
+
+    @Autowired
+    @Lazy
+    private SettlementBatchService settlementBatchService;
 
     @Override
     public boolean isReady() {
@@ -77,7 +92,7 @@ public class AdminSettlementServiceImpl implements AdminSettlementService {
         AdminStaySettlementVO row = adminSettlementMapper.selectStaySettlementById(settleId);
         int updated = adminSettlementMapper.updateStaySettlementPaid(settleId);
         if (updated > 0 && row != null) {
-            notifyPaid(row);
+            notifyStayPaid(row);
         }
         return updated;
     }
@@ -95,13 +110,10 @@ public class AdminSettlementServiceImpl implements AdminSettlementService {
             }
             updated += payStaySettlement(id);
         }
-        if (updated == 0 && settleIds.stream().anyMatch(id -> id != null)) {
-            // 전부 이미 완료 등이어도 예외는 아님 — 컨트롤러 메시지용
-        }
         return updated;
     }
 
-    private void notifyPaid(AdminStaySettlementVO row) {
+    private void notifyStayPaid(AdminStaySettlementVO row) {
         try {
             Long memberNo = staySettlementMapper.selectMemberNoByBizNo(row.getBizNo());
             mypageNotifyService.sendStaySettlementPaidNotification(
@@ -114,13 +126,6 @@ public class AdminSettlementServiceImpl implements AdminSettlementService {
         } catch (Exception e) {
             // 알림 실패해도 지급 처리는 유지
         }
-    }
-
-    private String formatDate(Date d) {
-        if (d == null) {
-            return "-";
-        }
-        return new SimpleDateFormat("yyyy-MM-dd").format(d);
     }
 
     @Override
@@ -152,5 +157,142 @@ public class AdminSettlementServiceImpl implements AdminSettlementService {
             throw new IllegalArgumentException("requestId 가 없습니다.");
         }
         staySettlementService.rejectMidSettlementRequest(requestId, rejectReason);
+    }
+
+    // ===== STORE =====
+
+    @Override
+    public int countStoreSettlements(Long bizNo) {
+        return adminSettlementMapper.countStoreSettlements(bizNo);
+    }
+
+    @Override
+    public List<AdminStaySettlementVO> getStoreSettlementList(String statusCd) {
+        String status = (statusCd == null || statusCd.isBlank() || "all".equalsIgnoreCase(statusCd))
+                ? null : statusCd.toLowerCase();
+        List<AdminStaySettlementVO> list = adminSettlementMapper.selectStoreSettlementList(status);
+        return list == null ? new ArrayList<>() : list;
+    }
+
+    @Override
+    public List<StoreSettlementItemVO> getStoreSettlementItems(Long settleId) {
+        if (settleId == null) {
+            return new ArrayList<>();
+        }
+        List<StoreSettlementItemVO> items = adminSettlementMapper.selectStoreSettlementItems(settleId);
+        return items == null ? new ArrayList<>() : items;
+    }
+
+    @Override
+    @Transactional
+    public int payStoreSettlement(Long settleId) {
+        if (settleId == null) {
+            throw new IllegalArgumentException("settleId 가 없습니다.");
+        }
+        AdminStaySettlementVO row = adminSettlementMapper.selectStoreSettlementById(settleId);
+        int updated = adminSettlementMapper.updateStoreSettlementPaid(settleId);
+        if (updated > 0 && row != null) {
+            notifyStorePaid(row);
+        }
+        return updated;
+    }
+
+    @Override
+    @Transactional
+    public int payStoreSettlements(List<Long> settleIds) {
+        if (settleIds == null || settleIds.isEmpty()) {
+            throw new IllegalArgumentException("선택된 정산이 없습니다.");
+        }
+        int updated = 0;
+        for (Long id : settleIds) {
+            if (id == null) {
+                continue;
+            }
+            updated += payStoreSettlement(id);
+        }
+        return updated;
+    }
+
+    private void notifyStorePaid(AdminStaySettlementVO row) {
+        try {
+            Long memberNo = storeSettlementMapper.selectMemberNoByBizNo(row.getBizNo());
+            mypageNotifyService.sendStoreSettlementPaidNotification(
+                    memberNo,
+                    row.getBizName(),
+                    formatDate(row.getPeriodStart()),
+                    formatDate(row.getPeriodEnd()),
+                    row.getRequestType(),
+                    row.getSettleAmount());
+        } catch (Exception e) {
+            // 알림 실패해도 지급 처리는 유지
+        }
+    }
+
+    @Override
+    public int countStoreMidRequestsRequested() {
+        return adminSettlementMapper.countStoreRequestsRequested();
+    }
+
+    @Override
+    public List<AdminStoreRequestVO> getStoreRequestList(String statusCd) {
+        String status = (statusCd == null || statusCd.isBlank() || "all".equalsIgnoreCase(statusCd))
+                ? null : statusCd.toLowerCase();
+        List<AdminStoreRequestVO> list = adminSettlementMapper.selectStoreRequestList(status);
+        return list == null ? new ArrayList<>() : list;
+    }
+
+    @Override
+    @Transactional
+    public StoreSettlementVO approveStoreMidRequest(Long requestId) {
+        if (requestId == null) {
+            throw new IllegalArgumentException("requestId 가 없습니다.");
+        }
+        return storeSettlementService.approveMidSettlementRequest(requestId);
+    }
+
+    @Override
+    @Transactional
+    public void rejectStoreMidRequest(Long requestId, String rejectReason) {
+        if (requestId == null) {
+            throw new IllegalArgumentException("requestId 가 없습니다.");
+        }
+        storeSettlementService.rejectMidSettlementRequest(requestId, rejectReason);
+    }
+
+    // ===== S12 =====
+
+    @Override
+    public SettlementBatchResultVO createMonthlySettlements(String settleMonth) {
+        return settlementBatchService.createMonthlySettlements(settleMonth);
+    }
+
+    @Override
+    public SettlementBatchResultVO autoPayWaitingSettlements() {
+        return settlementBatchService.autoPayWaitingSettlements();
+    }
+
+    @Override
+    @Transactional
+    public int markStaySettlementFail(Long settleId) {
+        if (settleId == null) {
+            throw new IllegalArgumentException("settleId 가 없습니다.");
+        }
+        return adminSettlementMapper.updateStaySettlementFail(settleId);
+    }
+
+    @Override
+    @Transactional
+    public int markStoreSettlementFail(Long settleId) {
+        if (settleId == null) {
+            throw new IllegalArgumentException("settleId 가 없습니다.");
+        }
+        return adminSettlementMapper.updateStoreSettlementFail(settleId);
+    }
+
+    private String formatDate(Date d) {
+        if (d == null) {
+            return "-";
+        }
+        return new SimpleDateFormat("yyyy-MM-dd").format(d);
     }
 }

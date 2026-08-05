@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.mypage.order.mapper.MypageOrderMapper;
+import com.petcare.petcare.mypage.order.vo.MypageOrderItemVO;
 import com.petcare.petcare.mypage.order.vo.MypageOrderVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
@@ -137,15 +138,20 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         return updated > 0;
     }
 
-    //지윤 26.07.23 추가: 구매확정 처리 (DONE 상태 주문만, 결제금액의 정책 % 만큼 적립)
+    //지윤 26.07.23 추가: 구매확정 처리 (DONE 상태 주문만, 정책 % 적립)
+    // 2026/08/04 장우철 — 부분 확정: 환불중/완료 상품 제외, 확정 대상 TOTAL_PRICE 합계 기준 적립
     @Override
     public Integer confirmPurchase(Long memberNo, Long orderId) {
+        int confirmableAmount = mypageOrderMapper.selectConfirmableItemsAmount(orderId);
+        if (confirmableAmount <= 0) return null;
+
         int updated = mypageOrderMapper.confirmPurchaseOrder(orderId, memberNo);
         if (updated == 0) return null;
 
-        MypageOrderVO order = mypageOrderMapper.selectOrderDetail(orderId, memberNo);
+        mypageOrderMapper.confirmPurchaseItems(orderId);
+
         int rate = Integer.parseInt(mypageOrderMapper.selectPolicyValue("PURCHASE_RATE"));
-        int earnPoint = order.getPayAmount() * rate / 100;
+        int earnPoint = confirmableAmount * rate / 100;
 
         int currentBalance = mypageOrderMapper.selectMemberPointBalance(memberNo);
         int newBalance = currentBalance + earnPoint;
@@ -153,5 +159,65 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         mypageOrderMapper.insertPointEarnHistory(memberNo, earnPoint, newBalance, "PURCHASE_CONFIRM", "ORDER", orderId);
 
         return earnPoint;
+    }
+
+    // 2026/08/04 장우철 — 환불 가능 상품 조회
+    @Override
+    public MypageOrderItemVO getRefundableItem(Long memberNo, Long orderItemId) {
+        return mypageOrderMapper.selectRefundableItem(orderItemId, memberNo);
+    }
+
+    // 2026/08/04 장우철 — 상품단위 환불 신청 (반품택배비 고정 3,000원 유저 부담)
+    private static final int RETURN_FEE_FIXED = 3000;
+
+    @Override
+    public String requestRefund(Long memberNo, Long orderItemId, String reasonCd, String content,
+                                List<MultipartFile> images) throws Exception {
+        if (!"CHANGE_OF_MIND".equals(reasonCd) && !"DEFECT".equals(reasonCd)) {
+            return "환불 유형을 선택해 주세요.";
+        }
+        if (content == null || content.isBlank()) {
+            return "신청 내용을 입력해 주세요.";
+        }
+        if ("DEFECT".equals(reasonCd)) {
+            boolean hasPhoto = false;
+            if (images != null) {
+                for (MultipartFile img : images) {
+                    if (img != null && !img.isEmpty()) {
+                        hasPhoto = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasPhoto) {
+                return "상품이상 환불은 사진을 1장 이상 첨부해 주세요.";
+            }
+        }
+
+        MypageOrderItemVO item = mypageOrderMapper.selectRefundableItem(orderItemId, memberNo);
+        if (item == null) {
+            return "환불 신청할 수 없는 상품입니다. (배송중·배송완료·미확정만 가능)";
+        }
+
+        int updated = mypageOrderMapper.requestItemRefund(
+                orderItemId, reasonCd, content.trim(), RETURN_FEE_FIXED);
+        if (updated == 0) {
+            return "이미 환불 진행 중이거나 신청할 수 없습니다.";
+        }
+
+        if ("DEFECT".equals(reasonCd) && images != null) {
+            for (MultipartFile image : images) {
+                if (image != null && !image.isEmpty()) {
+                    fileService.uploadFile(image, "ORDER_RETURN", orderItemId);
+                }
+            }
+        }
+
+        Long bizMemberNo = mypageOrderMapper.selectBizMemberNoByOrderItemId(orderItemId);
+        String orderNo = mypageOrderMapper.selectOrderNoByOrderItemId(orderItemId);
+        mypageNotifyService.sendRefundRequestNotification(
+                bizMemberNo, orderNo, item.getProductName(), reasonCd);
+
+        return null;
     }
 }

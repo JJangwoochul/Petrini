@@ -130,4 +130,13 @@ public interface BizStoreService {
 
     //지윤 26.07.23 추가: 사업자 정보 수정 (등록증 새로 올리면 기존 것 교체)
     void updateBusinessInfo(Long bizNo, com.petcare.petcare.biz.store.vo.BizInfoVO info, org.springframework.web.multipart.MultipartFile certFile) throws Exception;
+
+    // 2026/08/04 장우철 — 상품단위 환불
+    java.util.List<com.petcare.petcare.biz.store.vo.BizReturnVO> getReturnList(Long bizNo, String statusCd);
+    int getReturnRequestedCount(Long bizNo);
+    com.petcare.petcare.biz.store.vo.BizReturnVO getReturnDetail(Long orderItemId, Long bizNo);
+    /** null=성공, 아니면 에러메시지 */
+    String approveReturn(Long orderItemId, Long bizNo);
+    String rejectReturn(Long orderItemId, Long bizNo, String rejectReason);
+    String completeReturn(Long orderItemId, Long bizNo);
 }

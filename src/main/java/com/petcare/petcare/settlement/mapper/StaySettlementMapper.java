@@ -138,4 +138,10 @@ public interface StaySettlementMapper {
 
     /** 환불 반영 후 미지급 정산 마스터 금액 재합산 */
     int recalcUnpaidSettlementTotalsByResvId(@Param("resvId") Long resvId);
+
+    /** 2026/08/05 장우철 — S12: 승인된 숙소 사업자 목록 (월정산 배치) */
+    List<Long> selectApprovedStayBizNos();
+
+    /** 2026/08/05 장우철 — S12: 동일 월 REGULAR 존재 여부 (중복 월정산 방지) */
+    int countRegularByBizAndMonth(@Param("bizNo") Long bizNo, @Param("settleMonth") String settleMonth);
 }

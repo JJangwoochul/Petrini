@@ -71,7 +71,15 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <p class="od-section-title" style="margin-bottom:0">🏪 ${o.bizName}</p>
         <div style="display:flex;align-items:center;gap:10px">
+          <%-- 2026/08/04 장우철 — 환불신청/진행 중이면 배송중 대신 환불진행중 --%>
+          <c:set var="refundInProgress" value="false" />
+          <c:forEach var="itBadge" items="${o.itemList}">
+            <c:if test="${itBadge.returnStatusCd == 'REQUESTED' || itBadge.returnStatusCd == 'RETURNING'}">
+              <c:set var="refundInProgress" value="true" />
+            </c:if>
+          </c:forEach>
           <c:choose>
+            <c:when test="${refundInProgress}"><span class="badge-status badge-cancel">환불진행중</span></c:when>
             <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
             <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
             <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
@@ -79,7 +87,8 @@
             <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
           </c:choose>
           <%-- 지윤 26.07.30 수정: 주문취소 버튼을 사업자 단위로 이동 (하단 공용 버튼 -> 여기로) --%>
-          <c:if test="${o.orderStatus == 'PAID' && empty o.claimStatus}">
+          <%-- 2026/08/04 장우철 — 결제완료·배송준비 = 주문취소 (배송중부터는 환불) --%>
+          <c:if test="${(o.orderStatus == 'PAID' || o.orderStatus == 'READY') && empty o.claimStatus}">
             <button type="button" class="btn-sm" style="background:#fff;border:1px solid #E2445C;color:#E2445C;" onclick="openCancelModal(${o.orderId})">주문취소</button>
           </c:if>
           <c:if test="${not empty o.trackingNo}">
@@ -212,7 +221,7 @@
 <div id="cancelModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000; align-items:center; justify-content:center;">
   <div style="background:#fff; border-radius:14px; padding:24px; width:360px;">
     <p style="font-weight:800; font-size:15px; margin:0 0 12px;">주문취소 신청</p>
-    <p style="font-size:13px; color:var(--text-muted); margin:0 0 14px;">배송 시작 전 상품에 한해 취소 가능하며, 신청 후 사업자 확인을 거쳐 환불됩니다.</p>
+    <p style="font-size:13px; color:var(--text-muted); margin:0 0 14px;">결제완료·배송준비 단계에서만 취소 가능합니다. (배송중부터는 환불 신청) 신청 후 사업자 확인을 거쳐 환불됩니다.</p>
     <form id="cancelForm" method="post" action="${contextPath}/mypage/orders/cancel">
       <input type="hidden" id="cancelOrderId" name="orderId" value="">
       <textarea name="reason" required placeholder="취소 사유를 입력해주세요" style="width:100%; height:80px; border:1px solid #E2E8E4; border-radius:8px; padding:10px; font-size:13px; resize:none; box-sizing:border-box;"></textarea>
