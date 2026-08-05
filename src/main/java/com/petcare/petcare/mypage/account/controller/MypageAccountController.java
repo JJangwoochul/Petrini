@@ -1,6 +1,8 @@
 /**
  * 역할: 마이페이지 회원정보 URL 처리 → Service 호출 → JSP 반환
  *
+ * - 2026-08-04 박유정 — 회원정보 수정 POST /mypage/edit (프로필 사진 업로드·세션 갱신)
+ *
  * 연결
  * - Service: MypageAccountService
  *
@@ -24,6 +26,9 @@ import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
 
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 @Controller
 @RequestMapping("/mypage")
 public class MypageAccountController {
@@ -46,6 +51,36 @@ public class MypageAccountController {
         model.addAttribute("profile", profile);
 
         return "mypage/edit";
+    }
+
+    // 2026-08-04 박유정 — 회원정보 수정 저장 (프로필 사진)
+    @PostMapping("/edit")
+    public String editSubmit(
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
+            HttpSession session,
+            RedirectAttributes rttr) {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return "redirect:/login";
+        }
+
+        // 2026-08-04 박유정 — 파일 선택 시에만 저장 (사진 미변경 시 redirect만)
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                String url = mypageAccountService.updateProfileImage(member.getMemberNo(), profileImage);
+                // 2026-08-04 박유정 — 사이드바 즉시 반영을 위해 세션 memberInfo 갱신
+                member.setProfileImgUrl(url);
+                session.setAttribute("memberInfo", member);
+                rttr.addFlashAttribute("msg", "프로필 사진이 변경되었습니다.");
+            } catch (IllegalArgumentException e) {
+                rttr.addFlashAttribute("errorMsg", e.getMessage());
+            } catch (Exception e) {
+                rttr.addFlashAttribute("errorMsg", "사진 저장에 실패했습니다.");
+            }
+        }
+
+        return "redirect:/mypage/edit";
     }
 
     // HYJ 2026/07/29 — 회원 탈퇴

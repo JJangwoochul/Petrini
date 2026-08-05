@@ -40,7 +40,8 @@
            ADDR1       AS addr1,
            ADDR2       AS addr2,
            TO_CHAR(BIRTH_DATE, 'YYYY-MM-DD') AS birthDate,
-           GENDER      AS gender
+           GENDER      AS gender,
+           PROFILE_IMG_URL AS profileImgUrl   <!-- 2026-08-04 박유정 — 프로필 사진 URL -->
       FROM TB_MEMBER
      WHERE MEMBER_NO = #{memberNo}
   </select>
@@ -91,4 +92,11 @@
     <delete id="deleteMemberWithdrawByMemberNo">
         DELETE FROM TB_MEMBER_WITHDRAW WHERE MEMBER_NO = #{memberNo}
     </delete>
+
+    <!-- 2026-08-04 박유정 — 프로필 사진 URL UPDATE (TB_MEMBER.PROFILE_IMG_URL) -->
+    <update id="updateMemberProfile">
+         UPDATE TB_MEMBER
+         SET PROFILE_IMG_URL = #{profileImgUrl}
+         WHERE MEMBER_NO = #{memberNo}
+    </update>
 </mapper>

@@ -42,7 +42,8 @@
             ADDR2          AS addr2,
             STATUS_CD      AS statusCd,
             GRADE_CD       AS gradeCd,
-            POINT_BALANCE  AS pointBalance
+            POINT_BALANCE  AS pointBalance,
+            PROFILE_IMG_URL AS profileImgUrl   <!-- 2026-08-04 박유정 — 로그인 세션 사이드바용 -->
         FROM TB_MEMBER
         WHERE MEMBER_ID = #{loginId}
            OR EMAIL = #{loginId}
@@ -250,7 +251,8 @@
             M.ADDR2          AS addr2,
             M.STATUS_CD      AS statusCd,
             M.GRADE_CD       AS gradeCd,
-            M.POINT_BALANCE  AS pointBalance
+            M.POINT_BALANCE  AS pointBalance,
+            M.PROFILE_IMG_URL AS profileImgUrl   <!-- 2026-08-04 박유정 — 카카오 로그인 세션용 -->
         FROM TB_MEMBER M
         INNER JOIN TB_MEMBER_SOCIAL S
             ON M.MEMBER_NO = S.MEMBER_NO

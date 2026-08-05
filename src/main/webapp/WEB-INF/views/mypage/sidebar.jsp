@@ -5,7 +5,8 @@
 <aside class="mypage-sidebar">
     <div class="sidebar-profile">
         <div class="profile-avatar">
-            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80&auto=format&fit=crop"
+            <%-- 2026-08-04 박유정 — 세션 memberInfo.profileImgUrl 표시 (로그인·저장 시 갱신) --%>
+            <img src="${not empty memberInfo.profileImgUrl ? contextPath.concat(memberInfo.profileImgUrl) : 'https://placehold.co/76x76/EAF7F2/2BAB82?text=ME'}"
                  alt="프로필"
                  onerror="this.src='https://placehold.co/76x76/EAF7F2/2BAB82?text=ME'">
         </div>

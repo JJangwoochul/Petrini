@@ -14,24 +14,37 @@
 <%-- ── 회원정보 수정 ── --%>
 <div class="mp-section active">
     <h2 class="mp-title">회원정보 수정</h2>
+    <c:if test="${not empty msg}">
+    <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px">${msg}</div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+    <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px">${errorMsg}</div>
+    </c:if>
     <p class="mp-desc">비밀번호 확인 후 개인정보를 수정하세요.</p>
-    <%-- 프로필 사진 --%>
-    <div class="edit-section">
-        <div class="edit-section-title">
-            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            프로필 사진
-        </div>
-        <div class="edit-avatar-row">
-            <img class="edit-avatar-img"
-                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&q=80&auto=format&fit=crop"
-                 alt="프로필"
-                 onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=ME'">
-            <div class="edit-avatar-btns">
-                <button class="btn-sm">사진 변경</button>
-                <button class="btn-sm danger">사진 삭제</button>
+    <%-- 2026-08-04 박유정 — 프로필 사진 업로드 form (POST /mypage/edit, multipart) --%>
+    <form id="editForm"
+          method="post"
+          action="${contextPath}/mypage/edit"
+          enctype="multipart/form-data">
+        <div class="edit-section">
+            <div class="edit-section-title">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                프로필 사진
+            </div>
+            <div class="edit-avatar-row">
+                <%-- 2026-08-04 박유정 — DB profile.profileImgUrl 표시, 사진 선택 시 JS 미리보기(profilePreview) --%>
+                <img id="profilePreview" class="edit-avatar-img"
+                     src="${not empty profile.profileImgUrl ? contextPath.concat(profile.profileImgUrl) : 'https://placehold.co/80x80/EAF7F2/2BAB82?text=ME'}"
+                     alt="프로필"
+                     onerror="this.src='https://placehold.co/80x80/EAF7F2/2BAB82?text=ME'">
+                <div class="edit-avatar-btns">
+                    <input type="file" name="profileImage" id="profileImageInput"
+                           accept="image/*" style="display:none">
+                    <button type="button" class="btn-sm"
+                            onclick="document.getElementById('profileImageInput').click()">사진 선택</button>
+                </div>
             </div>
         </div>
-    </div>
     <%-- 현재 비밀번호 확인 --%>
     <div class="edit-section">
         <div class="edit-section-title">
@@ -57,7 +70,7 @@
             <div class="edit-group">
                 <label>새 비밀번호 확인</label>
                 <div class="edit-pw-wrap">
-                    <input type="password" placeholder="비밀번호를 다시 입력하세요 autocomplete="new-password">
+                    <input type="password" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password">
                     <button class="edit-pw-eye" type="button"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                 </div>
             </div>
@@ -134,9 +147,9 @@
     </div>
 
     <div class="edit-submit-area">
-        <button class="btn-primary" style="padding:13px 52px; font-size:15px;">저장하기</button>
+        <button type="submit" class="btn-primary" style="padding:13px 52px; font-size:15px;">저장하기</button>
     </div>
-
+  </form>
     <%-- HYJ 26.07.29 회원 탈퇴 --%>
     <div style="text-align:center; margin-top:48px; padding-top:24px; border-top:1px solid #eee;">
         <a href="${contextPath}/mypage/withdraw"
@@ -148,7 +161,28 @@
 
 </div><%-- /mypage-content --%>
 </div><%-- /mypage-wrap --%>
-
+<%-- 2026-08-04 박유정 — 사진 선택 즉시 미리보기 (저장 전 사이드바는 변경 안 함) --%>
+<script>
+(function () {
+  var input = document.getElementById('profileImageInput');
+  var preview = document.getElementById('profilePreview');
+  if (!input || !preview) return;
+  input.addEventListener('change', function () {
+    var file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 선택할 수 있습니다.');
+      input.value = '';
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      preview.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+})();
+</script>
 <%-- 2026/07/27 장우철 — 토스 빌링 SDK + 카드등록 Ajax --%>
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script src="${contextPath}/resources/js/billing-card.js"></script>

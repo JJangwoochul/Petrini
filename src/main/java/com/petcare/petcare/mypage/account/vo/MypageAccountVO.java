@@ -2,6 +2,7 @@
  * 역할: 마이페이지 회원정보 데이터 객체
  *
  * - 2026-07-28 박유정 — 회원정보 수정 화면 DB 조회용
+ * - 2026-08-04 박유정 — 프로필 사진 URL (TB_MEMBER.PROFILE_IMG_URL)
  *
  * 참고 테이블
  * - TB_MEMBER
@@ -26,4 +27,5 @@ public class MypageAccountVO {
     private String addr2;       // ADDR2 — 상세 주소
     private String birthDate;   // 2026-07-28 박유정 — TB_MEMBER.BIRTH_DATE
     private String gender;      // 2026-07-28 박유정 — TB_MEMBER.GENDER (M/F)
+    private String profileImgUrl;   // 2026-08-04 박유정 — TB_MEMBER.PROFILE_IMG_URL
 }
