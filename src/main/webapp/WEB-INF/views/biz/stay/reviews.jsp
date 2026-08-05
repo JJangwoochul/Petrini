@@ -99,6 +99,8 @@
 
 <%-- 2026-07-27 박유정 — 답글 저장 POST (BizStayController) --%>
 <form id="replyForm" method="post" action="${contextPath}/biz/stay/reviews/reply" style="display:none">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
 
   <input type="hidden" name="reviewId" id="replyReviewId" value="">
 
@@ -111,7 +113,9 @@
 <%-- 2026-07-24 박유정 — 리뷰 삭제 요청 --%>
 
 <form id="deleteRequestForm" method="post" action="${contextPath}/biz/stay/reviews/delete-request" style="display:none">
-
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+  
   <input type="hidden" name="reviewId" id="deleteReviewId" value="">
 
   <input type="hidden" name="requestReason" id="deleteRequestReason" value="">

@@ -42,6 +42,9 @@
 </style>
 <div class="order-wrap">
 <form id="orderForm" action="${contextPath}/store/payment" method="post">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+
   <c:forEach var="item" items="${orderItems}">
     <c:choose>
       <c:when test="${not empty item.cartItemId}">
@@ -555,7 +558,8 @@ function fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2) {
 function selectAddress(addrId, recvName, recvPhone, zipCode, addr1, addr2) {
   fillOrderForm(recvName, recvPhone, zipCode, addr1, addr2);
 
-  fetch(contextPath + '/mypage/address/select', {
+  //HYJ 26.08.05
+  csrfFetch(contextPath + '/mypage/address/select', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'addrId=' + addrId
@@ -594,7 +598,8 @@ function editAddress(addrId, recvName, recvPhone, zipCode, addr1, addr2) {
 function removeAddress(addrId) {
   if (!confirm('이 배송지를 삭제하시겠습니까?')) return;
 
-  fetch(contextPath + '/mypage/address/delete', {
+  //HYJ 26.08.05
+  csrfFetch(contextPath + '/mypage/address/delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'addrId=' + addrId
@@ -651,7 +656,8 @@ function saveNewAddress() {
   formData.set('addr2', addr2);
   if (!isEdit) formData.set('setDefault', 'true');
 
-  fetch(contextPath + url, {
+  //HYJ 26.08.05
+  csrfFetch(contextPath + url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: formData.toString()

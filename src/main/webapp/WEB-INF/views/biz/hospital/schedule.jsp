@@ -304,7 +304,8 @@
   }
   function apiPostParam(url, params) {
     var q = new URLSearchParams(params).toString();
-    return fetch(contextPath + url + '?' + q, { method: 'POST' })
+    //HYJ 26.08.05
+    return csrfFetch(contextPath + url + '?' + q, { method: 'POST' })
       .then(function (res) { return res.json(); });
   }
   function applyListResult(res, setter, okMsg) {

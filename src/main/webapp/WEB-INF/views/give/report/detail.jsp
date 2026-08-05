@@ -198,6 +198,9 @@
       </c:if>
 
       <form method="post" action="${contextPath}/give/report/comment">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="postId" value="${report.postId}">
         <div class="comment-input-wrap">
           <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=ME" alt="me">
@@ -229,6 +232,9 @@
                           onclick="toggleEditForm(${cmt.commentId})">수정</button>
                   <span class="comment-meta-sep">·</span>
                   <form method="post" action="${contextPath}/give/report/comment/delete" style="display:inline;margin:0;padding:0">
+                    <!--HYJ 26.08.05-->
+                    <input type="hidden" name="_csrf" value="${_csrf}">
+                    
                     <input type="hidden" name="commentId" value="${cmt.commentId}">
                     <input type="hidden" name="postId" value="${report.postId}">
                     <button type="submit" class="comment-delete-btn"
@@ -240,6 +246,9 @@
             <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
             <div id="editForm-${cmt.commentId}" class="edit-form">
               <form method="post" action="${contextPath}/give/report/comment/update">
+                <!--HYJ 26.08.05-->
+                <input type="hidden" name="_csrf" value="${_csrf}">
+                
                 <input type="hidden" name="commentId" value="${cmt.commentId}">
                 <input type="hidden" name="postId" value="${report.postId}">
                 <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
@@ -254,6 +263,9 @@
             </div>
             <div id="replyForm-${cmt.commentId}" class="reply-form">
               <form method="post" action="${contextPath}/give/report/comment">
+                <!--HYJ 26.08.05-->
+                <input type="hidden" name="_csrf" value="${_csrf}">
+                
                 <input type="hidden" name="postId" value="${report.postId}">
                 <input type="hidden" name="parentId" value="${cmt.commentId}">
                 <textarea class="comment-input reply-input" name="body" placeholder="답글을 입력하세요..." required></textarea>
@@ -284,6 +296,9 @@
                             onclick="toggleEditForm(${reply.commentId})">수정</button>
                     <span class="comment-meta-sep">·</span>
                     <form method="post" action="${contextPath}/give/report/comment/delete" style="display:inline;margin:0;padding:0">
+                      <!--HYJ 26.08.05-->
+                      <input type="hidden" name="_csrf" value="${_csrf}">
+                      
                       <input type="hidden" name="commentId" value="${reply.commentId}">
                       <input type="hidden" name="postId" value="${report.postId}">
                       <button type="submit" class="comment-delete-btn"
@@ -295,6 +310,9 @@
               <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
               <div id="editForm-${reply.commentId}" class="edit-form">
                 <form method="post" action="${contextPath}/give/report/comment/update">
+                  <!--HYJ 26.08.05-->
+                  <input type="hidden" name="_csrf" value="${_csrf}">
+                  
                   <input type="hidden" name="commentId" value="${reply.commentId}">
                   <input type="hidden" name="postId" value="${report.postId}">
                   <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
@@ -353,6 +371,9 @@
 
       <c:if test="${loginMemberNo != null && loginMemberNo == report.memberNo}">
       <form method="post" action="${contextPath}/give/report/status">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="postId" value="${report.postId}">
 
         <select name="findingStatus"

@@ -427,7 +427,8 @@ async function savePet() {
     const btn = document.getElementById('pm-save-btn');
     btn.disabled = true;
     try {
-        const res = await fetch(CTX + '/mypage/pets/save', { method: 'POST', body: fd });
+        //HYJ 26.08.05
+        const res = await csrfFetch(CTX + '/mypage/pets/save', { method: 'POST', body: fd });
         const data = await res.json();
         if (!data.success) {
             alert(data.message || '저장에 실패했습니다.');
@@ -447,7 +448,8 @@ async function deletePet(petId, petName) {
     const fd = new FormData();
     fd.append('petId', petId);
     try {
-        const res = await fetch(CTX + '/mypage/pets/delete', { method: 'POST', body: fd });
+        //HYJ 26.08.05
+        const res = await csrfFetch(CTX + '/mypage/pets/delete', { method: 'POST', body: fd });
         const data = await res.json();
         if (!data.success) {
             alert(data.message || '삭제에 실패했습니다.');

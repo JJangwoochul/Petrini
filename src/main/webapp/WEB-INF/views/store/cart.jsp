@@ -188,8 +188,8 @@
       val = isPlus ? val + 1 : Math.max(1, val - 1);
       input.value = val;
       recalc();
-
-      fetch('${contextPath}/store/cart/updateQty', {
+      //HYJ 26.08.05
+      csrfFetch('${contextPath}/store/cart/updateQty', {
         method: 'POST',
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
         body: 'cartItemId=' + item.dataset.cartItemId + '&qty=' + val
@@ -214,8 +214,8 @@
       item.remove();
       cleanupEmptyGroups();
       recalc();
-
-      fetch('${contextPath}/store/cart/delete', {
+      //HYJ 26.08.05
+      csrfFetch('${contextPath}/store/cart/delete', {
         method: 'POST',
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
         body: 'cartItemId=' + cartItemId
@@ -239,7 +239,8 @@
       params.append('cartItemIds', item.dataset.cartItemId);
     });
 
-   fetch('${contextPath}/store/cart/deleteAll', {
+    //HYJ 26.08.05
+   csrfFetch('${contextPath}/store/cart/deleteAll', {
       method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
       body: params.toString()
@@ -267,7 +268,8 @@
     allItems.forEach(function(item){
       params.append('cartItemIds', item.dataset.cartItemId);
     });
-
+    
+    //HYJ 26.08.05
     fetch('${contextPath}/store/cart/deleteAll', {
       method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},

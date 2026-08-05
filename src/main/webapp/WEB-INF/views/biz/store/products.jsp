@@ -446,7 +446,8 @@
     document.getElementById('pCategory').disabled = false;
     var formData = new FormData(form);
     var url = contextPath + '/biz/store/products' + (editingId ? '/' + editingId : '');
-    fetch(url, { method: 'POST', body: formData })
+    //HYJ 26.08.05
+    csrfFetch(url, { method: 'POST', body: formData })
       .then(function () { location.href = contextPath + '/biz/store/products'; });
   }
 </script>

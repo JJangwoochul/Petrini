@@ -132,6 +132,9 @@
                                     </c:when>
                                     <c:otherwise>
                                         <form method="post" action="${contextPath}/mypage/orders/confirm" style="display:inline" onsubmit="return confirm('구매확정 하시겠습니까?\n적립금은 확정 즉시 지급되며 취소할 수 없습니다.')">
+                                            <!--HYJ 26.08.05-->
+                                            <input type="hidden" name="_csrf" value="${_csrf}">
+                                            
                                             <input type="hidden" name="orderId" value="${o.orderId}">
                                             <button type="submit" class="btn-confirm-purchase">🎁 구매확정하고 적립받기</button>
                                         </form>
@@ -155,6 +158,9 @@
 <div id="reviewModalBg" class="review-modal-bg" style="display:none">
   <form id="reviewForm" class="review-modal" method="post" action="${contextPath}/mypage/orders/review"
         enctype="multipart/form-data" onsubmit="return validateReviewForm()">
+    <!--HYJ 26.08.05-->
+    <input type="hidden" name="_csrf" value="${_csrf}">
+    
     <button type="button" class="review-modal-close" onclick="closeReviewModal()">✕</button>
     <h3>⭐ 리뷰 작성</h3>
 

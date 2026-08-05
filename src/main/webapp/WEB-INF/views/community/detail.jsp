@@ -144,6 +144,9 @@
     <div class="cdetail-author-actions">
       <a href="${contextPath}/community/edit?id=${post.postId}" class="cdetail-edit-btn">수정</a>
       <form method="post" action="${contextPath}/community/delete" style="display:inline;margin:0;padding:0">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="postId" value="${post.postId}">
         <button type="submit" class="cdetail-delete-btn"
                 onclick="return confirm('게시글을 삭제하시겠습니까?\n삭제하면 복구할 수 없습니다.')">삭제</button>
@@ -237,6 +240,9 @@
   <c:choose>
     <c:when test="${canWriteTopComment}">
       <form method="post" action="${contextPath}/community/comment">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="postId" value="${post.postId}">
         <div class="comment-write">
           <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=ME" alt="내 아바타">
@@ -280,6 +286,9 @@
                       onclick="toggleEditForm(${cmt.commentId})">수정</button>
               <span class="comment-meta-sep" style="color:#999">·</span>
               <form method="post" action="${contextPath}/community/comment/delete" style="display:inline;margin:0;padding:0">
+                <!--HYJ 26.08.05-->
+                <input type="hidden" name="_csrf" value="${_csrf}">
+                
                 <input type="hidden" name="commentId" value="${cmt.commentId}">
                 <input type="hidden" name="postId" value="${post.postId}">
                 <button type="submit" class="comment-delete-btn"
@@ -292,6 +301,9 @@
         <div class="comment-text" id="commentText-${cmt.commentId}"><c:out value="${cmt.body}"/></div>
         <div id="editForm-${cmt.commentId}" class="edit-form">
           <form method="post" action="${contextPath}/community/comment/update">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            
             <input type="hidden" name="commentId" value="${cmt.commentId}">
             <input type="hidden" name="postId" value="${post.postId}">
             <textarea class="comment-input reply-input" name="body" required><c:out value="${cmt.body}"/></textarea>
@@ -310,6 +322,9 @@
         <c:if test="${canWriteReply}">
         <div id="replyForm-${cmt.commentId}" class="reply-form">
           <form method="post" action="${contextPath}/community/comment">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            
             <input type="hidden" name="postId" value="${post.postId}">
             <input type="hidden" name="parentId" value="${cmt.commentId}">
             <textarea class="comment-input reply-input" name="body"
@@ -345,6 +360,9 @@
                         onclick="toggleEditForm(${reply.commentId})">수정</button>
                 <span class="comment-meta-sep" style="color:#999">·</span>
                 <form method="post" action="${contextPath}/community/comment/delete" style="display:inline;margin:0;padding:0">
+                  <!--HYJ 26.08.05-->
+                  <input type="hidden" name="_csrf" value="${_csrf}">
+                  
                   <input type="hidden" name="commentId" value="${reply.commentId}">
                   <input type="hidden" name="postId" value="${post.postId}">
                   <button type="submit" class="comment-delete-btn"
@@ -357,6 +375,9 @@
           <div class="comment-text" id="commentText-${reply.commentId}"><c:out value="${reply.body}"/></div>
           <div id="editForm-${reply.commentId}" class="edit-form">
             <form method="post" action="${contextPath}/community/comment/update">
+              <!--HYJ 26.08.05-->
+              <input type="hidden" name="_csrf" value="${_csrf}">
+              
               <input type="hidden" name="commentId" value="${reply.commentId}">
               <input type="hidden" name="postId" value="${post.postId}">
               <textarea class="comment-input reply-input" name="body" required><c:out value="${reply.body}"/></textarea>
@@ -380,6 +401,9 @@
   <div class="report-modal" role="dialog" aria-labelledby="reportModalTitle">
     <h3 id="reportModalTitle">게시글 신고</h3>
     <form method="post" action="${contextPath}/community/report">
+      <!--HYJ 26.08.05-->
+      <input type="hidden" name="_csrf" value="${_csrf}">
+
       <input type="hidden" name="postId" value="${post.postId}">
       <label for="reasonCd">신고 사유</label>
       <select id="reasonCd" name="reasonCd" required>
@@ -461,8 +485,9 @@
       location.href = '${contextPath}/login?redirect=/community/detail?id=' + postId;
       return;
     }
-
-    fetch('${contextPath}/community/like/toggle', {
+    
+    //HYJ 26.08.05
+    csrfFetch('${contextPath}/community/like/toggle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'postId=' + postId

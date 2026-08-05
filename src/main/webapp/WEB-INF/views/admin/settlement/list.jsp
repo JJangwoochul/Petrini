@@ -335,7 +335,8 @@
       var id = Number(approveBtn.getAttribute('data-id'));
       var name = approveBtn.getAttribute('data-name') || '';
       if (!confirm('[' + name + '] 중간정산 요청을 승인할까요?\n승인 시 미정산 예약으로 정산 마스터가 생성됩니다.')) return;
-      fetch(CTX + '/admin/settlement/stay/request/approve', {
+      //HYJ 26.08.05
+      csrfFetch(CTX + '/admin/settlement/stay/request/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ requestId: id })
@@ -355,7 +356,8 @@
       var reason = prompt('[' + rname + '] 거절 사유를 입력하세요.');
       if (reason == null) return;
       if (!String(reason).trim()) { alert('거절 사유가 필요합니다.'); return; }
-      fetch(CTX + '/admin/settlement/stay/request/reject', {
+      //HYJ 26.08.05
+      csrfFetch(CTX + '/admin/settlement/stay/request/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ requestId: rid, rejectReason: String(reason).trim() })
@@ -393,7 +395,8 @@
         var name = payBtn.getAttribute('data-name') || '';
         var amount = payBtn.getAttribute('data-amount');
         if (!confirm('정말 정산(더미 지급) 하시겠습니까?\n[' + name + '] ' + fmt(amount))) return;
-        fetch(CTX + '/admin/settlement/stay/pay', {
+        //HYJ 26.08.05
+        csrfFetch(CTX + '/admin/settlement/stay/pay', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ settleId: settleId })
@@ -472,7 +475,8 @@
           return;
         }
         if (!confirm('선택한 ' + ids.length + '건을 정말 정산(더미 지급) 하시겠습니까?')) return;
-        fetch(CTX + '/admin/settlement/stay/pay-bulk', {
+        //HYJ 26.08.05
+        csrfFetch(CTX + '/admin/settlement/stay/pay-bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ settleIds: ids })

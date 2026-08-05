@@ -189,6 +189,9 @@
       - enctype="multipart/form-data" : 파일 업로드 필수
       =================================== -->
     <form name="hospitalInfoForm" method="post" action="${contextPath}/biz/hospital/profile" enctype="multipart/form-data">
+		<!--HYJ 26.08.05-->
+		<input type="hidden" name="_csrf" value="${_csrf}">
+		
       <!--
           hoursJson 히든 필드
           - 페이지 로딩 시 : DB에서 가져온 JSON 문자열이 들어있음

@@ -214,6 +214,9 @@
     <p style="font-weight:800; font-size:15px; margin:0 0 12px;">주문취소 신청</p>
     <p style="font-size:13px; color:var(--text-muted); margin:0 0 14px;">배송 시작 전 상품에 한해 취소 가능하며, 신청 후 사업자 확인을 거쳐 환불됩니다.</p>
     <form id="cancelForm" method="post" action="${contextPath}/mypage/orders/cancel">
+      <!--HYJ 26.08.05-->
+      <input type="hidden" name="_csrf" value="${_csrf}">
+      
       <input type="hidden" id="cancelOrderId" name="orderId" value="">
       <textarea name="reason" required placeholder="취소 사유를 입력해주세요" style="width:100%; height:80px; border:1px solid #E2E8E4; border-radius:8px; padding:10px; font-size:13px; resize:none; box-sizing:border-box;"></textarea>
       <div style="display:flex; gap:8px; margin-top:14px;">

@@ -300,8 +300,8 @@ if (isPending) {
   function approveCancel() {
     if (!currentOrderId) return;
     if (!confirm('취소를 승인하시겠습니까? 승인 즉시 결제가 취소되고 재고/포인트/쿠폰이 복구됩니다.')) return;
-
-    fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/cancel/approve', { method: 'POST' })
+    //HYJ 26.08.05
+    csrfFetch(contextPath + '/biz/store/orders/' + currentOrderId + '/cancel/approve', { method: 'POST' })
       .then(function (res) { return res.text(); })
       .then(function (result) {
         if (result === 'OK') {
@@ -316,8 +316,8 @@ if (isPending) {
   function rejectCancel() {
     if (!currentOrderId) return;
     if (!confirm('취소신청을 반려하시겠습니까?')) return;
-
-    fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/cancel/reject', { method: 'POST' })
+    //HYJ 26.08.05
+    csrfFetch(contextPath + '/biz/store/orders/' + currentOrderId + '/cancel/reject', { method: 'POST' })
       .then(function (res) { return res.text(); })
       .then(function (result) {
         if (result === 'OK') {
@@ -340,8 +340,8 @@ if (isPending) {
 function forceComplete() {
   if (!currentOrderId) return;
   if (!confirm('이 처리는 보통 스마트택배 API로 자동으로 이뤄집니다.\n실제로 배송이 완료된 것이 맞습니까?')) return;
-
-  fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/force-complete', { method: 'POST' })
+  //HYJ 26.08.05
+  csrfFetch(contextPath + '/biz/store/orders/' + currentOrderId + '/force-complete', { method: 'POST' })
     .then(function (res) { return res.text(); })
     .then(function (result) {
       if (result === 'OK') {

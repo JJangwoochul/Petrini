@@ -22,10 +22,16 @@
     </c:if>
     <div class="noti-actions">
         <form method="post" action="${contextPath}/mypage/notifications/read-all" style="display:inline">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            
             <button type="submit" class="btn-sm">전체 읽음</button>
         </form>
         <form method="post" action="${contextPath}/mypage/notifications/delete-all" style="display:inline"
               onsubmit="return confirm('알림을 모두 삭제할까요?');">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            
             <button type="submit" class="btn-sm danger">전체 삭제</button>
         </form>
     </div>

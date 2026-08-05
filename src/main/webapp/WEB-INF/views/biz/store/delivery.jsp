@@ -241,8 +241,8 @@
   function submitBulk() {
     var bulkText = document.getElementById('bulkText').value.trim();
     if (!bulkText) { alert('입력된 내용이 없습니다.'); return; }
-
-    fetch(contextPath + '/biz/store/delivery/bulk', {
+    //HYJ 26.08.05
+    csrfFetch(contextPath + '/biz/store/delivery/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'bulkText=' + encodeURIComponent(bulkText)
@@ -289,7 +289,8 @@
     formData.set('courierName', selectedOption ? selectedOption.textContent : '');
     formData.set('courierCode', carrierSelect.value);
     formData.set('trackingNo', trackingNo);
-    fetch(contextPath + '/biz/store/orders/' + eOrderId + '/status', {
+    //HYJ 26.08.05
+    csrfFetch(contextPath + '/biz/store/orders/' + eOrderId + '/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString()
@@ -360,7 +361,8 @@ box.innerHTML = html;
 function forceComplete(orderId) {
   if (!confirm('이 처리는 보통 스마트택배 API로 자동으로 이뤄집니다.\n실제로 배송이 완료된 것이 맞습니까?')) return;
 
-  fetch(contextPath + '/biz/store/orders/' + orderId + '/force-complete', { method: 'POST' })
+  //HYJ 26.08.05
+  csrfFetch(contextPath + '/biz/store/orders/' + orderId + '/force-complete', { method: 'POST' })
     .then(function (res) { return res.text(); })
     .then(function (result) {
       if (result === 'OK') {

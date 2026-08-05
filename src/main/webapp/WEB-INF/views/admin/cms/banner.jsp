@@ -127,6 +127,10 @@ document.querySelectorAll('.btn-approve').forEach(function(btn) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '${contextPath}/admin/cms/banner/approve');
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        
+        //HYJ 26.08.05
+        xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));
+        
         xhr.onload = function() {
             // 디버깅용 — 실제 응답 확인
             console.log('status:', xhr.status);
@@ -164,6 +168,10 @@ document.getElementById('rejectConfirm').addEventListener('click', function() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '${contextPath}/admin/cms/banner/reject');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    //HYJ 26.08.05
+    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));									
+	
     xhr.onload = function() {
         if (xhr.responseText === 'OK') {
             alert('반려되었습니다.');

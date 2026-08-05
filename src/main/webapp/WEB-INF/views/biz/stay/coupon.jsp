@@ -262,6 +262,9 @@
                                 <div style="display:flex;gap:6px">
                                     <form method="post" action="${contextPath}/biz/stay/coupon/delete"
                                           onsubmit="return confirm('삭제하시겠습니까?')">
+                                        <!--HYJ 26.08.05-->
+                                        <input type="hidden" name="_csrf" value="${_csrf}">  
+                                        
                                         <input type="hidden" name="couponId" value="${cpn.couponId}">
                                         <button type="submit" class="cpn-btn red">삭제</button>
                                     </form>
@@ -283,6 +286,9 @@
             <button class="cpn-modal-close" onclick="closeApplyModal()">&times;</button>
         </div>
         <form method="post" action="${contextPath}/biz/stay/coupon/apply" onsubmit="return validateForm()">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            
             <div class="cpn-modal-body">
                 <div class="cpn-form-group">
                     <label>쿠폰명 <span style="color:#DC2626">*</span></label>

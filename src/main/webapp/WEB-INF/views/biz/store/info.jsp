@@ -19,6 +19,8 @@
     <div class="biz-card-head"><span>사업자 정보</span><small>* 표시 항목은 필수 입력입니다</small></div>
 
     <form id="bizInfoForm" method="post" action="${contextPath}/biz/store/info" enctype="multipart/form-data" style="padding:20px;max-width:640px">
+      <!--HYJ 26.08.05-->
+      <input type="hidden" name="_csrf" value="${_csrf}">      
       
       <div class="biz-form-fields">
         <div class="biz-form-row">

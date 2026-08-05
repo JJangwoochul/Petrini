@@ -121,6 +121,9 @@
             </div>
 
             <form name="bizApplyForm" method="post" action="${contextPath}/mypage/biz/apply" enctype="multipart/form-data">
+                <!--HYJ 26.08.05-->
+                <input type="hidden" name="_csrf" value="${_csrf}">
+                
                 <div class="biz-form-section">
                     <div class="biz-form-title">
                         <svg viewBox="0 0 24 24">

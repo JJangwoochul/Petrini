@@ -229,6 +229,9 @@
                 <c:if test="${biz.statusCd eq 'PENDING'}">
                 <form method="post" action="${contextPath}/admin/biz/approve" class="approve-btn-row"
                       onsubmit="return confirm('${biz.bizName} 신청을 승인하시겠습니까?')">
+                    <!--HYJ 26.08.05-->
+                    <input type="hidden" name="_csrf" value="${_csrf}">
+                    
                     <input type="hidden" name="bizNo" value="${biz.bizNo}">
                     <!--HYJ 26.07.28 메일조회-->
                     <input type="hidden" name="bizId" value="${biz.bizId}">
@@ -239,6 +242,9 @@
                 </form>
                 <form method="post" action="${contextPath}/admin/biz/reject" class="approve-btn-row" style="margin-top:8px"
                       onsubmit="return confirm('반려 처리하시겠습니까?')">
+                    <!--HYJ 26.08.05-->
+                    <input type="hidden" name="_csrf" value="${_csrf}">
+                    
                     <input type="hidden" name="bizNo" value="${biz.bizNo}">
                     <!--HYJ 26.07.28 메일조회-->
                     <input type="hidden" name="bizId" value="${biz.bizId}">

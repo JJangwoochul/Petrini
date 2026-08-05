@@ -85,6 +85,9 @@
   </div>
 
   <form id="reserveForm" action="${contextPath}/stay/reserve" method="post">
+    <!--HYJ 26.08.05-->
+    <input type="hidden" name="_csrf" value="${_csrf}">
+    
     <input type="hidden" name="stayId" value="${stay.stayId}">
 
     <%-- 객실 + 날짜 --%>

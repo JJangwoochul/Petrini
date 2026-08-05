@@ -160,6 +160,9 @@
         </c:if>
 
         <form action="${contextPath}/admin/login" method="post">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            
             <div class="adm-login-field">
                 <label for="loginId">관리자 아이디</label>
                 <input type="text" id="loginId" name="loginId" placeholder="admin" autocomplete="username">

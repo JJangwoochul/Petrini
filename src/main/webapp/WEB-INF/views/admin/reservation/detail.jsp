@@ -77,6 +77,9 @@
       </p>
       <form method="post" action="${contextPath}/admin/reservation/cancel"
             onsubmit="return confirm('전액 환불 취소하시겠습니까?');">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">    
+        
         <input type="hidden" name="resvId" value="${reservation.resvId}">
         <textarea name="cancelReason" maxlength="500" placeholder="취소 사유 (필수)" required></textarea>
         <button type="submit" class="btn">전액 환불 취소</button>

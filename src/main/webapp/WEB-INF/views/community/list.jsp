@@ -167,6 +167,9 @@
             action="${contextPath}/community/write"
             enctype="multipart/form-data"
             onsubmit="return confirm('상담 글을 등록하시겠습니까?')">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="boardType" value="LIFE">
         <div class="vet-ask-title">상담 내용 작성</div>
         <div class="vet-form-row">

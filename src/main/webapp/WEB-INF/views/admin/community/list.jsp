@@ -121,12 +121,18 @@
                                                 <form method="post" action="${contextPath}/admin/community/restore"
                                                       style="display:inline;margin:0"
                                                       onsubmit="return confirm('다시 게시하시겠습니까?')">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="postId" value="${item.postId}">
                                                     <button type="submit" class="adm-btn green" style="margin-left:4px">복구</button>
                                                 </form>
                                                 <form method="post" action="${contextPath}/admin/community/delete"
                                                       style="display:inline;margin:0"
                                                       onsubmit="return confirm('삭제하시겠습니까?')">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="postId" value="${item.postId}">
                                                     <input type="hidden" name="memberNo" value="${item.memberNo}">
                                                     <button type="submit" class="adm-btn red" style="margin-left:4px">삭제</button>
@@ -136,6 +142,9 @@
                                                 <form method="post" action="${contextPath}/admin/community/restore"
                                                       style="display:inline;margin:0"
                                                       onsubmit="return confirm('다시 게시하시겠습니까?')">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="postId" value="${item.postId}">
                                                     <button type="submit" class="adm-btn green" style="margin-left:4px">복구</button>
                                                 </form>
@@ -144,12 +153,18 @@
                                                 <form method="post" action="${contextPath}/admin/community/hide"
                                                       style="display:inline;margin:0"
                                                       onsubmit="return confirm('숨김 처리하시겠습니까?')">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="postId" value="${item.postId}">
                                                     <button type="submit" class="adm-btn gray" style="margin-left:4px">숨김</button>
                                                 </form>
                                                 <form method="post" action="${contextPath}/admin/community/delete"
                                                       style="display:inline;margin:0"
                                                       onsubmit="return confirm('삭제하시겠습니까?')">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="postId" value="${item.postId}">
                                                     <input type="hidden" name="memberNo" value="${item.memberNo}">
                                                     <button type="submit" class="adm-btn red" style="margin-left:4px">삭제</button>

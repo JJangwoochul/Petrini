@@ -66,6 +66,9 @@
 
   <form name="stayProfileForm" method="post"
         action="${contextPath}/biz/stay/profile" enctype="multipart/form-data">
+    <!--HYJ 26.08.05-->
+    <input type="hidden" name="_csrf" value="${_csrf}">
+    
   <div class="pf-wrap">
 
     <!-- ─── 1. 입퇴실 시간 ─── -->

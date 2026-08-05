@@ -296,6 +296,9 @@
                 </div>
             </div>
             <form method="post" action="${contextPath}/admin/member/point" class="point-input-row">
+                <!--HYJ 26.08.05-->
+                <input type="hidden" name="_csrf" value="${_csrf}">
+                
                 <input type="hidden" name="memberNo" value="${member.memberNo}">
                 <div class="point-input-group">
                     <label>구분</label>
@@ -430,6 +433,9 @@
                         <form method="post" action="${contextPath}/admin/member/suspend"
                               style="display:flex;gap:8px;align-items:center"
                               onsubmit="return confirm('${member.memberName} 회원을 정지하시겠습니까?')">
+                            <!--HYJ 26.08.05-->
+                            <input type="hidden" name="_csrf" value="${_csrf}">
+                            
                             <input type="hidden" name="memberNo" value="${member.memberNo}">
                             <select name="suspendType" class="adm-filter-select" style="flex:1" required>
                                 <option value="DAY3">3일 정지</option>
@@ -447,6 +453,9 @@
                         <div class="danger-btns">
                             <form method="post" action="${contextPath}/admin/member/restore"
                                   onsubmit="return confirm('${member.memberName} 회원을 복구하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="memberNo" value="${member.memberNo}">
                                 <button type="submit" class="adm-btn green">계정 복구</button>
                             </form>
@@ -460,6 +469,9 @@
                         <div class="danger-btns">
                             <form method="post" action="${contextPath}/admin/member/withdraw"
                                   onsubmit="return confirm('정말 강제 탈퇴 처리하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="memberNo" value="${member.memberNo}">
                                 <button type="submit" class="adm-btn red">강제 탈퇴</button>
                             </form>
