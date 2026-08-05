@@ -144,7 +144,8 @@
         </c:when>
         <c:otherwise>
           <p style="color:var(--text-muted);font-size:14px">
-            등록된 반려동물이 없습니다. <a href="${contextPath}/mypage/pet" style="color:var(--primary)">반려동물 등록</a> 후 이용해주세요.
+            등록된 반려동물이 없습니다. <%-- 2026-08-05 박유정 — 링크 /mypage/pets 로 수정 --%>
+            <a href="${contextPath}/mypage/pets" style="color:var(--primary)">반려동물 등록</a> 후 이용해주세요.
           </p>
         </c:otherwise>
       </c:choose>
@@ -206,6 +207,8 @@
 
 <script>
   var contextPath = '${contextPath}';
+  <%-- 2026-08-05 박유정 — 반려동물 없으면 petId 미전송 → TB_RESERVATION.PET_ID NOT NULL 오류 방지 --%>
+  var hasPet = ${not empty petList};
 
   // 오늘 날짜를 min으로 설정
   var today = new Date().toISOString().split('T')[0];
@@ -280,9 +283,18 @@
         availMsg.innerHTML = '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
             + 'background:#F0FDF4;border:1px solid #BBF7D0;color:#16A34A;margin-top:10px">'
             + '✓ 예약 가능한 날짜입니다.</div>';
-        document.getElementById('submitBtn').disabled = false;
-        document.getElementById('submitBtn').textContent =
-            total.toLocaleString() + '원 예약 신청하기';
+        if (!hasPet) {
+          <%-- 2026-08-05 박유정 — 펫 미등록 시 예약 버튼 비활성화 --%>
+          availMsg.innerHTML += '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
+              + 'background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;margin-top:8px">'
+              + '✕ 반려동물을 등록한 후 예약할 수 있습니다.</div>';
+          document.getElementById('submitBtn').disabled = true;
+          document.getElementById('submitBtn').textContent = '반려동물 등록 필요';
+        } else {
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').textContent =
+              total.toLocaleString() + '원 예약 신청하기';
+        }
       } else {
         availMsg.innerHTML = '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
             + 'background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;margin-top:10px">'
@@ -310,7 +322,14 @@
   });
 
   // 예약 확인 모달
+  // 2026-08-05 박유정 — 반려동물 미선택 시 예약 모달 진입 차단
   function showConfirmModal() {
+    var petRadio = document.querySelector('input[name="petId"]:checked');
+    if (!petRadio || !petRadio.value) {
+      alert('반려동물을 선택해 주세요.\n등록된 반려동물이 없으면 마이페이지에서 등록 후 이용해 주세요.');
+      return;
+    }
+
     var roomSel = document.getElementById('roomSelect');
     var roomName = roomSel.options[roomSel.selectedIndex].text.split(' — ')[0];
     var ci = document.getElementById('checkinDate').value;
