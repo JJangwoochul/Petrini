@@ -78,6 +78,9 @@
 
         <%-- 로그인 폼 --%>
         <form class="member-form" action="${contextPath}/login" method="post" id="loginForm">
+            <!--HYJ 26.08.05-->
+            <input type="hidden" name="_csrf" value="${_csrf}">
+
             <c:if test="${not empty param.redirect}">
                 <input type="hidden" name="redirect" value="${param.redirect}">
             </c:if>

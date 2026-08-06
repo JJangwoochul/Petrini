@@ -165,6 +165,9 @@
       <div class="fee-row"><span>예상 환불액</span><span><fmt:formatNumber value="${reservation.refundAmt}" pattern="#,###"/>원</span></div>
       <form method="post" action="${contextPath}/mypage/reserve/stay-cancel"
             onsubmit="return confirm('예약을 취소하시겠습니까? 취소수수료가 적용됩니다.');">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="resvId" value="${reservation.resvId}">
         <textarea name="cancelReason" maxlength="500" placeholder="취소 사유를 입력해 주세요." required></textarea>
         <button type="submit" class="btn-cancel-stay">예약 취소하기</button>
@@ -215,6 +218,9 @@
       <h3>병원 리뷰 작성</h3>
       <p style="font-size:13px;color:#666;margin:0 0 12px">진료받으신 병원에 별점과 후기를 남겨 주세요.</p>
       <form method="post" action="${contextPath}/mypage/reserve/review">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="resvId" value="${reservation.resvId}">
         <div class="rd-stars">
           <label><input type="radio" name="rating" value="5" checked> ★5</label>
@@ -244,6 +250,9 @@
       </c:if>
       <form method="post" action="${contextPath}/mypage/reserve/stay-review"
             onsubmit="var b=this.querySelector('.btn-review'); if(b.disabled)return false; b.disabled=true; b.textContent='등록 중...'; return true;">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <input type="hidden" name="resvId" value="${reservation.resvId}">
         <div class="rd-stars">
           <label><input type="radio" name="rating" value="5" checked> ★5</label>

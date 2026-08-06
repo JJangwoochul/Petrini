@@ -16,6 +16,9 @@
     <div class="biz-card">
         <div class="biz-card-body" style="padding:24px">
             <form action="${contextPath}/biz/hospital/banner" method="post" enctype="multipart/form-data" id="bannerForm">
+                <!--HYJ 26.08.05-->
+                <input type="hidden" name="_csrf" value="${_csrf}">
+                
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">
 
                     <%-- 배너 제목 --%>

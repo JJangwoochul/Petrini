@@ -137,6 +137,10 @@ function claimCoupon(btn, couponId) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '${contextPath}/coupon/claim');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    //HYJ 26.08.05
+    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));									
+	
     xhr.onload = function() {
         if (xhr.status === 200) {
             var res = JSON.parse(xhr.responseText);

@@ -314,7 +314,8 @@
         var body = 'billingCardId=' + encodeURIComponent(selectedBillingCardId)
           + '&resvId=' + encodeURIComponent(resvId)
           + '&usedPoint=' + encodeURIComponent(usedPoint);
-        var res = await fetch(contextPath + '/stay/payment/billing-card', {
+        //HYJ 26.08.05
+        var res = await csrfFetch(contextPath + '/stay/payment/billing-card', {
           method: 'POST',
           credentials: 'same-origin',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },

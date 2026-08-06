@@ -41,10 +41,16 @@
 
 <%-- 지윤 26.07.20 추가: 답글/삭제요청은 실제 서버로 POST해야 해서 숨김 폼 2개로 처리 (fetch/AJAX 대신 그냥 submit) --%>
 <form id="replyForm" method="post" action="${contextPath}/biz/store/reviews/reply" style="display:none">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+  
   <input type="hidden" name="reviewId" id="replyFormReviewId">
   <textarea name="bizReply" id="replyFormText"></textarea>
 </form>
 <form id="deleteReqForm" method="post" action="${contextPath}/biz/store/reviews/delete-request" style="display:none">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+
   <input type="hidden" name="reviewId" id="delFormReviewId">
   <input type="hidden" name="reason" id="delFormReason">
 </form>

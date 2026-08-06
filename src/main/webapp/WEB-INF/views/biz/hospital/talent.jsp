@@ -79,6 +79,9 @@
       <div class="bt-stitle"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>재능나눔 신청서</div>
       <%-- 2026-07-14 박유정 STEP 4 — POST /biz/hospital/talent (talentType=HOSPITAL 고정) --%>
       <form method="post" action="${contextPath}/biz/hospital/talent">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        
         <div class="bt-grid">
           <div class="bt-group full"><label>재능나눔 제목 <span class="req">*</span></label><input type="text" name="title" required value="${memberInfo.memberName} 무료 진료 재능나눔"></div>
           <div class="bt-group"><label>제공 유형 <span class="req">*</span></label><select disabled><option selected>병원/건강</option></select></div>

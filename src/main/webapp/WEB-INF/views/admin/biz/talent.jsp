@@ -221,6 +221,9 @@
                             <form method="post" action="${contextPath}/admin/biz/talent/reject"
                                   style="display:flex;gap:8px;align-items:center"
                                   onsubmit="return confirm('반려하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <%-- 2026-07-14 박유정 — AdminBizController.rejectTalent --%>
                                 <input type="hidden" name="talentId" value="${item.talentId}">
                                 <input type="text" name="rejectReason" class="ta-reject-input"
@@ -231,6 +234,9 @@
                             <form method="post" action="${contextPath}/admin/biz/talent/approve"
                                   style="display:inline"
                                   onsubmit="return confirm('승인하시겠습니까?\n나눔 탭에 게시됩니다.')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <%-- 2026-07-14 박유정 — AdminBizController.approveTalent → /give/talent/list 노출 --%>
                                 <input type="hidden" name="talentId" value="${item.talentId}">
                                 <button type="submit" class="adm-btn green">승인 → 나눔 탭 게시</button>

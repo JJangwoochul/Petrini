@@ -16,6 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import com.petcare.petcare.common.interceptor.SuspendedMemberInterceptor;
+import com.petcare.petcare.common.interceptor.CsrfTokenInterceptor;
 import com.petcare.petcare.common.interceptor.JoinDraftScopeInterceptor;
 
 @Configuration
@@ -34,6 +35,9 @@ public class WebConfig implements WebMvcConfigurer {
     // 2026/07/27 장우철 — 가입 임시저장은 join/빌링 왕복에서만 유지
     @Autowired
     private JoinDraftScopeInterceptor joinDraftScopeInterceptor;
+
+    @Autowired
+    private CsrfTokenInterceptor csrfTokenInterceptor;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -72,5 +76,13 @@ public class WebConfig implements WebMvcConfigurer {
                         "/upload/**",
                         "/favicon.ico"
                 );
+                
+        registry.addInterceptor(csrfTokenInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/resources/**",
+                        "/upload/**",
+                        "/favicon.ico"
+                );  
     }
 }

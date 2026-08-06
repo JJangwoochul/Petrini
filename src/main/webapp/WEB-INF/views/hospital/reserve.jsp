@@ -59,6 +59,9 @@
 
 <%-- 2026/07/16 장우철 — 예약 UI: 1)일정(날짜·의사·유형·시간) 2)펫·증상, 선점(hold) --%>
 <form id="reserveForm" method="post" action="${contextPath}/hospital/reserve">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+  
   <input type="hidden" name="hospitalId" value="${hospitalId}">
   <input type="hidden" name="holdId" id="holdIdInput" value="">
   <input type="hidden" name="petId" id="petIdInput" value="">

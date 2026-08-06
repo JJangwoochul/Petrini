@@ -117,6 +117,9 @@
                                                 <form method="post" action="${contextPath}/admin/review/approve"
                                                       class="js-admin-approve-form"
                                                       style="display:inline;margin:0">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="requestId" value="${item.requestId}">
                                                     <button type="submit" class="adm-btn red">승인(삭제)</button>
                                                 </form>
@@ -124,6 +127,9 @@
                                                 <form method="post" action="${contextPath}/admin/review/reject"
                                                       style="display:inline-flex;gap:6px;margin-left:6px;align-items:center"
                                                       onsubmit="return confirm('반려하시겠습니까?')">
+                                                    <!--HYJ 26.08.05-->
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
+                                                    
                                                     <input type="hidden" name="requestId" value="${item.requestId}">
                                                     <input type="text" name="rejectReason" class="adm-filter-input"
                                                            placeholder="반려 사유" required style="width:160px">
@@ -181,7 +187,8 @@
         }
         var ctrl = new AbortController();
         var timer = setTimeout(function () { ctrl.abort(); }, 20000);
-        fetch(form.action, {
+        //HYJ 26.08.05
+        csrfFetch(form.action, {
           method: 'POST',
           body: new URLSearchParams(new FormData(form)),
           credentials: 'same-origin',

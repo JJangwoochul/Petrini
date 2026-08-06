@@ -383,6 +383,9 @@
       <button type="button" class="rm-close" onclick="closeRecordModal()">×</button>
     </div>
     <form id="recordWriteForm" method="post" action="${contextPath}/biz/hospital/records/complete">
+      <!--HYJ 26.08.05-->
+      <input type="hidden" name="_csrf" value="${_csrf}">
+      
       <input type="hidden" name="redirect" value="records">
       <input type="hidden" name="resvId" id="rm-resv-id" value="">
       <input type="hidden" name="treatType" id="rm-treat-type" value="진료">

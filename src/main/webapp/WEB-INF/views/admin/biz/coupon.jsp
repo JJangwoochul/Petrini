@@ -239,6 +239,9 @@
                                 <form method="post" action="${contextPath}/admin/biz/coupon/reject"
                                       style="display:flex;gap:8px;align-items:center"
                                       onsubmit="return confirm('반려하시겠습니까?')">
+                                    <!--HYJ 26.08.05-->
+                                    <input type="hidden" name="_csrf" value="${_csrf}">
+                                    
                                     <input type="hidden" name="couponId" value="${cpn.couponId}">
                                     <input type="text" name="rejectReason" class="cpn-reject-input"
                                            placeholder="반려 사유 입력" required>
@@ -247,6 +250,9 @@
                                 <form method="post" action="${contextPath}/admin/biz/coupon/approve"
                                       style="display:inline"
                                       onsubmit="return confirm('승인하시겠습니까?\n이벤트/쿠폰 게시판에 노출됩니다.')">
+                                    <!--HYJ 26.08.05-->
+                                    <input type="hidden" name="_csrf" value="${_csrf}">
+                                    
                                     <input type="hidden" name="couponId" value="${cpn.couponId}">
                                     <button type="submit" class="adm-btn green">승인</button>
                                 </form>

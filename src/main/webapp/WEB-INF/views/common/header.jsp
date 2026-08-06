@@ -20,6 +20,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${contextPath}/resources/css/petcare.css?v=20260724">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <%-- 2026-08-05 HYJ — CSRF 토큰: AJAX 에서 이 meta 태그를 읽어서 header 에 포함 --%>
+    <meta name="_csrf" content="${_csrf}">
 </head>
 <body>
 <%-- 2026-07-22 박유정 — 정지 회원 안내 (일반 회원 화면) --%>

@@ -184,6 +184,9 @@
                 <c:if test="${item.statusCd eq 'PENDING'}">
                 <form method="post" action="${contextPath}/admin/biz/approve" style="display:inline"
                       onsubmit="return confirm('${item.bizName} 신청을 승인하시겠습니까?')">
+                    <!--HYJ 26.08.05-->
+                    <input type="hidden" name="_csrf" value="${_csrf}">
+                    
                     <input type="hidden" name="bizNo" value="${item.bizNo}">
                     <!--HYJ 26.07.28 메일조회-->
                     <input type="hidden" name="bizId" value="${item.bizId}">

@@ -37,6 +37,9 @@
 </style>
 
 <form method="post" action="${contextPath}/community/edit">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+  
   <input type="hidden" name="postId" value="${post.postId}">
 <div class="write-wrap">
   <h1 class="write-title">게시글 수정</h1>

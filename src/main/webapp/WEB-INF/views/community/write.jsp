@@ -42,6 +42,9 @@
 <form method="post"
       action="${contextPath}/community/write"
       enctype="multipart/form-data">
+  <!--HYJ 26.08.05-->
+  <input type="hidden" name="_csrf" value="${_csrf}">
+  
 <div class="write-wrap">
   <h1 class="write-title">게시글 작성</h1>
   <c:if test="${param.error eq 'member'}">

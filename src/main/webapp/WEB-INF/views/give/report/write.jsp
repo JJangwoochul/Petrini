@@ -72,6 +72,9 @@
   </c:if>
 
   <form method="post" action="${contextPath}/give/report/write" enctype="multipart/form-data" onsubmit="return collectFeatureTags()">
+    <!--HYJ 26.08.05-->
+    <input type="hidden" name="_csrf" value="${_csrf}">
+    
   <input type="hidden" name="reportKind" value="FOUND">
   <input type="hidden" name="featureTags" id="featureTags">
   <%-- 2026-07-29 박유정 — 주소 검색·지도 클릭 시 갱신, POST 시 TB_POST LOST_LAT/LNG 저장 --%>

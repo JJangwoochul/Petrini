@@ -736,7 +736,8 @@
     var fd = new FormData();
     fd.append('email', email);
 
-    fetch(ctx + '/join/send-code', { method: 'POST', body: fd })
+    //HYJ 26.08.05
+    csrfFetch(ctx + '/join/send-code', { method: 'POST', body: fd })
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data.available) {
@@ -792,7 +793,8 @@
     fd.append('email', email);
     fd.append('code', code);
 
-    fetch(ctx + '/join/verify-code', { method: 'POST', body: fd })
+    //HYJ 26.08.05
+    csrfFetch(ctx + '/join/verify-code', { method: 'POST', body: fd })
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data.available) {
@@ -1212,7 +1214,8 @@
     }
 
     var ctx = '${contextPath}';
-    fetch(ctx + '/join', { method: 'POST', body: fd })
+    //HYJ 26.08.05
+    csrfFetch(ctx + '/join', { method: 'POST', body: fd })
       .then(function (res) { return res.text(); })
       .then(function (text) {
         if (text === 'OK') {

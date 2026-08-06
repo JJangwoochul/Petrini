@@ -132,6 +132,9 @@
       <button type="button" class="rm-close" onclick="closeCompleteModal()">×</button>
     </div>
     <form id="completeRecordForm" method="post" action="${contextPath}/biz/hospital/records/complete">
+      <!--HYJ 26.08.05-->
+      <input type="hidden" name="_csrf" value="${_csrf}">
+
       <input type="hidden" name="resvId" id="cmResvId" value="">
       <input type="hidden" name="treatType" id="cmTreatType" value="진료">
       <div class="rm-body">
@@ -349,6 +352,8 @@
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + resvId + '">' +
       '<input type="hidden" name="statusCd" value="' + statusCd + '">';
+      //HYJ 26.08.05
+      '<input type="hidden" name="_csrf" value="' + ${_csrf} + '">';
     document.body.appendChild(form);
     form.submit();
   }
@@ -428,6 +433,8 @@
       '<input type="hidden" name="resvId" value="' + cancelTargetResvId + '">' +
       '<input type="hidden" name="statusCd" value="CANCEL">' +
       '<input type="hidden" name="cancelReason" value="">';
+      //HYJ 26.08.05
+      '<input type="hidden" name="_csrf" value="' + ${_csrf} + '">';
     form.querySelector('input[name="cancelReason"]').value = reason;
     document.body.appendChild(form);
     form.submit();

@@ -58,12 +58,18 @@
       <p style="font-size:13px;color:#666">승인 시 해당 예약을 <strong>전액 환불 취소</strong>합니다. 거절 시 예약은 유지됩니다.</p>
       <form method="post" action="${contextPath}/admin/inquiry/stay-refund/approve" style="margin-bottom:16px"
             onsubmit="return confirm('환불을 승인하고 전액 환불하시겠습니까?');">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">    
+        
         <input type="hidden" name="inquiryId" value="${inquiry.inquiryId}">
         <textarea name="answer" placeholder="승인 메모 (선택)"></textarea>
         <button type="submit" class="btn btn-ok" style="margin-top:10px">승인 · 전액 환불</button>
       </form>
       <form method="post" action="${contextPath}/admin/inquiry/stay-refund/reject"
             onsubmit="return confirm('환불 신청을 거절할까요?');">
+        <!--HYJ 26.08.05-->
+        <input type="hidden" name="_csrf" value="${_csrf}">    
+        
         <input type="hidden" name="inquiryId" value="${inquiry.inquiryId}">
         <textarea name="answer" placeholder="거절 사유 (필수)" required></textarea>
         <button type="submit" class="btn btn-no" style="margin-top:10px">거절</button>

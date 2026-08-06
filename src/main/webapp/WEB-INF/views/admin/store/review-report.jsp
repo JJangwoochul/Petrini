@@ -57,10 +57,16 @@
                                     <td><fmt:formatDate value="${rr.regDate}" pattern="yyyy-MM-dd HH:mm"/></td>
                                     <td style="white-space:nowrap">
                                         <form method="post" action="${contextPath}/admin/store/review-report/${rr.reportId}/approve" style="display:inline">
+                                            <!--HYJ 26.08.05-->
+                                            <input type="hidden" name="_csrf" value="${_csrf}">
+                                            
                                             <input type="hidden" name="reviewId" value="${rr.reviewId}">
                                             <button type="submit" class="adm-btn green" onclick="return confirm('이 리뷰를 삭제하시겠습니까? 되돌릴 수 없습니다.')">승인</button>
                                         </form>
                                         <form method="post" action="${contextPath}/admin/store/review-report/${rr.reportId}/reject" style="display:inline">
+                                            <!--HYJ 26.08.05-->
+                                            <input type="hidden" name="_csrf" value="${_csrf}">
+                                            
                                             <button type="submit" class="adm-btn red" onclick="return confirm('삭제요청을 반려하시겠습니까?')">반려</button>
                                         </form>
                                     </td>

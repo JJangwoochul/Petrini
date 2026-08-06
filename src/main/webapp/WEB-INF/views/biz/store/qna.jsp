@@ -67,6 +67,9 @@
 
                 <%-- 지윤 26.07.22 수정: 리뷰관리와 동일하게 기본 접힘, "답변쓰기/답변수정" 눌러야 폼 펼쳐지게 변경 --%>
                 <form method="post" action="${contextPath}/biz/store/qna/answer" class="biz-reply-box" id="answer-box-${q.qnaId}" style="display:none">
+                  <!--HYJ 26.08.05-->
+                  <input type="hidden" name="_csrf" value="${_csrf}">
+                  
                   <input type="hidden" name="qnaId" value="${q.qnaId}">
                   <div class="biz-reply-box-label"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${empty q.answer ? '답변 작성' : '답변 수정'}</div>
                   <textarea name="answer" placeholder="답변 내용을 입력해주세요" required>${q.answer}</textarea>

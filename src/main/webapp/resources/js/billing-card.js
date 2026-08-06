@@ -32,15 +32,21 @@
     return res.json();
   }
 
+  //HYJ 26.08.05
   async function postForm(url, data) {
+    var headers = { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' };
+    var csrfMeta = document.querySelector('meta[name="_csrf"]');
+    if (csrfMeta) {
+      headers['X-CSRF-TOKEN'] = csrfMeta.getAttribute('content');
+    }
     var res = await fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      headers: headers,
       body: qs(data)
     });
     return res.json();
-  }
+}
 
   /**
    * 카드등록 창 열기

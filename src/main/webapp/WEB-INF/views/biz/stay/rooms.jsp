@@ -77,6 +77,9 @@
     <form id="roomForm" action="${contextPath}/biz/stay/rooms" method="post"
           style="padding:20px;max-width:640px">
 
+      <!--HYJ 26.08.05-->
+      <input type="hidden" name="_csrf" value="${_csrf}">
+
       <input type="hidden" id="rRoomId" name="roomId" value="">
 
       <div class="biz-form-fields">
@@ -107,6 +110,9 @@
 
   <%-- 삭제용 히든 폼 --%>
   <form id="deleteForm" action="${contextPath}/biz/stay/rooms/delete" method="post" style="display:none">
+    <!--HYJ 26.08.05-->
+    <input type="hidden" name="_csrf" value="${_csrf}">
+    
     <input type="hidden" id="delRoomId" name="roomId" value="">
   </form>
 </main>

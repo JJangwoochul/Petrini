@@ -59,11 +59,17 @@
                 <c:when test="${post.statusCd eq 'HIDDEN'}">
                     <form method="post" action="${contextPath}/admin/community/restore"
                           onsubmit="return confirm('다시 게시하시겠습니까?')">
+                        <!--HYJ 26.08.05-->
+                        <input type="hidden" name="_csrf" value="${_csrf}">  
+                        
                         <input type="hidden" name="postId" value="${post.postId}">
                         <button type="submit" class="adm-btn green">복구</button>
                     </form>
                     <form method="post" action="${contextPath}/admin/community/delete"
                           onsubmit="return confirm('삭제하시겠습니까?')">
+                        <!--HYJ 26.08.05-->
+                        <input type="hidden" name="_csrf" value="${_csrf}">  
+                        
                         <input type="hidden" name="postId" value="${post.postId}">
                         <input type="hidden" name="memberNo" value="${post.memberNo}">
                         <button type="submit" class="adm-btn red">삭제</button>
@@ -72,6 +78,9 @@
                 <c:when test="${post.statusCd eq 'DELETED'}">
                     <form method="post" action="${contextPath}/admin/community/restore"
                           onsubmit="return confirm('다시 게시하시겠습니까?')">
+                        <!--HYJ 26.08.05-->
+                        <input type="hidden" name="_csrf" value="${_csrf}">  
+                        
                         <input type="hidden" name="postId" value="${post.postId}">
                         <button type="submit" class="adm-btn green">복구</button>
                     </form>
@@ -79,11 +88,17 @@
                 <c:otherwise>
                     <form method="post" action="${contextPath}/admin/community/hide"
                           onsubmit="return confirm('숨김 처리하시겠습니까?')">
+                        <!--HYJ 26.08.05-->
+                        <input type="hidden" name="_csrf" value="${_csrf}">  
+                        
                         <input type="hidden" name="postId" value="${post.postId}">
                         <button type="submit" class="adm-btn gray">숨김</button>
                     </form>
                     <form method="post" action="${contextPath}/admin/community/delete"
                           onsubmit="return confirm('삭제하시겠습니까?')">
+                        <!--HYJ 26.08.05-->
+                        <input type="hidden" name="_csrf" value="${_csrf}">  
+                        
                         <input type="hidden" name="postId" value="${post.postId}">
                         <input type="hidden" name="memberNo" value="${post.memberNo}">
                         <button type="submit" class="adm-btn red">삭제</button>
@@ -175,11 +190,17 @@
                         <c:when test="${post.statusCd eq 'HIDDEN'}">
                             <form method="post" action="${contextPath}/admin/community/restore"
                                   onsubmit="return confirm('다시 게시하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="postId" value="${post.postId}">
                                 <button type="submit" class="adm-btn green">복구</button>
                             </form>
                             <form method="post" action="${contextPath}/admin/community/delete"
                                   onsubmit="return confirm('삭제하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="postId" value="${post.postId}">
                                 <input type="hidden" name="memberNo" value="${post.memberNo}">
                                 <button type="submit" class="adm-btn red">삭제</button>
@@ -188,6 +209,9 @@
                         <c:when test="${post.statusCd eq 'DELETED'}">
                             <form method="post" action="${contextPath}/admin/community/restore"
                                   onsubmit="return confirm('다시 게시하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="postId" value="${post.postId}">
                                 <button type="submit" class="adm-btn green">복구</button>
                             </form>
@@ -195,11 +219,17 @@
                         <c:otherwise>
                             <form method="post" action="${contextPath}/admin/community/hide"
                                   onsubmit="return confirm('숨김 처리하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="postId" value="${post.postId}">
                                 <button type="submit" class="adm-btn gray">숨김 처리</button>
                             </form>
                             <form method="post" action="${contextPath}/admin/community/delete"
                                   onsubmit="return confirm('삭제하시겠습니까?')">
+                                <!--HYJ 26.08.05-->
+                                <input type="hidden" name="_csrf" value="${_csrf}">  
+                                
                                 <input type="hidden" name="postId" value="${post.postId}">
                                 <input type="hidden" name="memberNo" value="${post.memberNo}">
                                 <button type="submit" class="adm-btn red">삭제</button>

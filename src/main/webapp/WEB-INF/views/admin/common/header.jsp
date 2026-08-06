@@ -12,6 +12,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${contextPath}/resources/css/admin.css">
+    
+    <%-- 2026-08-05 HYJ — CSRF 토큰: AJAX 에서 이 meta 태그를 읽어서 header 에 포함 --%>
+    <meta name="_csrf" content="${_csrf}">    
 </head>
 <body>
 <div class="adm-page">

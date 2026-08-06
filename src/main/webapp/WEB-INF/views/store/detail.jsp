@@ -450,7 +450,8 @@ function showTab(id, btn) {
 function reportReview(reviewId) {
   if (!confirm('이 리뷰를 신고하시겠습니까?')) return;
   var reason = prompt('신고 사유를 입력해주세요 (선택)') || '';
-  fetch('${contextPath}/store/review/report', {
+  //HYJ 26.08.05
+  csrfFetch('${contextPath}/store/review/report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'reviewId=' + encodeURIComponent(reviewId) + '&reason=' + encodeURIComponent(reason)
@@ -475,7 +476,8 @@ document.getElementById('reviewList').addEventListener('click', function (e) {
   if (!btn) return;
   if (!confirm('작성한 리뷰를 삭제하시겠습니까?')) return;
   var reviewId = btn.dataset.reviewId;
-  fetch('${contextPath}/store/review/delete', {
+  //HYJ 26.08.05
+  csrfFetch('${contextPath}/store/review/delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'reviewId=' + encodeURIComponent(reviewId)
@@ -514,7 +516,8 @@ document.getElementById('btnAddCart').addEventListener('click', function () {
   var qty = parseInt(document.getElementById('qty').value);
   var price = ${product.salePrice} + addPrice;
 
-  fetch('${contextPath}/store/cart/add', {
+  //HYJ 26.08.05
+  csrfFetch('${contextPath}/store/cart/add', {
     method: 'POST',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
     body: 'productId=${product.productId}&optionId=' + optionId + '&qty=' + qty + '&price=' + price
@@ -565,7 +568,8 @@ document.getElementById('btnAddQna').addEventListener('click', function () {
   }
   var optionSelectEl = document.getElementById('qnaOptionSelect');
   var qnaOptionId = optionSelectEl ? optionSelectEl.value : '';
-  fetch('${contextPath}/store/qna/add', {
+  //HYJ 26.08.05
+  csrfFetch('${contextPath}/store/qna/add', {
     method: 'POST',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
     body: 'productId=${product.productId}&question=' + encodeURIComponent(question) + '&optionId=' + encodeURIComponent(qnaOptionId)
@@ -611,7 +615,8 @@ document.getElementById('qnaList').addEventListener('click', function (e) {
   if (!btn) return;
   if (!confirm('문의를 삭제하시겠습니까?')) return;
   var qnaId = btn.dataset.qnaId;
-  fetch('${contextPath}/store/qna/delete', {
+  //HYJ 26.08.05
+  csrfFetch('${contextPath}/store/qna/delete', {
     method: 'POST',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
     body: 'qnaId=' + qnaId

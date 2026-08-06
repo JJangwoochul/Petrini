@@ -118,6 +118,13 @@
             <version>3.0.5</version>
         </dependency>
 
+        <!--Lucy XSS 라이브러리  lusy-xss-servlet은 지금 버전과 호환이 안되서 사용 못함-->
+        <dependency>
+            <groupId>com.navercorp.lucy</groupId>
+            <artifactId>lucy-xss</artifactId>
+            <version>1.6.3</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
