@@ -550,13 +550,13 @@ public class BizHospitalController extends BizBaseController {
 
         try {
             giveTalentService.applyTalent(member.getMemberId(), vo);
-            rttr.addFlashAttribute("msg", "?щ뒫?섎닎 ?좎껌???꾨즺?섏뿀?듬땲??");
+            rttr.addFlashAttribute("msg", "재능나눔 신청이 완료되었습니다.");
         } catch (IllegalStateException e) {
-            String err = "?좎껌?????놁뒿?덈떎.";
+            String err = "신청할 수 없습니다.";
             if ("BIZ_NOT_APPROVED".equals(e.getMessage())) {
-                err = "?ъ뾽???뱀씤???꾨즺?????щ뒫?섎닎???좎껌?????덉뒿?덈떎.";
+                err = "사업자 승인이 완료된 후 재능나눔을 신청할 수 있습니다.";
             } else if ("BIZ_NOT_FOUND".equals(e.getMessage())) {
-                err = "?깅줉???ъ뾽???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.";
+                err = "등록된 사업자 정보를 찾을 수 없습니다.";
             }
             rttr.addFlashAttribute("errorMsg", err);
         } catch (IllegalArgumentException e) {
