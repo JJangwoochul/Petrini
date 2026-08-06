@@ -487,6 +487,8 @@ function submitReserve() {
     return;
   }
   if (confirm('예약을 확정하시겠습니까?')) {
+    // 예약 확정 submit 시에는 beforeunload에서 hold 해제하지 않도록 플래그 설정
+    window.__reserveSubmitting = true;
     document.getElementById('reserveForm').submit();
   }
 }
@@ -498,6 +500,17 @@ function submitReserve() {
   dateInput.addEventListener('change', onDateChange);
   var firstPet = document.querySelector('.pet-select-card');
   if (firstPet) selectPet(firstPet);
+
+  // 페이지 이탈 시 hold 자동 해제 (뒤로가기, 탭 닫기, 다른 페이지 이동)
+  window.addEventListener('beforeunload', function () {
+    if (window.__reserveSubmitting) return; // 예약 확정 submit 중이면 해제하지 않음
+    var holdId = document.getElementById('holdIdInput').value;
+    if (!holdId) return;
+    var fd = new FormData();
+    fd.append('hospitalId', hospitalId);
+    fd.append('_csrf', document.querySelector('meta[name="_csrf"]').getAttribute('content'));
+    navigator.sendBeacon(contextPath + '/hospital/reserve/hold/release', fd);
+  });
 })();
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
