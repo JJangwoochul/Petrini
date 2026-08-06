@@ -140,4 +140,22 @@ public class EmailService {
         int code = 100000 + random.nextInt(900000);  // 100000 ~ 999999
         return String.valueOf(code);
     }
+
+    //지윤 26.08.05 추가: 상품 품절 알림 (기존 sendApproveNotice 패턴과 동일)
+    //지윤 26.08.05 수정: 사업자명까지 넣어서 인사말 추가 (3개 파라미터)
+    public void sendSoldoutNotice(String to, String bizName, String productName) throws MessagingException {
+    String subject = "[PetCare] 상품 품절 알림";
+    String body = ""
+        + "<div style='max-width:480px; margin:0 auto; padding:32px;'>"
+        + "  <h2 style='color:#DC2626;'>상품 품절 안내</h2>"
+        + "  <p><b>" + bizName + "</b> 사업자님, 아래 상품의 재고가 모두 소진되었습니다.</p>"
+        + "  <div style='background:#FEF2F2; border:1px solid #FECACA; border-radius:8px;"
+        + "  padding:16px; margin:16px 0;'>"
+        + "    <p style='color:#DC2626; font-weight:600; margin:0;'>" + productName + "</p>"
+        + "  </div>"
+        + "  <p style='color:#999; font-size:13px;'>사업자센터에서 재고를 보충해주세요.</p>"
+        + "</div>";
+
+    send(to, subject, body);
+ }
 }

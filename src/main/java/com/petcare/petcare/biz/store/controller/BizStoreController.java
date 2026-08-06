@@ -496,4 +496,286 @@ return json;
             return "redirect:/login";
         return "biz/store/contract";
     }
+
+    // ─────────────────────────────────────────────
+// 지윤 26.08.06: 쇼핑몰 사업자 쿠폰 관리
+// ─────────────────────────────────────────────
+
+/**
+ * 쇼핑몰 사업자 쿠폰 목록
+ */
+@GetMapping({"/coupon", "/coupon/"})
+public String couponList(
+        HttpSession session,
+        Model model
+) {
+    MemberVO biz = getBizMember(session);
+
+    if (biz == null) {
+        return "redirect:/login";
+    }
+
+    Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+    if (bizNo == null) {
+        model.addAttribute(
+                "errorMsg",
+                "사업자 정보를 찾을 수 없습니다."
+        );
+
+        model.addAttribute(
+                "couponList",
+                java.util.Collections.emptyList()
+        );
+
+        return "biz/store/coupon";
+    }
+
+    model.addAttribute(
+            "couponList",
+            bizStoreService.getCouponList(bizNo)
+    );
+
+    return "biz/store/coupon";
+}
+
+/**
+ * 쿠폰 승인 신청
+ */
+@PostMapping("/coupon/apply")
+public String applyCoupon(
+        com.petcare.petcare.biz.vo.BizCouponVO vo,
+        HttpSession session,
+        RedirectAttributes rttr
+) {
+    MemberVO biz = getBizMember(session);
+
+    if (biz == null) {
+        return "redirect:/login";
+    }
+
+    try {
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        if (bizNo == null) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "사업자 정보를 찾을 수 없습니다."
+            );
+
+            return "redirect:/biz/store/coupon";
+        }
+
+        bizStoreService.applyCoupon(bizNo, vo);
+
+        rttr.addFlashAttribute(
+                "msg",
+                "쿠폰 승인 신청이 완료되었습니다."
+        );
+
+    } catch (Exception e) {
+        e.printStackTrace();
+
+        rttr.addFlashAttribute(
+                "errorMsg",
+                "쿠폰 신청 중 오류가 발생했습니다."
+        );
+    }
+
+    return "redirect:/biz/store/coupon";
+}
+
+/**
+ * 승인 대기 쿠폰 수정
+ */
+@PostMapping("/coupon/update")
+public String updateCoupon(
+        com.petcare.petcare.biz.vo.BizCouponVO vo,
+        HttpSession session,
+        RedirectAttributes rttr
+) {
+    MemberVO biz = getBizMember(session);
+
+    if (biz == null) {
+        return "redirect:/login";
+    }
+
+    try {
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        if (bizNo == null) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "사업자 정보를 찾을 수 없습니다."
+            );
+
+            return "redirect:/biz/store/coupon";
+        }
+
+        bizStoreService.updateCoupon(bizNo, vo);
+
+        rttr.addFlashAttribute(
+                "msg",
+                "쿠폰 정보가 수정되었습니다."
+        );
+
+    } catch (IllegalStateException e) {
+
+        if ("NOT_PENDING".equals(e.getMessage())) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "승인 대기 상태의 쿠폰만 수정할 수 있습니다."
+            );
+
+        } else {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "수정 권한이 없습니다."
+            );
+        }
+
+    } catch (Exception e) {
+        rttr.addFlashAttribute(
+                "errorMsg",
+                "수정 중 오류가 발생했습니다."
+        );
+    }
+
+    return "redirect:/biz/store/coupon";
+}
+
+/**
+ * 승인 대기 쿠폰 삭제
+ */
+@PostMapping("/coupon/delete")
+public String deleteCoupon(
+        @RequestParam Long couponId,
+        HttpSession session,
+        RedirectAttributes rttr
+) {
+    MemberVO biz = getBizMember(session);
+
+    if (biz == null) {
+        return "redirect:/login";
+    }
+
+    try {
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        if (bizNo == null) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "사업자 정보를 찾을 수 없습니다."
+            );
+
+            return "redirect:/biz/store/coupon";
+        }
+
+        bizStoreService.deleteCoupon(bizNo, couponId);
+
+        rttr.addFlashAttribute(
+                "msg",
+                "쿠폰 신청이 삭제되었습니다."
+        );
+
+    } catch (IllegalStateException e) {
+
+        if ("NOT_PENDING".equals(e.getMessage())) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "승인 대기 상태의 쿠폰만 삭제할 수 있습니다."
+            );
+
+        } else {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "삭제 권한이 없습니다."
+            );
+        }
+
+    } catch (Exception e) {
+        rttr.addFlashAttribute(
+                "errorMsg",
+                "삭제 중 오류가 발생했습니다."
+        );
+    }
+
+    return "redirect:/biz/store/coupon";
+}
+
+/**
+ * 지윤 26.08.06
+ * 쇼핑몰 사업자 쿠폰 조기 마감
+ *
+ * 관리자 재승인 없이 사업자가 직접 마감한다.
+ * 기존에 발급된 회원 쿠폰은 변경하지 않는다.
+ */
+@PostMapping("/coupon/close")
+public String closeCoupon(
+        @RequestParam Long couponId,
+        HttpSession session,
+        RedirectAttributes rttr
+) {
+    MemberVO biz = getBizMember(session);
+
+    if (biz == null) {
+        return "redirect:/login";
+    }
+
+    try {
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+
+        if (bizNo == null) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "사업자 정보를 찾을 수 없습니다."
+            );
+
+            return "redirect:/biz/store/coupon";
+        }
+
+        bizStoreService.closeCoupon(bizNo, couponId);
+
+        rttr.addFlashAttribute(
+                "msg",
+                "쿠폰이 조기 마감되었습니다."
+        );
+
+    } catch (IllegalStateException e) {
+
+        if ("NOT_OWNER".equals(e.getMessage())) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "본인이 등록한 쿠폰만 마감할 수 있습니다."
+            );
+
+        } else if ("NOT_APPROVED".equals(e.getMessage())) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "승인된 쿠폰만 조기 마감할 수 있습니다."
+            );
+
+        } else if ("NOT_ACTIVE".equals(e.getMessage())) {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "현재 게시 중인 쿠폰만 조기 마감할 수 있습니다."
+            );
+
+        } else {
+            rttr.addFlashAttribute(
+                    "errorMsg",
+                    "쿠폰 조기 마감에 실패했습니다."
+            );
+        }
+
+    } catch (Exception e) {
+        rttr.addFlashAttribute(
+                "errorMsg",
+                "쿠폰 조기 마감 중 오류가 발생했습니다."
+        );
+    }
+
+    return "redirect:/biz/store/coupon";
+}
+
 }

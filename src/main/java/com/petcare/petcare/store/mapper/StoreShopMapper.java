@@ -44,17 +44,16 @@ public interface StoreShopMapper {
     List<StoreShopVO> selectProductList(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
                                          @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
                                          @Param("brand") List<String> brand,
-                                         @Param("sort") String sort, @Param("offset") int offset, @Param("size") int size);
+                                         @Param("sort") String sort, @Param("offset") int offset, @Param("size") int size,
+                                         @Param("bizNo") Long bizNo);
 
-    //지윤 26.07.06 페이지네이션용 전체 상품 개수 조회 (카테고리/검색 조건은 목록과 동일하게 적용)
-    //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
     int selectProductCount(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
                             @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
-                            @Param("brand") List<String> brand);
+                            @Param("brand") List<String> brand, @Param("bizNo") Long bizNo);
 
-    //지윤 26.07.12 브랜드별 상품 수 집계 (카테고리/검색/가격 조건은 목록과 동일하게 적용, 브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능하게 함)
     List<BrandVO> selectBrandCounts(@Param("categoryId") Long categoryId, @Param("keyword") String keyword,
-                                     @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice);
+                                     @Param("minPrice") Integer minPrice, @Param("maxPrice") Integer maxPrice,
+                                     @Param("bizNo") Long bizNo);
 
     //지윤 26.07.06 카테고리 트리 전체 조회
     List<CategoryVO> selectCategoryTree();
@@ -175,6 +174,13 @@ Long selectNextOrderId();
 
     //지윤 26.07.16 추가: 품절 알림 보낼 사업자 회원번호 조회
     Long selectBizMemberNoByBizNo(@Param("bizNo") Long bizNo);
+
+    //지윤 26.08.05 추가: 품절 이메일 발송 대상 사업자 이메일 조회
+
+    String selectBizEmailByBizNo(@Param("bizNo") Long bizNo);
+
+    //지윤 26.08.05 추가: 품절 이메일 인사말용 사업자명 조회
+    String selectBizNameByBizNo(@Param("bizNo") Long bizNo);
 
     //지윤 26.07.21 추가: 유저가 리뷰 신고 (TB_REVIEW_REPORT, REPORTER_TYPE='USER')
     //본인이 같은 리뷰를 이미 신고했으면 조용히 0건 처리 (SQL에서 중복 검증)

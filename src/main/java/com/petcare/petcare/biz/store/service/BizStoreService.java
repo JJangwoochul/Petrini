@@ -130,4 +130,12 @@ public interface BizStoreService {
 
     //지윤 26.07.23 추가: 사업자 정보 수정 (등록증 새로 올리면 기존 것 교체)
     void updateBusinessInfo(Long bizNo, com.petcare.petcare.biz.store.vo.BizInfoVO info, org.springframework.web.multipart.MultipartFile certFile) throws Exception;
+
+    List<com.petcare.petcare.biz.vo.BizCouponVO> getCouponList(Long bizNo);
+    void applyCoupon(Long bizNo, com.petcare.petcare.biz.vo.BizCouponVO vo);
+    void updateCoupon(Long bizNo, com.petcare.petcare.biz.vo.BizCouponVO vo);
+    void deleteCoupon(Long bizNo, Long couponId);
+
+// 지윤 26.08.06: 쇼핑몰 사업자 쿠폰 조기 마감
+void closeCoupon(Long bizNo, Long couponId);
 }

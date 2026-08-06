@@ -456,9 +456,84 @@ public class BizStoreServiceImpl implements BizStoreService {
                                     bizStoreMapper.updateBusinessInfo(bizNo, info.getShopName(), info.getCeoName(), info.getBizRegNo(), info.getBizType(),
                                     info.getAddr(), info.getAddrDetail(), info.getPhone());
 
-       if (certFile != null && !certFile.isEmpty()) {
-           fileService.deleteFilesByRef("BIZ_AUTH", bizNo);
-           fileService.uploadFile(certFile, "BIZ_AUTH", bizNo);
-       }
-   }
+                                    if (certFile != null && !certFile.isEmpty()) {
+                                        fileService.deleteFilesByRef("BIZ_AUTH", bizNo);
+                                        fileService.uploadFile(certFile, "BIZ_AUTH", bizNo);
+                                    }
+                                }
+    //지윤  26/08/06 쇼핑몰 쿠폰기능                       
+    @Override
+    public List<com.petcare.petcare.biz.vo.BizCouponVO> getCouponList(Long bizNo) {
+        return bizStoreMapper.selectCouponListByBizNo(bizNo);
+    }
+ 
+    @Override
+    public void applyCoupon(Long bizNo, com.petcare.petcare.biz.vo.BizCouponVO vo) {
+        String code = "CPN-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        vo.setCouponCode(code);
+        vo.setBizMemberNo(bizNo);
+        vo.setApprovalStatus("PENDING");
+        vo.setStatusCd("INACTIVE");
+        vo.setIssuedBudget(0);
+        vo.setIssuedQty(0);
+        bizStoreMapper.insertCoupon(vo);
+    }
+ 
+    @Override
+    public void updateCoupon(Long bizNo, com.petcare.petcare.biz.vo.BizCouponVO vo) {
+        com.petcare.petcare.biz.vo.BizCouponVO existing = bizStoreMapper.selectCouponById(vo.getCouponId());
+        if (existing == null) throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        if (bizNo == null || !bizNo.equals(existing.getBizMemberNo())) throw new IllegalStateException("NOT_OWNER");
+        if (!"PENDING".equals(existing.getApprovalStatus())) throw new IllegalStateException("NOT_PENDING");
+        vo.setBizMemberNo(bizNo);
+        bizStoreMapper.updateCoupon(vo);
+    }
+ 
+    @Override
+    public void deleteCoupon(Long bizNo, Long couponId) {
+        com.petcare.petcare.biz.vo.BizCouponVO existing = bizStoreMapper.selectCouponById(couponId);
+        if (existing == null) throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        if (bizNo == null || !bizNo.equals(existing.getBizMemberNo())) throw new IllegalStateException("NOT_OWNER");
+        if (!"PENDING".equals(existing.getApprovalStatus())) throw new IllegalStateException("NOT_PENDING");
+        bizStoreMapper.deleteCoupon(couponId, bizNo);
+    }
+
+    /**
+ * 지윤 26.08.06
+ * 쇼핑몰 사업자 쿠폰 조기 마감
+ *
+ * 관리자 승인을 받은 ACTIVE 쿠폰만 조기 마감할 수 있다.
+ * 회원이 이미 발급받은 쿠폰은 변경하지 않는다.
+ */
+@Override
+public void closeCoupon(Long bizNo, Long couponId) {
+    com.petcare.petcare.biz.vo.BizCouponVO existing =
+            bizStoreMapper.selectCouponById(couponId);
+
+    if (existing == null) {
+        throw new IllegalArgumentException("COUPON_NOT_FOUND");
+    }
+
+    // 로그인 사업자가 발급한 쿠폰인지 확인
+    if (bizNo == null || !bizNo.equals(existing.getBizMemberNo())) {
+        throw new IllegalStateException("NOT_OWNER");
+    }
+
+    // 관리자 승인을 받은 쿠폰만 조기 마감 가능
+    if (!"APPROVED".equals(existing.getApprovalStatus())) {
+        throw new IllegalStateException("NOT_APPROVED");
+    }
+
+    // 현재 게시 중인 쿠폰만 조기 마감 가능
+    if (!"ACTIVE".equals(existing.getStatusCd())) {
+        throw new IllegalStateException("NOT_ACTIVE");
+    }
+
+    int result = bizStoreMapper.closeCoupon(couponId, bizNo);
+
+    if (result == 0) {
+        throw new IllegalStateException("CLOSE_FAILED");
+    }
 }
+
+ }

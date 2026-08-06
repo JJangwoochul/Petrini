@@ -24,6 +24,21 @@
            C.USE_END_DATE,
            C.STATUS_CD,
            B.BIZ_NAME,
+           TO_CHAR(C.BIZ_MEMBER_NO) AS BIZ_NO,
+           B.BIZ_TYPE,
+           CASE B.BIZ_TYPE
+           WHEN 'HOSPITAL' THEN (
+           SELECT MAX(H.HOSPITAL_ID)
+           FROM TB_HOSPITAL H
+           WHERE H.BIZ_NO = B.BIZ_NO
+    )
+           WHEN 'STAY' THEN (
+           SELECT MAX(S.STAY_ID)
+           FROM TB_STAY S
+           WHERE S.BIZ_NO = B.BIZ_NO
+    )
+    ELSE NULL
+END AS TARGET_ID,
            <choose>
                <when test="memberNo != null">
                    CASE WHEN EXISTS (
@@ -120,7 +135,7 @@
      WHERE COUPON_ID = #{couponId}
   </update>
 
-  <!-- 쿠폰 상세 1건 (발급 가능 여부 검증) -->
+    <!-- 쿠폰 상세 1건 (발급 가능 여부 검증) -->
   <select id="selectCouponById"
           parameterType="long"
           resultType="com.petcare.petcare.store.vo.CouponVO">
@@ -137,6 +152,135 @@
       FROM TB_COUPON
      WHERE COUPON_ID = #{couponId}
        AND APPROVAL_STATUS = 'APPROVED'
+  </select>
+
+
+    <!--
+    지윤 26.08.06
+    선택한 쿠폰과 쿠폰 발급 사업자 정보 조회
+  -->
+  <select id="selectCouponTarget"
+          parameterType="long"
+          resultType="com.petcare.petcare.store.vo.CouponVO">
+
+    SELECT C.COUPON_ID,
+           C.COUPON_CODE,
+           C.COUPON_NAME,
+           C.COUPON_TYPE,
+           C.DISCOUNT_VALUE,
+           C.MIN_ORDER_AMT,
+           C.USE_START_DATE,
+           C.USE_END_DATE,
+           C.STATUS_CD,
+           TO_CHAR(C.BIZ_MEMBER_NO) AS BIZ_NO,
+           B.BIZ_NAME,
+           B.BIZ_TYPE,
+           CASE B.BIZ_TYPE
+               WHEN 'HOSPITAL' THEN (
+                   SELECT MAX(H.HOSPITAL_ID)
+                     FROM TB_HOSPITAL H
+                    WHERE H.BIZ_NO = B.BIZ_NO
+               )
+               WHEN 'STAY' THEN (
+                   SELECT MAX(S.STAY_ID)
+                     FROM TB_STAY S
+                    WHERE S.BIZ_NO = B.BIZ_NO
+               )
+               ELSE NULL
+           END AS TARGET_ID
+      FROM TB_COUPON C
+      JOIN TB_BUSINESS B
+        ON B.BIZ_NO = C.BIZ_MEMBER_NO
+     WHERE C.COUPON_ID = #{couponId}
+       AND C.APPROVAL_STATUS = 'APPROVED'
+
+  </select>
+
+
+  <!--
+    지윤 26.08.06
+    쿠폰을 발급한 쇼핑몰 사업자의 상품만 조회
+  -->
+  <select id="selectCouponProducts"
+          resultType="com.petcare.petcare.store.vo.StoreShopVO">
+
+    SELECT P.PRODUCT_ID,
+           P.PRODUCT_CD,
+           P.PRODUCT_NAME,
+           P.BRAND_NAME,
+           P.CATEGORY_ID,
+           TO_NUMBER(P.PRICE) AS PRICE,
+           TO_NUMBER(P.SALE_PRICE) AS SALE_PRICE,
+           F.FILE_URL AS THUMBNAIL_URL,
+           NVL(RV.AVG_RATING, 0) AS AVG_RATING,
+           NVL(RV.REVIEW_COUNT, 0) AS REVIEW_COUNT
+
+      FROM TB_PRODUCT P
+
+      <!-- 상품 대표 이미지 1개 조회 -->
+      LEFT JOIN (
+          SELECT REF_ID,
+                 FILE_URL,
+                 ROW_NUMBER() OVER (
+                     PARTITION BY REF_ID
+                     ORDER BY FILE_ID
+                 ) AS RN
+            FROM TB_FILE
+           WHERE REF_TYPE = 'PRODUCT'
+      ) F
+        ON F.REF_ID = P.PRODUCT_ID
+       AND F.RN = 1
+
+      <!-- 상품 평균 별점과 리뷰 개수 -->
+      LEFT JOIN (
+          SELECT TARGET_ID,
+                 ROUND(AVG(RATING), 1) AS AVG_RATING,
+                 COUNT(REVIEW_ID) AS REVIEW_COUNT
+            FROM TB_REVIEW
+           WHERE REVIEW_TYPE = 'PRODUCT'
+           GROUP BY TARGET_ID
+      ) RV
+        ON RV.TARGET_ID = P.PRODUCT_ID
+
+      <!-- 인기순 정렬에 사용할 상품 판매 수량 -->
+      LEFT JOIN (
+          SELECT PRODUCT_ID,
+                 SUM(QTY) AS SALES_QTY
+            FROM TB_ORDER_ITEM
+           GROUP BY PRODUCT_ID
+      ) SALES
+        ON SALES.PRODUCT_ID = P.PRODUCT_ID
+
+     WHERE TO_CHAR(P.BIZ_NO) = #{bizNo}
+  AND P.STATUS_CD = 'NORMAL'
+
+<!-- 지윤 26.08.06: 상품명 또는 브랜드명 검색 -->
+<if test="keyword != null and keyword != ''">
+  AND (
+       UPPER(P.PRODUCT_NAME)
+       LIKE '%' || UPPER(#{keyword}) || '%'
+       OR
+       UPPER(P.BRAND_NAME)
+       LIKE '%' || UPPER(#{keyword}) || '%'
+  )
+</if>
+
+<!-- 지윤 26.08.06: 인기순·가격순 정렬 -->
+<choose>
+      <when test="sort == 'priceAsc'">
+        ORDER BY TO_NUMBER(P.SALE_PRICE) ASC
+      </when>
+
+      <when test="sort == 'priceDesc'">
+        ORDER BY TO_NUMBER(P.SALE_PRICE) DESC
+      </when>
+
+      <otherwise>
+        ORDER BY NVL(SALES.SALES_QTY, 0) DESC,
+                 P.PRODUCT_ID DESC
+      </otherwise>
+    </choose>
+
   </select>
 
 </mapper>

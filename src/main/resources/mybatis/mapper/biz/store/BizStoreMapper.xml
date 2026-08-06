@@ -532,4 +532,67 @@
     WHERE BIZ_NO = #{bizNo}
 </update>
 
+<!-- 지윤 26.08.06 쿠폰 기능-->
+<select id="selectCouponListByBizNo" parameterType="long" resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+  SELECT COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MIN_ORDER_AMT,
+         TOTAL_BUDGET, ISSUED_BUDGET, TOTAL_QTY, ISSUED_QTY, USE_START_DATE, USE_END_DATE,
+         BIZ_MEMBER_NO, APPROVAL_STATUS, REJECT_REASON, APPROVAL_DATE, STATUS_CD, REG_DATE, MOD_DATE
+    FROM TB_COUPON
+   WHERE BIZ_MEMBER_NO = #{bizMemberNo}
+   ORDER BY REG_DATE DESC
+</select>
+
+<select id="selectCouponById" parameterType="long" resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+  SELECT COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MIN_ORDER_AMT,
+         TOTAL_BUDGET, ISSUED_BUDGET, TOTAL_QTY, ISSUED_QTY, USE_START_DATE, USE_END_DATE,
+         BIZ_MEMBER_NO, APPROVAL_STATUS, REJECT_REASON, APPROVAL_DATE, STATUS_CD, REG_DATE, MOD_DATE
+    FROM TB_COUPON
+   WHERE COUPON_ID = #{couponId}
+</select>
+
+<insert id="insertCoupon" parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
+  INSERT INTO TB_COUPON (
+      COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MIN_ORDER_AMT,
+      TOTAL_BUDGET, ISSUED_BUDGET, TOTAL_QTY, ISSUED_QTY, USE_START_DATE, USE_END_DATE,
+      BIZ_MEMBER_NO, BIZ_NO, APPROVAL_STATUS, STATUS_CD, REG_DATE
+  ) VALUES (
+      SEQ_COUPON.NEXTVAL, #{couponCode}, #{couponName}, #{couponType}, #{discountValue}, #{minOrderAmt},
+      #{totalBudget}, #{issuedBudget}, #{totalQty}, #{issuedQty}, #{useStartDate}, #{useEndDate},
+      #{bizMemberNo}, #{bizMemberNo}, #{approvalStatus}, #{statusCd}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+  )
+</insert>
+
+<update id="updateCoupon" parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
+  UPDATE TB_COUPON
+     SET COUPON_NAME = #{couponName}, COUPON_TYPE = #{couponType}, DISCOUNT_VALUE = #{discountValue},
+         MIN_ORDER_AMT = #{minOrderAmt}, TOTAL_BUDGET = #{totalBudget}, TOTAL_QTY = #{totalQty},
+         USE_START_DATE = #{useStartDate}, USE_END_DATE = #{useEndDate},
+         MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+   WHERE COUPON_ID = #{couponId} AND BIZ_MEMBER_NO = #{bizMemberNo} AND APPROVAL_STATUS = 'PENDING'
+</update>
+
+<delete id="deleteCoupon">
+  DELETE FROM TB_COUPON
+   WHERE COUPON_ID = #{couponId}
+     AND BIZ_MEMBER_NO = #{bizMemberNo}
+     AND APPROVAL_STATUS = 'PENDING'
+</delete>
+
+<!--
+  지윤 26.08.06
+  쇼핑몰 사업자 쿠폰 조기 마감
+
+  관리자 승인 없이 ACTIVE 쿠폰을 INACTIVE로 변경한다.
+  이미 회원이 발급받은 쿠폰은 변경하지 않는다.
+-->
+<update id="closeCoupon">
+  UPDATE TB_COUPON
+     SET STATUS_CD = 'INACTIVE',
+         MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+   WHERE COUPON_ID = #{couponId}
+     AND BIZ_MEMBER_NO = #{bizMemberNo}
+     AND APPROVAL_STATUS = 'APPROVED'
+     AND STATUS_CD = 'ACTIVE'
+</update>
+
 </mapper>

@@ -37,7 +37,22 @@
   .cp-ticket-name{font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:4px}
   .cp-ticket-cond{font-size:12px;color:var(--text-muted);margin-bottom:2px}
   .cp-ticket-date{font-size:12px;color:var(--text-muted)}
-  .cp-ticket-btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);background:#F59E0B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+
+/* 지윤 26.08.06: 적용 상품·병원·숙소 이동 링크 */
+.cp-ticket-target{
+  display:inline-block;
+  margin-top:7px;
+  color:#0D9F75;
+  font-size:12px;
+  font-weight:700;
+  text-decoration:none;
+}
+
+.cp-ticket-target:hover{
+  text-decoration:underline;
+}
+
+.cp-ticket-btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);background:#F59E0B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
   .cp-ticket-btn:hover{background:#D97706}
   .cp-ticket-btn.claimed{background:#F5F5F5;color:#aaa;cursor:not-allowed}
   .cp-ticket.ended{opacity:.5}
@@ -107,19 +122,55 @@
                 <c:if test="${not empty cpn.bizName}"> · ${cpn.bizName}</c:if>
               </div>
               <div class="cp-ticket-date">
-                ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}까지
-                <c:if test="${!isExhausted}"> · 잔여 ${cpn.totalQty - cpn.issuedQty}장</c:if>
-              </div>
+  ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}까지
+  <c:if test="${!isExhausted}">
+    · 잔여 ${cpn.totalQty - cpn.issuedQty}장
+  </c:if>
+</div>
+
+<%--
+  지윤 26.08.06
+  쿠폰 발급 사업자 업종에 따라 적용 대상 이동
+--%>
+<c:choose>
+
+  <%-- 쇼핑몰 쿠폰: 해당 사업자의 상품 목록 --%>
+  <c:when test="${cpn.bizType eq 'STORE'}">
+    <a class="cp-ticket-target"
+       href="${contextPath}/coupon/products?couponId=${cpn.couponId}">
+      적용 상품 &gt;
+    </a>
+  </c:when>
+
+  <%-- 병원 쿠폰: 해당 병원 상세 페이지 --%>
+  <c:when test="${cpn.bizType eq 'HOSPITAL'
+                  && not empty cpn.targetId}">
+    <a class="cp-ticket-target"
+       href="${contextPath}/hospital/detail?id=${cpn.targetId}">
+      적용 병원 &gt;
+    </a>
+  </c:when>
+
+  <%-- 숙소 쿠폰: 해당 숙소 상세 페이지 --%>
+  <c:when test="${cpn.bizType eq 'STAY'
+                  && not empty cpn.targetId}">
+    <a class="cp-ticket-target"
+       href="${contextPath}/stay/detail?id=${cpn.targetId}">
+      적용 숙소 &gt;
+    </a>
+  </c:when>
+
+</c:choose>
             </div>
             <c:choose>
               <c:when test="${cpn.alreadyClaimed}">
-                <button class="cp-ticket-btn claimed" disabled>받기 완료</button>
+                <button class="cp-ticket-btn claimed" disabled>다운 완료</button>
               </c:when>
               <c:when test="${isEnded}">
                 <button class="cp-ticket-btn claimed" disabled>마감</button>
               </c:when>
               <c:otherwise>
-                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">받기</button>
+                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">다운</button>
               </c:otherwise>
             </c:choose>
           </div>
@@ -141,7 +192,7 @@ function claimCoupon(btn, couponId) {
         if (xhr.status === 200) {
             var res = JSON.parse(xhr.responseText);
             if (res.ok) {
-                btn.textContent = '받기 완료';
+                btn.textContent = '다운 완료';
                 btn.disabled = true;
                 btn.classList.add('claimed');
                 alert(res.message);

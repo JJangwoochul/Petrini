@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.coupon.mapper.CouponMapper;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.StoreShopVO;
 
 @Service
 public class CouponServiceImpl implements CouponService {
@@ -27,12 +28,32 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public int countUsableCoupons(Long memberNo) {
-        return eventCouponMapper.countUsableCoupons(memberNo);
+    return eventCouponMapper.countUsableCoupons(memberNo);
     }
 
+    // 지윤 26.08.06: 쿠폰과 발급 사업자 정보 조회
     @Override
-    @Transactional
-    public void claimCoupon(Long memberNo, Long couponId) {
+    public CouponVO getCouponTarget(Long couponId) {
+    return eventCouponMapper.selectCouponTarget(couponId);
+    }
+
+    // 지윤 26.08.06: 쿠폰 발급 쇼핑몰의 적용 상품 조회
+    // 지윤 26.08.06: 쿠폰 적용 상품 검색 및 정렬
+@Override
+public List<StoreShopVO> getCouponProducts(
+        String bizNo,
+        String sort,
+        String keyword
+) {
+    return eventCouponMapper.selectCouponProducts(
+            bizNo,
+            sort,
+            keyword
+    );
+}
+@Override
+@Transactional
+public void claimCoupon(Long memberNo, Long couponId) {
         // 1) 이미 받았는지 체크 (중복발급 방지)
         int already = eventCouponMapper.countMemberCoupon(memberNo, couponId);
         if (already > 0) {

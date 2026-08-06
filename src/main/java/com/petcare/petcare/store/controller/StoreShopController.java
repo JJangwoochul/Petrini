@@ -93,15 +93,16 @@ public class StoreShopController {
                          @RequestParam(required = false) List<String> brand,
                          @RequestParam(required = false, defaultValue = "popular") String sort,
                          @RequestParam(required = false, defaultValue = "1") int page,
+                         @RequestParam(required = false) Long bizNo,
                          Model model) {
         if (q != null && !q.isBlank()) {
             return "redirect:/search?q=" + java.net.URLEncoder.encode(q.trim(), java.nio.charset.StandardCharsets.UTF_8);
         }
         Long effectiveCategoryId = (age != null) ? age : (category != null ? category : species);
 
-        model.addAttribute("productList", storeShopService.getProductList(effectiveCategoryId, keyword, minPrice, maxPrice, brand, sort, page));
+        model.addAttribute("productList", storeShopService.getProductList(effectiveCategoryId, keyword, minPrice, maxPrice, brand, sort, page, bizNo));
         model.addAttribute("categoryTree", storeShopService.getCategoryTree());
-        model.addAttribute("brandList", storeShopService.getBrandList(effectiveCategoryId, keyword, minPrice, maxPrice));
+        model.addAttribute("brandList", storeShopService.getBrandList(effectiveCategoryId, keyword, minPrice, maxPrice, bizNo));
         model.addAttribute("selectedSpecies", species);
         model.addAttribute("selectedCategory", category);
         model.addAttribute("selectedAge", age);
@@ -111,8 +112,9 @@ public class StoreShopController {
         model.addAttribute("selectedBrand", brand);
         model.addAttribute("selectedSort", sort);
         model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
-        model.addAttribute("totalCount", storeShopService.getTotalCount(effectiveCategoryId, keyword, minPrice, maxPrice, brand));
+        model.addAttribute("selectedBizNo", bizNo);
+        model.addAttribute("totalPages", storeShopService.getTotalPages(effectiveCategoryId, keyword, minPrice, maxPrice, brand, bizNo));
+        model.addAttribute("totalCount", storeShopService.getTotalCount(effectiveCategoryId, keyword, minPrice, maxPrice, brand, bizNo));
         return "store/list";
     }
     

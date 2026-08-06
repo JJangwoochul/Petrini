@@ -39,6 +39,9 @@
     <if test="maxPrice != null">
         AND TO_NUMBER(p.SALE_PRICE) &lt;= #{maxPrice}
     </if>
+    <if test="bizNo != null">
+        AND p.BIZ_NO = #{bizNo}
+    </if>
 </sql>
 
 <!-- 지윤 26.07.12 브랜드 필터는 브랜드 카운트 집계 쿼리와 별개 적용해야 해서 productFilter와 분리 -->
@@ -87,12 +90,22 @@
         FROM TB_FILE
         WHERE REF_TYPE = 'PRODUCT'
     ) f ON f.REF_ID = p.PRODUCT_ID AND f.RN = 1
+    <!-- 지윤 26.08.05 추가: 인기순(판매량) 정렬용 - 상품별 총 판매수량(TB_ORDER_ITEM.QTY 합계) 집계 -->
+    <!-- 참고: 지금은 취소/반품 여부 안 가리고 전체 주문수량을 다 더함. 나중에 취소분 빼고 싶으면
+         WHERE oi.RETURN_STATUS_CD IS NULL OR oi.RETURN_STATUS_CD != 'DONE' 조건 추가하면 됨 -->
+    LEFT JOIN (
+        SELECT oi.PRODUCT_ID, SUM(oi.QTY) AS SALES_QTY
+        FROM TB_ORDER_ITEM oi
+        GROUP BY oi.PRODUCT_ID
+    ) sales ON sales.PRODUCT_ID = p.PRODUCT_ID
     WHERE <include refid="productFilter"/>
     <include refid="brandFilter"/>
     <choose>
         <when test="sort == 'latest'">ORDER BY p.PRODUCT_ID DESC</when>
         <when test="sort == 'priceAsc'">ORDER BY TO_NUMBER(p.SALE_PRICE) ASC</when>
         <when test="sort == 'priceDesc'">ORDER BY TO_NUMBER(p.SALE_PRICE) DESC</when>
+        <!-- 지윤 26.08.05 추가: 인기순 = 판매수량 많은 순, 판매량 같으면(둘 다 0인 신상품끼리 등) 최신 등록순 -->
+        <when test="sort == 'popular'">ORDER BY NVL(sales.SALES_QTY, 0) DESC, p.PRODUCT_ID DESC</when>
         <otherwise>ORDER BY p.PRODUCT_ID ASC</otherwise>
     </choose>
     OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
@@ -539,5 +552,19 @@ SELECT
     DELETE FROM TB_REVIEW
     WHERE REVIEW_ID = #{reviewId} AND MEMBER_NO = #{memberNo} AND REVIEW_TYPE = 'PRODUCT'
 </delete>
+
+<!-- 지윤 26.08.05 추가: 품절 이메일 발송용 사업자 이메일 조회 -->
+<select id="selectBizEmailByBizNo" resultType="String">
+    SELECT B.EMAIL
+    FROM TB_BUSINESS B
+    WHERE B.BIZ_NO = #{bizNo}
+</select>
+
+<!-- 지윤 26.08.05 추가: 품절 이메일 인사말에 넣을 사업자명 조회 -->
+<select id="selectBizNameByBizNo" resultType="String">
+    SELECT B.BIZ_NAME
+    FROM TB_BUSINESS B
+    WHERE B.BIZ_NO = #{bizNo}
+</select>
 
 </mapper>

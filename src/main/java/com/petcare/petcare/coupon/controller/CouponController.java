@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.petcare.petcare.coupon.service.CouponService;
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.StoreShopVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
@@ -83,15 +84,64 @@ public class CouponController {
                 result.put("message", "쿠폰을 받을 수 없습니다.");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             result.put("ok", false);
             result.put("message", "오류가 발생했습니다.");
         }
         return result;
+}
+
+/**
+ * 지윤 26.08.06
+ * 쇼핑몰 쿠폰 적용 상품 목록 화면
+ *
+ * 쿠폰을 발급한 STORE 사업자의 상품만 조회한다.
+ * 병원과 숙소 쿠폰은 쿠폰함에서 기존 상세 페이지로 이동한다.
+ */
+/**
+ * 지윤 26.08.06
+ * 쿠폰 적용 상품 목록·검색·정렬
+ */
+@GetMapping("/products")
+public String couponProducts(
+        @RequestParam Long couponId,
+        @RequestParam(
+                required = false,
+                defaultValue = "popular"
+        ) String sort,
+        @RequestParam(
+                required = false,
+                defaultValue = ""
+        ) String keyword,
+        Model model
+) {
+    CouponVO coupon = couponService.getCouponTarget(couponId);
+
+    if (coupon == null || !"STORE".equals(coupon.getBizType())) {
+        return "redirect:/coupon";
     }
 
-    private Long getMemberNo(HttpSession session) {
-        MemberVO m = (MemberVO) session.getAttribute("memberInfo");
-        if (m == null) return null;
-        return m.getMemberNo();
-    }
+    // 검색어 앞뒤 공백 제거
+    keyword = keyword.trim();
+
+    List<StoreShopVO> productList =
+            couponService.getCouponProducts(
+                    coupon.getBizNo(),
+                    sort,
+                    keyword
+            );
+
+    model.addAttribute("coupon", coupon);
+    model.addAttribute("productList", productList);
+    model.addAttribute("selectedSort", sort);
+    model.addAttribute("selectedKeyword", keyword);
+
+    return "coupon/products";
+}
+
+private Long getMemberNo(HttpSession session) {
+    MemberVO m = (MemberVO) session.getAttribute("memberInfo");
+    if (m == null) return null;
+    return m.getMemberNo();
+}
 }
