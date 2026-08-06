@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath"  value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="반려동물 숙소" />
 <c:set var="bizPage"      value="dashboard" />
@@ -7,176 +8,135 @@
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
 
+<%--HYJ 26.08.06 DB 연동--%>
 <%-- 7/2, 사업자(숙박) 대시보드 UI 구성 — 병원 대시보드와 동일한 공용 클래스(summary-grid, dash-card 등) 재사용 --%>
 <main class="biz-main hospital-dashboard">
   <div class="dashboard-top">
     <div>
-      <h1>안녕하세요, 포근한 숙소 사장님!</h1>
+      <h1>안녕하세요, ${stay.name} 사장님!</h1>
       <p>오늘의 숙소 현황을 한눈에 확인하세요.</p>
     </div>
     <div class="date-select">
-      2026-06-30 (화) ▾
+      <fmt:formatDate value="<%= new java.util.Date() %>" pattern="yyyy-MM-dd (E)" />
     </div>
   </div>
 
+  <%-- ── 요약 카드 ── --%>
   <section class="summary-grid">
     <div class="summary-card">
       <div class="summary-icon green">📅</div>
       <div>
         <p>오늘 체크인</p>
-        <strong>2 <span>건</span></strong>
-        <small>어제 대비 ▲ 1건</small>
+        <strong>${dash.todayResvCount} <span>건</span></strong>
+        <small>어제 대비
+          <c:choose>
+            <c:when test="${dash.resvDiff > 0}">▲ ${dash.resvDiff}건</c:when>
+            <c:when test="${dash.resvDiff < 0}">▼ ${-dash.resvDiff}건</c:when>
+            <c:otherwise>동일</c:otherwise>
+          </c:choose>
+        </small>
       </div>
     </div>
-
     <div class="summary-card">
       <div class="summary-icon blue">🏠</div>
       <div>
-        <p>객실 가동률</p>
-        <strong>75 <span>%</span></strong>
-        <small>어제 대비 ▲ 15%p</small>
+        <p>예약 대기</p>
+        <strong>${dash.pendingCount} <span>건</span></strong>
+        <small>승인 대기 중</small>
       </div>
     </div>
-
     <div class="summary-card">
       <div class="summary-icon purple">🚪</div>
       <div>
         <p>오늘 체크아웃</p>
-        <strong>1 <span>건</span></strong>
-        <small>어제와 동일</small>
+        <strong>${dash.doneCount} <span>건</span></strong>
+        <small>어제 대비
+          <c:choose>
+            <c:when test="${dash.doneDiff > 0}">▲ ${dash.doneDiff}건</c:when>
+            <c:when test="${dash.doneDiff < 0}">▼ ${-dash.doneDiff}건</c:when>
+            <c:otherwise>동일</c:otherwise>
+          </c:choose>
+        </small>
       </div>
     </div>
-
     <div class="summary-card">
       <div class="summary-icon orange">₩</div>
       <div>
         <p>이번 달 매출</p>
-        <strong>5,200,000 <span>원</span></strong>
-        <small>어제 대비 ▲ 180,000원</small>
+        <strong><fmt:formatNumber value="${dash.monthRevenue}" type="number"/> <span>원</span></strong>
+        <small>어제 대비
+          <c:choose>
+            <c:when test="${dash.revenueDiff > 0}">▲ <fmt:formatNumber value="${dash.revenueDiff}" type="number"/>원</c:when>
+            <c:when test="${dash.revenueDiff < 0}">▼ <fmt:formatNumber value="${-dash.revenueDiff}" type="number"/>원</c:when>
+            <c:otherwise>동일</c:otherwise>
+          </c:choose>
+        </small>
       </div>
     </div>
   </section>
 
+  <%-- ── 차트 + 도넛 ── --%>
   <section class="dashboard-grid">
     <div class="dash-card chart-card">
       <div class="card-head">
         <h3>예약 / 매출 통계</h3>
         <div class="tab-btns">
-          <button class="active">일간</button>
-          <button>주간</button>
-          <button>월간</button>
-          <button>연간</button>
+          <button class="active" data-days="7">일간</button>
+          <button data-days="30">월간</button>
         </div>
       </div>
-
       <div class="line-chart">
         <div class="chart-legend">
           <span class="green-dot"></span> 예약 건수(건)
           <span class="blue-dot"></span> 매출(원)
         </div>
-
-        <div class="fake-line-chart">
-          <svg viewBox="0 0 700 260" preserveAspectRatio="none">
-            <line x1="40" y1="30" x2="660" y2="30" />
-            <line x1="40" y1="80" x2="660" y2="80" />
-            <line x1="40" y1="130" x2="660" y2="130" />
-            <line x1="40" y1="180" x2="660" y2="180" />
-            <line x1="40" y1="230" x2="660" y2="230" />
-
-            <polyline class="line-green" points="50,150 150,140 250,110 350,120 450,80 550,95 650,60" />
-            <polyline class="line-blue"  points="50,190 150,175 250,150 350,160 450,120 550,135 650,100" />
-
-            <circle cx="50" cy="150" r="5" class="dot-green"/>
-            <circle cx="150" cy="140" r="5" class="dot-green"/>
-            <circle cx="250" cy="110" r="5" class="dot-green"/>
-            <circle cx="350" cy="120" r="5" class="dot-green"/>
-            <circle cx="450" cy="80" r="5" class="dot-green"/>
-            <circle cx="550" cy="95" r="5" class="dot-green"/>
-            <circle cx="650" cy="60" r="5" class="dot-green"/>
-
-            <circle cx="50" cy="190" r="5" class="dot-blue"/>
-            <circle cx="150" cy="175" r="5" class="dot-blue"/>
-            <circle cx="250" cy="150" r="5" class="dot-blue"/>
-            <circle cx="350" cy="160" r="5" class="dot-blue"/>
-            <circle cx="450" cy="120" r="5" class="dot-blue"/>
-            <circle cx="550" cy="135" r="5" class="dot-blue"/>
-            <circle cx="650" cy="100" r="5" class="dot-blue"/>
-          </svg>
-        </div>
-
-        <div class="chart-days">
-          <span>06-24</span><span>06-25</span><span>06-26</span><span>06-27</span>
-          <span>06-28</span><span>06-29</span><span>06-30</span>
-        </div>
+        <canvas id="dashChart" height="220"></canvas>
       </div>
     </div>
 
     <div class="dash-card status-card">
-      <div class="card-head">
-        <h3>객실 상태 현황</h3>
-      </div>
-
+      <div class="card-head"><h3>예약 상태 현황</h3></div>
       <div class="donut-wrap">
-        <div class="donut-chart">
-          <div>
-            <span>전체 객실</span>
-            <strong>5실</strong>
-          </div>
-        </div>
-
+        <div class="donut-chart"><div><span>총 예약</span><strong>${dash.totalStatusCount}건</strong></div></div>
         <ul class="status-list">
-          <li><span class="box green-box"></span>입실중 <b>3실 (60%)</b></li>
-          <li><span class="box blue-box"></span>예약확정 <b>1실 (20%)</b></li>
-          <li><span class="box orange-box"></span>공실 <b>1실 (20%)</b></li>
-          <li><span class="box gray-box"></span>정비중 <b>0실 (0%)</b></li>
+          <li><span class="box green-box"></span>예약 확정 <b>${dash.statusConfirmed}건</b></li>
+          <li><span class="box blue-box"></span>예약 대기 <b>${dash.statusPending}건</b></li>
+          <li><span class="box orange-box"></span>입실중 <b>${dash.statusCheckin}건</b></li>
+          <li><span class="box gray-box"></span>취소 <b>${dash.statusCancel}건</b></li>
         </ul>
       </div>
     </div>
   </section>
 
+  <%-- ── 오늘 체크인 + 최근 리뷰 ── --%>
   <section class="bottom-grid">
     <div class="dash-card">
       <div class="card-head">
-        <h3>오늘의 체크인·체크아웃</h3>
+        <h3>오늘의 체크인</h3>
         <a href="${contextPath}/biz/stay/reserve" class="outline-btn">전체 예약 보기</a>
       </div>
-
       <table class="biz-table">
-        <thead>
-          <tr>
-            <th>구분</th>
-            <th>예약자</th>
-            <th>반려동물</th>
-            <th>객실</th>
-            <th>상태</th>
-            <th>관리</th>
-          </tr>
-        </thead>
+        <thead><tr><th>예약자</th><th>반려동물</th><th>객실</th><th>상태</th><th>관리</th></tr></thead>
         <tbody>
+          <c:forEach var="r" items="${todayList}">
           <tr>
-            <td>체크인</td>
-            <td>이성민</td>
-            <td>두부 (포메)</td>
-            <td>A-01호</td>
-            <td><span class="badge confirm">입실중</span></td>
-            <td><button class="detail-btn">상세보기</button></td>
+            <td>${r.memberName}</td>
+            <td>${r.petName} (${r.petBreed})</td>
+            <td>${r.roomName}</td>
+            <td>
+              <c:choose>
+                <c:when test="${r.statusCd eq 'CONFIRMED'}"><span class="badge confirm">예약 확정</span></c:when>
+                <c:when test="${r.statusCd eq 'CHECKIN'}"><span class="badge confirm">입실중</span></c:when>
+                <c:when test="${r.statusCd eq 'PENDING'}"><span class="badge wait">예약 대기</span></c:when>
+                <c:otherwise><span class="badge">${r.statusCd}</span></c:otherwise>
+              </c:choose>
+            </td>
+            <td><a href="${contextPath}/biz/stay/reserve" class="detail-btn">상세보기</a></td>
           </tr>
-          <tr>
-            <td>체크인</td>
-            <td>정아린</td>
-            <td>보리 (말티푸)</td>
-            <td>B-02호</td>
-            <td><span class="badge wait">예약 대기</span></td>
-            <td><button class="detail-btn">상세보기</button></td>
-          </tr>
-          <tr>
-            <td>체크아웃</td>
-            <td>한지우</td>
-            <td>달이 (사모예드)</td>
-            <td>C-01호</td>
-            <td><span class="badge confirm">예약 확정</span></td>
-            <td><button class="detail-btn">상세보기</button></td>
-          </tr>
+          </c:forEach>
+          <c:if test="${empty todayList}">
+          <tr><td colspan="5" style="text-align:center; color:#999; padding:24px;">오늘 체크인 예약이 없습니다.</td></tr>
+          </c:if>
         </tbody>
       </table>
     </div>
@@ -186,35 +146,55 @@
         <h3>최근 리뷰</h3>
         <a href="${contextPath}/biz/stay/reviews" class="outline-btn">전체 리뷰 보기</a>
       </div>
-
+      <c:forEach var="rv" items="${recentReviews}">
       <div class="review-item">
         <div class="avatar"></div>
         <div>
-          <p><b>이성민 님</b> <span class="stars">★★★★★</span></p>
-          <small>독채 풀빌라 이용했는데 마당이 넓어서 강아지가 정말 신나게 뛰어놀았어요.</small>
+          <p><b>${rv.nickname} 님</b>
+            <span class="stars"><c:forEach begin="1" end="5" var="i"><c:choose><c:when test="${i <= rv.rating}">★</c:when><c:otherwise>☆</c:otherwise></c:choose></c:forEach></span>
+          </p>
+          <small>${rv.content}</small>
         </div>
-        <em>2026-06-29</em>
+        <em><fmt:formatDate value="${rv.regDate}" pattern="yyyy-MM-dd"/></em>
       </div>
-
-      <div class="review-item">
-        <div class="avatar"></div>
-        <div>
-          <p><b>박소현 님</b> <span class="stars">★★★★☆</span></p>
-          <small>전반적으로 만족스러웠는데 체크인 시간이 조금 늦어졌어요.</small>
-        </div>
-        <em>2026-06-26</em>
-      </div>
-
-      <div class="review-item">
-        <div class="avatar"></div>
-        <div>
-          <p><b>한지우 님</b> <span class="stars">★★★★★</span></p>
-          <small>체크아웃할 때까지 반려동물을 잘 챙겨주셔서 마음 편히 다녀왔어요.</small>
-        </div>
-        <em>2026-06-20</em>
-      </div>
+      </c:forEach>
+      <c:if test="${empty recentReviews}">
+      <p style="text-align:center; color:#999; padding:24px;">아직 리뷰가 없습니다.</p>
+      </c:if>
     </div>
   </section>
 </main>
+
+<%-- 차트 JS --%>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  var labels = [<c:forEach var="l" items="${dash.chartLabels}" varStatus="s">'${l}'<c:if test="${!s.last}">,</c:if></c:forEach>];
+  var resvData = [<c:forEach var="c" items="${dash.chartResvCounts}" varStatus="s">${c}<c:if test="${!s.last}">,</c:if></c:forEach>];
+  var revData = [<c:forEach var="r" items="${dash.chartRevenues}" varStatus="s">${r}<c:if test="${!s.last}">,</c:if></c:forEach>];
+
+  var ctx = document.getElementById('dashChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: '예약 건수', data: resvData, borderColor: '#2BAB82', backgroundColor: 'rgba(43,171,130,0.1)', tension: 0.3, yAxisID: 'y' },
+        { label: '매출(원)', data: revData, borderColor: '#0284C7', backgroundColor: 'rgba(2,132,199,0.1)', tension: 0.3, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false } },
+      scales: {
+        y:  { type: 'linear', position: 'left',  beginAtZero: true, ticks: { precision: 0 } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false },
+              ticks: { callback: function(v){ return (v/10000).toFixed(0) + '만'; } } }
+      }
+    }
+  });
+})();
+</script>
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

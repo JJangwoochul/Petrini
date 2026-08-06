@@ -246,6 +246,14 @@ public interface BizStayMapper {
 
     List<ReviewDeleteRequestVO> selectBizReviewDeleteRequests(@Param("stayId") Long stayId, @Param("bizNo") Long bizNo);
 
+    // ── HYJ 26.08.06 대시보드 집계 ──
+    int countResvByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
+    int countCheckoutByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
+    long sumMonthRevenue(@Param("targetId") Long targetId, @Param("dt") String dt);
+    List<java.util.Map<String, Object>> countByStatus(@Param("targetId") Long targetId);
+    List<com.petcare.petcare.biz.vo.DailyStatVO> selectDailyStats(@Param("targetId") Long targetId, @Param("days") int days);
+    List<ReservationVO> selectTodayCheckinList(@Param("stayId") Long stayId);
+    List<StayReviewVO> selectRecentReviews(@Param("stayId") Long stayId);
 }
 
 

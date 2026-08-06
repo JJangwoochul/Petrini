@@ -228,9 +228,8 @@
     form.action = contextPath + '/biz/stay/reserve/status';
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + resvId + '">' +
-      '<input type="hidden" name="statusCd" value="' + statusCd + '">';
-      //HYJ 26.08.05
-      '<input type="hidden" name="_csrf" value="' + ${_csrf} + '">';
+      '<input type="hidden" name="statusCd" value="' + statusCd + '">' +
+      '<input type="hidden" name="_csrf" value="${_csrf}">';
     document.body.appendChild(form);
     form.submit();
   }
@@ -264,9 +263,8 @@
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + cancelTargetResvId + '">' +
       '<input type="hidden" name="statusCd" value="CANCEL">' +
-      '<input type="hidden" name="cancelReason" value="">';
-      //HYJ 26.08.05
-      '<input type="hidden" name="_csrf" value="' + ${_csrf} + '">';
+      '<input type="hidden" name="cancelReason" value="">' +
+      '<input type="hidden" name="_csrf" value="${_csrf}">';
     form.querySelector('input[name="cancelReason"]').value = reason;
     document.body.appendChild(form);
     form.submit();

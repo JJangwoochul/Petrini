@@ -109,7 +109,7 @@ public class BizHospitalController extends BizBaseController {
 
     // ?? 蹂묒썝 (HOSPITAL) ??????????????????????????????????????
     @GetMapping({"", "/"})
-    public String hospitalDashboard(HttpSession session, Model model) {
+    public String hospitalDashboard(HttpSession session, Model model) throws Exception {
 
         MemberVO member = getBizMember(session);
         if (member == null)
@@ -117,6 +117,10 @@ public class BizHospitalController extends BizBaseController {
 
         HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
         model.addAttribute("hospital", hospital);
+        //HYJ 26.08.06 대시보드
+        model.addAttribute("dash", bizHospitalService.getDashboardData(hospital.getHospitalId(), 7));
+        model.addAttribute("todayList", bizHospitalService.getTodayResvList(hospital.getHospitalId()));
+        model.addAttribute("recentReviews", bizHospitalService.getRecentReviews(hospital.getHospitalId()));
 
         return "biz/hospital/dashboard";
     }

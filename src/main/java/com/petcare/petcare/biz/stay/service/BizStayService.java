@@ -69,7 +69,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import com.petcare.petcare.biz.vo.BizCouponVO;
-
+import com.petcare.petcare.biz.vo.BizDashboardVO;
 import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
@@ -210,6 +210,10 @@ public interface BizStayService {
 
     List<ReviewDeleteRequestVO> getBizReviewDeleteRequests(Long stayId, Long bizNo) throws Exception;
 
+    // ── 대시보드 ──
+    BizDashboardVO getDashboardData(Long stayId, int chartDays) throws Exception;
+    List<ReservationVO> getTodayCheckinList(Long stayId);
+    List<StayReviewVO> getRecentReviews(Long stayId);
 }
 
 

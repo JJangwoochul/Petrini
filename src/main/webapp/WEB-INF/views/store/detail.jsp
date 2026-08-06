@@ -209,7 +209,8 @@
   <div class="tab-section on" id="tab-info">
     <c:choose>
       <c:when test="${not empty product.imageList}">
-        <img src="${product.imageList[0]}" style="width:100%;border-radius:var(--radius-md)" alt="상품상세" onerror="this.src='https://placehold.co/900x400/EAF7F2/2BAB82?text=상품상세이미지'">
+        <c:set var="infoImgSrc" value="${fn:startsWith(product.imageList[0],'http') ? product.imageList[0] : contextPath.concat('/upload/').concat(product.imageList[0])}"/>
+        <img src="${infoImgSrc}" style="width:100%;border-radius:var(--radius-md)" alt="상품상세" onerror="this.src='https://placehold.co/900x400/EAF7F2/2BAB82?text=상품상세이미지'">
       </c:when>
       <c:otherwise>
         <img src="https://placehold.co/900x400/EAF7F2/2BAB82?text=상품상세이미지" style="width:100%;border-radius:var(--radius-md)" alt="상품상세">

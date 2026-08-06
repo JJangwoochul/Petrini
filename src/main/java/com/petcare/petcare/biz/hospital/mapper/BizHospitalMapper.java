@@ -21,10 +21,12 @@
 package com.petcare.petcare.biz.hospital.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.petcare.petcare.biz.vo.DailyStatVO;
 import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
 import com.petcare.petcare.hospital.vo.HospitalResvExceptionVO;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
@@ -132,4 +134,14 @@ public interface BizHospitalMapper {
     int updateResvException(HospitalResvExceptionVO vo) throws Exception;
     int deleteResvException(@Param("hospitalId") Long hospitalId,
                             @Param("excId") Long excId) throws Exception;
+
+   // ── 대시보드 집계 ──
+   int countResvByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
+   int countDoneByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
+   long sumMonthRevenue(@Param("targetId") Long targetId, @Param("dt") String dt);
+   List<Map<String, Object>> countByStatus(@Param("targetId") Long targetId);
+   List<DailyStatVO> selectDailyStats(@Param("targetId") Long targetId, @Param("days") int days);
+   List<ReservationVO> selectTodayResvList(@Param("hospitalId") Long hospitalId);
+   List<HospitalReviewVO> selectRecentReviews(@Param("hospitalId") Long hospitalId);
+
 }

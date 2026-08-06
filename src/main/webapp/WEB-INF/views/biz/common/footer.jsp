@@ -33,14 +33,16 @@ window.csrfFetch = function(url, options) {
 };
 
 // HYJ 26.08.05 모든 $.ajax POST 요청에 CSRF 토큰 자동 포함
-$.ajaxSetup({
-    beforeSend: function(xhr) {
-        var token = $('meta[name="_csrf"]').attr('content');
-        if (token) {
-            xhr.setRequestHeader('X-CSRF-TOKEN', token);
+if (typeof $ !== 'undefined' && $.ajaxSetup) {
+    $.ajaxSetup({
+        beforeSend: function(xhr) {
+            var token = $('meta[name="_csrf"]').attr('content');
+            if (token) {
+                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+            }
         }
-    }
-});
+    });
+}
 </script>
 
 </html>
