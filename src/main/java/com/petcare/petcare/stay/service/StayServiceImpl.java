@@ -103,6 +103,11 @@ public class StayServiceImpl implements StayService {
     // HYJ 26.07.20 예약 생성 (비관적 락 + 가용성 검증)
     @Override
     public Long createStayReservation(ReservationVO vo) {
+        // 2026-08-05 박유정 — PET_ID NOT NULL 제약 (반려동물 미선택 시 INSERT 방지)
+        if (vo.getPetId() == null) {
+            throw new RuntimeException("반려동물을 선택해 주세요. 등록된 반려동물이 없으면 마이페이지에서 등록 후 이용해 주세요.");
+        }
+
         // 1. 객실 행 잠금
         StayRoomVO room = stayMapper.selectRoomForUpdate(vo.getRoomId());
         if (room == null) {
