@@ -2,12 +2,13 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
+<c:set var="bizTypeLabel" value="동물병원" />
 <c:set var="bizPage" value="banner" />
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
 
 <main class="biz-main">
-    <div class="biz-page-head">
+    <div class="biz-page-head has-action">
         <div>
             <h1 class="biz-page-title">배너 광고</h1>
             <p class="biz-page-desc">메인페이지 및 서비스 페이지에 노출할 배너를 신청하세요.</p>
@@ -18,12 +19,12 @@
         </a>
     </div>
 
-    <%-- 알림 메시지 --%>
+    <%-- 알림 메시지 (reviews.jsp 와 동일 패턴) --%>
     <c:if test="${not empty msg}">
-        <div class="biz-alert success">${msg}</div>
+        <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px;font-weight:600">${msg}</div>
     </c:if>
     <c:if test="${not empty errorMsg}">
-        <div class="biz-alert error">${errorMsg}</div>
+        <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px;font-weight:600">${errorMsg}</div>
     </c:if>
 
     <div class="biz-card">
@@ -75,18 +76,28 @@
                                             <c:when test="${banner.statusCd eq 'PENDING'}">
                                                 <span class="biz-badge warning">심사중</span>
                                             </c:when>
+                                            <%-- 2026-08-06 박유정 — HOLD 노출예정 --%>
+                                            <c:when test="${banner.statusCd eq 'HOLD'}">
+                                                <span class="biz-badge warning">노출예정</span>
+                                            </c:when>
                                             <c:when test="${banner.statusCd eq 'ACTIVE'}">
                                                 <span class="biz-badge success">노출중</span>
                                             </c:when>
                                             <c:when test="${banner.statusCd eq 'REJECTED'}">
                                                 <span class="biz-badge danger">반려</span>
                                             </c:when>
+                                            <c:when test="${banner.statusCd eq 'EXPIRED'}">
+                                                <span class="biz-badge inactive">미노출</span>
+                                            </c:when>
                                             <c:otherwise>
-                                                <span class="biz-badge">${banner.statusCd}</span>
+                                                <span class="biz-badge">${banner.statusLabel}</span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
                                     <td>
+                                        <c:if test="${banner.statusCd eq 'HOLD' and not empty banner.rejectReason}">
+                                            <span style="color:#3B5BDB;font-size:13px">${banner.rejectReason}</span>
+                                        </c:if>
                                         <c:if test="${banner.statusCd eq 'REJECTED' and not empty banner.rejectReason}">
                                             <span style="color:#e74c3c;font-size:13px">${banner.rejectReason}</span>
                                         </c:if>

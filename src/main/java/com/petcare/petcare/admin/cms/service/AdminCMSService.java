@@ -28,11 +28,23 @@
 package com.petcare.petcare.admin.cms.service;
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface AdminCMSService {
-    List<MainBannerVO> getAllBannerList();
+    // 2026-08-06 박유정 — 관리자 배너 목록·건수 (대분류 + 중분류 탭)
+    List<MainBannerVO> getBannerListByTabAndCategory(String tab, String category);
+    Map<String, Integer> getBannerTabCounts(String category);
+    Map<String, Integer> getBannerCategoryCounts(String tab);
     int getPendingBannerCount();
-    void approveBanner(Long bannerId);
+    // 2026-08-06 박유정 — 승인·대기·반려
+    String approveBanner(Long bannerId);
+    void holdBanner(Long bannerId, String holdReason);
     void rejectBanner(Long bannerId, String rejectReason);
+    MainBannerVO getBannerDetail(Long bannerId);
+    void updateBannerPeriod(Long bannerId, String startDate, String endDate);
+    void deactivateBanner(Long bannerId);
+    String activateBanner(Long bannerId);
+    void deleteBanner(Long bannerId);
 }

@@ -198,10 +198,10 @@ public class MypageBizController extends CommonConfigController {
                     result.put("success", true);
                     result.put("message", "인증 완료 (계속사업자)");
                 } else if (status.isEmpty()) {
-                    result.put("success", false);
+                    result.put("success", true);
                     result.put("message", "등록되지 않은 사업자등록번호입니다.");
                 } else {
-                    result.put("success", false);
+                    result.put("success", true);
                     result.put("message", "사업 상태: " + status);
                 }
             } 

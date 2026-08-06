@@ -7,7 +7,6 @@
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="store" />
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
-<%@ include file="/WEB-INF/views/common/ad-banner.jsp" %>
 <style>
 .store-wrap { max-width:var(--inner-width); margin:32px auto 80px; padding:0 20px; display:flex; gap:28px; align-items:flex-start; }
 /* 사이드바 */
@@ -72,7 +71,30 @@
 .age-filter { display:flex; gap:6px; margin-bottom:14px; }
 .age-chip { padding:6px 14px; border:1px solid var(--border); border-radius:20px; font-size:12px; color:var(--text-sub); text-decoration:none; }
 .age-chip.active { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); font-weight:700; }
+/* 2026-08-06 박유정 — 쇼핑 목록 히어로 (stay-hero 패턴) */
+.store-hero {
+    background: linear-gradient(135deg, #1A1A2E 0%, #2D5E4F 60%, #2BAB82 100%);
+    padding: 48px 0;
+    color: #fff;
+    text-align: center;
+}
+.store-hero-inner {
+    max-width: var(--inner-width);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+.store-hero h1 { font-size: 32px; font-weight: 800; margin: 0 0 10px; }
+.store-hero p  { font-size: 15px; opacity: .8; margin: 0; }
 </style>
+
+<div class="store-hero"> 
+  <div class="store-hero-inner">
+    <h1>반려동물 쇼핑몰</h1>
+    <p>사료, 간식, 용품까지 — 우리 아이에게 필요한 모든 것</p>
+  </div>
+</div>
+
+<%@ include file="/WEB-INF/views/common/ad-banner.jsp" %>
 
 <div class="store-wrap">
   <%-- 사이드바 --%>

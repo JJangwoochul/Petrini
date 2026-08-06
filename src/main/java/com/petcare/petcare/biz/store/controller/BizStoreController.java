@@ -46,6 +46,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
 
+import com.petcare.petcare.biz.stay.service.BizStayService;
+import com.petcare.petcare.main.banner.vo.MainBannerVO;
+
 @Controller("bizStoreController")
 @RequestMapping("/biz/store")
 public class BizStoreController extends BizBaseController {
@@ -65,6 +68,10 @@ public class BizStoreController extends BizBaseController {
     //지윤 26.07.24 추가: 택배사 API 연동용
     @Autowired
     private com.petcare.petcare.common.external.service.SmartTrackerService smartTrackerService;
+
+    // 2026-08-06 박유정 — 쇼핑 배너 (BizStayService 공용)
+    @Autowired
+    private BizStayService bizStayService;
 
     //지윤 26.07.21 추가: 사이드바 "주문관리" 뱃지 하드코딩(12) 제거 - 이 컨트롤러가 처리하는 모든 페이지(상품관리/주문관리/배송관리/리뷰관리 등) 렌더링 전에
     //자동으로 실행돼서 model에 paidOrderCount를 채워줌. 로그인 안 됐으면 0으로 조용히 넘어감 (개별 핸들러가 알아서 redirect:/login 처리하므로 여기선 막지 않음)
@@ -696,6 +703,79 @@ return json;
         }
         return options;
     }
+
+    // ─────────────────────────────────────────────
+// 2026-08-06 박유정 — 쇼핑 배너 (stay/hospital 공용 BizStayService)
+// ─────────────────────────────────────────────
+@GetMapping({"/banner", "/banner/"})
+public String bannerList(HttpSession session, Model model) {
+    MemberVO member = getBizMember(session);
+    if (member == null) return "redirect:/login";
+
+    Long bizNo = bizStoreService.getBizNo(member.getMemberId());
+    if (bizNo == null) {
+        model.addAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+        model.addAttribute("bannerList", java.util.Collections.emptyList());
+        model.addAttribute("bizPage", "banner");
+        return "biz/store/banner";
+    }
+    model.addAttribute("bannerList", bizStayService.getBannerList(bizNo));
+    model.addAttribute("bizPage", "banner");
+    return "biz/store/banner";
+}
+
+@GetMapping("/banner/form")
+public String bannerForm(HttpSession session, Model model) {
+    if (getBizMember(session) == null) return "redirect:/login";
+    model.addAttribute("bizPage", "banner");
+    return "biz/store/banner-form";
+}
+
+@PostMapping("/banner")
+public String bannerSubmit(@RequestParam String title,
+                           @RequestParam(required = false) String linkUrl,
+                           @RequestParam String positionCd,
+                           @RequestParam String startDate,
+                           @RequestParam String endDate,
+                           @RequestParam(required = false) MultipartFile bannerImage,
+                           HttpSession session,
+                           RedirectAttributes rttr) {
+    MemberVO member = getBizMember(session);
+    if (member == null) return "redirect:/login";
+    try {
+        Long bizNo = bizStoreService.getBizNo(member.getMemberId());
+        if (bizNo == null) {
+            rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+            return "redirect:/biz/store/banner";
+        }
+        MainBannerVO banner = new MainBannerVO();
+        banner.setBizNo(bizNo);
+        banner.setTitle(title);
+        banner.setLinkUrl(linkUrl);
+        banner.setPositionCd(positionCd);
+        banner.setStartDate(startDate);
+        banner.setEndDate(endDate);
+        banner.setStatusCd("PENDING");
+
+        bizStayService.applyBanner(banner, bannerImage);
+        rttr.addFlashAttribute("msg", "배너 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.");
+    } catch (IllegalArgumentException e) {
+        rttr.addFlashAttribute("errorMsg", e.getMessage());
+    } catch (Exception e) {
+        e.printStackTrace();
+        String msg = e.getMessage() != null ? e.getMessage() : "";
+        if (msg.contains("ORA-00001")) {
+            rttr.addFlashAttribute("errorMsg",
+                    "배너 ID가 중복되었습니다. DB에서 SEQ_TB_BANNER 시퀀스를 MAX(BANNER_ID)+1 로 맞춘 뒤 다시 시도하세요.");
+        } else if (msg.contains("ORA-02289")) {
+            rttr.addFlashAttribute("errorMsg",
+                    "SEQ_TB_BANNER 시퀀스가 없습니다. DB에 시퀀스를 생성한 뒤 다시 시도하세요.");
+        } else {
+            rttr.addFlashAttribute("errorMsg", "배너 신청 중 오류가 발생했습니다. (서버 콘솔 ORA- 메시지 확인)");
+        }
+    }
+    return "redirect:/biz/store/banner";
+}
 
     /*사업자(샵) 계약관리*/
     @GetMapping("/contract")

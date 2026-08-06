@@ -49,5 +49,46 @@
           AND       b.POSITION_CD = #{positionCd}
           AND       TRUNC(SYSDATE) BETWEEN TRUNC(b.START_DATE) AND TRUNC(b.END_DATE)
         ORDER       BY b.BANNER_ID ASC
+        FETCH FIRST 5 ROWS ONLY  <!-- 2026-08-06 박유정 — 위치별 최대 5개 노출 -->
     </select>
+
+    <!-- 2026-08-06 박유정 — 위치·상태별 건수 (레거시) -->
+    <select id="countByPositionAndStatuses" resultType="int">
+        SELECT  COUNT(*)
+        FROM    TB_BANNER
+        WHERE   POSITION_CD = #{positionCd}
+          AND   STATUS_CD IN
+        <foreach collection="statusCds" item="statusCd" open="(" separator="," close=")">
+            #{statusCd}
+        </foreach>
+    </select>
+
+    <!-- 2026-08-06 박유정 — 사업자 신청 슬롯 (PENDING + 기간 만료 전 ACTIVE) -->
+    <select id="countReservedSlotsByPosition" resultType="int">
+        SELECT  COUNT(*)
+        FROM    TB_BANNER
+        WHERE   POSITION_CD = #{positionCd}
+          AND   (
+                    STATUS_CD = 'PENDING'
+                 OR (STATUS_CD = 'ACTIVE' AND TRUNC(END_DATE) >= TRUNC(SYSDATE))
+                )
+    </select>
+
+    <!-- 2026-08-06 박유정 — 승인·올리기 슬롯 (기간 만료 전 ACTIVE) -->
+    <select id="countLiveSlotsByPosition" resultType="int">
+        SELECT  COUNT(*)
+        FROM    TB_BANNER
+        WHERE   POSITION_CD = #{positionCd}
+          AND   STATUS_CD = 'ACTIVE'
+          AND   TRUNC(END_DATE) >= TRUNC(SYSDATE)
+    </select>
+
+    <!-- 2026-08-06 박유정 — 종료일 지난 ACTIVE 배너 자동 EXPIRED -->
+    <update id="expirePastEndDateBanners">
+        UPDATE  TB_BANNER
+        SET     STATUS_CD = 'EXPIRED',
+                MOD_DATE  = SYSDATE
+        WHERE   STATUS_CD = 'ACTIVE'
+          AND   TRUNC(END_DATE) &lt; TRUNC(SYSDATE)
+    </update>
 </mapper>

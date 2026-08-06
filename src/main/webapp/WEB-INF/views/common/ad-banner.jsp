@@ -5,6 +5,7 @@
      - 다른 JSP에서 <%@ include file="/WEB-INF/views/common/ad-banner.jsp" %> 로 삽입
      - pageId 변수(store, hospital, stay, grooming)를 POSITION_CD로 매핑
      - /api/banners?position=STORE 등으로 해당 위치 배너만 조회
+     - 2026-08-06 박유정 — store/list.jsp 연동, 이미지 URL 처리
 ==================================================================== --%>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
@@ -32,12 +33,16 @@
     .adv-slide-overlay{padding:0 20px;max-width:75%}
     .adv-headline{font-size:15px}
     .adv-dots{left:20px}
+    .adv-slide-overlay,
+    .adv-sponsor,
+    .adv-label {
+    display: none;
+}
   }
 </style>
 
 <div class="adv-wrap" id="advWrap" style="display:none">
   <div class="adv-banner" id="advBanner">
-    <span class="adv-label">광고</span>
     <div class="adv-track" id="advTrack"></div>
     <button class="adv-nav prev" id="advPrev" aria-label="이전 광고">&#8249;</button>
     <button class="adv-nav next" id="advNext" aria-label="다음 광고">&#8250;</button>
@@ -66,28 +71,34 @@
       var track = document.getElementById('advTrack');
       var dots  = document.getElementById('advDots');
 
-      // 슬라이드 생성
-      for (var i = 0; i < list.length; i++) {
-        var b = list[i];
-        var slide = document.createElement('a');
-        slide.className = 'adv-slide';
-        slide.href = b.linkUrl || '#';
-        slide.style.background = 'linear-gradient(120deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.15) 55%,rgba(0,0,0,0) 100%)';
-        slide.innerHTML =
-          '<img src="' + ctx + '/upload/' + (b.imageUrl || '') + '" alt="' + (b.title || '') + '" onerror="this.src=\'https://placehold.co/1000x280/2BAB82/ffffff?text=AD\'">' +
-          '<div class="adv-slide-overlay">' +
-          '  <span class="adv-eyebrow">' + (b.bizName || '') + '</span>' +
-          '  <p class="adv-headline">' + (b.title || '') + '</p>' +
-          '</div>' +
-          '<span class="adv-sponsor">제공 · ' + (b.bizName || '') + '</span>';
-        track.appendChild(slide);
+// 슬라이드 생성
+for (var i = 0; i < list.length; i++) {
+    var b = list[i];
+    var slide = document.createElement('a');
+    slide.className = 'adv-slide';
+    slide.href = b.linkUrl || '#';
 
-        // 도트 생성
-        var dot = document.createElement('span');
-        dot.className = 'adv-dot' + (i === 0 ? ' active' : '');
-        dot.setAttribute('data-i', i);
-        dots.appendChild(dot);
-      }
+    // 2026-08-06 박유정 — 외부 URL /upload/ 중복 방지 (main.jsp 동일)
+    var imgSrc = b.imageUrl || '';
+    if (imgSrc.indexOf('http') === 0) {
+    } else if (imgSrc.indexOf('/upload/') === 0) {
+        imgSrc = ctx + imgSrc;
+    } else {
+        imgSrc = ctx + '/upload/' + imgSrc;
+    }
+
+    slide.innerHTML =
+        '<img src="' + imgSrc + '" alt="' + (b.title || '') + '"' +
+        ' onerror="this.src=\'https://placehold.co/1160x140/2BAB82/ffffff?text=AD\'">';
+
+    track.appendChild(slide);
+
+    // 도트 생성
+    var dot = document.createElement('span');
+    dot.className = 'adv-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('data-i', i);
+    dots.appendChild(dot);
+}
 
       // 배너 영역 표시
       document.getElementById('advWrap').style.display = 'block';

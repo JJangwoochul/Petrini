@@ -3,7 +3,7 @@
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizPage" value="banner" />
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
-<%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
+<%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
 
 <main class="biz-main">
     <div class="biz-page-head">
@@ -15,7 +15,7 @@
 
     <div class="biz-card">
         <div class="biz-card-body" style="padding:24px">
-            <form action="${contextPath}/biz/hospital/banner" method="post" enctype="multipart/form-data" id="bannerForm">
+            <form action="${contextPath}/biz/store/banner" method="post" enctype="multipart/form-data" id="bannerForm">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">
 
                     <%-- 배너 제목 --%>
@@ -31,9 +31,9 @@
                         <select name="positionCd" required
                                 style="border:1px solid #E4E6ED;border-radius:8px;padding:10px 14px;font-size:14px;background:#fff">
                             <option value="">위치를 선택하세요</option>
-                            <option value="MAIN_HERO">메인 히어로 (메인페이지 상단 슬라이드)</option>
+                            <option value="MAIN_HERO">메인 히어로 - 1200 × 360px (메인페이지 상단 슬라이드)</option>
                             <option value="MAIN_MID">메인 중간 (메인페이지 섹션 사이)</option>
-                            <option value="STORE">쇼핑 (쇼핑 목록 상단)</option> <%-- 2026-08-06 박유정 쇼핑몰→쇼핑 --%>
+                            <option value="STORE">쇼핑 - 1160 × 140px (쇼핑 목록 상단)</option> <%-- 2026-08-06 박유정 쇼핑몰→쇼핑 --%>
                             <option value="HOSPITAL">병원 (병원 목록 상단)</option>
                             <option value="STAY">숙소 (숙소 목록 상단)</option>
                             <option value="GROOMING">미용 (미용 목록 상단)</option>
@@ -75,7 +75,7 @@
                 </div>
 
                 <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px">
-                    <a href="${contextPath}/biz/hospital/banner"
+                    <a href="${contextPath}/biz/store/banner"
                        style="padding:10px 20px;border:1px solid #E4E6ED;border-radius:8px;text-decoration:none;color:#555;font-size:14px">취소</a>
                     <button type="submit"
                             style="padding:10px 24px;background:#2BAB82;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">신청하기</button>
@@ -123,13 +123,13 @@ document.getElementById('bannerImageInput').addEventListener('change', function(
 document.querySelector('select[name="positionCd"]').addEventListener('change', function() {
     var guide = document.getElementById('sizeGuide');
     var sizes = {
-        'MAIN_HERO': '960 x 400px',
-        'MAIN_MID':  '960 x 200px',
-        'STORE':     '728 x 120px',
-        'HOSPITAL':  '728 x 120px',
-        'STAY':      '728 x 120px',
-        'GROOMING':  '728 x 120px'
-    };
+         'MAIN_HERO': '1200 × 360px',
+          'MAIN_MID':  '1200 × 200px',
+          'STORE':     '1160 × 140px',
+          'HOSPITAL':  '1160 × 140px',
+          'STAY':      '1160 × 140px',
+          'GROOMING':  '1160 × 140px'
+        };
     var size = sizes[this.value] || '960 x 400px';
     guide.textContent = '권장 크기: ' + size + ' / JPG, PNG (최대 5MB)';
 });

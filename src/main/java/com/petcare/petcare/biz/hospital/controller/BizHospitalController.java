@@ -937,6 +937,8 @@ public class BizHospitalController extends BizBaseController {
             banner.setStatusCd("PENDING");
             bizStayService.applyBanner(banner, bannerImage);
             rttr.addFlashAttribute("msg", "배너 신청이 완료되었습니다. 관리자 승인 후 노출됩니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
         } catch (Exception e) {
             rttr.addFlashAttribute("errorMsg", "배너 신청 중 오류가 발생했습니다.");
         }

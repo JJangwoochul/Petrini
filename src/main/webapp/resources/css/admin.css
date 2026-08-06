@@ -302,6 +302,9 @@
 .adm-badge.done    { background: #DCFCE7; color: #16A34A; }
 .adm-badge.cancel  { background: #FEE2E2; color: #DC2626; }
 .adm-badge.shipping{ background: #E0F2FE; color: #0284C7; }
+.adm-badge.warning { background: #FFF8E1; color: #D97706; }
+.adm-badge.danger  { background: #FEE2E2; color: #DC2626; }
+.adm-badge.inactive { background: #F3F4F6; color: #6B7280; }
 
 /* ================================================================
    버튼
@@ -320,6 +323,13 @@
 .adm-btn.red:hover    { background: #DC2626; color: #fff; }
 .adm-btn.gray   { background: #F1F3F7; color: #555; border: 1px solid #E4E6ED; }
 .adm-btn.gray:hover   { background: #E4E6ED; }
+a.adm-btn { text-decoration: none; }
+.adm-table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
 
 /* ================================================================
    페이지네이션

@@ -46,4 +46,21 @@ public interface AdminCMSMapper {
 
     // ── 관리자: 배너 상태 변경 (승인/반려) ──
     void updateBannerStatus(MainBannerVO banner);
+
+    // ── 관리자: 배너 1건 (승인 알림용) ──
+    MainBannerVO selectBannerById(Long bannerId);
+
+    // ── 관리자: 배너 상세 ──
+    MainBannerVO selectBannerDetail(Long bannerId);
+
+    // ── 관리자: 노출 기간 변경 ──
+    void updateBannerPeriod(MainBannerVO banner);
+
+    // ── 관리자: 배너 삭제 ──
+    void deleteBanner(Long bannerId);
+
+    // ── 관리자: 테스트 숙소 배너 일괄 삭제 ──
+    int deleteTestStayBanners();
+
+    Long selectMemberNoByBizNo(Long bizNo);
 }
