@@ -31,6 +31,13 @@ public interface MypageAccountMapper {
     // 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 조회
     MypageAccountVO selectMemberProfile(@Param("memberNo") Long memberNo);
 
+    /** 회원정보 수정 (전화번호, 닉네임, 주소) */
+    int updateMemberProfile(MypageAccountVO vo);
+
+    /** 비밀번호 변경 */
+    int updatePassword(@Param("memberNo") Long memberNo,
+                       @Param("newPassword") String newPassword);
+
     // HYJ 26.07.29 회원 탈퇴
 
     /** 비밀번호 확인용 — TB_MEMBER.MEMBER_PWD 조회 */

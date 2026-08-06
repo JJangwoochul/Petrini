@@ -19,6 +19,7 @@ public class MypageAccountVO {
     private Long memberNo;      // MEMBER_NO — 회원번호
     private String memberId;    // MEMBER_ID — 아이디
     private String memberName;  // MEMBER_NAME — 이름
+    private String nickname;    // NICKNAME — 닉네임
     private String email;       // EMAIL — 이메일
     private String phone;       // PHONE — 전화번호
     private String zipcode;     // ZIP_CODE — 우편번호

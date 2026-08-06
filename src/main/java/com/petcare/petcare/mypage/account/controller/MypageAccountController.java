@@ -10,6 +10,9 @@
 
 package com.petcare.petcare.mypage.account.controller;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,6 +51,76 @@ public class MypageAccountController {
         return "mypage/edit";
     }
 
+    /**
+     * 회원정보 수정 처리 (AJAX)
+     * POST /mypage/edit
+     */
+    @PostMapping("/edit")
+    @ResponseBody
+    public Map<String, Object> editPost(@RequestParam String nickname,
+                                         @RequestParam String phone,
+                                         @RequestParam(required = false, defaultValue = "") String zipcode,
+                                         @RequestParam(required = false, defaultValue = "") String addr1,
+                                         @RequestParam(required = false, defaultValue = "") String addr2,
+                                         HttpSession session) {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+
+        MypageAccountVO vo = new MypageAccountVO();
+        vo.setMemberNo(member.getMemberNo());
+        vo.setNickname(nickname);
+        vo.setPhone(phone);
+        vo.setZipcode(zipcode);
+        vo.setAddr1(addr1);
+        vo.setAddr2(addr2);
+
+        String error = mypageAccountService.updateProfile(vo);
+        if (error != null) {
+            return apiFail(error);
+        }
+
+        // 세션 정보도 갱신 (사이드바 등에서 바로 반영)
+        member.setNickname(nickname);
+        member.setPhone(phone);
+        member.setZipcode(zipcode);
+        member.setAddr1(addr1);
+        member.setAddr2(addr2);
+
+        return apiOk("회원정보가 수정되었습니다.");
+    }
+
+    /**
+     * 비밀번호 변경 (AJAX)
+     * POST /mypage/change-password
+     */
+    @PostMapping("/change-password")
+    @ResponseBody
+    public Map<String, Object> changePassword(@RequestParam String currentPassword,
+                                               @RequestParam String newPassword,
+                                               @RequestParam String confirmPassword,
+                                               HttpSession session) {
+
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return apiFail("로그인이 필요합니다.");
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            return apiFail("새 비밀번호가 일치하지 않습니다.");
+        }
+
+        String error = mypageAccountService.changePassword(
+                member.getMemberNo(), currentPassword, newPassword);
+        if (error != null) {
+            return apiFail(error);
+        }
+
+        return apiOk("비밀번호가 변경되었습니다.");
+    }
+
     // HYJ 2026/07/29 — 회원 탈퇴
     /** 탈퇴 페이지 (GET /mypage/withdraw) */
     @GetMapping("/withdraw")
@@ -75,5 +148,21 @@ public class MypageAccountController {
         // 탈퇴 성공 → 세션 제거
         session.invalidate();
         return "OK";
+    }
+
+    // ── 내부 유틸 ──
+
+    private Map<String, Object> apiOk(Object data) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ok", true);
+        m.put("msg", data);
+        return m;
+    }
+
+    private Map<String, Object> apiFail(String msg) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("ok", false);
+        m.put("msg", msg);
+        return m;
     }
 }
