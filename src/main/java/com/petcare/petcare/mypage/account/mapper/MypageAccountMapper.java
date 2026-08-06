@@ -31,8 +31,16 @@ public interface MypageAccountMapper {
     // 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 조회
     MypageAccountVO selectMemberProfile(@Param("memberNo") Long memberNo);
 
-    // 2026-08-04 박유정 — 프로필 사진 URL UPDATE (TB_MEMBER.PROFILE_IMG_URL)
+    /** 회원정보 수정 (전화번호, 닉네임, 주소) */
     int updateMemberProfile(MypageAccountVO vo);
+
+    // 2026-08-04 박유정 — 프로필 사진 URL UPDATE (TB_MEMBER.PROFILE_IMG_URL)
+    // 2026/08/06 장우철 — yeju updateMemberProfile 과 id 분리
+    int updateProfileImageUrl(MypageAccountVO vo);
+
+    /** 비밀번호 변경 */
+    int updatePassword(@Param("memberNo") Long memberNo,
+                       @Param("newPassword") String newPassword);
 
     // HYJ 26.07.29 회원 탈퇴
 

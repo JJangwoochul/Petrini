@@ -3,10 +3,7 @@
  *
  * 담당 화면
  * - search/result.jsp         검색 결과
- *
- * 구현할 기능 예시
- * - 키워드 통합 검색 (상품·병원·커뮤니티 등)
- * - 영역별 결과 집계
+ * - 헤더 자동완성 (AJAX)
  *
  * 연결
  * - 구현: SearchResultServiceImpl
@@ -16,7 +13,8 @@
  * 참고 테이블
  * - TB_PRODUCT
  * - TB_HOSPITAL
- * - TB_COMMUNITY_POST
+ * - TB_STAY
+ * - TB_POST
  */
 
 package com.petcare.petcare.search.result.service;
@@ -27,7 +25,12 @@ import com.petcare.petcare.search.SearchSection;
 
 public interface SearchResultService {
 
+    /** 결과 페이지용 통합 검색 */
     List<SearchSection> search(String keyword);
 
+    /** 자동완성용 통합 검색 (영역별 최대 3건) */
+    List<SearchSection> autocomplete(String keyword);
+
+    /** 섹션별 결과 합계 */
     int countResults(List<SearchSection> sections);
 }

@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.mypage.account.mapper.MypageAccountMapper;
 import com.petcare.petcare.mypage.account.vo.MypageAccountVO;
+import com.petcare.petcare.mypage.address.mapper.MypageAddressMapper;
+import com.petcare.petcare.mypage.address.vo.MypageAddressVO;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,14 +34,17 @@ public class MypageAccountServiceImpl implements MypageAccountService {
     private static final Logger log = LoggerFactory.getLogger(MypageAccountServiceImpl.class);
 
     private final MypageAccountMapper mypageAccountMapper;
+    private final MypageAddressMapper mypageAddressMapper;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Value("${file.upload-dir}")
     private String uploadDir;   // application.properties → C:/upload/
 
     public MypageAccountServiceImpl(MypageAccountMapper mypageAccountMapper,
+                                     MypageAddressMapper mypageAddressMapper,
                                      BCryptPasswordEncoder passwordEncoder) {
         this.mypageAccountMapper = mypageAccountMapper;
+        this.mypageAddressMapper = mypageAddressMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -86,13 +91,116 @@ public class MypageAccountServiceImpl implements MypageAccountService {
     }
 
     // 2026-08-04 박유정 — [4] TB_MEMBER.PROFILE_IMG_URL UPDATE
+    // 2026/08/06 장우철 — updateProfileImageUrl 로 분리 (회원정보 UPDATE 와 구분)
     MypageAccountVO vo = new MypageAccountVO();
     vo.setMemberNo(memberNo);
     vo.setProfileImgUrl(fileUrl);
-    mypageAccountMapper.updateMemberProfile(vo);
+    mypageAccountMapper.updateProfileImageUrl(vo);
 
     return fileUrl;
 }
+
+    /**
+     * 회원정보 수정 (닉네임, 전화번호, 주소)
+     * + 주소가 입력되었으면 기본배송지(TB_MEMBER_ADDRESS)도 동기화
+     */
+    @Override
+    @Transactional
+    public String updateProfile(MypageAccountVO vo) {
+        if (vo == null || vo.getMemberNo() == null) {
+            return "회원 정보를 찾을 수 없습니다.";
+        }
+
+        // 닉네임 빈값 체크
+        if (vo.getNickname() == null || vo.getNickname().isBlank()) {
+            return "닉네임을 입력해 주세요.";
+        }
+
+        // 전화번호 빈값 체크
+        if (vo.getPhone() == null || vo.getPhone().isBlank()) {
+            return "전화번호를 입력해 주세요.";
+        }
+
+        // [1] TB_MEMBER 업데이트
+        mypageAccountMapper.updateMemberProfile(vo);
+
+        // [2] 주소가 입력되었으면 기본배송지 동기화
+        if (vo.getZipcode() != null && !vo.getZipcode().isBlank()) {
+            syncDefaultAddress(vo);
+        }
+
+        return null;
+    }
+
+    /**
+     * 기본배송지 동기화
+     * - 기존 기본배송지가 있으면 → 주소만 UPDATE
+     * - 없으면 → 신규 INSERT (IS_DEFAULT = 'Y')
+     */
+    private void syncDefaultAddress(MypageAccountVO vo) {
+        Long memberNo = vo.getMemberNo();
+
+        // 회원 이름·전화번호를 수령인 정보로 사용
+        MypageAccountVO profile = mypageAccountMapper.selectMemberProfile(memberNo);
+        String recvName  = profile.getMemberName();
+        String recvPhone = vo.getPhone();
+
+        MypageAddressVO existing = mypageAddressMapper.selectDefaultAddress(memberNo);
+
+        if (existing != null) {
+            // 기존 기본배송지 UPDATE
+            mypageAddressMapper.updateAddress(
+                existing.getAddrId(), memberNo,
+                recvName, recvPhone,
+                vo.getZipcode(), vo.getAddr1(), vo.getAddr2()
+            );
+        } else {
+            // 신규 기본배송지 INSERT
+            mypageAddressMapper.clearDefaultAddress(memberNo);
+            Long nextId = mypageAddressMapper.selectNextAddrId();
+            mypageAddressMapper.insertAddress(
+                nextId, memberNo,
+                recvName, recvPhone,
+                vo.getZipcode(), vo.getAddr1(), vo.getAddr2(),
+                "Y"
+            );
+        }
+    }
+
+    /**
+     * 비밀번호 변경
+     * [1] 현재 비밀번호 확인
+     * [2] 새 비밀번호 암호화 후 저장
+     */
+    @Override
+    @Transactional
+    public String changePassword(Long memberNo, String currentPassword, String newPassword) {
+        if (memberNo == null) {
+            return "회원 정보를 찾을 수 없습니다.";
+        }
+
+        // 현재 비밀번호 확인
+        String storedPwd = mypageAccountMapper.selectPasswordByMemberNo(memberNo);
+        if (storedPwd == null) {
+            return "회원 정보를 찾을 수 없습니다.";
+        }
+        if (!passwordEncoder.matches(currentPassword, storedPwd)) {
+            return "현재 비밀번호가 일치하지 않습니다.";
+        }
+
+        // 새 비밀번호 유효성 검사 (영문+숫자+특수문자 8자 이상)
+        if (newPassword == null || newPassword.length() < 8) {
+            return "새 비밀번호는 8자 이상이어야 합니다.";
+        }
+        if (!newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=]).{8,}$")) {
+            return "영문, 숫자, 특수문자를 모두 포함해야 합니다.";
+        }
+
+        // 암호화 후 저장
+        String encodedPwd = passwordEncoder.encode(newPassword);
+        mypageAccountMapper.updatePassword(memberNo, encodedPwd);
+        return null;
+    }
 
     /**
      * HYJ 26.07.29 회원 탈퇴

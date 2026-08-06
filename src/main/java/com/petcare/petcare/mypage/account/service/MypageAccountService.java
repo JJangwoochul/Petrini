@@ -32,6 +32,18 @@ public interface MypageAccountService {
     String updateProfileImage(Long memberNo, MultipartFile file);
 
     /**
+     * 회원정보 수정 (닉네임, 전화번호, 주소)
+     * @return null 이면 성공, 문자열이면 오류 메시지
+     */
+    String updateProfile(MypageAccountVO vo);
+
+    /**
+     * 비밀번호 변경 (현재 비밀번호 확인 → 새 비밀번호 저장)
+     * @return null 이면 성공, 문자열이면 오류 메시지
+     */
+    String changePassword(Long memberNo, String currentPassword, String newPassword);
+
+    /**
      * HYJ 26.07.29 회원 탈퇴 — 비밀번호 확인 후 STATUS_CD = 'WITHDRAWN'
      * @return null 이면 성공, 문자열이면 오류 메시지
      */

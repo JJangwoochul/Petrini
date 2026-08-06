@@ -34,6 +34,7 @@
     SELECT MEMBER_NO   AS memberNo,
            MEMBER_ID   AS memberId,
            MEMBER_NAME AS memberName,
+           NICKNAME    AS nickname,
            EMAIL       AS email,
            PHONE       AS phone,
            ZIP_CODE    AS zipcode,
@@ -45,6 +46,24 @@
       FROM TB_MEMBER
      WHERE MEMBER_NO = #{memberNo}
   </select>
+
+  <!-- HYJ 26.08.06 회원정보 수정 (전화번호, 닉네임, 주소) -->
+  <update id="updateMemberProfile" parameterType="com.petcare.petcare.mypage.account.vo.MypageAccountVO">
+    UPDATE TB_MEMBER
+       SET NICKNAME = #{nickname},
+           PHONE    = #{phone},
+           ZIP_CODE = #{zipcode},
+           ADDR1    = #{addr1},
+           ADDR2    = #{addr2}
+     WHERE MEMBER_NO = #{memberNo}
+  </update>
+
+  <!-- HYJ 26.08.06 비밀번호 변경 -->
+  <update id="updatePassword">
+    UPDATE TB_MEMBER
+       SET MEMBER_PWD = #{newPassword}
+     WHERE MEMBER_NO = #{memberNo}
+  </update>
 
     <!-- ══════════════════════════════════════════════
          7일 경과 탈퇴 회원 개인정보 삭제 (스케줄러용)
@@ -94,7 +113,8 @@
     </delete>
 
     <!-- 2026-08-04 박유정 — 프로필 사진 URL UPDATE (TB_MEMBER.PROFILE_IMG_URL) -->
-    <update id="updateMemberProfile">
+    <!-- 2026/08/06 장우철 — yeju 회원정보 UPDATE 와 id 충돌 방지 → updateProfileImageUrl -->
+    <update id="updateProfileImageUrl" parameterType="com.petcare.petcare.mypage.account.vo.MypageAccountVO">
          UPDATE TB_MEMBER
          SET PROFILE_IMG_URL = #{profileImgUrl}
          WHERE MEMBER_NO = #{memberNo}
