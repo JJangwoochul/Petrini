@@ -71,15 +71,19 @@
                 <span class="logo-text">펫린이</span>
             </a>
 
-            <!-- 검색 -->
+            <!-- HYJ 26.08.06 검색 + 자동완성 -->
             <div class="header-search">
-                <input type="text" class="search-input" placeholder="검색어를 입력하세요" value="${param.q}">
-                <button type="button" class="search-btn" aria-label="검색">
+                <input type="text" class="search-input" id="headerSearchInput"
+                       placeholder="검색어를 입력하세요" value="${param.q}"
+                       autocomplete="off">
+                <button type="button" class="search-btn" id="headerSearchBtn" aria-label="검색">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"/>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                 </button>
+                <%-- 자동완성 드롭다운 --%>
+                <div class="ac-dropdown" id="acDropdown"></div>
             </div>
 
             <!-- 유틸 아이콘 -->
@@ -132,3 +136,131 @@
         </div>
     </nav>
 </header>
+
+<%-- ── HYJ 26.08.06 헤더 검색 + 자동완성 JS ── --%>
+<script>
+$(function () {
+    var CTX   = '${contextPath}';
+    var $input    = $('#headerSearchInput');
+    var $btn      = $('#headerSearchBtn');
+    var $dropdown = $('#acDropdown');
+    var timer     = null;
+    var acIdx     = -1;          // 키보드 선택 인덱스
+
+    /* ── 검색 실행 (결과 페이지 이동) ── */
+    function doSearch() {
+        var q = $.trim($input.val());
+        if (q.length === 0) return;
+        location.href = CTX + '/search?q=' + encodeURIComponent(q);
+    }
+
+    $btn.on('click', doSearch);
+    $input.on('keydown', function (e) {
+        if (e.key === 'Enter') {
+            // 드롭다운에서 항목을 선택 중이면 그 항목으로 이동
+            var $items = $dropdown.find('.ac-item');
+            if (acIdx >= 0 && acIdx < $items.length) {
+                location.href = CTX + $items.eq(acIdx).data('url');
+            } else {
+                doSearch();
+            }
+            closeDropdown();
+            e.preventDefault();
+            return;
+        }
+        // 위/아래 화살표
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var $items = $dropdown.find('.ac-item');
+            if ($items.length === 0) return;
+            if (e.key === 'ArrowDown') {
+                acIdx = (acIdx + 1 >= $items.length) ? 0 : acIdx + 1;
+            } else {
+                acIdx = (acIdx - 1 < 0) ? $items.length - 1 : acIdx - 1;
+            }
+            $items.removeClass('ac-active');
+            $items.eq(acIdx).addClass('ac-active');
+        }
+        if (e.key === 'Escape') {
+            closeDropdown();
+        }
+    });
+
+    /* ── 자동완성 요청 (디바운스 300ms) ── */
+    $input.on('input', function () {
+        var q = $.trim($input.val());
+        acIdx = -1;
+        if (q.length < 1) {
+            closeDropdown();
+            return;
+        }
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            fetchAutocomplete(q);
+        }, 300);
+    });
+
+    function fetchAutocomplete(q) {
+        $.ajax({
+            url: CTX + '/search/autocomplete',
+            data: { q: q },
+            dataType: 'json',
+            success: function (res) {
+                if (!res.ok || res.data.length === 0) {
+                    closeDropdown();
+                    return;
+                }
+                renderDropdown(res.data, q);
+            },
+            error: function () {
+                closeDropdown();
+            }
+        });
+    }
+
+    /* ── 드롭다운 렌더링 ── */
+    function renderDropdown(items, q) {
+        var html = '';
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            var highlighted = highlightKeyword(escapeHtml(item.title), q);
+            var meta = item.meta ? escapeHtml(item.meta) : '';
+            html += '<a class="ac-item" href="' + CTX + escapeAttr(item.url) + '"'
+                  + ' data-url="' + escapeAttr(item.url) + '">'
+                  + '  <span class="ac-title">' + highlighted + '</span>'
+                  + '  <span class="ac-meta">' + meta + '</span>'
+                  + '  <span class="ac-cat">' + escapeHtml(item.category) + '</span>'
+                  + '</a>';
+        }
+        $dropdown.html(html).addClass('open');
+    }
+
+    function closeDropdown() {
+        $dropdown.removeClass('open').empty();
+        acIdx = -1;
+    }
+
+    /* 외부 클릭 시 닫기 */
+    $(document).on('mousedown', function (e) {
+        if (!$(e.target).closest('.header-search').length) {
+            closeDropdown();
+        }
+    });
+
+    /* ── 유틸 함수 ── */
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escapeAttr(str) {
+        return escapeHtml(str).replace(/'/g, '&#39;');
+    }
+    function highlightKeyword(text, keyword) {
+        if (!keyword) return text;
+        var escaped = keyword.replace(new RegExp('[.*+?^$' + '{}()|[\\]\\\\]', 'g'), '\\$&');
+        var regex = new RegExp('(' + escaped + ')', 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+});
+</script>

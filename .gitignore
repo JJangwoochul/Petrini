@@ -47,6 +47,7 @@ application*.properties
 *.xlsx
 *.bak
 ~$*
+/claude/
 
 ### 로컬 개발용 SQL 더미 (팀 공유 안 함) ###
 /sql/
