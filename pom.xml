@@ -37,6 +37,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- AOP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
         <!--Lucy XSS 라이브러리  lusy-xss-servlet은 지금 버전과 호환이 안되서 사용 못함-->
         <dependency>
             <groupId>com.navercorp.lucy</groupId>
