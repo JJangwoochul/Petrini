@@ -77,7 +77,8 @@ public class WebConfig implements WebMvcConfigurer {
         .excludePathPatterns(
                 "/resources/**",
                 "/upload/**",
-                "/favicon.ico"
+                "/favicon.ico",
+                "/find/**"
         );  
 
         registry.addInterceptor(joinDraftScopeInterceptor)

@@ -45,6 +45,7 @@ application*.properties
 ### 기타 ###
 *.zip
 *.xlsx
+*.docx
 *.bak
 ~$*
 /claude/
