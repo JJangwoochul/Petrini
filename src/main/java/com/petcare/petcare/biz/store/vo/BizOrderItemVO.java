@@ -19,4 +19,5 @@ public class BizOrderItemVO {
     private Integer qty;
     private Integer unitPrice;
     private Integer totalPrice;
+    private String thumbnailUrl; // 지윤 26.08.07: 주문상세 화면 상품 썸네일 표시용
 }

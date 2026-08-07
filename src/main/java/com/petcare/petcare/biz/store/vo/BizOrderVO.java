@@ -35,6 +35,12 @@ public class BizOrderVO {
     private String deliveryStatus;
     private List<BizOrderItemVO> itemList;
 
+    // 지윤 26.08.07: 상세화면에 결제금액 세부 내역(상품금액/배송비/쿠폰명) 표시용
+    private Integer productTotal;   // TB_ORDER.TOTAL_AMOUNT (배송비·할인 반영 전 상품 합계)
+    private Integer deliveryFee;
+    private Integer discountAmount; // 쿠폰+포인트 할인 합계 (TB_ORDER.DISCOUNT_AMOUNT)
+    private String  couponName;     // 사용한 쿠폰명 (없으면 null)
+
     //지윤 26.07.22 추가: 취소신청 정보 (취소신청 탭/상세용)
     private String claimStatus;    // PENDING/DONE/REJECTED
     private String cancelReason;   // 유저가 입력한 취소사유
