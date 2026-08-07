@@ -76,6 +76,10 @@ public interface StayMapper {
 
     // HYJ 26.07.20 스케줄러 — 체크아웃 지난 CONFIRMED → DONE 일괄 변경
     int updateConfirmedToDone();
+
+    // 2026/08/07 장우철 — DONE 전환 대상 조회 (알림용, UPDATE 전에 호출)
+    List<ReservationVO> selectCheckoutDueForDone();
+
     // HYJ 26.07.28 스케줄러 — 30분 경과 PENDING → CANCEL 자동 취소
     int cancelExpiredPending();
 }

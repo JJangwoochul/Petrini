@@ -32,6 +32,7 @@ import com.petcare.petcare.hospital.vo.HospitalTimeBlockVO;
 import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.HospitalVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
 @Service
 public class HospitalServiceImpl implements HospitalService {
@@ -45,6 +46,8 @@ public class HospitalServiceImpl implements HospitalService {
     private HospitalMapper hospitalMapper;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     @Override
     public List<HospitalVO> getHospitalList() throws Exception {
@@ -306,6 +309,8 @@ public class HospitalServiceImpl implements HospitalService {
             throw e;
         }
         releaseHoldSafe(hold.getHoldId());
+        // 2026/08/07 장우철 — 병원 신규 예약 → 사업자 알림
+        notifyHospitalBizNewReserve(vo);
         return vo.getResvId();
     }
 
@@ -356,7 +361,28 @@ public class HospitalServiceImpl implements HospitalService {
             vo.setResvNo(buildResvNo());
         }
         hospitalMapper.insertReservation(vo);
+        // 2026/08/07 장우철 — 병원 신규 예약 → 사업자 알림
+        notifyHospitalBizNewReserve(vo);
         return vo.getResvId();
+    }
+
+    /** 2026/08/07 장우철 — PENDING 예약 생성 시 병원 사업자 알림 */
+    private void notifyHospitalBizNewReserve(ReservationVO vo) {
+        try {
+            if (vo == null || vo.getTargetId() == null || vo.getTargetId().isBlank()) {
+                return;
+            }
+            Long hospitalId = Long.parseLong(vo.getTargetId());
+            HospitalVO hospital = hospitalMapper.selectHospitalById(hospitalId);
+            if (hospital == null || hospital.getMemberNo() == null) {
+                return;
+            }
+            String hospitalName = hospital.getName() != null ? hospital.getName() : "병원";
+            mypageNotifyService.sendHospitalReserveToBizNotification(
+                    hospital.getMemberNo(), hospitalName, vo.getResvDate(), vo.getResvTime(), vo.getResvId());
+        } catch (Exception ignored) {
+            // 알림 실패해도 예약은 유지
+        }
     }
 
     @Override

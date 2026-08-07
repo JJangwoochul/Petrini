@@ -282,6 +282,8 @@
                                 <div></div>
                                 <form method="post" action="${contextPath}/biz/hospital/coupon/close"
                                       onsubmit="return confirm('쿠폰을 조기 마감하시겠습니까?\n마감 후 이벤트 화면에서 사라집니다.')">
+                                    <%-- 2026/08/07 장우철 CSRF --%>
+                                    <input type="hidden" name="_csrf" value="${_csrf}">
                                     <input type="hidden" name="couponId" value="${cpn.couponId}">
                                     <button type="submit" class="cpn-btn red">조기 마감</button>
                                 </form>

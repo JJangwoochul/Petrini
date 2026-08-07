@@ -565,7 +565,8 @@
       var monthEl = document.getElementById('batchSettleMonth');
       var month = monthEl && monthEl.value ? monthEl.value : '';
       if (!confirm('월정산(REGULAR)을 생성할까요?\n대상월: ' + (month || '전월') + '\n숙소·쇼핑 승인 사업자 전체')) return;
-      fetch(CTX + '/admin/settlement/batch/monthly-create', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/batch/monthly-create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ settleMonth: month || null })
@@ -582,7 +583,8 @@
   if (btnAutoPay) {
     btnAutoPay.addEventListener('click', function () {
       if (!confirm('WAIT 상태 정산을 전부 더미 지급할까요?\n(FAIL은 제외 · 숙소+쇼핑)')) return;
-      fetch(CTX + '/admin/settlement/batch/auto-pay', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/batch/auto-pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
       })
@@ -686,7 +688,8 @@
         var fid = Number(failBtn.getAttribute('data-id'));
         var fname = failBtn.getAttribute('data-name') || '';
         if (!confirm('[' + fname + '] 지급실패(FAIL)로 표시할까요?\n상세에서 계좌 확인 후 수동입금하세요.')) return;
-        fetch(CTX + '/admin/settlement/stay/mark-fail', {
+        // 2026/08/07 장우철 CSRF
+        csrfFetch(CTX + '/admin/settlement/stay/mark-fail', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ settleId: fid })
@@ -791,7 +794,8 @@
       var id = Number(approveBtn.getAttribute('data-id'));
       var name = approveBtn.getAttribute('data-name') || '';
       if (!confirm('[' + name + '] 중간정산 요청을 승인할까요?\n승인 시 미정산 주문상품으로 정산 마스터가 생성됩니다.')) return;
-      fetch(CTX + '/admin/settlement/store/request/approve', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/store/request/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ requestId: id })
@@ -811,7 +815,8 @@
       var reason = prompt('[' + rname + '] 거절 사유를 입력하세요.');
       if (reason == null) return;
       if (!String(reason).trim()) { alert('거절 사유가 필요합니다.'); return; }
-      fetch(CTX + '/admin/settlement/store/request/reject', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/store/request/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ requestId: rid, rejectReason: String(reason).trim() })
@@ -852,7 +857,8 @@
         ? '계좌 입금 확인 후 수동입금완료 처리할까요?\n[' + name + '] ' + fmt(amount)
         : '정말 정산(더미 지급) 하시겠습니까?\n[' + name + '] ' + fmt(amount);
       if (!confirm(msg)) return;
-      fetch(CTX + '/admin/settlement/store/pay', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/store/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ settleId: settleId })
@@ -870,7 +876,8 @@
       var fid = Number(failBtn.getAttribute('data-id'));
       var fname = failBtn.getAttribute('data-name') || '';
       if (!confirm('[' + fname + '] 지급실패(FAIL)로 표시할까요?\n상세에서 계좌 확인 후 수동입금하세요.')) return;
-      fetch(CTX + '/admin/settlement/store/mark-fail', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/store/mark-fail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ settleId: fid })
@@ -948,7 +955,8 @@
         return;
       }
       if (!confirm('선택한 ' + ids.length + '건을 더미 지급 완료할까요?')) return;
-      fetch(CTX + '/admin/settlement/store/pay-bulk', {
+      // 2026/08/07 장우철 CSRF
+      csrfFetch(CTX + '/admin/settlement/store/pay-bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ settleIds: ids })

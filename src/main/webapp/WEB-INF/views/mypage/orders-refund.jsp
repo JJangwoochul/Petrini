@@ -43,6 +43,8 @@
 
       <form method="post" action="${contextPath}/mypage/orders/refund" enctype="multipart/form-data"
             onsubmit="return validateRefundForm()">
+        <%-- 2026/08/07 장우철 CSRF --%>
+        <input type="hidden" name="_csrf" value="${_csrf}">
         <input type="hidden" name="orderItemId" value="${item.orderItemId}">
 
         <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;">환불 유형 <span style="color:#E2445C;">*</span></label>

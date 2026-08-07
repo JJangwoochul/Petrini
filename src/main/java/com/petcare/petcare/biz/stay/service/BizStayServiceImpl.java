@@ -187,6 +187,18 @@ public class BizStayServiceImpl implements BizStayService {
         if ("CONFIRMED".equals(next)) {
             mypageNotifyService.sendReserveConfirmNotification(
                     current.getMemberNo(), stayName, current.getCheckinDate(), null, resvId);
+        } else if ("CHECKIN".equals(next)) {
+            // 2026/08/07 장우철 — 체크인 알림
+            try {
+                mypageNotifyService.sendStayCheckinNotification(current.getMemberNo(), stayName, resvId);
+            } catch (Exception ignored) {
+            }
+        } else if ("CHECKOUT".equals(next)) {
+            // 2026/08/07 장우철 — 체크아웃 알림
+            try {
+                mypageNotifyService.sendStayCheckoutNotification(current.getMemberNo(), stayName, resvId);
+            } catch (Exception ignored) {
+            }
         }
     }
 

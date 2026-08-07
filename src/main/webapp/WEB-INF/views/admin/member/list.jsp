@@ -215,6 +215,13 @@ function submitBulkAction(url, confirmMsg, extraFields) {
     form.method = 'post';
     form.action = url + '?' + listQuery;
 
+    // 2026/08/07 장우철 CSRF
+    var csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = '_csrf';
+    csrf.value = (document.querySelector('meta[name="_csrf"]') || {}).content || '';
+    form.appendChild(csrf);
+
     checked.forEach(function (cb) {
         var input = document.createElement('input');
         input.type = 'hidden';

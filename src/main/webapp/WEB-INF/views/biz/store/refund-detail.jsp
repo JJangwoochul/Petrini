@@ -104,11 +104,15 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
           <form method="post" action="${contextPath}/biz/store/refunds/approve"
                 onsubmit="return confirm('승인하여 환불진행으로 바꿀까요?');">
+            <%-- 2026/08/07 장우철 CSRF --%>
+            <input type="hidden" name="_csrf" value="${_csrf}">
             <input type="hidden" name="orderItemId" value="${refund.orderItemId}">
             <button type="submit" class="biz-btn primary">승인 (환불진행)</button>
           </form>
           <form method="post" action="${contextPath}/biz/store/refunds/reject"
                 onsubmit="return confirm('거절할까요?');" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <%-- 2026/08/07 장우철 CSRF --%>
+            <input type="hidden" name="_csrf" value="${_csrf}">
             <input type="hidden" name="orderItemId" value="${refund.orderItemId}">
             <input type="text" name="rejectReason" required placeholder="거절 사유" maxlength="500"
                    style="min-width:220px;padding:8px 10px;border:1px solid #E2E8E4;border-radius:6px;">
@@ -120,6 +124,8 @@
       <c:if test="${refund.returnStatusCd == 'RETURNING'}">
         <form method="post" action="${contextPath}/biz/store/refunds/complete"
               onsubmit="return confirm('회수완료 처리하고 토스 환불을 진행할까요?\n예상 환불액: ${expectRefund}원');">
+          <%-- 2026/08/07 장우철 CSRF --%>
+          <input type="hidden" name="_csrf" value="${_csrf}">
           <input type="hidden" name="orderItemId" value="${refund.orderItemId}">
           <button type="submit" class="biz-btn primary">회수완료 (환불 실행)</button>
         </form>

@@ -338,6 +338,20 @@
            AND CHECKOUT_DATE <![CDATA[<]]> TRUNC(SYSDATE)
     </update>
 
+    <!-- 2026/08/07 장우철 — DONE 전환 대상 (알림용) -->
+    <select id="selectCheckoutDueForDone" resultType="com.petcare.petcare.stay.vo.ReservationVO">
+        SELECT R.RESV_ID     AS resvId,
+               R.MEMBER_NO   AS memberNo,
+               NVL(S.NAME, '숙소') AS stayName
+          FROM TB_RESERVATION R
+          LEFT JOIN TB_STAY S
+                 ON R.RESV_TYPE = 'STAY'
+                AND S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+         WHERE R.RESV_TYPE = 'STAY'
+           AND R.STATUS_CD = 'CHECKOUT'
+           AND R.CHECKOUT_DATE <![CDATA[<]]> TRUNC(SYSDATE)
+    </select>
+
     <!-- HYJ 26.07.21 회원 보유 포인트 조회 -->
     <select id="selectMemberPointBalance" parameterType="long" resultType="long">
         SELECT NVL(POINT_BALANCE, 0) FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}

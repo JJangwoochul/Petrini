@@ -157,6 +157,8 @@
                 <form class="banner-side-form" method="post"
                       action="${contextPath}/admin/cms/banner/update"
                       enctype="multipart/form-data">
+                    <%-- 2026/08/07 장우철 CSRF --%>
+                    <input type="hidden" name="_csrf" value="${_csrf}">
                     <input type="hidden" name="bannerId" value="${banner.bannerId}">
                     <div>
                         <label>배너 제목</label>
@@ -178,6 +180,8 @@
             <div class="banner-side-card">
                 <h3 class="banner-side-title">광고 기간 재설정</h3>
                 <form class="banner-side-form" method="post" action="${contextPath}/admin/cms/banner/period">
+                    <%-- 2026/08/07 장우철 CSRF --%>
+                    <input type="hidden" name="_csrf" value="${_csrf}">
                     <input type="hidden" name="bannerId" value="${banner.bannerId}">
                     <div>
                         <label>시작일</label>
@@ -198,6 +202,8 @@
                         <c:when test="${banner.statusCd eq 'ACTIVE'}">
                             <form method="post" action="${contextPath}/admin/cms/banner/deactivate"
                                   onsubmit="return confirm('이 광고를 내리시겠습니까?')">
+                                <%-- 2026/08/07 장우철 CSRF --%>
+                                <input type="hidden" name="_csrf" value="${_csrf}">
                                 <input type="hidden" name="bannerId" value="${banner.bannerId}">
                                 <button type="submit" class="adm-btn gray">광고 내리기</button>
                             </form>
@@ -205,6 +211,8 @@
                         <c:when test="${banner.statusCd eq 'EXPIRED'}">
                             <form method="post" action="${contextPath}/admin/cms/banner/activate"
                                   onsubmit="return confirm('이 광고를 다시 올리시겠습니까?')">
+                                <%-- 2026/08/07 장우철 CSRF --%>
+                                <input type="hidden" name="_csrf" value="${_csrf}">
                                 <input type="hidden" name="bannerId" value="${banner.bannerId}">
                                 <button type="submit" class="adm-btn green">광고 올리기</button>
                             </form>
@@ -212,6 +220,8 @@
                     </c:choose>
                     <form method="post" action="${contextPath}/admin/cms/banner/delete"
                           onsubmit="return confirm('배너를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')">
+                        <%-- 2026/08/07 장우철 CSRF --%>
+                        <input type="hidden" name="_csrf" value="${_csrf}">
                         <input type="hidden" name="bannerId" value="${banner.bannerId}">
                         <button type="submit" class="adm-btn red">배너 삭제</button>
                     </form>

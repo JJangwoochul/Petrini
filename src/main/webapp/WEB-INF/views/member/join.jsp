@@ -1001,7 +1001,8 @@
 
     /** 서버 세션에 임시저장 */
     async function saveDraftToServer() {
-      var res = await fetch(ctx + '/join/draft', {
+      // 2026/08/07 장우철 CSRF
+      var res = await csrfFetch(ctx + '/join/draft', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json;charset=UTF-8' },

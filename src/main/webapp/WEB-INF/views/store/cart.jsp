@@ -269,8 +269,8 @@
       params.append('cartItemIds', item.dataset.cartItemId);
     });
     
-    //HYJ 26.08.05
-    fetch('${contextPath}/store/cart/deleteAll', {
+    //HYJ 26.08.05 · 2026/08/07 장우철 CSRF (csrfFetch)
+    csrfFetch('${contextPath}/store/cart/deleteAll', {
       method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
       body: params.toString()

@@ -260,13 +260,27 @@ public class BizStoreServiceImpl implements BizStoreService {
         }
 
         orderCancelTxService.applyCancelToDb(order, bizNo);
+        // 2026/08/07 장우철 — 취소 승인 → 구매자 알림
+        try {
+            mypageNotifyService.sendCancelApproveToBuyerNotification(order.getMemberNo(), order.getOrderNo());
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
     //지윤 26.07.22 추가: 취소신청 반려 (토스 호출 없이 상태만 변경)
     @Override
     public boolean rejectOrderCancel(Long orderId, Long bizNo) {
-        return bizStoreMapper.updateClaimReject(orderId, bizNo) > 0;
+        BizOrderVO order = bizStoreMapper.selectOrderDetail(orderId, bizNo);
+        boolean ok = bizStoreMapper.updateClaimReject(orderId, bizNo) > 0;
+        // 2026/08/07 장우철 — 취소 거절 → 구매자 알림
+        if (ok && order != null) {
+            try {
+                mypageNotifyService.sendCancelRejectToBuyerNotification(order.getMemberNo(), order.getOrderNo());
+            } catch (Exception ignored) {
+            }
+        }
+        return ok;
     }
 
     //지윤 26.07.20 추가: 주문 상태 변경 + 배송정보(택배사/송장번호) 저장
@@ -303,6 +317,8 @@ public class BizStoreServiceImpl implements BizStoreService {
                 bizStoreMapper.insertOrderDelivery(orderId, bizNo, courierName, courierCode, trackingNo, deliveryStatus);
             }
         }
+        // 2026/08/07 장우철 — 배송중/배송완료 → 구매자 알림
+        notifyBuyerDeliveryStatus(orderId, bizNo, orderStatus);
         return true;
     }
 
@@ -314,6 +330,7 @@ public class BizStoreServiceImpl implements BizStoreService {
         if (updated == 0) return false;
         bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, "DELIVERED_AT");
         bizStoreMapper.updateDeliveryStatusOnly(orderId, "DELIVERED");
+        notifyBuyerDeliveryStatus(orderId, bizNo, "DONE");
         return true;
     }
 
@@ -325,7 +342,27 @@ public class BizStoreServiceImpl implements BizStoreService {
         if (updated == 0) return false;
         bizStoreMapper.updateDeliveryTimestamp(orderId, bizNo, "SHIPPING_AT");
         bizStoreMapper.updateDeliveryStatusOnly(orderId, "SHIPPING");
+        notifyBuyerDeliveryStatus(orderId, bizNo, "SHIPPING");
         return true;
+    }
+
+    /** 2026/08/07 장우철 — 배송 상태 변경 시 구매자 알림 */
+    private void notifyBuyerDeliveryStatus(Long orderId, Long bizNo, String orderStatus) {
+        try {
+            if (!"SHIPPING".equals(orderStatus) && !"DONE".equals(orderStatus)) {
+                return;
+            }
+            BizOrderVO order = bizStoreMapper.selectOrderDetail(orderId, bizNo);
+            if (order == null || order.getMemberNo() == null) {
+                return;
+            }
+            if ("SHIPPING".equals(orderStatus)) {
+                mypageNotifyService.sendOrderShippingToBuyerNotification(order.getMemberNo(), order.getOrderNo());
+            } else {
+                mypageNotifyService.sendOrderDeliveredToBuyerNotification(order.getMemberNo(), order.getOrderNo());
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     //지윤 26.07.20 추가: 배송관리 목록 조회 + 지연여부(3일 이상 SHIPPING) 자바에서 계산

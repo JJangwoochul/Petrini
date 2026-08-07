@@ -144,4 +144,30 @@ public interface MypageNotifyService {
 
     // 2026-08-06 박유정 — 배너 신청 반려 알림 (사업자)
     void sendBannerRejectNotification(Long memberNo, String bannerTitle, String positionLabel, String rejectReason, String linkUrl);
+
+    // 2026/08/07 장우철 — 미구현 알림 보강 (쿠폰·공지/FAQ·이메일/FCM·커뮤니티 댓글 제외)
+
+    /** 병원 신규 예약(PENDING) → 사업자 */
+    void sendHospitalReserveToBizNotification(Long bizMemberNo, String hospitalName,
+                                              java.util.Date resvDate, String resvTime, Long resvId);
+
+    /** 주문취소 승인/거절 → 구매자 */
+    void sendCancelApproveToBuyerNotification(Long memberNo, String orderNo);
+    void sendCancelRejectToBuyerNotification(Long memberNo, String orderNo);
+
+    /** 배송중 / 배송완료 → 구매자 */
+    void sendOrderShippingToBuyerNotification(Long memberNo, String orderNo);
+    void sendOrderDeliveredToBuyerNotification(Long memberNo, String orderNo);
+
+    /** 커뮤니티 신고 조치(숨김/삭제) → 작성자 */
+    void sendCommunityPostHiddenNotification(Long memberNo, String postTitle, Long postId);
+    void sendCommunityPostDeletedNotification(Long memberNo, String postTitle);
+
+    /** 숙소 체크인 / 체크아웃 / 이용완료 → 회원 */
+    void sendStayCheckinNotification(Long memberNo, String stayName, Long resvId);
+    void sendStayCheckoutNotification(Long memberNo, String stayName, Long resvId);
+    void sendStayDoneNotification(Long memberNo, String stayName, Long resvId);
+
+    /** 숙소 보상환불(이용 유지) → 회원 */
+    void sendStayCompensationRefundNotification(Long memberNo, String stayName, long refundAmount, Long resvId);
 }

@@ -164,5 +164,14 @@ public class StayFullCancelService {
         if (updated == 0) {
             throw new IllegalStateException("환불 금액을 기록할 수 없습니다. 예약 상태를 확인해 주세요.");
         }
+
+        // 2026/08/07 장우철 — 보상환불(이용 유지) → 회원 알림
+        try {
+            String stayName = resv.getStayName() != null && !resv.getStayName().isBlank()
+                    ? resv.getStayName() : "숙소";
+            mypageNotifyService.sendStayCompensationRefundNotification(
+                    resv.getMemberNo(), stayName, refundAmt, resvId);
+        } catch (Exception ignored) {
+        }
     }
 }

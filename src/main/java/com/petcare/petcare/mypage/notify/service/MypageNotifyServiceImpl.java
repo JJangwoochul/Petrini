@@ -537,6 +537,206 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // ── 2026/08/07 장우철 — 미구현 알림 보강 ──
+
+    @Override
+    @Transactional
+    public void sendHospitalReserveToBizNotification(Long bizMemberNo, String hospitalName,
+                                                     java.util.Date resvDate, String resvTime, Long resvId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String name = (hospitalName != null && !hospitalName.isBlank()) ? hospitalName.trim() : "병원";
+        String when = formatResvWhen(resvDate, resvTime);
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("새 병원 예약이 접수되었습니다");
+        vo.setContent("[" + name + "] " + when + " 예약이 접수되었습니다. 확정 여부를 확인해 주세요.");
+        vo.setLinkUrl("/biz/hospital/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendCancelApproveToBuyerNotification(Long memberNo, String orderNo) {
+        if (memberNo == null) {
+            return;
+        }
+        String no = (orderNo != null && !orderNo.isBlank()) ? orderNo.trim() : "-";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("ORDER");
+        vo.setTitle("주문 취소가 승인되었습니다");
+        vo.setContent("주문번호 " + no + " 취소가 승인되어 환불이 진행됩니다.");
+        vo.setLinkUrl("/mypage/orders");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendCancelRejectToBuyerNotification(Long memberNo, String orderNo) {
+        if (memberNo == null) {
+            return;
+        }
+        String no = (orderNo != null && !orderNo.isBlank()) ? orderNo.trim() : "-";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("ORDER");
+        vo.setTitle("주문 취소가 거절되었습니다");
+        vo.setContent("주문번호 " + no + " 취소 신청이 거절되었습니다.");
+        vo.setLinkUrl("/mypage/orders");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendOrderShippingToBuyerNotification(Long memberNo, String orderNo) {
+        if (memberNo == null) {
+            return;
+        }
+        String no = (orderNo != null && !orderNo.isBlank()) ? orderNo.trim() : "-";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("ORDER");
+        vo.setTitle("상품이 배송중입니다");
+        vo.setContent("주문번호 " + no + " 상품이 배송을 시작했습니다.");
+        vo.setLinkUrl("/mypage/orders");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendOrderDeliveredToBuyerNotification(Long memberNo, String orderNo) {
+        if (memberNo == null) {
+            return;
+        }
+        String no = (orderNo != null && !orderNo.isBlank()) ? orderNo.trim() : "-";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("ORDER");
+        vo.setTitle("상품이 배송완료되었습니다");
+        vo.setContent("주문번호 " + no + " 배송이 완료되었습니다. 구매확정·리뷰를 남겨 주세요.");
+        vo.setLinkUrl("/mypage/orders?statusCd=DONE");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendCommunityPostHiddenNotification(Long memberNo, String postTitle, Long postId) {
+        if (memberNo == null) {
+            return;
+        }
+        String title = (postTitle != null && !postTitle.isBlank()) ? postTitle.trim() : "게시글";
+        if (title.length() > 40) {
+            title = title.substring(0, 37) + "...";
+        }
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle("게시글이 숨김 처리되었습니다");
+        vo.setContent("신고 검토 결과 [" + title + "] 게시글이 숨김 처리되었습니다.");
+        vo.setLinkUrl(postId != null ? "/community/detail?id=" + postId : "/community");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendCommunityPostDeletedNotification(Long memberNo, String postTitle) {
+        if (memberNo == null) {
+            return;
+        }
+        String title = (postTitle != null && !postTitle.isBlank()) ? postTitle.trim() : "게시글";
+        if (title.length() > 40) {
+            title = title.substring(0, 37) + "...";
+        }
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("SYSTEM");
+        vo.setTitle("게시글이 삭제 처리되었습니다");
+        vo.setContent("신고 검토 결과 [" + title + "] 게시글이 삭제 처리되었습니다.");
+        vo.setLinkUrl("/community");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendStayCheckinNotification(Long memberNo, String stayName, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String name = (stayName != null && !stayName.isBlank()) ? stayName.trim() : "숙소";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 체크인이 완료되었습니다");
+        vo.setContent("[" + name + "] 체크인이 확인되었습니다. 편안한 숙박 되세요.");
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendStayCheckoutNotification(Long memberNo, String stayName, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String name = (stayName != null && !stayName.isBlank()) ? stayName.trim() : "숙소";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 체크아웃이 완료되었습니다");
+        vo.setContent("[" + name + "] 체크아웃이 확인되었습니다.");
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendStayDoneNotification(Long memberNo, String stayName, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String name = (stayName != null && !stayName.isBlank()) ? stayName.trim() : "숙소";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 이용이 완료되었습니다");
+        vo.setContent("[" + name + "] 숙박이 완료되었습니다. 리뷰를 남겨 주세요.");
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    @Override
+    @Transactional
+    public void sendStayCompensationRefundNotification(Long memberNo, String stayName,
+                                                       long refundAmount, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String name = (stayName != null && !stayName.isBlank()) ? stayName.trim() : "숙소";
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 환불이 승인되었습니다");
+        vo.setContent("[" + name + "] 예약은 유지되며 "
+                + String.format("%,d", Math.max(0L, refundAmount))
+                + "원(및 포인트·쿠폰)이 환불·복구 처리되었습니다.");
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     private String formatResvWhen(java.util.Date resvDate, String resvTime) {
         String datePart = "-";
         if (resvDate != null) {
