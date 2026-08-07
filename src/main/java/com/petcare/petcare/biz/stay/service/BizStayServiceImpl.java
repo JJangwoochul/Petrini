@@ -15,6 +15,7 @@
 
 package com.petcare.petcare.biz.stay.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.biz.stay.mapper.BizStayMapper;
 import com.petcare.petcare.biz.vo.BizCouponVO;
+import com.petcare.petcare.biz.vo.BizDashboardVO;
 import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
@@ -410,5 +412,67 @@ public class BizStayServiceImpl implements BizStayService {
             return List.of();
         }
         return bizStayMapper.selectBizReviewDeleteRequests(stayId, bizNo);
+    }
+
+    // ── HYJ 26.08.06 대시보드 ──
+
+    @Override
+    public BizDashboardVO getDashboardData(Long stayId, int chartDays) throws Exception {
+        BizDashboardVO dash = new BizDashboardVO();
+        String today = java.time.LocalDate.now().toString();
+        String yesterday = java.time.LocalDate.now().minusDays(1).toString();
+
+        // 요약 카드
+        dash.setTodayResvCount(bizStayMapper.countResvByDate(stayId, today));
+        dash.setTodayResvYesterday(bizStayMapper.countResvByDate(stayId, yesterday));
+        dash.setDoneCount(bizStayMapper.countCheckoutByDate(stayId, today));
+        dash.setDoneYesterday(bizStayMapper.countCheckoutByDate(stayId, yesterday));
+        dash.setPendingCount(bizStayMapper.countPendingReservations(stayId));
+        dash.setPendingYesterday(0); // 대기는 누적이므로 비교 생략
+        dash.setMonthRevenue(bizStayMapper.sumMonthRevenue(stayId, today));
+        dash.setMonthRevenueYesterday(bizStayMapper.sumMonthRevenue(stayId, yesterday));
+
+        // 상태 현황 (도넛)
+        List<Map<String, Object>> statusList = bizStayMapper.countByStatus(stayId);
+        int total = 0;
+        for (Map<String, Object> row : statusList) {
+            String st = (String) row.get("STATUS_CD");
+            int cnt = ((Number) row.get("CNT")).intValue();
+            total += cnt;
+            if ("CONFIRMED".equals(st)) dash.setStatusConfirmed(cnt);
+            else if ("PENDING".equals(st)) dash.setStatusPending(cnt);
+            else if ("CHECKIN".equals(st)) dash.setStatusCheckin(cnt);
+            else if ("CHECKOUT".equals(st)) dash.setStatusCheckout(cnt);
+            else if ("DONE".equals(st)) dash.setStatusDone(cnt);
+            else if ("CANCEL".equals(st) || "REJECTED".equals(st))
+                dash.setStatusCancel(dash.getStatusCancel() + cnt);
+        }
+        dash.setTotalStatusCount(total);
+
+        // 차트 (일별)
+        List<com.petcare.petcare.biz.vo.DailyStatVO> dailyList = bizStayMapper.selectDailyStats(stayId, chartDays);
+        List<String> labels = new ArrayList<>();
+        List<Integer> counts = new ArrayList<>();
+        List<Long> revenues = new ArrayList<>();
+        for (com.petcare.petcare.biz.vo.DailyStatVO d : dailyList) {
+            labels.add(d.getDt());
+            counts.add(d.getResvCount());
+            revenues.add(d.getRevenue());
+        }
+        dash.setChartLabels(labels);
+        dash.setChartResvCounts(counts);
+        dash.setChartRevenues(revenues);
+
+        return dash;
+    }
+
+    @Override
+    public List<com.petcare.petcare.stay.vo.ReservationVO> getTodayCheckinList(Long stayId) {
+        return bizStayMapper.selectTodayCheckinList(stayId);
+    }
+
+    @Override
+    public List<com.petcare.petcare.stay.vo.StayReviewVO> getRecentReviews(Long stayId) {
+        return bizStayMapper.selectRecentReviews(stayId);
     }
 }

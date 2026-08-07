@@ -113,7 +113,7 @@
                 <c:forEach var="product" items="${popularProducts}">
                     <a href="${contextPath}/store/detail?id=${product.productId}" class="home-product-card">
                         <img class="home-product-thumb"
-                             src="${not empty product.imageUrl ? product.imageUrl : 'https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'}"
+                             src="${not empty product.imageUrl ? contextPath.concat('/upload/').concat(product.imageUrl) : 'https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'}"
                              alt="${product.productName}"
                              onerror="this.src='https://placehold.co/400x400/EAF7F2/2BAB82?text=상품'">
                         <div class="home-product-body">

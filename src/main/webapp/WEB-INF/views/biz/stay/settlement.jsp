@@ -111,7 +111,6 @@
       <select name="status" onchange="this.form.submit()">
         <option value="all" <c:if test="${filterStatus eq 'all'}">selected</c:if>>전체</option>
         <option value="pending" <c:if test="${filterStatus eq 'pending'}">selected</c:if>>지급대기</option>
-        <option value="fail" <c:if test="${filterStatus eq 'fail'}">selected</c:if>>지급실패</option>
         <option value="done" <c:if test="${filterStatus eq 'done'}">selected</c:if>>지급완료</option>
       </select>
       <%-- 2026/08/06 장우철 — 필터 줄 오른쪽 정산계좌 버튼 (숙소·쇼핑 공통) --%>
@@ -179,9 +178,6 @@
                   <c:choose>
                     <c:when test="${s.payStatus eq 'DONE'}">
                       <span class="bs-badge bs-done">지급완료</span>
-                    </c:when>
-                    <c:when test="${s.payStatus eq 'FAIL'}">
-                      <span class="bs-badge bs-cancel">지급실패</span>
                     </c:when>
                     <c:otherwise>
                       <span class="bs-badge bs-wait">지급대기</span>

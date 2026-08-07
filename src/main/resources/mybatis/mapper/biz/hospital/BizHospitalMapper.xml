@@ -36,7 +36,7 @@
         WHERE   B.BIZ_ID = #{bizId}
     </select> 
     
-    <!-- 蹂묒썝 理쒖큹 ?깅줉 (鍮?猿띾뜲湲? -->
+    <!-- 병원 최초 등록 (빈 템플릿) -->
     <insert id="insertHospital" parameterType="string">
         INSERT INTO TB_HOSPITAL (
                                     HOSPITAL_ID,
@@ -71,7 +71,7 @@
               )
     </insert>
     
-    <!-- 蹂묒썝(PK)濡??섏젙 ??Oracle null 諛붿씤?⑹슜 jdbcType 紐낆떆 (ORA-17004 諛⑹?) -->
+    <!-- 병원(PK)로 수정 — Oracle null 바인딩용 jdbcType 명시 (ORA-17004 방지) -->
     <update id="updateHospitalInfo" parameterType="com.petcare.petcare.hospital.vo.HospitalVO">
         UPDATE TB_HOSPITAL
         SET    NAME         = #{name, jdbcType=VARCHAR},
@@ -86,7 +86,7 @@
         WHERE  HOSPITAL_ID  = #{hospitalId}
     </update>
 
-    <!-- 2026-07-10 ?μ슦泥????ъ뾽???덉빟 紐⑸줉 (F4), tab: all / wait / done / cancel -->
+    <!-- 2026-07-10 장우철 — 사업자 예약 목록 (F4), tab: all / wait / done / cancel -->
     <select id="selectReservationList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
         SELECT  R.RESV_ID      AS resvId,
                 R.RESV_NO      AS resvNo,
@@ -136,7 +136,7 @@
          ORDER BY R.RESV_DATE DESC, R.RESV_TIME DESC, R.RESV_ID DESC
     </select>
 
-    <!-- 2026-07-10 ?μ슦泥????ъ뾽???덉빟 ?곸꽭 紐⑤떖 (F6) -->
+    <!-- 2026-07-10 장우철 — 사업자 예약 상세 모달 (F6) -->
     <select id="selectReservationDetail" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
         SELECT  R.RESV_ID      AS resvId,
                 R.RESV_NO      AS resvNo,
@@ -172,8 +172,8 @@
            AND  R.RESV_TYPE  = 'HOSPITAL'
     </select>
 
-    <!-- 2026-07-10 ?μ슦泥????ъ뾽???덉빟 ?곹깭 蹂寃?(F5) -->
-    <!-- 2026/07/11 ?μ슦泥???CANCEL ??REJECT_REASON(痍⑥냼 ?ъ쑀) ???-->
+    <!-- 2026-07-10 장우철 — 사업자 예약 상태 변경 (F5) -->
+    <!-- 2026/07/11 장우철 — CANCEL 시 REJECT_REASON(취소 사유) 저장 -->
     <update id="updateReservationStatus">
         UPDATE TB_RESERVATION
            SET STATUS_CD = #{statusCd},
@@ -183,7 +183,7 @@
            AND RESV_TYPE = 'HOSPITAL'
     </update>
 
-    <!-- 2026-07-10 ?μ슦泥????ъ뾽???덉빟 罹섎┛??(F7) -->
+    <!-- 2026-07-10 장우철 — 사업자 예약 캘린더 (F7) -->
     <select id="selectReservationCalendarList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
         SELECT  R.RESV_ID      AS resvId,
                 R.RESV_NO      AS resvNo,
@@ -208,7 +208,7 @@
          ORDER BY R.RESV_DATE, R.RESV_TIME
     </select>
 
-    <!-- 2026/07/11 ?μ슦泥????ъ씠?쒕컮 ?덉빟愿由?諛곗? (PENDING留? -->
+    <!-- 2026/07/11 장우철 — 사이드바 예약관리 배지 (PENDING만) -->
     <select id="countPendingReservations" resultType="int">
         SELECT COUNT(*)
           FROM TB_RESERVATION R
@@ -217,7 +217,7 @@
            AND R.STATUS_CD  = 'PENDING'
     </select>
 
-    <!-- 2026/07/11 ?μ슦泥????ъ씠?쒕컮 罹섎┛??諛곗? (?ㅻ뒛 CONFIRMED) -->
+    <!-- 2026/07/11 장우철 — 사이드바 캘린더 배지 (오늘 CONFIRMED) -->
     <select id="countTodayConfirmedReservations" resultType="int">
         SELECT COUNT(*)
           FROM TB_RESERVATION R
@@ -228,21 +228,21 @@
            AND R.RESV_DATE &lt;  TRUNC(SYSDATE) + 1
     </select>
 
-    <!-- 2026/07/11 ?μ슦泥????덉빟 ?뚮┝??蹂묒썝紐?-->
+    <!-- 2026/07/11 장우철 — 예약 알림용 병원명 -->
     <select id="selectHospitalNameById" resultType="string">
         SELECT NAME
           FROM TB_HOSPITAL
          WHERE HOSPITAL_ID = #{hospitalId}
     </select>
 
-    <!-- 2026/07/13 ?μ슦泥???由щ럭 ?뚮┝ ?섏떊??(蹂묒썝 MEMBER_NO) -->
+    <!-- 2026/07/13 장우철 — 리뷰 알림 수신자 (병원 MEMBER_NO) -->
     <select id="selectHospitalMemberNo" resultType="long">
         SELECT MEMBER_NO
           FROM TB_HOSPITAL
          WHERE HOSPITAL_ID = #{hospitalId}
     </select>
 
-    <!-- 2026/07/13 ?μ슦泥???湲곕줉 誘몄옉??CONFIRMED ?덉빟 (?묒꽦 紐⑤떖?? -->
+    <!-- 2026/07/13 장우철 — 기록 미작성 CONFIRMED 예약 (작성 모달용) -->
     <select id="selectConfirmedWithoutRecord"
             resultType="com.petcare.petcare.hospital.vo.ReservationVO">
         SELECT  R.RESV_ID      AS resvId,
@@ -268,7 +268,7 @@
          ORDER BY R.RESV_DATE DESC, R.RESV_TIME DESC
     </select>
 
-    <!-- 2026/07/13 ?μ슦泥???吏꾨즺湲곕줉 ?깅줉 (MAX+1) -->
+    <!-- 2026/07/13 장우철 — 진료기록 등록 (MAX+1) -->
     <insert id="insertMedicalRecord"
             parameterType="com.petcare.petcare.hospital.vo.MedicalRecordVO">
         <selectKey keyProperty="recordId" resultType="long" order="BEFORE">
@@ -291,7 +291,7 @@
          WHERE RESV_ID = #{resvId}
     </select>
 
-    <!-- 2026/07/13 ?μ슦泥???吏꾨즺湲곕줉 紐⑸줉 -->
+    <!-- 2026/07/13 장우철 — 진료기록 목록 -->
     <select id="selectMedicalRecords"
             resultType="com.petcare.petcare.hospital.vo.MedicalRecordVO">
         SELECT  MR.RECORD_ID     AS recordId,
@@ -353,7 +353,7 @@
            AND  MR.RECORD_ID = #{recordId}
     </select>
 
-    <!-- 2026/07/14 ?μ슦泥????ъ뾽??由щ럭愿由?紐⑸줉 -->
+    <!-- 2026/07/14 장우철 — 사업자 리뷰관리 목록 -->
     <select id="selectBizHospitalReviews"
             resultType="com.petcare.petcare.hospital.vo.HospitalReviewVO">
         SELECT  R.REVIEW_ID   AS reviewId,
@@ -376,7 +376,7 @@
          ORDER BY R.REG_DATE DESC, R.REVIEW_ID DESC
     </select>
 
-    <!-- 2026/07/14 ?μ슦泥????듦? ???由щ럭 ?④굔 (蹂묒썝 ?뚯쑀 寃利? -->
+    <!-- 2026/07/14 장우철 — 답글 대상 리뷰 확인 (병원 소유 검증) -->
     <select id="selectBizHospitalReview"
             resultType="com.petcare.petcare.hospital.vo.HospitalReviewVO">
         SELECT  R.REVIEW_ID   AS reviewId,
@@ -395,7 +395,7 @@
            AND  R.REVIEW_ID = #{reviewId}
     </select>
 
-    <!-- 2026/07/14 ?μ슦泥???蹂묒썝 ?듦? ???(?묒꽦쨌?섏젙 ?숈씪 UPDATE) -->
+    <!-- 2026/07/14 장우철 — 병원 답글 저장 (작성·수정 동일 UPDATE) -->
     <update id="updateReviewBizReply">
         UPDATE TB_REVIEW
            SET BIZ_REPLY = #{bizReply, jdbcType=VARCHAR}
@@ -465,7 +465,7 @@
     </select>
 
     <!-- =========================================================
-         2026/07/16 ?μ슦泥?怨좊룄?붿옉????蹂묒썝 ?ㅼ?以?(?좏삎쨌?섏궗쨌洹쒖튃쨌?덉쇅)
+         2026/07/16 장우철 고도화작업 — 병원 스케줄 (유형·의사·규칙·예외)
          ========================================================= -->
 
     <select id="selectTreatTypeList"
@@ -586,7 +586,7 @@
            AND DOCTOR_ID = #{doctorId}
     </delete>
 
-    <!-- 2026/07/16 ?μ슦泥?怨좊룄?붿옉????RESV_RULE ?쒓굅, 蹂묒썝 ?쒖옉 媛꾧꺽 -->
+    <!-- 2026/07/16 장우철 고도화작업 — RESV_RULE 제거, 병원 시작 간격 -->
     <select id="selectResvIntervalMin" resultType="java.lang.Integer">
         SELECT NVL(RESV_INTERVAL_MIN, 15)
           FROM TB_HOSPITAL
@@ -688,5 +688,112 @@
          WHERE HOSPITAL_ID = #{hospitalId}
            AND EXC_ID = #{excId}
     </delete>
+
+    <!-- ══════════════════════════════════════════════
+        HYJ 26.08.06 대시보드 집계 쿼리
+    ══════════════════════════════════════════════ -->
+
+    <!-- 특정 날짜 예약 건수 -->
+    <select id="countResvByDate" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'HOSPITAL'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND TRUNC(RESV_DATE) = TO_DATE(#{dt}, 'YYYY-MM-DD')
+           AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+    </select>
+
+    <!-- 특정 날짜 진료 완료 건수 -->
+    <select id="countDoneByDate" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'HOSPITAL'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND TRUNC(RESV_DATE) = TO_DATE(#{dt}, 'YYYY-MM-DD')
+           AND STATUS_CD = 'DONE'
+    </select>
+
+    <!-- 이번 달 매출 (특정 기준일까지) -->
+    <select id="sumMonthRevenue" resultType="long">
+        SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'HOSPITAL'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND STATUS_CD IN ('CONFIRMED', 'DONE')
+           AND RESV_DATE >= TRUNC(TO_DATE(#{dt}, 'YYYY-MM-DD'), 'MM')
+           AND RESV_DATE &lt;= TO_DATE(#{dt}, 'YYYY-MM-DD')
+    </select>
+
+    <!-- 예약 상태별 건수 (이번 달 전체) -->
+    <select id="countByStatus" resultType="map">
+        SELECT STATUS_CD AS "STATUS_CD", COUNT(*) AS "CNT"
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'HOSPITAL'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND RESV_DATE >= TRUNC(SYSDATE, 'MM')
+         GROUP BY STATUS_CD
+    </select>
+
+    <!-- 일별 예약 건수 + 매출 (최근 N일) -->
+    <select id="selectDailyStats" resultType="com.petcare.petcare.biz.vo.DailyStatVO">
+        SELECT TO_CHAR(D.DT, 'MM-DD') AS dt,
+               NVL(R.CNT, 0)          AS resvCount,
+               NVL(R.REV, 0)          AS revenue
+          FROM (SELECT TRUNC(SYSDATE) - (LEVEL - 1) AS DT
+                  FROM DUAL
+               CONNECT BY LEVEL &lt;= #{days}
+               ) D
+          LEFT JOIN (
+               SELECT TRUNC(RESV_DATE) AS RD,
+                      COUNT(*)         AS CNT,
+                      NVL(SUM(TOTAL_AMOUNT), 0) AS REV
+                 FROM TB_RESERVATION
+                WHERE RESV_TYPE  = 'HOSPITAL'
+                  AND TARGET_ID  = TO_CHAR(#{targetId})
+                  AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+                  AND RESV_DATE >= TRUNC(SYSDATE) - #{days} + 1
+                GROUP BY TRUNC(RESV_DATE)
+               ) R ON R.RD = D.DT
+         ORDER BY D.DT
+    </select>
+
+    <!-- 오늘 예약 목록 (최대 5건) -->
+    <select id="selectTodayResvList" resultType="com.petcare.petcare.hospital.vo.ReservationVO">
+        SELECT R.RESV_ID      AS resvId,
+               R.RESV_TIME    AS resvTime,
+               R.STATUS_CD    AS statusCd,
+               R.SYMPTOMS     AS symptoms,
+               M.MEMBER_NAME  AS memberName,
+               P.PET_NAME     AS petName,
+               P.SPECIES      AS petSpecies,
+               D.DOCTOR_NAME  AS doctorName,
+               T.TYPE_NAME    AS treatTypeName
+          FROM TB_RESERVATION R
+          JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          LEFT JOIN TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_HOSPITAL_DOCTOR D ON D.DOCTOR_ID = R.DOCTOR_ID
+          LEFT JOIN TB_HOSPITAL_TREAT_TYPE T ON T.TREAT_TYPE_ID = R.TREAT_TYPE_ID
+         WHERE R.RESV_TYPE  = 'HOSPITAL'
+           AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
+           AND TRUNC(R.RESV_DATE) = TRUNC(SYSDATE)
+           AND R.STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+         ORDER BY R.RESV_TIME
+         FETCH FIRST 5 ROWS ONLY
+    </select>
+
+    <!-- 최근 리뷰 3건 -->
+    <select id="selectRecentReviews" resultType="com.petcare.petcare.hospital.vo.HospitalReviewVO">
+        SELECT R.REVIEW_ID AS reviewId,
+               R.RATING    AS rating,
+               R.CONTENT   AS content,
+               R.REG_DATE  AS regDate,
+               M.NICKNAME  AS nickname
+          FROM TB_REVIEW R
+          JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+         WHERE R.REVIEW_TYPE = 'HOSPITAL'
+           AND R.TARGET_ID   = #{hospitalId}
+         ORDER BY R.REG_DATE DESC
+         FETCH FIRST 3 ROWS ONLY
+    </select>
 
 </mapper>

@@ -611,4 +611,109 @@
            AND DR.REVIEW_TYPE = 'STAY'
          ORDER BY DR.REQ_DATE DESC, DR.REQUEST_ID DESC
     </select>
+
+   <!-- ══════════════════════════════════════════════
+        HYJ 26.08.06 대시보드 집계 쿼리
+    ══════════════════════════════════════════════ -->
+
+    <!-- 특정 날짜 예약(체크인) 건수 -->
+    <select id="countResvByDate" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'STAY'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND TRUNC(CHECKIN_DATE) = TO_DATE(#{dt}, 'YYYY-MM-DD')
+           AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+    </select>
+
+    <!-- 특정 날짜 체크아웃 건수 -->
+    <select id="countCheckoutByDate" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'STAY'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND TRUNC(CHECKOUT_DATE) = TO_DATE(#{dt}, 'YYYY-MM-DD')
+           AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+    </select>
+
+    <!-- 이번 달 매출 (특정 기준일까지) -->
+    <select id="sumMonthRevenue" resultType="long">
+        SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'STAY'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND STATUS_CD IN ('CONFIRMED', 'CHECKIN', 'CHECKOUT', 'DONE')
+           AND CHECKIN_DATE >= TRUNC(TO_DATE(#{dt}, 'YYYY-MM-DD'), 'MM')
+           AND CHECKIN_DATE &lt;= TO_DATE(#{dt}, 'YYYY-MM-DD')
+    </select>
+
+    <!-- 예약 상태별 건수 (이번 달 전체) -->
+    <select id="countByStatus" resultType="map">
+        SELECT STATUS_CD AS "STATUS_CD", COUNT(*) AS "CNT"
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'STAY'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND CHECKIN_DATE >= TRUNC(SYSDATE, 'MM')
+         GROUP BY STATUS_CD
+    </select>
+
+    <!-- 일별 예약 건수 + 매출 (최근 N일) -->
+    <select id="selectDailyStats" resultType="com.petcare.petcare.biz.vo.DailyStatVO">
+        SELECT TO_CHAR(D.DT, 'MM-DD') AS dt,
+               NVL(R.CNT, 0)          AS resvCount,
+               NVL(R.REV, 0)          AS revenue
+          FROM (SELECT TRUNC(SYSDATE) - (LEVEL - 1) AS DT
+                  FROM DUAL
+               CONNECT BY LEVEL &lt;= #{days}
+               ) D
+          LEFT JOIN (
+               SELECT TRUNC(CHECKIN_DATE) AS RD,
+                      COUNT(*)            AS CNT,
+                      NVL(SUM(TOTAL_AMOUNT), 0) AS REV
+                 FROM TB_RESERVATION
+                WHERE RESV_TYPE  = 'STAY'
+                  AND TARGET_ID  = TO_CHAR(#{targetId})
+                  AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+                  AND CHECKIN_DATE >= TRUNC(SYSDATE) - #{days} + 1
+                GROUP BY TRUNC(CHECKIN_DATE)
+               ) R ON R.RD = D.DT
+         ORDER BY D.DT
+    </select>
+
+    <!-- 오늘 체크인 예약 목록 (최대 5건) -->
+    <select id="selectTodayCheckinList" resultType="com.petcare.petcare.stay.vo.ReservationVO">
+        SELECT R.RESV_ID      AS resvId,
+               R.STATUS_CD    AS statusCd,
+               R.CHECKIN_DATE AS checkinDate,
+               R.CHECKOUT_DATE AS checkoutDate,
+               M.MEMBER_NAME  AS memberName,
+               P.PET_NAME     AS petName,
+               P.BREED        AS petBreed,
+               SR.NAME        AS roomName
+          FROM TB_RESERVATION R
+          JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+          LEFT JOIN TB_PET P ON P.PET_ID = R.PET_ID
+          LEFT JOIN TB_STAY_ROOM SR ON SR.ROOM_ID = R.ROOM_ID
+         WHERE R.RESV_TYPE  = 'STAY'
+           AND R.TARGET_ID  = TO_CHAR(#{stayId})
+           AND TRUNC(R.CHECKIN_DATE) = TRUNC(SYSDATE)
+           AND R.STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+         ORDER BY R.CHECKIN_DATE
+         FETCH FIRST 5 ROWS ONLY
+    </select>
+
+    <!-- 최근 리뷰 3건 -->
+    <select id="selectRecentReviews" resultType="com.petcare.petcare.stay.vo.StayReviewVO">
+        SELECT R.REVIEW_ID AS reviewId,
+               R.RATING    AS rating,
+               R.CONTENT   AS content,
+               R.REG_DATE  AS regDate,
+               M.NICKNAME  AS nickname
+          FROM TB_REVIEW R
+          JOIN TB_MEMBER M ON M.MEMBER_NO = R.MEMBER_NO
+         WHERE R.REVIEW_TYPE = 'STAY'
+           AND R.TARGET_ID   = #{stayId}
+         ORDER BY R.REG_DATE DESC
+         FETCH FIRST 3 ROWS ONLY
+    </select>
 </mapper>

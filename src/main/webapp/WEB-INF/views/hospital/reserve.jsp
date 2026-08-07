@@ -249,8 +249,7 @@ function goBackToStep1() {
   }
   var body = new URLSearchParams();
   body.append('hospitalId', hospitalId);
-  body.append('_csrf', csrfToken);
-  fetch(contextPath + '/hospital/reserve/hold/release', {
+  csrfFetch(contextPath + '/hospital/reserve/hold/release', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -452,7 +451,7 @@ function goToPetStep() {
   body.append('resvTime', selectedResvTime);
   body.append('_csrf', csrfToken);
 
-  fetch(contextPath + '/hospital/reserve/hold', {
+  csrfFetch(contextPath + '/hospital/reserve/hold', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

@@ -101,4 +101,10 @@ public interface BizHospitalService {
     List<HospitalResvExceptionVO> getResvExceptionList(Long hospitalId, String fromDate, String toDate) throws Exception;
     void saveResvException(Long hospitalId, HospitalResvExceptionVO vo) throws Exception;
     void deleteResvException(Long hospitalId, Long excId) throws Exception;
+
+   // ── HYJ 26.08.06 대시보드 ──
+   com.petcare.petcare.biz.vo.BizDashboardVO getDashboardData(Long hospitalId, int chartDays) throws Exception;
+   java.util.List<com.petcare.petcare.hospital.vo.ReservationVO> getTodayResvList(Long hospitalId);
+   java.util.List<com.petcare.petcare.hospital.vo.HospitalReviewVO> getRecentReviews(Long hospitalId);
+
 }

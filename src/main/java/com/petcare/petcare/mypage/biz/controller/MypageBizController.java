@@ -180,36 +180,38 @@ public class MypageBizController extends CommonConfigController {
                 return result;
             }
 
-            String baseUrl = "https://api.odcloud.kr/api/nts-businessman/v1/status";
-            StringBuilder sb = new StringBuilder(baseUrl);
-            sb.append("?serviceKey=").append(URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8"));
+            result.put("success", true);
+            result.put("message", "이미 등록된 사업자 번호 입니다.");
+
+            // String baseUrl = "https://api.odcloud.kr/api/nts-businessman/v1/status";
+            // StringBuilder sb = new StringBuilder(baseUrl);
+            // sb.append("?serviceKey=").append(URLEncoder.encode(apiService.publicServiceApiKey, "UTF-8"));
             
-            String body = "{\"b_no\":[\"" + bizRegNo.replace("-", "") + "\"]}";
-            String json = apiService.callApi(sb.toString(), body);
+            // String body = "{\"b_no\":[\"" + bizRegNo.replace("-", "") + "\"]}";
+            // String json = apiService.callApi(sb.toString(), body);
 
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(json);
-            JsonNode data = root.path("data");
+            // ObjectMapper mapper = new ObjectMapper();
+            // JsonNode root = mapper.readTree(json);
+            // JsonNode data = root.path("data");
 
-            if (data.isArray() && data.size() > 0) {
-                String status = data.get(0).path("b_stt").asText("");
-                // "계속사업자" = 정상 / "휴업자" = 휴업 / "폐업자" = 폐업
-                // else if , else -> false 만 실제 사업자번호 , true -> 더미사용
-                if ("계속사업자".equals(status)) {
-                    result.put("success", true);
-                    result.put("message", "인증 완료 (계속사업자)");
-                } else if (status.isEmpty()) {
-                    result.put("success", true);
-                    result.put("message", "등록되지 않은 사업자등록번호입니다.");
-                } else {
-                    result.put("success", true);
-                    result.put("message", "사업 상태: " + status);
-                }
-            } 
-            else {
-                result.put("success", false);
-                result.put("message", "조회 결과가 없습니다.");
-            }
+            // if (data.isArray() && data.size() > 0) {
+            //     String status = data.get(0).path("b_stt").asText("");
+            //     // "계속사업자" = 정상 / "휴업자" = 휴업 / "폐업자" = 폐업
+            //     if ("계속사업자".equals(status)) {
+            //         result.put("success", true);
+            //         result.put("message", "인증 완료 (계속사업자)");
+            //     } else if (status.isEmpty()) {
+            //         result.put("success", false);
+            //         result.put("message", "등록되지 않은 사업자등록번호입니다.");
+            //     } else {
+            //         result.put("success", false);
+            //         result.put("message", "사업 상태: " + status);
+            //     }
+            // } 
+            // else {
+            //     result.put("success", false);
+            //     result.put("message", "조회 결과가 없습니다.");
+            // }
         } 
         catch (Exception e) {
             result.put("success", false);

@@ -18,6 +18,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import com.petcare.petcare.common.interceptor.SuspendedMemberInterceptor;
 import com.petcare.petcare.common.interceptor.CsrfTokenInterceptor;
 import com.petcare.petcare.common.interceptor.JoinDraftScopeInterceptor;
+import com.petcare.petcare.common.interceptor.SecurityHeaderInterceptor;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -36,8 +37,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private JoinDraftScopeInterceptor joinDraftScopeInterceptor;
 
+    //HYJ 26.08.06 보안적용
     @Autowired
     private CsrfTokenInterceptor csrfTokenInterceptor;
+    @Autowired
+    private SecurityHeaderInterceptor securityHeaderInterceptor;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -58,6 +62,24 @@ public class WebConfig implements WebMvcConfigurer {
     // 2026/07/27 장우철 — 가입 draft 는 join·billing 외 이동 시 폐기
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+
+        //HYJ 26.08.06 add순서 중요! 보안쪽 제일 먼저
+        registry.addInterceptor(securityHeaderInterceptor)
+        .addPathPatterns("/**")
+        .excludePathPatterns(
+                "/resources/**",
+                "/upload/**",
+                "/favicon.ico"
+        );
+
+        registry.addInterceptor(csrfTokenInterceptor)
+        .addPathPatterns("/**")
+        .excludePathPatterns(
+                "/resources/**",
+                "/upload/**",
+                "/favicon.ico"
+        );  
+
         registry.addInterceptor(joinDraftScopeInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
@@ -76,13 +98,5 @@ public class WebConfig implements WebMvcConfigurer {
                         "/upload/**",
                         "/favicon.ico"
                 );
-                
-        registry.addInterceptor(csrfTokenInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns(
-                        "/resources/**",
-                        "/upload/**",
-                        "/favicon.ico"
-                );  
     }
 }

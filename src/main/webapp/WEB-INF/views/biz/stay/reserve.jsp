@@ -233,7 +233,7 @@
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + resvId + '">' +
       '<input type="hidden" name="statusCd" value="' + statusCd + '">' +
-      '<input type="hidden" name="_csrf" value="' + csrfToken + '">';
+      '<input type="hidden" name="_csrf" value="${_csrf}">';
     document.body.appendChild(form);
     form.submit();
   }
@@ -268,7 +268,7 @@
       '<input type="hidden" name="resvId" value="' + cancelTargetResvId + '">' +
       '<input type="hidden" name="statusCd" value="CANCEL">' +
       '<input type="hidden" name="cancelReason" value="">' +
-      '<input type="hidden" name="_csrf" value="' + csrfToken + '">';
+      '<input type="hidden" name="_csrf" value="${_csrf}">';
     form.querySelector('input[name="cancelReason"]').value = reason;
     document.body.appendChild(form);
     form.submit();

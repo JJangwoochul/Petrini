@@ -52,7 +52,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -105,13 +104,21 @@ public class BizStayController extends BizBaseController {
     }
     
     @GetMapping({"", "/"})
-    public String stayDashboard(HttpSession session, Model model) {
+    public String stayDashboard(HttpSession session, Model model) throws Exception {
         MemberVO member = getBizMember(session);
         if (member == null) 
             return "redirect:/login";
 
-        // StayVO stay = bizStayService.getStayByBizId(member.getMemberId());
-        // model.addAttribute("stay", stay);
+        //HYJ 26.08.06 대시보드
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getStayId() == null) {
+            return "redirect:/mypage/biz";
+        }
+
+        model.addAttribute("stay", stay);
+        model.addAttribute("dash", bizStayService.getDashboardData(stay.getStayId(), 7));
+        model.addAttribute("todayList", bizStayService.getTodayCheckinList(stay.getStayId()));
+        model.addAttribute("recentReviews", bizStayService.getRecentReviews(stay.getStayId()));
 
         return "biz/stay/dashboard";
     }

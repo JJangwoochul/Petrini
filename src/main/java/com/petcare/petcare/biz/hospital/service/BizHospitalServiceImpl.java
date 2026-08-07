@@ -586,4 +586,64 @@ public class BizHospitalServiceImpl implements BizHospitalService {
             throw new IllegalStateException("예외를 찾을 수 없거나 이미 삭제되었습니다.");
         }
     }
+
+    // ── 대시보드 ──
+
+    @Override
+    public com.petcare.petcare.biz.vo.BizDashboardVO getDashboardData(Long hospitalId, int chartDays) throws Exception {
+        com.petcare.petcare.biz.vo.BizDashboardVO dash = new com.petcare.petcare.biz.vo.BizDashboardVO();
+        String today = java.time.LocalDate.now().toString();
+        String yesterday = java.time.LocalDate.now().minusDays(1).toString();
+
+        // 요약 카드
+        dash.setTodayResvCount(bizHospitalMapper.countResvByDate(hospitalId, today));
+        dash.setTodayResvYesterday(bizHospitalMapper.countResvByDate(hospitalId, yesterday));
+        dash.setPendingCount(bizHospitalMapper.countPendingReservations(hospitalId));
+        dash.setPendingYesterday(0);
+        dash.setDoneCount(bizHospitalMapper.countDoneByDate(hospitalId, today));
+        dash.setDoneYesterday(bizHospitalMapper.countDoneByDate(hospitalId, yesterday));
+        dash.setMonthRevenue(bizHospitalMapper.sumMonthRevenue(hospitalId, today));
+        dash.setMonthRevenueYesterday(bizHospitalMapper.sumMonthRevenue(hospitalId, yesterday));
+
+        // 상태 현황 (도넛)
+        java.util.List<java.util.Map<String, Object>> statusList = bizHospitalMapper.countByStatus(hospitalId);
+        int total = 0;
+        for (java.util.Map<String, Object> row : statusList) {
+            String st = (String) row.get("STATUS_CD");
+            int cnt = ((Number) row.get("CNT")).intValue();
+            total += cnt;
+            if ("CONFIRMED".equals(st)) dash.setStatusConfirmed(cnt);
+            else if ("PENDING".equals(st)) dash.setStatusPending(cnt);
+            else if ("DONE".equals(st)) dash.setStatusDone(cnt);
+            else if ("CANCEL".equals(st) || "REJECTED".equals(st))
+                dash.setStatusCancel(dash.getStatusCancel() + cnt);
+        }
+        dash.setTotalStatusCount(total);
+
+        // 차트 (일별)
+        java.util.List<com.petcare.petcare.biz.vo.DailyStatVO> dailyList = bizHospitalMapper.selectDailyStats(hospitalId, chartDays);
+        java.util.List<String> labels = new java.util.ArrayList<>();
+        java.util.List<Integer> counts = new java.util.ArrayList<>();
+        java.util.List<Long> revenues = new java.util.ArrayList<>();
+        for (com.petcare.petcare.biz.vo.DailyStatVO d : dailyList) {
+            labels.add(d.getDt());
+            counts.add(d.getResvCount());
+            revenues.add(d.getRevenue());
+        }
+        dash.setChartLabels(labels);
+        dash.setChartResvCounts(counts);
+        dash.setChartRevenues(revenues);
+
+        return dash;
+    }
+
+    @Override
+    public java.util.List<com.petcare.petcare.hospital.vo.ReservationVO> getTodayResvList(Long hospitalId) {
+        return bizHospitalMapper.selectTodayResvList(hospitalId);
+    }
+
+    @Override
+    public java.util.List<com.petcare.petcare.hospital.vo.HospitalReviewVO> getRecentReviews(Long hospitalId) {
+        return bizHospitalMapper.selectRecentReviews(hospitalId);
+    }
 }
