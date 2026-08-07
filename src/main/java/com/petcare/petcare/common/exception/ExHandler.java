@@ -45,18 +45,20 @@ public class ExHandler {
         if (uri.contains(".well-known") || uri.endsWith("/favicon.ico")) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("not_found");
         }
-
+    
         logException(e, request);
-
+    
         if (isApiRequest(request)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error");
         }
-
+    
+        // redirect:/ 대신 에러 페이지 직접 반환 (무한 루프 방지)
         ModelAndView mav = new ModelAndView();
         if (uri.startsWith("/community")) {
             mav.setViewName("redirect:/community?error=server");
         } else {
-            mav.setViewName("redirect:/");
+            mav.setViewName("error/500");  // error/500.jsp를 만들어두거나
+            mav.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return mav;
     }
