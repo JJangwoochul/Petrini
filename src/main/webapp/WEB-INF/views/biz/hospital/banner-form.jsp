@@ -31,12 +31,11 @@
                         <select name="positionCd" required
                                 style="border:1px solid #E4E6ED;border-radius:8px;padding:10px 14px;font-size:14px;background:#fff">
                             <option value="">위치를 선택하세요</option>
-                            <option value="MAIN_HERO">메인 히어로 (메인페이지 상단 슬라이드)</option>
-                            <option value="MAIN_MID">메인 중간 (메인페이지 섹션 사이)</option>
-                            <option value="STORE">쇼핑 (쇼핑 목록 상단)</option> <%-- 2026-08-06 박유정 쇼핑몰→쇼핑 --%>
-                            <option value="HOSPITAL">병원 (병원 목록 상단)</option>
-                            <option value="STAY">숙소 (숙소 목록 상단)</option>
-                            <option value="GROOMING">미용 (미용 목록 상단)</option>
+                            <option value="MAIN_HERO">메인 히어로 - 1200 × 360px (메인페이지 상단 슬라이드)</option>
+                            <option value="MAIN_MID">메인 중간 - 1200 × 200px (메인페이지 섹션 사이)</option>
+                            <option value="STORE">쇼핑 - 728 x 100px(쇼핑 목록 상단)</option> <%-- 2026-08-06 박유정 쇼핑몰→쇼핑 --%>
+                            <option value="HOSPITAL">병원 - 730 x 100px(병원 목록 상단)</option>
+                            <option value="STAY">숙소 - 730 x 100px(숙소 목록 상단)</option>
                         </select>
                         <span style="font-size:12px;color:#999">선택한 위치에 배너가 노출됩니다. 관리자 승인 후 적용되며, 위치별 최대 5개까지 신청·노출됩니다.</span>
                     </div>
@@ -123,12 +122,11 @@ document.getElementById('bannerImageInput').addEventListener('change', function(
 document.querySelector('select[name="positionCd"]').addEventListener('change', function() {
     var guide = document.getElementById('sizeGuide');
     var sizes = {
-        'MAIN_HERO': '960 x 400px',
-        'MAIN_MID':  '960 x 200px',
-        'STORE':     '728 x 120px',
-        'HOSPITAL':  '728 x 120px',
-        'STAY':      '728 x 120px',
-        'GROOMING':  '728 x 120px'
+        'MAIN_HERO': '1200 x 360px',
+        'MAIN_MID':  '120 x 200px',
+        'STORE':     '730 x 100px',
+        'HOSPITAL':  '730 x 100px',
+        'STAY':      '730 x 100px',
     };
     var size = sizes[this.value] || '960 x 400px';
     guide.textContent = '권장 크기: ' + size + ' / JPG, PNG (최대 5MB)';

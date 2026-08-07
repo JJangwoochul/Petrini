@@ -30,26 +30,27 @@
         <result property="imageUrl"   column="IMAGE_URL"/>
     </resultMap>
 
+    <!-- 2026-08-07 박유정 — Oracle ROWNUM + maxCount 바인드 (FETCH FIRST #{n} 은 바인드 미지원 환경 있음) -->
     <select id="selectActiveBannersByPosition"
-            parameterType="String"
             resultMap="bannerActiveMap">
-        SELECT
-                    b.BANNER_ID, 
-                    b.TITLE, 
-                    b.LINK_URL,
-                    b.POSITION_CD, 
-                    TO_CHAR(b.START_DATE, 'YYYY-MM-DD') AS START_DATE, 
-                    TO_CHAR(b.END_DATE, 'YYYY-MM-DD') AS END_DATE, 
-                    biz.BIZ_NAME,
-                    f.FILE_URL AS IMAGE_URL
-        FROM        TB_BANNER b
-        JOIN        TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
-        <include refid="bannerImageJoin"/>
-        WHERE       b.STATUS_CD = 'ACTIVE'
-          AND       b.POSITION_CD = #{positionCd}
-          AND       TRUNC(SYSDATE) BETWEEN TRUNC(b.START_DATE) AND TRUNC(b.END_DATE)
-        ORDER       BY b.BANNER_ID ASC
-        FETCH FIRST 5 ROWS ONLY  <!-- 2026-08-06 박유정 — 위치별 최대 5개 노출 -->
+        SELECT * FROM (
+            SELECT
+                        b.BANNER_ID,
+                        b.TITLE,
+                        b.LINK_URL,
+                        b.POSITION_CD,
+                        TO_CHAR(b.START_DATE, 'YYYY-MM-DD') AS START_DATE,
+                        TO_CHAR(b.END_DATE, 'YYYY-MM-DD') AS END_DATE,
+                        biz.BIZ_NAME,
+                        f.FILE_URL AS IMAGE_URL
+            FROM        TB_BANNER b
+            JOIN        TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
+            <include refid="bannerImageJoin"/>
+            WHERE       b.STATUS_CD = 'ACTIVE'
+              AND       b.POSITION_CD = #{positionCd}
+              AND       TRUNC(SYSDATE) BETWEEN TRUNC(b.START_DATE) AND TRUNC(b.END_DATE)
+            ORDER       BY b.BANNER_ID ASC
+        ) WHERE ROWNUM &lt;= #{maxCount}
     </select>
 
     <!-- 2026-08-06 박유정 — 위치·상태별 건수 (레거시) -->

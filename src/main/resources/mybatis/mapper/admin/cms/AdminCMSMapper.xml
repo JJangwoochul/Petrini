@@ -84,6 +84,7 @@
     </select>
 
     <!-- ─── 관리자: 배너 상세 — 2026-08-06 박유정 ─── -->
+    <!-- 2026-08-07 박유정 — b.FILE_ID AS fileId SELECT 정리 (FROM 절 오타 수정) -->
     <select id="selectBannerDetail" parameterType="long"
             resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         SELECT
@@ -97,6 +98,7 @@
                 b.STATUS_CD   AS statusCd,
                 b.REJECT_REASON AS rejectReason,
                 b.REG_DATE    AS regDate,
+                b.FILE_ID     AS fileId,
                 biz.BIZ_NAME  AS bizName,
                 biz.BIZ_TYPE  AS bizType,
                 f.FILE_URL    AS imageUrl
@@ -105,6 +107,16 @@
         <include refid="bannerImageJoin"/>
         WHERE   b.BANNER_ID = #{bannerId}
     </select>
+
+    <!-- 2026-08-07 박유정 — 관리자 배너 정보 수정 (제목·링크·이미지 FILE_ID) -->
+    <update id="updateBannerInfo" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        UPDATE  TB_BANNER
+        SET     TITLE    = #{title},
+                LINK_URL = #{linkUrl, jdbcType=VARCHAR},
+                <if test="fileId != null">FILE_ID = #{fileId},</if>
+                MOD_DATE = SYSDATE
+        WHERE   BANNER_ID = #{bannerId}
+    </update>
 
     <update id="updateBannerPeriod" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
         <!-- 2026-08-06 박유정 — 관리자 광고 기간 재설정 -->

@@ -31,6 +31,8 @@ import com.petcare.petcare.admin.controller.AdminBaseController;
 
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.web.multipart.MultipartFile;
+
 @Controller
 @RequestMapping("/admin/cms")
 public class AdminCMSController extends AdminBaseController {
@@ -132,6 +134,26 @@ public class AdminCMSController extends AdminBaseController {
             rttr.addFlashAttribute("msg", "광고 기간이 변경되었습니다.");
         } catch (IllegalArgumentException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/cms/banner/detail?bannerId=" + bannerId;
+    }
+
+    // 2026-08-07 박유정 — 관리자 배너 정보 수정 (제목·링크·이미지, POST /banner/update)
+    @PostMapping("/banner/update")
+    public String adminBannerUpdateInfo(@RequestParam Long bannerId,
+                                        @RequestParam String title,
+                                        @RequestParam(required = false) String linkUrl,
+                                        @RequestParam(required = false) MultipartFile bannerImage,
+                                        HttpSession session,
+                                        RedirectAttributes rttr) {
+        if (getAdmin(session) == null) return "redirect:/admin/login";
+        try {
+            adminCMSService.updateBannerInfo(bannerId, title, linkUrl, bannerImage);
+            rttr.addFlashAttribute("msg", "배너 정보가 저장되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "배너 정보 저장 중 오류가 발생했습니다.");
         }
         return "redirect:/admin/cms/banner/detail?bannerId=" + bannerId;
     }

@@ -316,14 +316,18 @@ public class BizStayServiceImpl implements BizStayService {
         if (image == null || image.isEmpty()) {
             throw new IllegalArgumentException("배너 이미지를 선택해 주세요.");
         }
+        // 2026-08-07 박유정 — JPG/PNG/WebP만 허용 (PDF 등은 <img>에서 표시 불가)
+        validateBannerImageFile(image);
 
         // 2026-08-06 박유정 — 종료일 과거 신청 차단 + 위치별 슬롯 제한
         validateBannerApplyPeriod(banner.getStartDate(), banner.getEndDate());
 
+        // 2026-08-07 박유정 — 위치별 슬롯 상한 (MAIN_MID 1개)
+        int maxSlots = BannerConstants.getMaxPerPosition(banner.getPositionCd());
         int occupied = mainBannerMapper.countReservedSlotsByPosition(banner.getPositionCd());
-        if (occupied >= BannerConstants.MAX_PER_POSITION) {
+        if (occupied >= maxSlots) {
             throw new IllegalArgumentException(
-                    "해당 노출 위치의 배너는 최대 " + BannerConstants.MAX_PER_POSITION + "개까지 신청할 수 있습니다.");
+                    "해당 노출 위치의 배너는 최대 " + maxSlots + "개까지 신청할 수 있습니다.");
         }
 
         FileVO file = fileService.uploadFile(image, "BANNER", banner.getBizNo());
@@ -348,6 +352,22 @@ public class BizStayServiceImpl implements BizStayService {
         String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
         if (endDate.compareTo(today) < 0) {
             throw new IllegalArgumentException("종료일이 지났습니다. 기간을 수정한 후 신청해 주세요.");
+        }
+    }
+
+    // 2026-08-07 박유정 — 배너 이미지 형식 검증 (PDF 등 차단)
+    private void validateBannerImageFile(MultipartFile image) {
+        String originalName = image.getOriginalFilename();
+        if (originalName != null) {
+            String lower = originalName.toLowerCase();
+            if (lower.endsWith(".pdf") || lower.endsWith(".doc") || lower.endsWith(".docx")
+                    || lower.endsWith(".hwp") || lower.endsWith(".ppt") || lower.endsWith(".pptx")) {
+                throw new IllegalArgumentException("배너는 JPG, PNG, WebP 이미지 파일만 등록할 수 있습니다.");
+            }
+        }
+        String contentType = image.getContentType();
+        if (contentType != null && !contentType.isBlank() && !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("배너는 JPG, PNG, WebP 이미지 파일만 등록할 수 있습니다.");
         }
     }
 

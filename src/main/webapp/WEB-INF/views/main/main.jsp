@@ -113,6 +113,17 @@
         </div>
     </section>
 
+    <%-- 2026-08-07 박유정 — 메인 중간 배너 (MAIN_MID, Step 2에서 API 연동) --%>
+    <div class="main-mid-banner-wrap" id="mainMidBannerWrap">
+        <div class="main-mid-banner" id="mainMidBanner">
+             <%-- 2026-08-07 박유정 — MAIN_MID 없을 때 기본 배너 --%>
+               <a href="${contextPath}/store" class="main-mid-banner-link" id="mainMidBannerFallback">
+                   <img src="https://placehold.co/1200x200/EAF7F2/2BAB82?text=PetCare"
+                      alt="펫린이 쇼핑 바로가기">
+            </a>
+        </div>
+    </div>
+
 
     <%-- 커뮤니티 미리보기 (최신 3건) --%>
     <section class="section-wrap">
@@ -306,14 +317,17 @@
     var div = document.createElement('div');
     div.className = 'hero-slide' + (i === 0 ? ' active' : '');
 
-    // 2026-08-06 박유정 — 외부 URL /upload/ 중복 방지 (store/list.jsp 동일 패턴)
+    // 2026-08-07 박유정 — API imageUrl 절대경로·상대경로 분기 (UploadUrlUtil 연동)
     var imgSrc = banner.imageUrl || '';
-    if (imgSrc.indexOf('http') === 0) {
-        // Unsplash 등 외부 URL → 그대로
-    } else if (imgSrc.indexOf('/upload/') === 0) {
-        imgSrc = '${contextPath}' + imgSrc;
-    } else {
-        imgSrc = '${contextPath}/upload/' + imgSrc;
+    if (imgSrc && imgSrc.indexOf('http') !== 0) {
+        var ctx = '${contextPath}';
+        if (!(ctx && imgSrc.indexOf(ctx + '/') === 0)) {
+            if (imgSrc.indexOf('/upload/') === 0) {
+                imgSrc = ctx + imgSrc;
+            } else if (imgSrc.indexOf('/') !== 0) {
+                imgSrc = ctx + '/upload/' + imgSrc;
+            }
+        }
     }
     div.innerHTML =
     '<div class="hero-image">' +
@@ -349,3 +363,44 @@
         if (heroControls) heroControls.style.display = 'none';
     });
 </script>
+
+<script>
+// 2026-08-07 박유정 — 메인 중간 배너 API (MAIN_MID, 없으면 fallback 유지)
+(function() {
+    var ctx = '${contextPath}';
+    fetch(ctx + '/api/banners?position=MAIN_MID')
+        .then(function(res) { return res.json(); })
+        .then(function(list) {
+            var wrap = document.getElementById('mainMidBannerWrap');
+            var box  = document.getElementById('mainMidBanner');
+            if (!wrap || !box) return;
+
+            // 2026-08-07 박유정 — 활성 배너 없으면 기본 placeholder 유지
+            if (!list || list.length === 0) {
+                return;
+            }
+
+            // 2026-08-07 박유정 — DB 배너 있으면 fallback 제거
+            var fallback = document.getElementById('mainMidBannerFallback');
+            if (fallback) fallback.remove();
+
+            // 2026-08-07 박유정 — MAIN_MID 슬롯 이미지 렌더 (API imageUrl 그대로 사용)
+            for (var i = 0; i < list.length; i++) {
+                var b = list[i];
+                var imgSrc = b.imageUrl || '';
+                if (!imgSrc) continue;
+
+                var a = document.createElement('a');
+                a.href = b.linkUrl || '#';
+                a.className = 'main-mid-banner-link';
+                a.innerHTML = '<img src="' + imgSrc + '" alt="' + (b.title || '').replace(/"/g, '&quot;') + '"' +
+                    ' onerror="this.src=\'https://placehold.co/1200x200/EAF7F2/2BAB82?text=AD\'">';
+                box.appendChild(a);
+            }
+        })
+        .catch(function(err) {
+            console.error('메인 중간 배너 로드 실패', err);
+        });
+})();
+</script>
+

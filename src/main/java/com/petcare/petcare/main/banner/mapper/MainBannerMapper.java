@@ -27,6 +27,7 @@ import com.petcare.petcare.main.banner.vo.MainBannerVO;
 @Mapper
 public interface MainBannerMapper {
     // ── 사용자: 위치별 활성 배너 조회 ──
+    // 2026-08-07 박유정 — maxCount 바인드 (MAIN_MID 1건, Oracle ROWNUM)
     List<MainBannerVO> selectActiveBannersByPosition(@Param("positionCd") String positionCd,
                                                      @Param("maxCount") int maxCount);
 

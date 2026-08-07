@@ -38,6 +38,10 @@ import com.petcare.petcare.main.banner.service.BannerExpiryService;
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 
+import org.springframework.web.multipart.MultipartFile;
+import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.file.vo.FileVO;
+
 @Service
 public class AdminCMSServiceImpl implements AdminCMSService {
     private static volatile boolean testStayBannersCleaned = false;
@@ -53,6 +57,9 @@ public class AdminCMSServiceImpl implements AdminCMSService {
 
     @Autowired
     private BannerExpiryService bannerExpiryService;
+
+    @Autowired
+    private FileService fileService;
     
     // ── 2026-08-06 박유정 — 관리자: 탭·대분류별 배너 목록 ──
     @Override
@@ -184,7 +191,7 @@ public class AdminCMSServiceImpl implements AdminCMSService {
             testStayBannersCleaned = true;
         }
     }
-
+    // 2026-08-07 박유정 — 관리자 배너 상세 1건 (만료 동기화 후 조회)
     @Override
     public MainBannerVO getBannerDetail(Long bannerId) {
         bannerExpiryService.expirePastEndDateBanners();
@@ -193,6 +200,46 @@ public class AdminCMSServiceImpl implements AdminCMSService {
             throw new IllegalArgumentException("배너를 찾을 수 없습니다.");
         }
         return banner;
+    }
+
+    // 2026-08-07 박유정 — 관리자 배너 정보 수정 (제목·링크·이미지)
+    @Override
+    @Transactional
+    public void updateBannerInfo(Long bannerId, String title, String linkUrl,
+                                 MultipartFile bannerImage) throws Exception {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("배너 제목을 입력해 주세요.");
+        }
+        MainBannerVO banner = adminCMSMapper.selectBannerDetail(bannerId);
+        if (banner == null) {
+            throw new IllegalArgumentException("배너를 찾을 수 없습니다.");
+        }
+
+        MainBannerVO vo = new MainBannerVO();
+        vo.setBannerId(bannerId);
+        vo.setTitle(title.trim());
+        vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl.trim() : null);
+
+        Long oldFileId = banner.getFileId();
+
+        if (bannerImage != null && !bannerImage.isEmpty()) {
+            // 2026-08-07 박유정 — PDF·문서 업로드 차단 후 BANNER 파일 교체
+            String name = bannerImage.getOriginalFilename();
+            if (name != null) {
+                String lower = name.toLowerCase();
+                if (lower.endsWith(".pdf") || lower.endsWith(".doc") || lower.endsWith(".docx")) {
+                    throw new IllegalArgumentException("배너는 JPG, PNG 이미지 파일만 등록할 수 있습니다.");
+                }
+            }
+            FileVO file = fileService.uploadFile(bannerImage, "BANNER", banner.getBizNo());
+            vo.setFileId(file.getFileId());
+            adminCMSMapper.updateBannerInfo(vo);
+            if (oldFileId != null) {
+                fileService.deleteFile(oldFileId);
+            }
+        } else {
+            adminCMSMapper.updateBannerInfo(vo);
+        }
     }
 
     @Override
@@ -319,10 +366,12 @@ public class AdminCMSServiceImpl implements AdminCMSService {
 
     // 2026-08-06 박유정 — 위치별 노출 슬롯 제한 (기간 만료 전 ACTIVE 기준)
     private void ensureActiveSlotAvailable(String positionCd) {
+        // 2026-08-07 박유정 — MAIN_MID 1개, 그 외 MAX_PER_POSITION
+        int maxSlots = BannerConstants.getMaxPerPosition(positionCd);
         int activeCount = mainBannerMapper.countLiveSlotsByPosition(positionCd);
-        if (activeCount >= BannerConstants.MAX_PER_POSITION) {
+        if (activeCount >= maxSlots) {
             throw new IllegalArgumentException(
-                    "해당 노출 위치에 이미 노출 중인 배너가 " + BannerConstants.MAX_PER_POSITION + "개입니다.");
+                    "해당 노출 위치에 이미 노출 중인 배너가 " + maxSlots + "개입니다.");
         }
     }
 
