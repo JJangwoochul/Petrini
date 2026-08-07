@@ -135,4 +135,13 @@ public interface MypageNotifyService {
     // 2026-07-24 박유정 — 리뷰 삭제 요청 승인 알림 (사업자)
     void sendReviewDeleteApproveNotification(Long bizMemberNo, String targetName,
                                              Long reviewId, String linkUrl);
+
+    // 2026-08-06 박유정 — 배너 신청 승인 알림 (사업자)
+    void sendBannerApproveNotification(Long memberNo, String bannerTitle, String positionLabel, String linkUrl);
+
+    // 2026-08-06 박유정 — 배너 신청 대기(노출예정) 알림 (사업자)
+    void sendBannerHoldNotification(Long memberNo, String bannerTitle, String positionLabel, String holdReason, String linkUrl);
+
+    // 2026-08-06 박유정 — 배너 신청 반려 알림 (사업자)
+    void sendBannerRejectNotification(Long memberNo, String bannerTitle, String positionLabel, String rejectReason, String linkUrl);
 }

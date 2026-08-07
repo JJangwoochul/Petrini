@@ -2,10 +2,10 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
-<c:set var="bizTypeLabel" value="반려동물 숙소" />
+<c:set var="bizTypeLabel" value="반려동물 쇼핑몰" />
 <c:set var="bizPage" value="banner" />
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
-<%@ include file="/WEB-INF/views/biz/common/sidebar_stay.jsp" %>
+<%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
 
 <main class="biz-main">
     <div class="biz-page-head has-action">
@@ -13,18 +13,18 @@
             <h1 class="biz-page-title">배너 광고</h1>
             <p class="biz-page-desc">메인페이지 및 서비스 페이지에 노출할 배너를 신청하세요.</p>
         </div>
-        <a href="${contextPath}/biz/stay/banner/form" class="biz-btn primary">
+        <a href="${contextPath}/biz/store/banner/form" class="biz-btn primary">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             배너 신청
         </a>
     </div>
 
-    <%-- 알림 메시지 (reviews.jsp 와 동일 패턴) --%>
+    <%-- 알림 메시지 (qna.jsp / refunds.jsp 와 동일 패턴) --%>
     <c:if test="${not empty msg}">
-        <div style="margin-bottom:12px;padding:12px 16px;background:#E8F8F1;color:#1F8464;border-radius:8px;font-size:14px;font-weight:600">${msg}</div>
+        <div style="background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-weight:600">${msg}</div>
     </c:if>
     <c:if test="${not empty errorMsg}">
-        <div style="margin-bottom:12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px;font-weight:600">${errorMsg}</div>
+        <div style="background:#FFF1F2;border:1px solid #FECDD3;color:#BE123C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-weight:600">${errorMsg}</div>
     </c:if>
 
     <div class="biz-card">
@@ -53,7 +53,7 @@
                                     <td>
                                         <c:choose>
                                             <c:when test="${not empty banner.imageUrl}">
-                                                <img src="/upload/${banner.imageUrl}" alt=""
+                                                <img src="${contextPath}/upload/${banner.imageUrl}" alt=""
                                                      style="width:120px;height:50px;object-fit:cover;border-radius:6px"
                                                      onerror="this.src='https://placehold.co/120x50/EAF7F2/2BAB82?text=배너'">
                                             </c:when>
@@ -109,7 +109,7 @@
             <c:otherwise>
                 <div style="padding:60px 20px;text-align:center;color:#999">
                     <p>신청한 배너가 없습니다.</p>
-                    <a href="${contextPath}/biz/stay/banner/form" style="color:#2BAB82;text-decoration:underline;margin-top:8px;display:inline-block">배너 신청하기</a>
+                    <a href="${contextPath}/biz/store/banner/form" style="color:#2BAB82;text-decoration:underline;margin-top:8px;display:inline-block">배너 신청하기</a>
                 </div>
             </c:otherwise>
         </c:choose>

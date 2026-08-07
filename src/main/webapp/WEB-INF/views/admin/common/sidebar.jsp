@@ -104,6 +104,10 @@
         <a href="${contextPath}/admin/cms/banner" class="adm-nav-link ${adminPage eq 'cms-banner' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
             배너 관리
+            <%-- 2026-08-06 박유정 — PENDING 심사대기 건수 (AdminSidebarAdvice.pendingBannerCount) --%>
+            <c:if test="${pendingBannerCount > 0}">
+              <span class="adm-nav-badge">${pendingBannerCount}</span>
+            </c:if>
         </a>
         <a href="${contextPath}/admin/cms/notice" class="adm-nav-link ${adminPage eq 'cms-notice' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>

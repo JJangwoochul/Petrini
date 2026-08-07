@@ -66,4 +66,80 @@
                 MOD_DATE = SYSDATE
         WHERE   BANNER_ID = #{bannerId}
     </update>
+
+    <!-- ─── 관리자: 배너 1건 (승인 알림용) ─── -->
+    <select id="selectBannerById" parameterType="long"
+            resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        SELECT
+                b.BANNER_ID   AS bannerId,
+                b.BIZ_NO      AS bizNo,
+                b.TITLE       AS title,
+                b.POSITION_CD AS positionCd,
+                b.STATUS_CD   AS statusCd,
+                biz.BIZ_NAME  AS bizName,
+                biz.BIZ_TYPE  AS bizType
+        FROM    TB_BANNER b
+        JOIN    TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
+        WHERE   b.BANNER_ID = #{bannerId}
+    </select>
+
+    <!-- ─── 관리자: 배너 상세 — 2026-08-06 박유정 ─── -->
+    <select id="selectBannerDetail" parameterType="long"
+            resultType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        SELECT
+                b.BANNER_ID   AS bannerId,
+                b.BIZ_NO      AS bizNo,
+                b.TITLE       AS title,
+                b.LINK_URL    AS linkUrl,
+                b.POSITION_CD AS positionCd,
+                TO_CHAR(b.START_DATE, 'YYYY-MM-DD') AS startDate,
+                TO_CHAR(b.END_DATE, 'YYYY-MM-DD') AS endDate,
+                b.STATUS_CD   AS statusCd,
+                b.REJECT_REASON AS rejectReason,
+                b.REG_DATE    AS regDate,
+                biz.BIZ_NAME  AS bizName,
+                biz.BIZ_TYPE  AS bizType,
+                f.FILE_URL    AS imageUrl
+        FROM    TB_BANNER b
+        JOIN    TB_BUSINESS biz ON biz.BIZ_NO = b.BIZ_NO
+        <include refid="bannerImageJoin"/>
+        WHERE   b.BANNER_ID = #{bannerId}
+    </select>
+
+    <update id="updateBannerPeriod" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        <!-- 2026-08-06 박유정 — 관리자 광고 기간 재설정 -->
+        UPDATE  TB_BANNER
+        SET     START_DATE = TO_DATE(#{startDate}, 'YYYY-MM-DD'),
+                END_DATE   = TO_DATE(#{endDate}, 'YYYY-MM-DD'),
+                MOD_DATE   = SYSDATE
+        WHERE   BANNER_ID  = #{bannerId}
+    </update>
+
+    <delete id="deleteBanner" parameterType="long">
+        DELETE FROM TB_BANNER WHERE BANNER_ID = #{bannerId}
+    </delete>
+
+    <!-- 테스트 숙소 더미 배너 정리 — 2026-08-06 박유정 -->
+    <delete id="deleteTestStayBanners">
+        DELETE FROM TB_BANNER b
+        WHERE EXISTS (
+            SELECT 1
+            FROM   TB_BUSINESS biz
+            WHERE  biz.BIZ_NO = b.BIZ_NO
+              AND  biz.BIZ_TYPE = 'STAY'
+              AND  (
+                    biz.BIZ_NAME LIKE '%테스트%'
+                 OR biz.BIZ_NAME LIKE '테스트%'
+                 OR biz.BIZ_ID LIKE 'test%'
+                 OR biz.BIZ_ID = 'stay'
+              )
+        )
+    </delete>
+
+    <select id="selectMemberNoByBizNo" parameterType="long" resultType="long">
+        SELECT M.MEMBER_NO
+        FROM   TB_BUSINESS B
+        JOIN   TB_MEMBER M ON M.MEMBER_ID = B.BIZ_ID
+        WHERE  B.BIZ_NO = #{bizNo}
+    </select>
 </mapper>

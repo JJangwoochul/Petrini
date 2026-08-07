@@ -457,6 +457,86 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026-08-06 박유정 — 배너 신청 승인 알림 (사업자)
+    @Override
+    @Transactional
+    public void sendBannerApproveNotification(Long memberNo, String bannerTitle,
+                                              String positionLabel, String linkUrl) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeTitle = (bannerTitle != null && !bannerTitle.isBlank()) ? bannerTitle.trim() : "배너";
+        String safePosition = (positionLabel != null && !positionLabel.isBlank()) ? positionLabel.trim() : "지정 위치";
+        String content = "[" + safeTitle + "] 배너 신청이 승인되었습니다.\n\n"
+                + "노출 위치: " + safePosition + "\n"
+                + "설정한 기간 동안 해당 페이지에 노출됩니다.";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("BIZ");
+        vo.setTitle("배너 신청이 승인되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/mypage/biz");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-08-06 박유정 — 배너 신청 대기(노출예정) 알림 (사업자)
+    @Override
+    @Transactional
+    public void sendBannerHoldNotification(Long memberNo, String bannerTitle,
+                                           String positionLabel, String holdReason, String linkUrl) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeTitle = (bannerTitle != null && !bannerTitle.isBlank()) ? bannerTitle.trim() : "배너";
+        String safePosition = (positionLabel != null && !positionLabel.isBlank()) ? positionLabel.trim() : "지정 위치";
+        String safeReason = holdReason != null ? holdReason.trim() : "";
+        if (safeReason.length() > 400) {
+            safeReason = safeReason.substring(0, 397) + "...";
+        }
+        String content = "[" + safeTitle + "] 배너 신청이 노출 예정 상태로 변경되었습니다.\n\n"
+                + "노출 위치: " + safePosition + "\n"
+                + "대기 사유:\n" + safeReason;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("BIZ");
+        vo.setTitle("배너 신청이 노출 예정으로 변경되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/mypage/biz");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-08-06 박유정 — 배너 신청 반려 알림 (사업자)
+    @Override
+    @Transactional
+    public void sendBannerRejectNotification(Long memberNo, String bannerTitle,
+                                             String positionLabel, String rejectReason, String linkUrl) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeTitle = (bannerTitle != null && !bannerTitle.isBlank()) ? bannerTitle.trim() : "배너";
+        String safePosition = (positionLabel != null && !positionLabel.isBlank()) ? positionLabel.trim() : "지정 위치";
+        String safeReason = rejectReason != null ? rejectReason.trim() : "";
+        if (safeReason.length() > 400) {
+            safeReason = safeReason.substring(0, 397) + "...";
+        }
+        String content = "[" + safeTitle + "] 배너 신청이 반려되었습니다.\n\n"
+                + "노출 위치: " + safePosition + "\n"
+                + "반려 사유:\n" + safeReason;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("BIZ");
+        vo.setTitle("배너 신청이 반려되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/mypage/biz");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     private String formatResvWhen(java.util.Date resvDate, String resvTime) {
         String datePart = "-";
         if (resvDate != null) {

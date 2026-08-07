@@ -77,19 +77,22 @@
       Q&A 관리
     </a>
 
+    <%-- 2026-08-06 박유정 — 배너 광고 --%>
+    <a href="${contextPath}/biz/store/banner" class="biz-nav-link ${bizPage eq 'banner' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      배너 광고
+    </a>
+
     <a href="${contextPath}/biz/store/settlement" class="biz-nav-link ${bizPage eq 'settlement' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
       </svg>
       정산 내역
-    </a>
-
-    <a href="${contextPath}/biz/store/contract" class="biz-nav-link ${bizPage eq 'contract' ? 'active' : ''}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23"/>
-        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-      </svg>
-      계약 관리
     </a>
     
     <a href="${contextPath}/biz/store/info" class="biz-nav-link ${bizPage eq 'info' ? 'active' : ''}">

@@ -494,8 +494,13 @@
 
     <!-- ─── 사업자: 배너 신청 INSERT ─── -->
     <!-- 2026/08/03 장우철 — START/END_DATE가 DATE 타입 → TO_DATE로 바인딩 (문자열 INSERT ORA-01861 방지) -->
+    <!-- 2026-08-06 박유정 — BANNER_ID 시퀀스 누락 시 ORA-01400 방지 -->
     <insert id="insertBanner" parameterType="com.petcare.petcare.main.banner.vo.MainBannerVO">
+        <selectKey keyProperty="bannerId" resultType="long" order="BEFORE">
+            SELECT SEQ_TB_BANNER.NEXTVAL FROM DUAL
+        </selectKey>
         INSERT INTO TB_BANNER (
+            BANNER_ID,
             BIZ_NO, 
             TITLE, 
             LINK_URL,
@@ -505,9 +510,10 @@
             END_DATE,
             STATUS_CD
         ) VALUES (
+            #{bannerId},
             #{bizNo}, 
             #{title}, 
-            #{linkUrl},
+            #{linkUrl, jdbcType=VARCHAR},
             #{positionCd}, 
             #{fileId},
             TO_DATE(#{startDate}, 'YYYY-MM-DD'), 

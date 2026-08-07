@@ -349,10 +349,14 @@ ul, ol { list-style: none; }
     border-radius: var(--radius-lg);
     margin: 20px auto;
     max-width: var(--inner-width);
-    padding: 0 20px;
-    overflow: hidden;
+    padding: 0;              /* 0 20px → 0 으로 변경 */
+    overflow: hidden;        /* 이미 있으면 유지 */
     position: relative;
     min-height: 360px;
+}
+/* inner 클래스 padding 덮어쓰기 (main.jsp에 class="hero-section inner") */
+.hero-section.inner {
+    padding: 0;
 }
 .hero-slides { position: relative; }
 .hero-slide {
@@ -406,17 +410,88 @@ ul, ol { list-style: none; }
 }
 .hero-cta:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(43,171,130,.4); }
 
-.hero-image {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
+/* DB 배너 슬라이드: 사진 전체 너비 + 글자 오버레이 */
+.hero-slide {
+    display: none;
+    position: relative;          /* grid 대신 */
+    min-height: 360px;
+    padding: 0;                  /* 기존 padding 제거 */
 }
-.hero-image img {
-    height: 300px;
-    object-fit: contain;
-    filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
+.hero-slide.active {
+    display: block;             /* grid → block */
+}
+/* 2026-08-06 박유정 — 메인 히어로 기본 배너 (DB 배너 없을 때) */
+.hero-slide.hero-slide-default {
+    display: none;
+    position: relative;
+    min-height: 360px;
+    padding: 0;
+}
+.hero-slide.hero-slide-default.active {
+    display: block;
+}
+.hero-slide.hero-slide-default .hero-image {
+    width: 100%;
+    height: 360px;
     border-radius: 0;
+}
+.hero-slide.hero-slide-default .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+    filter: none;
+}
+.hero-slide.hero-slide-default .hero-text {
+    position: absolute;
+    top: 48px;
+    left: 48px;
+    z-index: 2;
+    max-width: 50%;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.hero-slide.hero-slide-default .hero-badge {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    border-color: rgba(255,255,255,.4);
+}
+.hero-slide.hero-slide-default .hero-title {
+    color: #fff;
+}
+.hero-slide.hero-slide-default .hero-desc {
+    color: rgba(255,255,255,.92);
+    margin-bottom: 0;
+}
+
+.hero-slide .hero-image {
+    width: 100%;
+    height: 360px;
+    border-radius: 0;           /* 섹션 모서리에 맞춤 */
+}
+.hero-slide .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: none;               /* 그림자 제거 (선택) */
+}
+
+.hero-slide .hero-text {
+    position: absolute;
+    top: 48px;
+    left: 48px;
+    z-index: 2;
+    max-width: 50%;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.hero-slide .hero-badge {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    border-color: rgba(255,255,255,.4);
+}
+.hero-slide .hero-title {
+    color: #fff;
 }
 
 /* 플로팅 아이콘 */

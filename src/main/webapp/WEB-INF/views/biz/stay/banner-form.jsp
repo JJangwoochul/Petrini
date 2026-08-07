@@ -36,12 +36,12 @@
                             <option value="">위치를 선택하세요</option>
                             <option value="MAIN_HERO">메인 히어로 (메인페이지 상단 슬라이드)</option>
                             <option value="MAIN_MID">메인 중간 (메인페이지 섹션 사이)</option>
-                            <option value="STORE">쇼핑몰 (쇼핑몰 목록 상단)</option>
+                            <option value="STORE">쇼핑 (쇼핑 목록 상단)</option> <%-- 2026-08-06 박유정 쇼핑몰→쇼핑 --%>
                             <option value="HOSPITAL">병원 (병원 목록 상단)</option>
                             <option value="STAY">숙소 (숙소 목록 상단)</option>
                             <option value="GROOMING">미용 (미용 목록 상단)</option>
                         </select>
-                        <span style="font-size:12px;color:#999">선택한 위치에 배너가 노출됩니다. 관리자 승인 후 적용됩니다.</span>
+                        <span style="font-size:12px;color:#999">선택한 위치에 배너가 노출됩니다. 관리자 승인 후 적용되며, 위치별 최대 5개까지 신청·노출됩니다.</span>
                     </div>
 
                     <%-- 노출 기간 --%>
@@ -90,6 +90,23 @@
 <jsp:include page="/WEB-INF/views/biz/common/footer.jsp" />
 
 <script>
+// 기본 노출 기간: 오늘 ~ 30일 후
+(function() {
+    var startInput = document.querySelector('input[name="startDate"]');
+    var endInput = document.querySelector('input[name="endDate"]');
+    if (!startInput || !endInput) return;
+    var today = new Date();
+    var end = new Date(today);
+    end.setDate(end.getDate() + 30);
+    function fmt(d) {
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + m + '-' + day;
+    }
+    if (!startInput.value) startInput.value = fmt(today);
+    if (!endInput.value) endInput.value = fmt(end);
+})();
+
 // 이미지 미리보기
 document.getElementById('bannerImageInput').addEventListener('change', function() {
     var file = this.files[0];
@@ -124,9 +141,18 @@ document.querySelector('select[name="positionCd"]').addEventListener('change', f
 document.getElementById('bannerForm').addEventListener('submit', function(e) {
     var start = document.querySelector('input[name="startDate"]').value;
     var end = document.querySelector('input[name="endDate"]').value;
+    var today = new Date();
+    var todayStr = today.getFullYear() + '-' +
+        String(today.getMonth() + 1).padStart(2, '0') + '-' +
+        String(today.getDate()).padStart(2, '0');
     if (start && end && end < start) {
         e.preventDefault();
         alert('종료일은 시작일 이후여야 합니다.');
+        return;
+    }
+    if (end && end < todayStr) {
+        e.preventDefault();
+        alert('종료일이 지났습니다. 기간을 수정한 후 신청해 주세요.');
     }
 });
 </script>

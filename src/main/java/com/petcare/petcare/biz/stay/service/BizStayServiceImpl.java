@@ -16,6 +16,8 @@
 package com.petcare.petcare.biz.stay.service;
 
 import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +34,9 @@ import com.petcare.petcare.common.external.service.KakaoMapService;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
+import com.petcare.petcare.main.banner.BannerConstants;
+import com.petcare.petcare.main.banner.mapper.MainBannerMapper;
+import com.petcare.petcare.main.banner.service.BannerExpiryService;
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.stay.service.StayFullCancelService;
@@ -52,6 +57,10 @@ public class BizStayServiceImpl implements BizStayService {
     private MypageNotifyService mypageNotifyService;
     @Autowired
     private StayFullCancelService stayFullCancelService;
+    @Autowired
+    private MainBannerMapper mainBannerMapper;
+    @Autowired
+    private BannerExpiryService bannerExpiryService; // 2026-08-06 박유정 — 배너 자동 만료
 
     @Override
     public StayVO getStayByBizId(String bizId) {
@@ -330,8 +339,10 @@ public class BizStayServiceImpl implements BizStayService {
         return bizStayMapper.selectBizNoByBizId(bizId);
     }
 
+    // 2026-08-06 박유정 — 사업자 배너 목록 (조회 전 만료 처리)
     @Override
     public List<MainBannerVO> getBannerList(Long bizNo) {
+        bannerExpiryService.expirePastEndDateBanners();
         List<MainBannerVO> result = bizStayMapper.selectBannerList(bizNo);
         return result;
     }
@@ -340,26 +351,41 @@ public class BizStayServiceImpl implements BizStayService {
     @Override
     @Transactional
     public void applyBanner(MainBannerVO banner, MultipartFile image) throws Exception {
-        // 2) 이미지 업로드 (기존 FileService 활용, REF_TYPE = 'BANNER')
-        FileVO file = null;
-        if (image != null && !image.isEmpty()) {
-            file = fileService.uploadFile(image, "BANNER", banner.getBizNo());
-            banner.setFileId(file.getFileId());
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("배너 이미지를 선택해 주세요.");
         }
+
+        // 2026-08-06 박유정 — 종료일 과거 신청 차단 + 위치별 슬롯 제한
+        validateBannerApplyPeriod(banner.getStartDate(), banner.getEndDate());
+
+        int occupied = mainBannerMapper.countReservedSlotsByPosition(banner.getPositionCd());
+        if (occupied >= BannerConstants.MAX_PER_POSITION) {
+            throw new IllegalArgumentException(
+                    "해당 노출 위치의 배너는 최대 " + BannerConstants.MAX_PER_POSITION + "개까지 신청할 수 있습니다.");
+        }
+
+        FileVO file = fileService.uploadFile(image, "BANNER", banner.getBizNo());
+        banner.setFileId(file.getFileId());
 
         try {
-            // 1) 배너 INSERT (selectKey로 bannerId 자동 세팅)
             bizStayMapper.insertBanner(banner);
-
+        } catch (Exception e) {
+            fileService.deleteFile(file.getFileId());
+            throw e;
         }
-        catch(Exception e) {
-            // DB는 @Transactional이 롤백해주지만
-            // 디스크/GCS에 올라간 물리 파일은 직접 삭제
-            if (file != null) {
-                fileService.deleteFile(file.getFileId());
-            }
+    }
 
-            throw e;  // 예외를 다시 던져야 @Transactional 롤백이 동작            
+    // 2026-08-06 박유정 — 사업자 배너 신청 기간 검증 (종료일 < 오늘 차단)
+    private void validateBannerApplyPeriod(String startDate, String endDate) {
+        if (startDate == null || endDate == null || startDate.isBlank() || endDate.isBlank()) {
+            throw new IllegalArgumentException("시작일과 종료일을 모두 입력해 주세요.");
+        }
+        if (endDate.compareTo(startDate) < 0) {
+            throw new IllegalArgumentException("종료일은 시작일 이후여야 합니다.");
+        }
+        String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        if (endDate.compareTo(today) < 0) {
+            throw new IllegalArgumentException("종료일이 지났습니다. 기간을 수정한 후 신청해 주세요.");
         }
     }
 

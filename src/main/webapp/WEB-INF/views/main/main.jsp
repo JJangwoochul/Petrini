@@ -17,48 +17,26 @@
     <%-- ===================================================
          HERO BANNER SLIDER
     ===================================================== --%>
-    <div class="hero-section inner">
-        <div class="hero-slides">
-            <%-- Slide 1 HYJ 26.07.31 JS에서 동적삽입--%>
-            <%-- <div class="hero-slide active">
+    <div class="hero-section inner" id="heroSection">
+        <div class="hero-slides" id="heroSlides">
+            <%-- 2026-08-06 박유정 — DB 배너 없을 때 기본 히어로 배너 --%>
+            <div class="hero-slide hero-slide-default active" id="heroFallback">
+                <div class="hero-image">
+                    <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1200&q=80"
+                         alt="강아지와 고양이" onerror="this.src='https://placehold.co/1200x360/EAF7F2/2BAB82?text=펫린이'">
+                </div>
                 <div class="hero-text">
                     <span class="hero-badge">반려동물 통합 케어</span>
                     <h2 class="hero-title">우리 아이의<br>모든 순간을 함께해요</h2>
                     <p class="hero-desc">쇼핑부터 병원 예약, 여가까지<br>펫린이 하나로 간편하게!</p>
-                    <a href="/store" class="hero-cta">지금 시작하기</a>
                 </div>
-                <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=480&q=80"
-                         alt="강아지와 고양이" onerror="this.src='https://placehold.co/480x300/EAF7F2/2BAB82?text=펫린이'">
-                    <div class="hero-float f1">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2v20M2 12h20" stroke="#2BAB82" stroke-width="2.5" stroke-linecap="round"/>
-                            <circle cx="12" cy="12" r="10" stroke="#2BAB82" stroke-width="2" fill="none"/>
-                        </svg>
-                    </div>
-                    <div class="hero-float f2">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="4" width="18" height="18" rx="3" stroke="#5B8DEF" stroke-width="2" fill="none"/>
-                            <path d="M3 9h18M8 2v4M16 2v4" stroke="#5B8DEF" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <div class="hero-float f3">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" fill="#FF6B6B" stroke="#FF6B6B" stroke-width="1.5" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                </div>
-            </div> --%>
+            </div>
         </div>
 
-        <%-- 슬라이드 컨트롤 --%>
-        <div class="hero-controls">
-            <span class="slide-indicator">1 / 3</span>
-            <div class="slide-dots">
-                <span class="slide-dot active"></span>
-                <span class="slide-dot"></span>
-                <span class="slide-dot"></span>
-            </div>
+        <%-- 슬라이드 컨트롤 (DB 배너 2개 이상일 때만 표시) --%>
+        <div class="hero-controls" id="heroControls" style="display:none">
+            <span class="slide-indicator"></span>
+            <div class="slide-dots"></div>
             <button class="slide-nav-btn btn-prev" aria-label="이전">&#8249;</button>
             <button class="slide-nav-btn btn-pause" aria-label="일시정지">❚❚</button>
             <button class="slide-nav-btn btn-next" aria-label="다음">&#8250;</button>
@@ -305,25 +283,69 @@
 
 <script src="${contextPath}/resources/js/main.js"></script>
 <script>
-    fetch('/api/banners')
+    fetch('${contextPath}/api/banners')
     .then(function(result) { return result.json(); })
     .then(function(list) {
-        var slider = document.querySelector('.hero-slides');
-        for (var i = 0; i < list.length; i++) {
-            var banner = list[i];
-            console.log(banner);
-            console.log(banner.imageUrl);
-            var div = document.createElement('div');
-            div.className = 'hero-slide' + (i === 0 ? ' active' : '');
-            div.innerHTML =
-                '<a href="' + (banner.linkUrl || '#') + '">' +
-                '  <img src="' + '${contextPath}' + '/upload/' + banner.imageUrl + '" alt="' + banner.title + '">' +
-                '</a>' +
-                '<div class="hero-text">' +
-                '  <span class="hero-badge">' + (banner.bizName || '') + '</span>' +
-                '  <h2 class="hero-title">' + banner.title + '</h2>' +
-                '</div>';
-            slider.appendChild(div);
+        var heroSection = document.getElementById('heroSection');
+        var heroControls = document.getElementById('heroControls');
+        var heroFallback = document.getElementById('heroFallback');
+        var slider = document.getElementById('heroSlides');
+
+        // 노출중 배너 없으면 기본 배너 유지 (슬라이더 컨트롤 숨김)
+        if (!list || list.length === 0) {
+            if (heroControls) heroControls.style.display = 'none';
+            return;
         }
+
+        if (heroFallback) heroFallback.remove();
+        if (heroSection) heroSection.style.display = '';
+
+  // 1) 슬라이드 DOM 추가
+  for (var i = 0; i < list.length; i++) {
+    var banner = list[i];
+    var div = document.createElement('div');
+    div.className = 'hero-slide' + (i === 0 ? ' active' : '');
+
+    // 2026-08-06 박유정 — 외부 URL /upload/ 중복 방지 (store/list.jsp 동일 패턴)
+    var imgSrc = banner.imageUrl || '';
+    if (imgSrc.indexOf('http') === 0) {
+        // Unsplash 등 외부 URL → 그대로
+    } else if (imgSrc.indexOf('/upload/') === 0) {
+        imgSrc = '${contextPath}' + imgSrc;
+    } else {
+        imgSrc = '${contextPath}/upload/' + imgSrc;
+    }
+    div.innerHTML =
+    '<div class="hero-image">' +
+    '  <a href="' + (banner.linkUrl || '#') + '">' +
+    '    <img src="' + imgSrc + '" alt="' + (banner.title || '') + '"' +
+    '         onerror="this.src=\'https://placehold.co/1200x360/EAF7F2/2BAB82?text=PetCare\'">' +
+    '  </a>' +
+    '</div>';
+
+    slider.appendChild(div);
+}
+
+        // 2) 슬라이드 컨트롤 (2개 이상일 때만 표시)
+        if (list.length > 1 && heroControls) {
+            heroControls.style.display = '';
+            var dotsWrap = document.querySelector('.slide-dots');
+            if (dotsWrap) {
+                dotsWrap.innerHTML = '';
+                for (var d = 0; d < list.length; d++) {
+                    var dot = document.createElement('span');
+                    dot.className = 'slide-dot' + (d === 0 ? ' active' : '');
+                    dotsWrap.appendChild(dot);
+                }
+            }
+        } else if (heroControls) {
+            heroControls.style.display = 'none';
+        }
+        initHeroSlider();
+    })
+    .catch(function(err) {
+        console.error('메인 배너 로드 실패', err);
+        var heroControls = document.getElementById('heroControls');
+        if (heroControls) heroControls.style.display = 'none';
     });
 </script>
