@@ -341,6 +341,8 @@ document.getElementById('holdConfirm').addEventListener('click', function() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '${contextPath}/admin/cms/banner/hold');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    // 2026/08/07 장우철 CSRF
+    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));
     xhr.onload = function() {
         var res = xhr.responseText.trim();
         if (res === 'OK') {

@@ -16,6 +16,8 @@
     <div class="biz-card">
         <div class="biz-card-body" style="padding:24px">
             <form action="${contextPath}/biz/store/banner" method="post" enctype="multipart/form-data" id="bannerForm">
+                <%-- 2026/08/07 장우철 CSRF --%>
+                <input type="hidden" name="_csrf" value="${_csrf}">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">
 
                     <%-- 배너 제목 --%>

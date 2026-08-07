@@ -258,6 +258,8 @@ document.querySelectorAll('.btn-approve').forEach(function(btn) {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '${contextPath}/admin/cms/banner/approve');
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        // 2026/08/07 장우철 CSRF
+        xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));
         xhr.onload = function() {
             var res = xhr.responseText.trim();
             if (xhr.status === 200 && res.indexOf('OK') === 0) {
@@ -293,6 +295,8 @@ document.getElementById('holdConfirm').addEventListener('click', function() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '${contextPath}/admin/cms/banner/hold');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    // 2026/08/07 장우철 CSRF
+    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));
     xhr.onload = function() {
         var res = xhr.responseText.trim();
         if (res === 'OK') {
@@ -326,6 +330,8 @@ document.getElementById('rejectConfirm').addEventListener('click', function() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '${contextPath}/admin/cms/banner/reject');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    // 2026/08/07 장우철 CSRF
+    xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="_csrf"]').getAttribute('content'));
     xhr.onload = function() {
         var res = xhr.responseText.trim();
         if (res === 'OK') {
