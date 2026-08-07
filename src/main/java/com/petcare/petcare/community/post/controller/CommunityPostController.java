@@ -63,6 +63,7 @@ import com.petcare.petcare.member.vo.MemberVO;
 import java.util.List;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 
 @Controller("communityController")
 @RequestMapping("/community")
@@ -485,10 +486,17 @@ public class CommunityPostController {
     /** 게시글 등록 — TB_POST + 사진 저장 후 상세 또는 LIFE 목록 redirect */
     @PostMapping("/write")
     public String writeSubmit(
-            @ModelAttribute CommunityPostVO vo,
+            @Valid @ModelAttribute CommunityPostVO vo,      //HYJ 26.08.06 vo 검증 추가
             @RequestParam(value = "photos", required = false) MultipartFile[] photos,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
+        
+        //HYJ 26.08.06 @Valid 추가로 자동 검증
+        // 수동 검증 필요 — 직접 if 문으로 체크해야 함 (원래 없었는데 이해를 돕기 위한 예시로 추가)
+        // if (vo.getTitle() == null || vo.getTitle().isBlank()) { ... }
+        // if (vo.getBody() == null || vo.getBody().isBlank()) { ... }
+
+
         boolean isLife = vo.getBoardType() != null && "LIFE".equalsIgnoreCase(vo.getBoardType().trim());
         String lifeListUrl = "/community?boardType=LIFE";
         String loginRedirect = isLife ? lifeListUrl : "/community/write";
