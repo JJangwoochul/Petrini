@@ -22,6 +22,7 @@ import com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
 import com.petcare.petcare.mypage.reserve.vo.StayReviewRegisterResult;
 import com.petcare.petcare.stay.service.StayCancelFeeCalculator;
+import com.petcare.petcare.stay.service.StayRefundBenefitService;
 import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Service
@@ -29,6 +30,8 @@ public class MypageReserveServiceImpl implements MypageReserveService {
 
     @Autowired
     private MypageReserveMapper mypageReserveMapper;
+    @Autowired
+    private StayRefundBenefitService stayRefundBenefitService;
     @Autowired
     private MypageNotifyService mypageNotifyService;
     @Autowired
@@ -67,6 +70,7 @@ public class MypageReserveServiceImpl implements MypageReserveService {
     }
 
     /** 2026/07/31 장우철 — CONFIRMED 숙소면 취소 수수료 미리보기 채움 */
+    /** 2026/08/07 장우철 — 수수료·환불 미리보기는 실결제(PAY_AMOUNT) 기준 */
     private void fillStayCancelPreview(MypageReserveVO detail) {
         if (!"STAY".equalsIgnoreCase(detail.getResvType())
                 || !"CONFIRMED".equalsIgnoreCase(detail.getStatusCd())
@@ -75,8 +79,14 @@ public class MypageReserveServiceImpl implements MypageReserveService {
             return;
         }
         try {
+            long payBase = stayRefundBenefitService.resolveCardPayAmount(
+                    detail.getResvId(),
+                    detail.getTotalAmount(),
+                    detail.getCouponDiscount(),
+                    detail.getPointUsed());
+            detail.setPayAmount(payBase);
             StayCancelFeeCalculator.Result fee =
-                    StayCancelFeeCalculator.calculate(detail.getTotalAmount(), detail.getCheckinDate());
+                    StayCancelFeeCalculator.calculate(payBase, detail.getCheckinDate());
             detail.setCancelable(true);
             detail.setDaysUntilCheckin(fee.getDaysUntilCheckin());
             detail.setCancelFeeRatePercent(fee.getFeeRatePercent());
@@ -89,6 +99,7 @@ public class MypageReserveServiceImpl implements MypageReserveService {
     }
 
     // 2026/07/31 장우철 — 유저 숙소 취소 (1-4) + 위약금(1-6)
+    // 2026/08/07 장우철 — 실결제 기준 수수료/환불 + 포인트·쿠폰 복구
     @Override
     @Transactional
     public void cancelStayReservation(Long memberNo, Long resvId, String cancelReason) {
@@ -114,28 +125,26 @@ public class MypageReserveServiceImpl implements MypageReserveService {
             throw new IllegalStateException("예약확정 상태에서만 취소할 수 있습니다.");
         }
 
-        StayCancelFeeCalculator.Result fee =
-                StayCancelFeeCalculator.calculate(detail.getTotalAmount(), detail.getCheckinDate());
+        Map<String, Object> payment = mypageReserveMapper.selectDonePaymentByResvId(resvId);
+        long payAmount = stayRefundBenefitService.readPayAmount(payment);
+        if (payment == null) {
+            payAmount = stayRefundBenefitService.resolveCardPayAmount(
+                    resvId, detail.getTotalAmount(), detail.getCouponDiscount(), detail.getPointUsed());
+        }
 
-        // 1) 토스 부분/전액 환불 (환불액 0이면 스킵)
-        if (fee.getRefundAmt() > 0) {
-            Map<String, Object> payment = mypageReserveMapper.selectDonePaymentByResvId(resvId);
-            if (payment != null && payment.get("tossPaymentKey") != null) {
+        StayCancelFeeCalculator.Result fee =
+                StayCancelFeeCalculator.calculate(payAmount, detail.getCheckinDate());
+
+        // 1) 토스 부분/전액 환불 (환불액 0이면 스킵) + 결제 REFUND
+        if (payment != null) {
+            if (fee.getRefundAmt() > 0 && payment.get("tossPaymentKey") != null) {
                 String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
-                // POINT_ONLY 등 비토스 키는 API 호출 스킵
                 if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
                         && !paymentKey.startsWith("BILLING-")) {
-                    long payAmount = 0L;
-                    Object payAmtObj = payment.get("payAmount");
-                    if (payAmtObj instanceof Number) {
-                        payAmount = ((Number) payAmtObj).longValue();
-                    }
                     long refundAmt = fee.getRefundAmt();
-                    // 전액 환불이면 cancelAmount 생략 (토스 전액취소)
                     Long cancelAmountParam = (payAmount > 0 && refundAmt >= payAmount)
                             ? null
                             : refundAmt;
-                    // 2026/08/01 장우철 — BILLING 결제는 billing secret 으로 취소
                     String payMethod = payment.get("payMethod") != null
                             ? String.valueOf(payment.get("payMethod")) : null;
                     boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
@@ -145,8 +154,15 @@ public class MypageReserveServiceImpl implements MypageReserveService {
                         throw new IllegalStateException(tossError);
                     }
                 }
-                mypageReserveMapper.updatePaymentRefundByResvId(resvId, fee.getRefundAmt());
             }
+            mypageReserveMapper.updatePaymentRefundByResvId(resvId, fee.getRefundAmt());
+            // 포인트·쿠폰 복구 (결제 DONE → REFUND 전환 시 1회)
+            stayRefundBenefitService.restorePointAndCoupon(
+                    memberNo,
+                    detail.getPointUsed(),
+                    detail.getMemberCouponId(),
+                    resvId,
+                    "STAY_CANCEL");
         }
 
         // 2) 예약 CANCEL + 위약금/환불액 저장

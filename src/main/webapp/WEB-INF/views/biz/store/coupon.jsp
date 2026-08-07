@@ -1,42 +1,42 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%--
-  역할: 사업자 쿠폰 승인신청 화면 (biz/hospital/coupon)
+  역할: 사업자 쿠폰 승인신청 화면 (biz/store/coupon)
 
   [화면 흐름]
-  1. GET /biz/hospital/coupon → 본인 쿠폰 목록 표시
-  2. 신규 신청 모달 → POST /biz/hospital/coupon/apply (PENDING)
+  1. GET /biz/store/coupon → 본인 쿠폰 목록 표시
+  2. 신규 신청 모달 → POST /biz/store/coupon/apply (PENDING)
   3. PENDING 쿠폰 수정/삭제 가능
   4. 관리자 승인 후 사용자 이벤트/쿠폰 게시판 노출
 
   [model]
   - couponList, msg, errorMsg
 --%>
-<%@ taglib prefix="c"   uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<c:set var="contextPath"  value="${pageContext.request.contextPath}" />
-<c:set var="bizTypeLabel" value="동물병원" />
+<c:set var="contextPath" value="${pageContext.request.contextPath}" />
+<c:set var="bizTypeLabel" value="반려동물 쇼핑몰" />
 <c:set var="bizPage" value="coupon" />
 
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
-<%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
+<%@ include file="/WEB-INF/views/biz/common/sidebar_store.jsp" %>
 
 <style>
     /* ── 쿠폰 카드 그리드 ── */
     .cpn-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px; }
-    
+
     .cpn-card {
         background:#fff; border:1px solid #E4E6ED; border-radius:12px;
         overflow:hidden; transition:box-shadow .2s;
     }
     .cpn-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); }
-    
+
     .cpn-card-head {
         display:flex; align-items:center; justify-content:space-between;
         padding:16px 20px; border-bottom:1px solid #E4E6ED; background:#FAFBFC;
     }
     .cpn-card-name { font-size:15px; font-weight:700; color:#1A1A2E; }
     .cpn-card-code { font-size:11px; color:#999; margin-top:2px; }
-    
+
     .cpn-badge {
         font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;
     }
@@ -44,9 +44,12 @@
     .cpn-badge.approved { background:#DCFCE7; color:#16A34A; }
     .cpn-badge.rejected { background:#FEE2E2; color:#DC2626; }
     .cpn-badge.exhausted { background:#F1F3F7; color:#999; }
-    /* 지윤 26.08.07: 조기 마감 상태 */
-    .cpn-badge.closed { background:#F1F3F7; color:#666; }
-    
+
+/* 지윤 26.08.06: 조기 마감 상태 */
+.cpn-badge.closed {
+    background:#F1F3F7;
+    color:#666;
+}
     .cpn-card-body {
         display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #E4E6ED;
     }
@@ -54,7 +57,7 @@
     .cpn-field:nth-child(2n) { border-right:none; }
     .cpn-field label { font-size:11px; color:#999; font-weight:600; display:block; margin-bottom:3px; }
     .cpn-field span  { font-size:13px; color:#1A1A2E; font-weight:500; }
-    
+
     .cpn-card-foot {
         display:flex; align-items:center; justify-content:space-between;
         padding:12px 18px; gap:8px;
@@ -62,7 +65,7 @@
     .cpn-card-foot .reject-reason {
         font-size:12px; color:#DC2626; flex:1;
     }
-    
+
     /* ── 버튼 ── */
     .cpn-btn {
         border:none; border-radius:6px; padding:7px 16px; font-size:13px;
@@ -74,7 +77,7 @@
     .cpn-btn.gray:hover { background:#E4E6ED; }
     .cpn-btn.red     { background:#FEE2E2; color:#DC2626; }
     .cpn-btn.red:hover { background:#FECACA; }
-    
+
     /* ── 모달 ── */
     .cpn-modal-overlay {
         display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
@@ -111,7 +114,7 @@
         display:flex; justify-content:flex-end; gap:8px;
         padding:16px 24px; border-top:1px solid #E4E6ED;
     }
-    
+
     /* ── 예산 프로그레스 ── */
     .cpn-progress-bar {
         background:#F1F3F7; border-radius:4px; height:6px; margin-top:6px; overflow:hidden;
@@ -119,7 +122,7 @@
     .cpn-progress-fill {
         height:100%; border-radius:4px; background:#3B5BDB; transition:width .3s;
     }
-    
+
     /* ── 빈 상태 ── */
     .cpn-empty {
         text-align:center; color:#999; padding:60px 0;
@@ -191,16 +194,20 @@
                                 <c:when test="${cpn.approvalStatus eq 'PENDING'}">
                                     <span class="cpn-badge pending">승인 대기</span>
                                 </c:when>
-                                <%-- 지윤 26.08.07: 사업자가 조기 마감한 쿠폰 --%>
-                                <c:when test="${cpn.approvalStatus eq 'APPROVED' && cpn.statusCd eq 'INACTIVE'}">
-                                    <span class="cpn-badge closed">조기 마감</span>
-                                </c:when>
-                                <c:when test="${cpn.approvalStatus eq 'APPROVED' && cpn.statusCd eq 'EXHAUSTED'}">
-                                    <span class="cpn-badge exhausted">예산 소진</span>
-                                </c:when>
-                                <c:when test="${cpn.approvalStatus eq 'APPROVED'}">
-                                    <span class="cpn-badge approved">승인 (게시 중)</span>
-                                </c:when>
+                               <c:when test="${cpn.approvalStatus eq 'APPROVED'
+                && cpn.statusCd eq 'EXHAUSTED'}">
+    <span class="cpn-badge exhausted">예산 소진</span>
+</c:when>
+
+<%-- 지윤 26.08.06: 사업자가 조기 마감한 쿠폰 --%>
+<c:when test="${cpn.approvalStatus eq 'APPROVED'
+                && cpn.statusCd eq 'INACTIVE'}">
+    <span class="cpn-badge closed">조기 마감</span>
+</c:when>
+
+<c:when test="${cpn.approvalStatus eq 'APPROVED'}">
+    <span class="cpn-badge approved">승인 (게시 중)</span>
+</c:when>
                                 <c:when test="${cpn.approvalStatus eq 'REJECTED'}">
                                     <span class="cpn-badge rejected">반려</span>
                                 </c:when>
@@ -266,26 +273,43 @@
                             <c:if test="${cpn.approvalStatus eq 'PENDING'}">
                                 <div></div>
                                 <div style="display:flex;gap:6px">
-                                    <form method="post" action="${contextPath}/biz/hospital/coupon/delete"
+                                    <form method="post" action="${contextPath}/biz/store/coupon/delete"
                                           onsubmit="return confirm('삭제하시겠습니까?')">
-                                        <!--HYJ 26.08.05-->
-                                        <input type="hidden" name="_csrf" value="${_csrf}">  
-                                        
+                                        <%-- 2026/08/07 장우철 — CSRF --%>
+                                        <input type="hidden" name="_csrf" value="${_csrf}">
                                         <input type="hidden" name="couponId" value="${cpn.couponId}">
                                         <button type="submit" class="cpn-btn red">삭제</button>
                                     </form>
                                 </div>
                             </c:if>
 
-                            <%-- 지윤 26.08.07: 게시 중인 쿠폰만 조기 마감 가능 --%>
-                            <c:if test="${cpn.approvalStatus eq 'APPROVED' && cpn.statusCd eq 'ACTIVE'}">
-                                <div></div>
-                                <form method="post" action="${contextPath}/biz/hospital/coupon/close"
-                                      onsubmit="return confirm('쿠폰을 조기 마감하시겠습니까?\n마감 후 이벤트 화면에서 사라집니다.')">
-                                    <input type="hidden" name="couponId" value="${cpn.couponId}">
-                                    <button type="submit" class="cpn-btn red">조기 마감</button>
-                                </form>
-                            </c:if>
+                            <%--
+  지윤 26.08.06
+  승인되어 게시 중인 쿠폰에만 조기 마감 버튼 표시
+--%>
+<c:if test="${cpn.approvalStatus eq 'APPROVED'
+              && cpn.statusCd eq 'ACTIVE'}">
+
+    <div></div>
+
+    <form method="post"
+          action="${contextPath}/biz/store/coupon/close"
+          onsubmit="return confirm('쿠폰을 조기 마감하시겠습니까?\n마감 후 이벤트 화면에서 사라집니다.')">
+        <%-- 2026/08/07 장우철 — CSRF --%>
+        <input type="hidden" name="_csrf" value="${_csrf}">
+        <input type="hidden"
+               name="couponId"
+               value="${cpn.couponId}">
+
+        <button type="submit" class="cpn-btn red">
+            조기 마감
+        </button>
+
+    </form>
+
+</c:if>
+
+
                         </div>
                     </div>
                 </c:forEach>
@@ -301,10 +325,9 @@
             <h2>쿠폰 승인 신청</h2>
             <button class="cpn-modal-close" onclick="closeApplyModal()">&times;</button>
         </div>
-        <form method="post" action="${contextPath}/biz/hospital/coupon/apply" onsubmit="return validateForm()">
-            <!--HYJ 26.08.05-->
-            <input type="hidden" name="_csrf" value="${_csrf}">        
-            
+        <form method="post" action="${contextPath}/biz/store/coupon/apply" onsubmit="return validateForm()">
+            <%-- 2026/08/07 장우철 — CSRF --%>
+            <input type="hidden" name="_csrf" value="${_csrf}">
             <div class="cpn-modal-body">
                 <div class="cpn-form-group">
                     <label>쿠폰명 <span style="color:#DC2626">*</span></label>
@@ -350,7 +373,7 @@
                 </div>
                 <%-- 히든 필드: YYYYMMDD 변환 --%>
                 <input type="hidden" name="useStartDate" id="useStartDate">
-                <input type="hidden" name="useEndDate"   id="useEndDate">
+                <input type="hidden" name="useEndDate" id="useEndDate">
             </div>
             <div class="cpn-modal-foot">
                 <button type="button" class="cpn-btn gray" onclick="closeApplyModal()">취소</button>

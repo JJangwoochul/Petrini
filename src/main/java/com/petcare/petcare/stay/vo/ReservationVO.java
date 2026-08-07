@@ -43,5 +43,11 @@ public class ReservationVO {
 
     private String  stayName;
     private String  stayAddr;
-    private String  roomName;    
+    private String  roomName;
+
+    // 지윤 26.08.07: 쿠폰 적용 결제
+    private Long    memberCouponId;
+    private Long    couponDiscount;
+    // 지윤 26.08.07: 결제 완료 화면에 정확한 실결제금액 표시용
+    private Long    pointUsed;
 }

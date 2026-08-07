@@ -51,8 +51,26 @@
           <span><fmt:formatDate value="${reservation.checkinDate}" pattern="yyyy.MM.dd"/> ~ <fmt:formatDate value="${reservation.checkoutDate}" pattern="MM.dd"/> · ${reservation.nightCnt}박</span>
         </div>
         <div class="complete-row"><span>반려동물</span><span>${reservation.petName} (${reservation.petBreed})</span></div>
+        <div class="complete-row"><span>숙박 요금</span>
+          <span><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
+        </div>
+        <c:if test="${not empty reservation.couponDiscount && reservation.couponDiscount > 0}">
+          <div class="complete-row"><span>쿠폰 할인</span>
+            <span style="color:#D97706">-<fmt:formatNumber value="${reservation.couponDiscount}" pattern="#,###"/>원</span>
+          </div>
+        </c:if>
+        <%-- 지윤 26.08.07: 포인트 사용 내역 표시 --%>
+        <c:if test="${not empty reservation.pointUsed && reservation.pointUsed > 0}">
+          <div class="complete-row"><span>포인트 사용</span>
+            <span style="color:#16A34A">-<fmt:formatNumber value="${reservation.pointUsed}" pattern="#,###"/>P</span>
+          </div>
+        </c:if>
+        <c:set var="couponDiscountVal" value="${empty reservation.couponDiscount ? 0 : reservation.couponDiscount}" />
+        <c:set var="pointUsedVal" value="${empty reservation.pointUsed ? 0 : reservation.pointUsed}" />
         <div class="complete-row"><span>결제 금액</span>
-          <span style="color:#4F6BC4;font-size:16px;font-weight:800"><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
+          <span style="color:#4F6BC4;font-size:16px;font-weight:800">
+            <fmt:formatNumber value="${reservation.totalAmount - couponDiscountVal - pointUsedVal}" pattern="#,###"/>원
+          </span>
         </div>
       </div>
     </c:when>

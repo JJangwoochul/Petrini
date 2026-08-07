@@ -148,4 +148,12 @@ public interface BizStoreService {
     String approveReturn(Long orderItemId, Long bizNo);
     String rejectReturn(Long orderItemId, Long bizNo, String rejectReason);
     String completeReturn(Long orderItemId, Long bizNo);
+
+    List<com.petcare.petcare.biz.vo.BizCouponVO> getCouponList(Long bizNo);
+    void applyCoupon(Long bizNo, com.petcare.petcare.biz.vo.BizCouponVO vo);
+    void updateCoupon(Long bizNo, com.petcare.petcare.biz.vo.BizCouponVO vo);
+    void deleteCoupon(Long bizNo, Long couponId);
+
+// 지윤 26.08.06: 쇼핑몰 사업자 쿠폰 조기 마감
+void closeCoupon(Long bizNo, Long couponId);
 }

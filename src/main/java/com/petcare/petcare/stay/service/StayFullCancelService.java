@@ -1,6 +1,7 @@
 /**
  * 역할: 숙소 예약 전액 환불 취소 (사업자·관리자 공통)
  * 2026/07/31 장우철 — 수수료 0 · 결제액 전액 토스 취소 · 정산 대상 아님(CANCEL)
+ * 2026/08/07 장우철 — 실결제(PAY_AMOUNT) 환불 + 포인트·쿠폰 복구
  */
 package com.petcare.petcare.stay.service;
 
@@ -24,9 +25,11 @@ public class StayFullCancelService {
     private TossPaymentService tossPaymentService;
     @Autowired
     private MypageNotifyService mypageNotifyService;
+    @Autowired
+    private StayRefundBenefitService stayRefundBenefitService;
 
     /**
-     * 사업자·관리자 취소: CANCEL_FEE=0, REFUND=TOTAL, 토스 전액(또는 결제액) 취소
+     * 사업자·관리자 취소: CANCEL_FEE=0, 실결제 전액 환불, 포인트·쿠폰 복구
      * @param stayId 사업자 소속 검증용 (관리자면 null)
      */
     @Transactional
@@ -69,30 +72,32 @@ public class StayFullCancelService {
         if ("DONE".equals(status) && !allowDone) {
             throw new IllegalStateException("이용완료 예약은 취소할 수 없습니다.");
         }
-        // PENDING / CONFIRMED / CHECKIN / CHECKOUT (+ allowDone 시 DONE)
 
-        long total = resv.getTotalAmount() != null ? resv.getTotalAmount() : 0L;
         long cancelFeeAmt = 0L;
-        long refundAmt = total;
+        long refundAmt = 0L;
 
-        // 결제 완료건만 토스 전액 환불
-        if (refundAmt > 0 && !"PENDING".equals(status)) {
+        // 결제 완료건: 실결제액 환불 + 혜택 복구
+        if (!"PENDING".equals(status)) {
             Map<String, Object> payment = stayCancelMapper.selectDonePaymentByResvId(resvId);
-            if (payment != null && payment.get("tossPaymentKey") != null) {
-                String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
-                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
-                        && !paymentKey.startsWith("BILLING-")) {
-                    // 2026/08/01 장우철 — BILLING 결제는 billing secret 으로 취소
-                    String payMethod = payment.get("payMethod") != null
-                            ? String.valueOf(payment.get("payMethod")) : null;
-                    boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
-                    String tossError = tossPaymentService.cancelPayment(
-                            paymentKey, actor + " 숙소 예약 취소", null, billing);
-                    if (tossError != null) {
-                        throw new IllegalStateException(tossError);
+            if (payment != null) {
+                refundAmt = stayRefundBenefitService.readPayAmount(payment);
+                if (refundAmt > 0 && payment.get("tossPaymentKey") != null) {
+                    String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
+                    if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
+                            && !paymentKey.startsWith("BILLING-")) {
+                        String payMethod = payment.get("payMethod") != null
+                                ? String.valueOf(payment.get("payMethod")) : null;
+                        boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
+                        // 실결제 전액 → cancelAmount null (토스 전액취소)
+                        String tossError = tossPaymentService.cancelPayment(
+                                paymentKey, actor + " 숙소 예약 취소", null, billing);
+                        if (tossError != null) {
+                            throw new IllegalStateException(tossError);
+                        }
                     }
                 }
                 stayCancelMapper.updatePaymentRefundByResvId(resvId, refundAmt);
+                stayRefundBenefitService.restorePointAndCoupon(resv, "STAY_CANCEL");
             }
         }
 
@@ -109,7 +114,7 @@ public class StayFullCancelService {
     }
 
     /**
-     * 2026/08/06 장우철 — 관리자 환불승인(보상 숙박): 전액 환불만, 예약 STATUS 유지 · 취소 알림 없음
+     * 2026/08/06 장우철 — 관리자 환불승인(보상 숙박): 실결제 환불 + 포인트·쿠폰 복구, 예약 STATUS 유지
      */
     @Transactional
     public void refundPaymentKeepReservation(Long resvId, String actorLabel) throws Exception {
@@ -131,27 +136,29 @@ public class StayFullCancelService {
             throw new IllegalStateException("이미 취소된 예약입니다.");
         }
 
-        long total = resv.getTotalAmount() != null ? resv.getTotalAmount() : 0L;
-        long refundAmt = total;
+        long refundAmt = 0L;
+        Map<String, Object> payment = stayCancelMapper.selectDonePaymentByResvId(resvId);
+        if (payment == null) {
+            throw new IllegalStateException("환불할 결제 내역이 없습니다.");
+        }
 
-        if (refundAmt > 0 && !"PENDING".equals(status)) {
-            Map<String, Object> payment = stayCancelMapper.selectDonePaymentByResvId(resvId);
-            if (payment != null && payment.get("tossPaymentKey") != null) {
-                String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
-                if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
-                        && !paymentKey.startsWith("BILLING-")) {
-                    String payMethod = payment.get("payMethod") != null
-                            ? String.valueOf(payment.get("payMethod")) : null;
-                    boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
-                    String tossError = tossPaymentService.cancelPayment(
-                            paymentKey, actor + " 숙소 환불승인(이용유지)", null, billing);
-                    if (tossError != null) {
-                        throw new IllegalStateException(tossError);
-                    }
+        refundAmt = stayRefundBenefitService.readPayAmount(payment);
+        if (refundAmt > 0 && payment.get("tossPaymentKey") != null) {
+            String paymentKey = String.valueOf(payment.get("tossPaymentKey"));
+            if (!paymentKey.startsWith("POINT") && !paymentKey.isBlank()
+                    && !paymentKey.startsWith("BILLING-")) {
+                String payMethod = payment.get("payMethod") != null
+                        ? String.valueOf(payment.get("payMethod")) : null;
+                boolean billing = TossPaymentService.isBillingPayMethod(payMethod);
+                String tossError = tossPaymentService.cancelPayment(
+                        paymentKey, actor + " 숙소 환불승인(이용유지)", null, billing);
+                if (tossError != null) {
+                    throw new IllegalStateException(tossError);
                 }
-                stayCancelMapper.updatePaymentRefundByResvId(resvId, refundAmt);
             }
         }
+        stayCancelMapper.updatePaymentRefundByResvId(resvId, refundAmt);
+        stayRefundBenefitService.restorePointAndCoupon(resv, "STAY_REFUND");
 
         int updated = stayCancelMapper.updateStayRefundAmtKeepStatus(resvId, refundAmt);
         if (updated == 0) {

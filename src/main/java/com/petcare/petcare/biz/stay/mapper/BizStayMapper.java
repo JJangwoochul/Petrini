@@ -187,10 +187,12 @@ public interface BizStayMapper {
 
 
     // 쿠폰 삭제 (PENDING 상태일 때만)
-
     int deleteCoupon(@Param("couponId") Long couponId,
-
                      @Param("bizMemberNo") Long bizMemberNo);
+
+    // 지윤 26.08.07: 쿠폰 조기 마감 (병원/숙소 공용)
+    int closeCoupon(@Param("couponId") Long couponId,
+                    @Param("bizMemberNo") Long bizMemberNo);
 
 
 

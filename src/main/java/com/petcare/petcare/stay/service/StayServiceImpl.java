@@ -37,6 +37,8 @@ import com.petcare.petcare.stay.mapper.StayMapper;
 import com.petcare.petcare.stay.vo.StayReviewVO;
 import com.petcare.petcare.stay.vo.StayRoomVO;
 import com.petcare.petcare.stay.vo.StayVO;
+import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.coupon.mapper.CouponMapper;
 
 @Service
 public class StayServiceImpl implements StayService {
@@ -45,6 +47,10 @@ public class StayServiceImpl implements StayService {
 
     @Autowired
     private StayMapper stayMapper;
+
+    // 지윤 26.08.07: 숙소 예약 쿠폰 적용용
+    @Autowired
+    private CouponMapper couponMapper;
 
     @Autowired
     private KakaoMessageService kakaoMessageService;
@@ -142,7 +148,8 @@ public class StayServiceImpl implements StayService {
     @Override
     @Transactional
     public void confirmPayment(Long resvId, String tossPaymentKey, String tossOrderId, String payMethod,
-                               String kakaoAccessToken, Long memberNo, long usedPoint, Long tossPaidAmount) {
+                               String kakaoAccessToken, Long memberNo, long usedPoint, Long tossPaidAmount,
+                               Long memberCouponId) {
         // 예약 조회
         ReservationVO resv = stayMapper.selectReservationById(resvId);
         if (resv == null) {
@@ -153,13 +160,41 @@ public class StayServiceImpl implements StayService {
         }
 
         long total = resv.getTotalAmount() != null ? resv.getTotalAmount() : 0L;
+
+        // 지윤 26.08.07: 쿠폰 서버 재검증 (클라이언트가 보낸 memberCouponId를 그대로 믿지 않음)
+        long couponDiscount = 0L;
+        if (memberCouponId != null && memberCouponId > 0) {
+            CouponVO coupon = couponMapper.selectMemberCouponForUse(memberCouponId, memberNo);
+            if (coupon == null) {
+                throw new RuntimeException("사용할 수 없는 쿠폰입니다.");
+            }
+            // 이 숙소를 발급한 사업자의 쿠폰인지 재확인
+            StayVO stay = getStayById(Long.valueOf(resv.getTargetId()));
+            Long stayBizNo = stay != null ? stay.getBizNo() : null;
+            if (stayBizNo == null || coupon.getBizNo() == null
+                    || !String.valueOf(stayBizNo).equals(coupon.getBizNo())) {
+                throw new RuntimeException("이 숙소에는 사용할 수 없는 쿠폰입니다.");
+            }
+            int minOrderAmt = coupon.getMinOrderAmt() != null ? coupon.getMinOrderAmt() : 0;
+            if (total < minOrderAmt) {
+                throw new RuntimeException("최소 예약금액 미달로 쿠폰을 사용할 수 없습니다.");
+            }
+            couponDiscount = "RATE".equals(coupon.getCouponType())
+                    ? total * coupon.getDiscountValue() / 100
+                    : coupon.getDiscountValue();
+            if (couponDiscount > total) {
+                couponDiscount = total;
+            }
+        }
+
+        long payableAfterCoupon = total - couponDiscount;
         if (usedPoint < 0) {
             usedPoint = 0;
         }
-        if (usedPoint > total) {
-            usedPoint = total;
+        if (usedPoint > payableAfterCoupon) {
+            usedPoint = payableAfterCoupon;
         }
-        long cardAmount = total - usedPoint;
+        long cardAmount = payableAfterCoupon - usedPoint;
         if (tossPaidAmount != null) {
             cardAmount = tossPaidAmount;
         }
@@ -221,6 +256,22 @@ public class StayServiceImpl implements StayService {
         statusParam.put("resvId", resvId);
         statusParam.put("statusCd", "CONFIRMED");
         stayMapper.updateReservationStatus(statusParam);
+
+        // 지윤 26.08.07: 쿠폰·포인트 사용 확정 — 예약에 기록 (완료화면에 정확한 결제금액 표시용)
+        // 쿠폰을 안 썼어도 포인트만 썼으면 그 내역도 남겨야 완료화면이 정확해짐
+        Map<String, Object> paymentInfoParam = new HashMap<>();
+        paymentInfoParam.put("resvId", resvId);
+        paymentInfoParam.put("memberCouponId", (memberCouponId != null && memberCouponId > 0) ? memberCouponId : null);
+        paymentInfoParam.put("couponDiscount", couponDiscount);
+        paymentInfoParam.put("pointUsed", usedPoint);
+        stayMapper.updateReservationPaymentInfo(paymentInfoParam);
+
+        if (memberCouponId != null && memberCouponId > 0 && couponDiscount > 0) {
+            int couponUpdated = couponMapper.markMemberCouponUsed(memberCouponId);
+            if (couponUpdated != 1) {
+                throw new RuntimeException("쿠폰 사용 처리에 실패했습니다.");
+            }
+        }
 
         // 결제 정보 INSERT — PAY_AMOUNT 는 카드(토스) 실결제액
         long payAmountToStore = pointOnly ? 0L : cardAmount;
@@ -292,5 +343,14 @@ public class StayServiceImpl implements StayService {
     public Long getMemberPointBalance(Long memberNo) {
         Long bal = stayMapper.selectMemberPointBalance(memberNo);
         return bal != null ? bal : 0L;
+    }
+
+    // 지윤 26.08.07: 이 숙소(사업자)가 발급한, 회원이 사용 가능한 쿠폰 목록
+    @Override
+    public List<CouponVO> getUsableCoupons(Long memberNo, Long bizNo) {
+        if (memberNo == null || bizNo == null) {
+            return java.util.Collections.emptyList();
+        }
+        return couponMapper.selectMemberCouponsByBiz(memberNo, bizNo);
     }
 }

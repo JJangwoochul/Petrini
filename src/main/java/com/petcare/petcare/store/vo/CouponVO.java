@@ -18,6 +18,8 @@ public class CouponVO {
     private Integer discountValue;
     private Integer minOrderAmt;
     private String bizNo; //지윤 26.07.30 추가: 이 쿠폰이 어느 사업자 발급인지
+    private String bizType;      //2026.08.06 지윤 추가: HOSPITAL/STAY/STORE 등 업종
+    private Long targetId;       //2026.08.06 지윤 추가: HOSPITAL→hospitalId, STAY→stayId
 
     //HYJ 26.07.31
     private String  couponCode;

@@ -36,6 +36,7 @@ import com.petcare.petcare.store.vo.OptionVO;
 import com.petcare.petcare.biz.store.vo.BizReviewVO;
 import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
 import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.biz.vo.BizCouponVO;
 
 @Mapper
 public interface BizStoreMapper {
@@ -245,6 +246,21 @@ public interface BizStoreMapper {
     int completeReturn(@Param("orderItemId") Long orderItemId, @Param("bizNo") Long bizNo,
                        @Param("refundAmount") Integer refundAmount);
     void addPaymentRefundAmt(@Param("orderId") Long orderId, @Param("refundAmount") Integer refundAmount);
+
+    List<BizCouponVO> selectCouponListByBizNo(@Param("bizMemberNo") Long bizMemberNo);
+    BizCouponVO selectCouponById(@Param("couponId") Long couponId);
+    int insertCoupon(BizCouponVO vo);
+    int updateCoupon(BizCouponVO vo);
+    int deleteCoupon(
+        @Param("couponId") Long couponId,
+        @Param("bizMemberNo") Long bizMemberNo
+);
+
+// 지윤 26.08.06: 쇼핑몰 사업자 쿠폰 조기 마감
+int closeCoupon(
+        @Param("couponId") Long couponId,
+        @Param("bizMemberNo") Long bizMemberNo
+);
 }
 
 

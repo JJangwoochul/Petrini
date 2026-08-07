@@ -286,6 +286,42 @@ public class BizStayServiceImpl implements BizStayService {
         bizStayMapper.deleteCoupon(couponId, bizNo);
     }
 
+    /**
+     * 지윤 26.08.07
+     * 병원/숙소 쿠폰 조기 마감 (BizStoreServiceImpl.closeCoupon과 동일 패턴)
+     * 관리자 재승인 없이 사업자가 직접 마감한다.
+     * 기존에 발급된 회원 쿠폰은 변경하지 않는다.
+     */
+    @Override
+    public void closeCoupon(Long bizNo, Long couponId) {
+        BizCouponVO existing = bizStayMapper.selectCouponById(couponId);
+
+        if (existing == null) {
+            throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+
+        // 로그인 사업자가 발급한 쿠폰인지 확인
+        if (bizNo == null || !bizNo.equals(existing.getBizMemberNo())) {
+            throw new IllegalStateException("NOT_OWNER");
+        }
+
+        // 관리자 승인을 받은 쿠폰만 조기 마감 가능
+        if (!"APPROVED".equals(existing.getApprovalStatus())) {
+            throw new IllegalStateException("NOT_APPROVED");
+        }
+
+        // 현재 게시 중인 쿠폰만 조기 마감 가능
+        if (!"ACTIVE".equals(existing.getStatusCd())) {
+            throw new IllegalStateException("NOT_ACTIVE");
+        }
+
+        int result = bizStayMapper.closeCoupon(couponId, bizNo);
+
+        if (result == 0) {
+            throw new IllegalStateException("CLOSE_FAILED");
+        }
+    }
+
     //
     //HYJ 26.07.31 배너관리
     //

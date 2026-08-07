@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.store.vo.StoreShopVO;
 
 /**
  * 사용자 이벤트/쿠폰 페이지 DB 접근
@@ -39,4 +40,31 @@ public interface CouponMapper {
 
     // TB_COUPON 상세 1건 (발급 가능 여부 검증용)
     CouponVO selectCouponById(@Param("couponId") Long couponId);
+
+    // 지윤 26.08.06: 쿠폰과 발급 사업자 정보 조회
+    CouponVO selectCouponTarget(
+        @Param("couponId") Long couponId
+        );
+
+    // 지윤 26.08.06: 쿠폰 발급 쇼핑몰의 적용 상품 조회
+    // 지윤 26.08.06: 쿠폰 적용 상품 검색 및 정렬
+    List<StoreShopVO> selectCouponProducts(
+    @Param("bizNo") String bizNo,
+    @Param("sort") String sort,
+    @Param("keyword") String keyword
+);
+
+// 지윤 26.08.07: 특정 사업자(병원/숙소)가 발급한, 회원이 보유한 사용가능 쿠폰 목록
+List<CouponVO> selectMemberCouponsByBiz(@Param("memberNo") Long memberNo,
+                                        @Param("bizNo") Long bizNo);
+
+// 지윤 26.08.07: 결제 확정 시 서버 재검증용 — 본인 소유 + UNUSED 쿠폰 1건 조회
+CouponVO selectMemberCouponForUse(@Param("memberCouponId") Long memberCouponId,
+                                  @Param("memberNo") Long memberNo);
+
+// 지윤 26.08.07: 쿠폰 사용 확정 (STATUS_CD -> USED)
+int markMemberCouponUsed(@Param("memberCouponId") Long memberCouponId);
+
+    // 2026/08/07 장우철 — 숙소 취소/환불 시 쿠폰 복구 (USED -> UNUSED)
+    int restoreMemberCouponUsed(@Param("memberCouponId") Long memberCouponId);
 }

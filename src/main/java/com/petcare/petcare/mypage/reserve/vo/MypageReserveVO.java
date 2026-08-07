@@ -61,6 +61,13 @@ public class MypageReserveVO {
     private Long refundAmt;
     private Date cancelAt;
 
+    // 2026/08/07 장우철 — 쿠폰·포인트·실결제 (취소 환불 기준)
+    private Long memberCouponId;
+    private Long couponDiscount;
+    private Long pointUsed;
+    /** 취소 미리보기/환불 기준 실결제액 (PAY_AMOUNT) */
+    private Long payAmount;
+
     // 2026/08/06 장우철 — 숙소 환불신청 UI (PENDING/APPROVED/REJECTED, 예약 운영상태 유지)
     private String stayRefundStatus;
     // 2026/08/06 장우철 — 환불 승인/거절 시 관리자 답변

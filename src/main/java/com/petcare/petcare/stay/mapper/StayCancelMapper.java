@@ -32,4 +32,11 @@ public interface StayCancelMapper {
     // 2026/08/06 장우철 — 환불승인·보상숙박: 예약 상태 유지, 환불금액만 기록
     int updateStayRefundAmtKeepStatus(@Param("resvId") Long resvId,
                                       @Param("refundAmt") Long refundAmt);
+
+    // 2026/08/07 장우철 — 취소/환불 시 포인트 복구
+    Long selectMemberPointBalance(@Param("memberNo") Long memberNo);
+
+    int addMemberPointBalance(java.util.Map<String, Object> param);
+
+    int insertPointRefundHistory(java.util.Map<String, Object> param);
 }

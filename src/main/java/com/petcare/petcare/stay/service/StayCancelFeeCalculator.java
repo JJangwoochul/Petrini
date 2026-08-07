@@ -18,15 +18,15 @@ public final class StayCancelFeeCalculator {
     }
 
     /**
-     * @param totalAmount 예약 총액
+     * @param payAmount   카드/토스 실결제액 (쿠폰·포인트 제외). TB_PAYMENT.PAY_AMOUNT
      * @param checkinDate 체크인일
      * @param today       기준일 (보통 오늘)
      */
-    public static Result calculate(Long totalAmount, Date checkinDate, LocalDate today) {
+    public static Result calculate(Long payAmount, Date checkinDate, LocalDate today) {
         if (checkinDate == null) {
             throw new IllegalArgumentException("체크인일이 없습니다.");
         }
-        long amount = totalAmount != null ? totalAmount : 0L;
+        long amount = payAmount != null ? payAmount : 0L;
         if (amount < 0) {
             throw new IllegalArgumentException("예약 금액이 올바르지 않습니다.");
         }
@@ -67,8 +67,8 @@ public final class StayCancelFeeCalculator {
         return new Result(daysUntil, feeRatePercent, cancelFeeAmt, refundAmt, tierLabel);
     }
 
-    public static Result calculate(Long totalAmount, Date checkinDate) {
-        return calculate(totalAmount, checkinDate, LocalDate.now(ZONE));
+    public static Result calculate(Long payAmount, Date checkinDate) {
+        return calculate(payAmount, checkinDate, LocalDate.now(ZONE));
     }
 
     private static LocalDate toLocalDate(Date date) {

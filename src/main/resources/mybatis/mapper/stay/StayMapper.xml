@@ -230,7 +230,10 @@
                 R.NIGHT_CNT     AS nightCnt,
                 R.REQUEST_MEMO  AS requestMemo,
                 R.TOTAL_AMOUNT  AS totalAmount,
-                R.STATUS_CD, 
+                R.MEMBER_COUPON_ID AS memberCouponId,
+                R.COUPON_DISCOUNT  AS couponDiscount,
+                R.POINT_USED       AS pointUsed,
+                R.STATUS_CD,
                 R.REG_DATE,
                 M.MEMBER_NAME   AS memberName,
                 P.PET_NAME      AS petName,
@@ -298,6 +301,15 @@
         UPDATE TB_RESERVATION
            SET STATUS_CD = #{statusCd}
          WHERE RESV_ID   = #{resvId}
+    </update>
+
+    <!-- 지윤 26.08.07: 예약에 쿠폰·포인트 사용 내역 기록 (완료화면 정확한 결제금액 표시용) -->
+    <update id="updateReservationPaymentInfo" parameterType="map">
+        UPDATE TB_RESERVATION
+           SET MEMBER_COUPON_ID = #{memberCouponId},
+               COUPON_DISCOUNT  = #{couponDiscount},
+               POINT_USED       = #{pointUsed}
+         WHERE RESV_ID = #{resvId}
     </update>
 
     <!-- HYJ 26.07.20 결제 정보 등록 -->

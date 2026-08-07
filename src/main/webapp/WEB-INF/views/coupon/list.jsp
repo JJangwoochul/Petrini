@@ -23,6 +23,12 @@
   .ev-count{font-size:14px;color:var(--text-muted);margin-bottom:18px}
   .ev-count strong{color:#D97706;font-weight:800}
 
+  /* 지윤 26.08.07: 업종별 필터 탭 */
+  .cp-tabs{display:flex;gap:8px;margin-bottom:18px}
+  .cp-tab{padding:8px 18px;border:1px solid var(--border);border-radius:50px;background:var(--bg-card);color:var(--text-muted);font-size:13px;font-weight:700;cursor:pointer}
+  .cp-tab:hover{border-color:#F59E0B}
+  .cp-tab.active{background:#F59E0B;border-color:#F59E0B;color:#fff}
+
   /* 쿠폰 티켓 */
   .cp-ticket{display:flex;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:14px;transition:box-shadow .2s}
   .cp-ticket:hover{box-shadow:var(--shadow-sm)}
@@ -37,7 +43,22 @@
   .cp-ticket-name{font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:4px}
   .cp-ticket-cond{font-size:12px;color:var(--text-muted);margin-bottom:2px}
   .cp-ticket-date{font-size:12px;color:var(--text-muted)}
-  .cp-ticket-btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);background:#F59E0B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+
+/* 지윤 26.08.06: 적용 상품·병원·숙소 이동 링크 */
+.cp-ticket-target{
+  display:inline-block;
+  margin-top:7px;
+  color:#0D9F75;
+  font-size:12px;
+  font-weight:700;
+  text-decoration:none;
+}
+
+.cp-ticket-target:hover{
+  text-decoration:underline;
+}
+
+.cp-ticket-btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);background:#F59E0B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
   .cp-ticket-btn:hover{background:#D97706}
   .cp-ticket-btn.claimed{background:#F5F5F5;color:#aaa;cursor:not-allowed}
   .cp-ticket.ended{opacity:.5}
@@ -69,20 +90,37 @@
       <div class="ev-empty">현재 받을 수 있는 쿠폰이 없습니다.</div>
     </c:when>
     <c:otherwise>
+      <%-- 지윤 26.08.07: 업종별 필터 탭 (클라이언트 필터, 재조회 없음) --%>
+      <div class="cp-tabs">
+        <button type="button" class="cp-tab active" data-filter="ALL">전체</button>
+        <button type="button" class="cp-tab" data-filter="HOSPITAL">병원</button>
+        <button type="button" class="cp-tab" data-filter="STAY">숙소</button>
+        <button type="button" class="cp-tab" data-filter="STORE">쇼핑몰</button>
+      </div>
+
       <%-- 건수 표시 --%>
       <c:set var="claimableCount" value="0" />
       <c:forEach var="cpn" items="${availableCoupons}">
         <c:if test="${!cpn.alreadyClaimed}"><c:set var="claimableCount" value="${claimableCount + 1}" /></c:if>
       </c:forEach>
-      <div class="ev-count">총 <strong>${availableCoupons.size()}장</strong>의 쿠폰이 있습니다.</div>
+      <div class="ev-count">총 <strong id="evCountNum">${availableCoupons.size()}장</strong>의 쿠폰이 있습니다.</div>
+
+      <%-- 지윤 26.08.07: 필터 결과 0건일 때 표시 --%>
+      <div class="ev-empty" id="evFilterEmpty" style="display:none">해당 카테고리에 쿠폰이 없습니다.</div>
 
       <c:forEach var="cpn" items="${availableCoupons}">
-        <%-- 만료·소진 여부 판단 --%>
+        <%--
+          지윤 26.08.07
+          - 조기마감(INACTIVE)은 쿼리 단계에서 이미 제외되어 여기 안 옴
+          - isExpired : 기간 만료 → 목록엔 남되 버튼 비활성(마감)
+          - isExhausted : 수량/예산 소진 → 목록엔 남고 버튼은 눌리게 둠(클릭 시 서버가 소진 응답)
+          - isEnded : "버튼을 미리 막아야 하는" 케이스만 (기간만료). 소진은 제외!
+        --%>
         <c:set var="isExpired" value="${cpn.useEndDate < today}" />
         <c:set var="isExhausted" value="${cpn.statusCd eq 'EXHAUSTED' || cpn.issuedQty >= cpn.totalQty}" />
-        <c:set var="isEnded" value="${isExpired || isExhausted}" />
+        <c:set var="isEnded" value="${isExpired}" />
 
-        <div class="cp-ticket ${isEnded ? 'ended' : ''}">
+        <div class="cp-ticket ${isEnded ? 'ended' : ''}" data-biz-type="${cpn.bizType}">
           <div class="cp-ticket-left">
             <c:choose>
               <c:when test="${cpn.couponType eq 'FIXED'}">
@@ -107,19 +145,57 @@
                 <c:if test="${not empty cpn.bizName}"> · ${cpn.bizName}</c:if>
               </div>
               <div class="cp-ticket-date">
-                ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}까지
-                <c:if test="${!isExhausted}"> · 잔여 ${cpn.totalQty - cpn.issuedQty}장</c:if>
-              </div>
+  ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}까지
+  <c:if test="${!isExhausted}">
+    · 잔여 ${cpn.totalQty - cpn.issuedQty}장
+  </c:if>
+</div>
+
+<%--
+  지윤 26.08.06
+  쿠폰 발급 사업자 업종에 따라 적용 대상 이동
+--%>
+<c:choose>
+
+  <%-- 쇼핑몰 쿠폰: 해당 사업자의 상품 목록 --%>
+  <c:when test="${cpn.bizType eq 'STORE'}">
+    <a class="cp-ticket-target"
+       href="${contextPath}/coupon/products?couponId=${cpn.couponId}">
+      적용 상품 &gt;
+    </a>
+  </c:when>
+
+  <%-- 병원 쿠폰: 해당 병원 상세 페이지 --%>
+  <c:when test="${cpn.bizType eq 'HOSPITAL'
+                  && not empty cpn.targetId}">
+    <a class="cp-ticket-target"
+       href="${contextPath}/hospital/detail?id=${cpn.targetId}">
+      적용 병원 &gt;
+    </a>
+  </c:when>
+
+  <%-- 숙소 쿠폰: 해당 숙소 상세 페이지 --%>
+  <c:when test="${cpn.bizType eq 'STAY'
+                  && not empty cpn.targetId}">
+    <a class="cp-ticket-target"
+       href="${contextPath}/stay/detail?id=${cpn.targetId}">
+      적용 숙소 &gt;
+    </a>
+  </c:when>
+
+</c:choose>
             </div>
             <c:choose>
               <c:when test="${cpn.alreadyClaimed}">
-                <button class="cp-ticket-btn claimed" disabled>받기 완료</button>
+                <button class="cp-ticket-btn claimed" disabled>다운 완료</button>
               </c:when>
               <c:when test="${isEnded}">
                 <button class="cp-ticket-btn claimed" disabled>마감</button>
               </c:when>
+              <%-- 지윤 26.08.07: 소진(isExhausted)은 여기 안 걸림 → 버튼 그대로 눌림,
+                   claimCoupon() 호출 시 서버가 COUPON_EXHAUSTED로 막고 alert로 안내 --%>
               <c:otherwise>
-                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">받기</button>
+                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">다운</button>
               </c:otherwise>
             </c:choose>
           </div>
@@ -131,6 +207,29 @@
 </div>
 
 <script>
+// 지윤 26.08.07: 업종별 쿠폰 필터 (전체/병원/숙소/쇼핑몰)
+document.querySelectorAll('.cp-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.cp-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+
+        var filter = tab.dataset.filter;
+        var visibleCount = 0;
+
+        document.querySelectorAll('.cp-ticket').forEach(function(ticket) {
+            var match = (filter === 'ALL' || ticket.dataset.bizType === filter);
+            ticket.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+
+        var countEl = document.getElementById('evCountNum');
+        if (countEl) countEl.textContent = visibleCount + '장';
+
+        var emptyEl = document.getElementById('evFilterEmpty');
+        if (emptyEl) emptyEl.style.display = (visibleCount === 0) ? '' : 'none';
+    });
+});
+
 function claimCoupon(btn, couponId) {
     if (btn.disabled) return;
 
@@ -145,7 +244,7 @@ function claimCoupon(btn, couponId) {
         if (xhr.status === 200) {
             var res = JSON.parse(xhr.responseText);
             if (res.ok) {
-                btn.textContent = '받기 완료';
+                btn.textContent = '다운 완료';
                 btn.disabled = true;
                 btn.classList.add('claimed');
                 alert(res.message);

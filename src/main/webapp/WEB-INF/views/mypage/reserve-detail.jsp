@@ -166,12 +166,18 @@
         체크인 전 취소 시 입실일 기준으로 취소수수료가 적용됩니다.
         (<c:out value="${reservation.cancelFeeTierLabel}"/> · 체크인까지 ${reservation.daysUntilCheckin}일)
       </p>
-      <div class="fee-row"><span>결제금액</span><span><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span></div>
+      <div class="fee-row"><span>실결제금액</span><span><fmt:formatNumber value="${reservation.payAmount}" pattern="#,###"/>원</span></div>
+      <c:if test="${not empty reservation.couponDiscount and reservation.couponDiscount > 0}">
+        <div class="fee-row"><span>쿠폰할인</span><span><fmt:formatNumber value="${reservation.couponDiscount}" pattern="#,###"/>원 (복구)</span></div>
+      </c:if>
+      <c:if test="${not empty reservation.pointUsed and reservation.pointUsed > 0}">
+        <div class="fee-row"><span>사용포인트</span><span><fmt:formatNumber value="${reservation.pointUsed}" pattern="#,###"/>P (복구)</span></div>
+      </c:if>
       <div class="fee-row">
         <span>취소수수료 (${reservation.cancelFeeRatePercent}%)</span>
         <strong><fmt:formatNumber value="${reservation.cancelFeeAmt}" pattern="#,###"/>원</strong>
       </div>
-      <div class="fee-row"><span>예상 환불액</span><span><fmt:formatNumber value="${reservation.refundAmt}" pattern="#,###"/>원</span></div>
+      <div class="fee-row"><span>예상 카드환불액</span><span><fmt:formatNumber value="${reservation.refundAmt}" pattern="#,###"/>원</span></div>
       <form method="post" action="${contextPath}/mypage/reserve/stay-cancel"
             onsubmit="return confirm('예약을 취소하시겠습니까? 취소수수료가 적용됩니다.');">
         <!--HYJ 26.08.05-->

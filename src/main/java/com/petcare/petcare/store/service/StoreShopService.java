@@ -39,17 +39,13 @@ public interface StoreShopService {
 //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터
 //지윤 26.07.12 가격대(minPrice/maxPrice)·브랜드(brand) 필터 파라미터 추가
 //지윤 26.07.30 수정: brand String -> List<String> (다중선택)
-List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, String sort, int pageNo);
+List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, String sort, int pageNo, Long bizNo);
 
-//지윤 26.07.06 페이지네이션용 총 페이지 수 계산
-//지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
-int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand);
+int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, Long bizNo);
 
-//지윤 26.07.21 추가: 필터 조건에 맞는 전체 상품 개수 (목록 화면 "총 O개 상품" 표시용, 페이지 크기와 무관한 실제 총합)
-int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand);
+int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, Long bizNo);
 
-//지윤 26.07.12 사이드바 브랜드별 상품 수 조회
-List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice);
+List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, Long bizNo);
 
 //지윤 26.07.06 카테고리 트리 조회
 List<CategoryVO> getCategoryTree();

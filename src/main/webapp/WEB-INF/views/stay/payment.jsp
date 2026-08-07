@@ -119,6 +119,25 @@
       <span><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</span>
     </div>
 
+    <%-- 지윤 26.08.07: 쿠폰 사용 --%>
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px 16px;margin:12px 0">
+      <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:8px">보유 쿠폰</div>
+      <select id="couponSelect" onchange="calcFinalAmount()"
+              style="width:100%;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;font-size:14px;outline:none;font-family:inherit">
+        <option value="0" data-type="" data-value="0" data-min="0">쿠폰 선택 안 함</option>
+        <c:forEach var="c" items="${usableCoupons}">
+          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-min="${c.minOrderAmt}">
+            ${c.couponName}
+            <c:if test="${c.couponType == 'RATE'}"> (${c.discountValue}% 할인)</c:if>
+            <c:if test="${c.couponType == 'FIXED'}"> (<fmt:formatNumber value="${c.discountValue}" pattern="#,###"/>원 할인)</c:if>
+          </option>
+        </c:forEach>
+      </select>
+      <c:if test="${empty usableCoupons}">
+        <small style="color:var(--text-muted)">이 숙소에 사용 가능한 쿠폰이 없습니다.</small>
+      </c:if>
+    </div>
+
     <%-- 포인트 사용 --%>
       <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:14px 16px;margin:12px 0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -137,6 +156,11 @@
     <div style="display:none"><span id="pointDiscountRow"></span></div>
 
     <div class="pay-total-box">
+        <%-- 지윤 26.08.07: 쿠폰 할인 표시 행 --%>
+        <div class="pay-row" id="couponDiscountDisplay" style="display:none;margin-bottom:10px">
+          <span>쿠폰 할인</span>
+          <span id="couponDiscountLabel" style="color:#D97706">-0원</span>
+        </div>
         <div class="pay-row" id="pointDiscountDisplay" style="display:none;margin-bottom:10px">
           <span>포인트 사용</span>
           <span id="pointDiscountLabel" style="color:#16A34A">0P</span>
@@ -168,6 +192,9 @@
   var resvNo = "${reservation.resvNo}";
   var contextPath = "${contextPath}";
   var usedPoint = 0;
+  // 지윤 26.08.07: 쿠폰 상태
+  var couponDiscount = 0;
+  var couponMemberCouponId = 0;
 
   var tossPayments = TossPayments(clientKey);
   var widgets = tossPayments.widgets({ customerKey: customerKey });
@@ -232,29 +259,69 @@
     refreshCards();
   })();
 
+  // 지윤 26.08.07: 선택된 쿠폰으로 할인 계산 (store/order.jsp와 동일 패턴)
+  function calcCouponDiscount() {
+    var couponSel = document.getElementById('couponSelect');
+    var opt = couponSel.options[couponSel.selectedIndex];
+    var couponType = opt.dataset.type;
+    var couponValue = parseInt(opt.dataset.value) || 0;
+    var minOrderAmt = parseInt(opt.dataset.min) || 0;
+
+    couponMemberCouponId = parseInt(couponSel.value) || 0;
+    couponDiscount = 0;
+
+    if (couponType) {
+      if (totalAmount < minOrderAmt) {
+        alert('최소 예약금액 ' + minOrderAmt.toLocaleString() + '원 이상부터 사용 가능한 쿠폰입니다.');
+        couponSel.value = '0';
+        couponMemberCouponId = 0;
+      } else if (couponType === 'RATE') {
+        couponDiscount = Math.floor(totalAmount * couponValue / 100);
+      } else if (couponType === 'FIXED') {
+        couponDiscount = couponValue;
+      }
+    }
+    if (couponDiscount > totalAmount) couponDiscount = totalAmount;
+
+    var discountDisplay = document.getElementById('couponDiscountDisplay');
+    if (discountDisplay) {
+      if (couponDiscount > 0) {
+        discountDisplay.style.display = 'flex';
+        document.getElementById('couponDiscountLabel').textContent = '-' + couponDiscount.toLocaleString() + '원';
+      } else {
+        discountDisplay.style.display = 'none';
+      }
+    }
+  }
+
   function useAllPoints() {
     // 2026/07/27 장우철 — 전액 사용도 보유분·결제액 이내
+    // 지윤 26.08.07 — 쿠폰 할인 반영한 금액 기준으로 상한 계산
     var held = Math.max(0, memberPoint || 0);
-    var maxUsable = Math.min(held, totalAmount);
+    var payableAfterCoupon = totalAmount - couponDiscount;
+    var maxUsable = Math.min(held, payableAfterCoupon);
     document.getElementById('pointInput').value = maxUsable;
     calcFinalAmount();
   }
 
   function calcFinalAmount() {
+    // 지윤 26.08.07: 쿠폰 먼저 계산 -> 그 결과 금액 기준으로 포인트 계산
+    calcCouponDiscount();
+
     var input = document.getElementById('pointInput');
     var val = parseInt(input.value) || 0;
     var held = Math.max(0, memberPoint || 0);
-    var maxUsable = Math.min(held, totalAmount);
+    var payableAfterCoupon = totalAmount - couponDiscount;
+    var maxUsable = Math.min(held, payableAfterCoupon);
 
-    // 범위 제한
     if (val < 0) val = 0;
     if (val > maxUsable) val = maxUsable;
     input.value = val;
+    input.max = maxUsable;
 
     usedPoint = val;
-    var finalAmount = totalAmount - usedPoint;
+    var finalAmount = payableAfterCoupon - usedPoint;
 
-    // 포인트 할인 행 표시
     var discountDisplay = document.getElementById('pointDiscountDisplay');
     if (discountDisplay) {
       if (usedPoint > 0) {
@@ -265,21 +332,18 @@
       }
     }
 
-    // 최종 금액 + 버튼
     document.getElementById('finalAmountLabel').textContent = finalAmount.toLocaleString() + '원';
     var btn = document.getElementById('btnPayFinal');
 
     if (finalAmount === 0) {
-      btn.textContent = '포인트로 결제하기';
+      btn.textContent = '포인트/쿠폰으로 결제하기';
       document.getElementById('tossSection').style.display = 'none';
     } else {
       btn.textContent = finalAmount.toLocaleString() + '원 결제하기';
       document.getElementById('tossSection').style.display = 'block';
-      // Toss 금액 업데이트
       widgets.setAmount({ currency: "KRW", value: finalAmount });
     }
 
-    // 메시지
     var msgEl = document.getElementById('pointMsg');
     if (msgEl) {
       if (usedPoint > 0) {
@@ -292,11 +356,14 @@
   }
 
   async function requestPayment() {
-    var finalAmount = totalAmount - usedPoint;
+    // 지윤 26.08.07: 쿠폰 할인까지 반영한 최종 결제 금액
+    var payableAfterCoupon = totalAmount - couponDiscount;
+    var finalAmount = payableAfterCoupon - usedPoint;
 
-    // 전액 포인트 결제 — Toss 없이 서버로 직접 요청
+    // 전액 포인트/쿠폰 결제 — Toss 없이 서버로 직접 요청
     if (finalAmount === 0) {
-      location.href = contextPath + '/stay/payment/point-only?resvId=' + resvId + '&usedPoint=' + usedPoint;
+      location.href = contextPath + '/stay/payment/point-only?resvId=' + resvId
+        + '&usedPoint=' + usedPoint + '&couponMemberCouponId=' + couponMemberCouponId;
       return;
     }
 
@@ -313,7 +380,8 @@
       try {
         var body = 'billingCardId=' + encodeURIComponent(selectedBillingCardId)
           + '&resvId=' + encodeURIComponent(resvId)
-          + '&usedPoint=' + encodeURIComponent(usedPoint);
+          + '&usedPoint=' + encodeURIComponent(usedPoint)
+          + '&couponMemberCouponId=' + encodeURIComponent(couponMemberCouponId);
         //HYJ 26.08.05
         var res = await csrfFetch(contextPath + '/stay/payment/billing-card', {
           method: 'POST',
@@ -335,8 +403,8 @@
     }
 
     try {
-      // 포인트 사용액을 orderId에 포함시켜 서버에서 파싱
-      var orderId = 'stay-' + resvId + '-' + usedPoint + '-' + Date.now();
+      // 포인트·쿠폰 사용 정보를 orderId에 포함시켜 서버에서 파싱
+      var orderId = 'stay-' + resvId + '-' + usedPoint + '-' + couponMemberCouponId + '-' + Date.now();
       await widgets.requestPayment({
         orderId: orderId,
         orderName: "${reservation.stayName} - ${reservation.serviceName} ${reservation.nightCnt}박",

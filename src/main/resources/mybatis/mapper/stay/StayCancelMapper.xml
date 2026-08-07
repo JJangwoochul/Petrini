@@ -11,6 +11,9 @@
             R.MEMBER_NO     AS memberNo,
             R.STATUS_CD     AS statusCd,
             R.TOTAL_AMOUNT  AS totalAmount,
+            R.MEMBER_COUPON_ID AS memberCouponId,
+            R.COUPON_DISCOUNT  AS couponDiscount,
+            R.POINT_USED       AS pointUsed,
             R.CHECKIN_DATE  AS checkinDate,
             R.CHECKOUT_DATE AS checkoutDate,
             R.TARGET_ID     AS targetId,
@@ -82,5 +85,33 @@
        AND RESV_TYPE = 'STAY'
        AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
   </update>
+
+  <!-- 2026/08/07 장우철 — 취소/환불 포인트 복구 -->
+  <select id="selectMemberPointBalance" resultType="long">
+    SELECT NVL(POINT_BALANCE, 0) FROM TB_MEMBER WHERE MEMBER_NO = #{memberNo}
+  </select>
+
+  <update id="addMemberPointBalance" parameterType="map">
+    UPDATE TB_MEMBER
+       SET POINT_BALANCE = NVL(POINT_BALANCE, 0) + #{pointAmount}
+     WHERE MEMBER_NO = #{memberNo}
+  </update>
+
+  <insert id="insertPointRefundHistory" parameterType="map">
+    INSERT INTO TB_POINT (
+      POINT_ID, MEMBER_NO, POINT_TYPE, POINT_AMOUNT,
+      BALANCE_AFTER, REASON_CD, REF_TYPE, REF_ID, REG_DATE
+    ) VALUES (
+      (SELECT NVL(MAX(POINT_ID), 0) + 1 FROM TB_POINT),
+      #{memberNo},
+      'REFUND',
+      #{pointAmount},
+      #{balanceAfter},
+      #{reasonCd, jdbcType=VARCHAR},
+      #{refType, jdbcType=VARCHAR},
+      #{refId, jdbcType=VARCHAR},
+      SYSDATE
+    )
+  </insert>
 
 </mapper>

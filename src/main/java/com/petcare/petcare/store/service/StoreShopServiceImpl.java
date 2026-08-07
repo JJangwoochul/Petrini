@@ -44,14 +44,18 @@ public class StoreShopServiceImpl implements StoreShopService {
     @Autowired
     private MypageNotifyService mypageNotifyService;
 
+    //지윤 26.08.05 추가: 품절 시 사업자에게 이메일 알림 보내기 위해 주입
+    @Autowired
+    private com.petcare.petcare.member.auth.service.EmailService emailService;
+
     //지윤 26.07.06 페이지당 상품 개수 (요구사항 고정값)
     private static final int PAGE_SIZE = 12;
 
     //지윤 26.07.06 카테고리/검색어/정렬/페이지네이션 파라미터(pageNo) 추가, 26.07.12 가격대·브랜드 필터 파라미터 추가
     @Override
-    public List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, String sort, int pageNo) {
+    public List<StoreShopVO> getProductList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, String sort, int pageNo, Long bizNo) {
         int offset = (pageNo - 1) * PAGE_SIZE;
-        List<StoreShopVO> list = storeShopMapper.selectProductList(categoryId, keyword, minPrice, maxPrice, brand, sort, offset, PAGE_SIZE);
+        List<StoreShopVO> list = storeShopMapper.selectProductList(categoryId, keyword, minPrice, maxPrice, brand, sort, offset, PAGE_SIZE, bizNo);
         for (StoreShopVO p : list) {
             if (p.getPrice() != null && p.getSalePrice() != null && p.getPrice() > 0) {
                 int rate = (int) Math.round((p.getPrice() - p.getSalePrice()) * 100.0 / p.getPrice());
@@ -66,21 +70,19 @@ public class StoreShopServiceImpl implements StoreShopService {
 //지윤 26.07.06 총 페이지 수 계산 (전체개수 / 12, 나머지 있으면 올림)
 //지윤 26.07.12 가격대·브랜드 필터 파라미터 추가
 @Override
-public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand) {
-    int totalCount = storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
+public int getTotalPages(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, Long bizNo) {
+    int totalCount = storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand, bizNo);
     return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
 }
 
-//지윤 26.07.21 추가: 전체 상품 개수 (getTotalPages와 같은 count 쿼리 재사용, 화면 표시용으로 그대로 반환)
 @Override
-public int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand) {
-    return storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand);
+public int getTotalCount(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, List<String> brand, Long bizNo) {
+    return storeShopMapper.selectProductCount(categoryId, keyword, minPrice, maxPrice, brand, bizNo);
 }
 
-//지윤 26.07.12 사이드바 브랜드별 상품 수 조회 (브랜드 필터 자체는 제외해서 다른 브랜드도 계속 선택 가능)
   @Override
-  public List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice) {
-      return storeShopMapper.selectBrandCounts(categoryId, keyword, minPrice, maxPrice);
+  public List<BrandVO> getBrandList(Long categoryId, String keyword, Integer minPrice, Integer maxPrice, Long bizNo) {
+      return storeShopMapper.selectBrandCounts(categoryId, keyword, minPrice, maxPrice, bizNo);
   }
 
 //지윤 26.07.06 카테고리 트리는 가공 없이 그대로 전달
@@ -294,13 +296,28 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
                 storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
             }
 
-            //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
-            //지윤 26.07.16 수정: 방금 품절로 "새로 바뀐" 경우에만(반환값>0) 사업자에게 알림 전송
-            int soldoutJustNow = storeShopMapper.checkAndSetSoldout(item.getProductId());
-            if (soldoutJustNow > 0) {
-                Long bizMemberNo = storeShopMapper.selectBizMemberNoByBizNo(item.getBizNo());
-                mypageNotifyService.sendProductSoldoutNotification(bizMemberNo, item.getProductName(), item.getProductId());
-            }
+    //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
+    //지윤 26.07.16 수정: 방금 품절로 "새로 바뀐" 경우에만(반환값>0) 사업자에게 알림 전송
+        int soldoutJustNow = storeShopMapper.checkAndSetSoldout(item.getProductId());
+        if (soldoutJustNow > 0) {
+    // 기존: 인앱 알림(알림함)
+    Long bizMemberNo = storeShopMapper.selectBizMemberNoByBizNo(item.getBizNo());
+    mypageNotifyService.sendProductSoldoutNotification(bizMemberNo, item.getProductName(), item.getProductId());
+
+    //지윤 26.08.05 추가: 인앱 알림뿐 아니라 이메일로도 품절 안내
+    //사업자 승인 알림(sendApproveNotice)이랑 완전히 같은 패턴 - EmailService.send()를 재사용
+    try {
+        String bizEmail = storeShopMapper.selectBizEmailByBizNo(item.getBizNo());
+        if (bizEmail != null && !bizEmail.isBlank()) {
+            String bizName = storeShopMapper.selectBizNameByBizNo(item.getBizNo());
+            emailService.sendSoldoutNotice(bizEmail, bizName, item.getProductName());
+        }
+    } catch (Exception e) {
+        //이메일 발송(외부 SMTP 의존)이 실패해도 결제/재고차감 같은 핵심 흐름은 절대 막히면 안 되므로
+        //예외를 여기서 잡아서 흐름은 계속 진행시키고, 로그만 남김
+        e.printStackTrace();
+    }
+}
         }
 
         //지윤 26.07.30 수정: 토스 결제 1건에 대해, 사업자 수만큼 TB_PAYMENT도 각각 생성 (같은 paymentKey/orderId 공유, orderId 컬럼만 다름)
