@@ -1,6 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%-- 2026-08-07 박유정 — 사업자 배너 목록: effectiveStatusLabel·미리보기 URL 분기 --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%-- 2026-08-07 박유정 — fn:startsWith (이미지 URL 분기) --%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="반려동물 숙소" />
 <c:set var="bizPage" value="banner" />
@@ -53,7 +56,20 @@
                                     <td>
                                         <c:choose>
                                             <c:when test="${not empty banner.imageUrl}">
-                                                <img src="/upload/${banner.imageUrl}" alt=""
+                                                <%-- 2026-08-07 박유정 — /upload/ 접두어·외부 URL 분기 (ad-banner.jsp 동일) --%>
+                                                <c:set var="imgSrc" value="${banner.imageUrl}" />
+                                                <c:choose>
+                                                    <c:when test="${fn:startsWith(banner.imageUrl, 'http')}">
+                                                        <c:set var="imgSrc" value="${banner.imageUrl}" />
+                                                    </c:when>
+                                                    <c:when test="${fn:startsWith(banner.imageUrl, '/upload/')}">
+                                                        <c:set var="imgSrc" value="${contextPath}${banner.imageUrl}" />
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <c:set var="imgSrc" value="${contextPath}/upload/${banner.imageUrl}" />
+                                                    </c:otherwise>
+                                                </c:choose>
+                                                <img src="${imgSrc}" alt=""
                                                      style="width:120px;height:50px;object-fit:cover;border-radius:6px"
                                                      onerror="this.src='https://placehold.co/120x50/EAF7F2/2BAB82?text=배너'">
                                             </c:when>
@@ -70,25 +86,28 @@
                                         ${banner.startDate} ~ ${banner.endDate}
                                     </td>
                                     <td>
+                                        <%-- 2026-08-07 박유정 — effectiveStatusLabel (기간 반영, 관리자 목록과 동일) --%>
                                         <c:choose>
-                                            <c:when test="${banner.statusCd eq 'PENDING'}">
+                                            <c:when test="${banner.effectiveStatusLabel eq '심사중'}">
                                                 <span class="biz-badge warning">심사중</span>
                                             </c:when>
-                                            <%-- 2026-08-06 박유정 — HOLD 노출예정 --%>
-                                            <c:when test="${banner.statusCd eq 'HOLD'}">
+                                            <c:when test="${banner.effectiveStatusLabel eq '노출예정'}">
                                                 <span class="biz-badge warning">노출예정</span>
                                             </c:when>
-                                            <c:when test="${banner.statusCd eq 'ACTIVE'}">
+                                            <c:when test="${banner.effectiveStatusLabel eq '노출중'}">
                                                 <span class="biz-badge success">노출중</span>
                                             </c:when>
-                                            <c:when test="${banner.statusCd eq 'REJECTED'}">
+                                            <c:when test="${banner.effectiveStatusLabel eq '노출 예정'}">
+                                                <span class="biz-badge warning">노출 예정</span>
+                                            </c:when>
+                                            <c:when test="${banner.effectiveStatusLabel eq '반려'}">
                                                 <span class="biz-badge danger">반려</span>
                                             </c:when>
-                                            <c:when test="${banner.statusCd eq 'EXPIRED'}">
+                                            <c:when test="${banner.effectiveStatusLabel eq '미노출'}">
                                                 <span class="biz-badge inactive">미노출</span>
                                             </c:when>
                                             <c:otherwise>
-                                                <span class="biz-badge">${banner.statusLabel}</span>
+                                                <span class="biz-badge">${banner.effectiveStatusLabel}</span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>

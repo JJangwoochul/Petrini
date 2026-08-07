@@ -2,6 +2,7 @@
 <%--
   역할: 관리자 배너 광고 상세
   - 2026-08-06 박유정 — 기간 변경, 광고 올리기/내리기, 승인·대기·반려
+  - 2026-08-07 박유정 — 배너 정보 수정 (제목·링크·이미지), 미리보기 URL 분기
 --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
@@ -73,6 +74,7 @@
             </div>
             <c:choose>
                 <c:when test="${not empty banner.imageUrl}">
+                    <%-- 2026-08-07 박유정 — 미리보기 이미지 URL (외부 http /upload/ 분기) --%>
                     <c:set var="imgSrc" value="${banner.imageUrl}" />
                     <c:if test="${not fn:startsWith(banner.imageUrl, 'http')}">
                         <c:set var="imgSrc" value="${contextPath}/upload/${banner.imageUrl}" />
@@ -114,6 +116,7 @@
                 <div class="banner-info-row">
                     <span class="banner-info-label">상태</span>
                     <span class="banner-info-value">
+                        <%-- 2026-08-07 박유정 — effectiveStatusLabel (기간 반영) --%>
                         <c:choose>
                             <c:when test="${banner.effectiveStatusLabel eq '심사중'}"><span class="adm-badge warning">심사중</span></c:when>
                             <c:when test="${banner.effectiveStatusLabel eq '노출예정'}"><span class="adm-badge warning">노출예정</span></c:when>
@@ -147,6 +150,31 @@
         </div>
 
         <div>
+
+         <%-- 2026-08-07 박유정 — 배너 정보 수정 (제목·링크·이미지) --%>
+            <div class="banner-side-card">
+                <h3 class="banner-side-title">배너 정보 수정</h3>
+                <form class="banner-side-form" method="post"
+                      action="${contextPath}/admin/cms/banner/update"
+                      enctype="multipart/form-data">
+                    <input type="hidden" name="bannerId" value="${banner.bannerId}">
+                    <div>
+                        <label>배너 제목</label>
+                        <input type="text" name="title" value="${banner.title}" required>
+                    </div>
+                    <div>
+                        <label>링크 URL</label>
+                        <input type="text" name="linkUrl" value="${banner.linkUrl}"
+                               placeholder="비우면 클릭 시 이동 없음">
+                    </div>
+                    <div>
+                        <label>배너 이미지 (변경 시만 선택)</label>
+                        <input type="file" name="bannerImage" accept="image/*">
+                        <span style="font-size:11px;color:#999">JPG, PNG / PDF 불가</span>
+                    </div>
+                    <button type="submit" class="adm-btn blue">정보 저장</button>
+                </form>
+            </div>
             <div class="banner-side-card">
                 <h3 class="banner-side-title">광고 기간 재설정</h3>
                 <form class="banner-side-form" method="post" action="${contextPath}/admin/cms/banner/period">

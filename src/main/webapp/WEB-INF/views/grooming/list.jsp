@@ -56,6 +56,9 @@
   </div>
 </div>
 
+<%-- 2026-08-07 박유정 — 미용 목록 광고 배너 (POSITION_CD=GROOMING, store/list.jsp 동일) --%>
+<%@ include file="/WEB-INF/views/common/ad-banner.jsp" %>
+
 <div class="gr-wrap">
   <aside>
     <div class="gr-filter-card">

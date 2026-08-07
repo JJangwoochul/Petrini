@@ -126,6 +126,9 @@
   </div>
 </div>
 
+<%-- 2026-08-07 박유정 — 숙소 목록 광고 배너 (POSITION_CD=STAY, store/list.jsp 동일) --%>
+<%@ include file="/WEB-INF/views/common/ad-banner.jsp" %>
+
 <%-- 검색 폼 (hidden) --%>
 <form id="searchForm" method="get" action="${contextPath}/stay">
   <input type="hidden" name="region"   id="hRegion"   value="${search.region}" />

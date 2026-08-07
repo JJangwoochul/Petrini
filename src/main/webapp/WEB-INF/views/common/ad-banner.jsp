@@ -6,6 +6,7 @@
      - pageId 변수(store, hospital, stay, grooming)를 POSITION_CD로 매핑
      - /api/banners?position=STORE 등으로 해당 위치 배너만 조회
      - 2026-08-06 박유정 — store/list.jsp 연동, 이미지 URL 처리
+     - 2026-08-07 박유정 — API imageUrl 직접 사용, 로드 실패 시 placeholder
 ==================================================================== --%>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
@@ -63,6 +64,17 @@
   var position = pageMap[pageId] || pageId.toUpperCase();
   var ctx = '${contextPath}';
 
+  // 2026-08-07 박유정 — API가 내려준 URL 우선 (없으면 클라이언트에서 조합)
+  function resolveImgSrc(url) {
+    if (!url) return '';
+    var path = String(url).replace(/\\/g, '/');
+    if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) return path;
+    if (ctx && path.indexOf(ctx + '/') === 0) return path;
+    if (path.indexOf('/upload/') === 0) return ctx + path;
+    if (path.indexOf('upload/') === 0) return ctx + '/' + path;
+    return ctx + '/upload/' + path;
+  }
+
   fetch(ctx + '/api/banners?position=' + position)
     .then(function(res) { return res.json(); })
     .then(function(list) {
@@ -70,42 +82,41 @@
 
       var track = document.getElementById('advTrack');
       var dots  = document.getElementById('advDots');
+      var slideCount = 0;
 
 // 슬라이드 생성
 for (var i = 0; i < list.length; i++) {
     var b = list[i];
+    var imgSrc = resolveImgSrc(b.imageUrl);
+    if (!imgSrc) continue;
+
     var slide = document.createElement('a');
     slide.className = 'adv-slide';
     slide.href = b.linkUrl || '#';
 
-    // 2026-08-06 박유정 — 외부 URL /upload/ 중복 방지 (main.jsp 동일)
-    var imgSrc = b.imageUrl || '';
-    if (imgSrc.indexOf('http') === 0) {
-    } else if (imgSrc.indexOf('/upload/') === 0) {
-        imgSrc = ctx + imgSrc;
-    } else {
-        imgSrc = ctx + '/upload/' + imgSrc;
-    }
-
     slide.innerHTML =
-        '<img src="' + imgSrc + '" alt="' + (b.title || '') + '"' +
+        '<img src="' + imgSrc + '" alt="' + (b.title || '').replace(/"/g, '&quot;') + '"' +
+        // 2026-08-07 박유정 — 로드 실패 시 AD placeholder
         ' onerror="this.src=\'https://placehold.co/1160x140/2BAB82/ffffff?text=AD\'">';
 
     track.appendChild(slide);
 
     // 도트 생성
     var dot = document.createElement('span');
-    dot.className = 'adv-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('data-i', i);
+    dot.className = 'adv-dot' + (slideCount === 0 ? ' active' : '');
+    dot.setAttribute('data-i', slideCount);
     dots.appendChild(dot);
+    slideCount++;
 }
+
+      if (slideCount === 0) return;
 
       // 배너 영역 표시
       document.getElementById('advWrap').style.display = 'block';
 
       // 슬라이더 로직
       var allDots = dots.querySelectorAll('.adv-dot');
-      var total = list.length;
+      var total = slideCount;
       var idx = 0;
       var timer;
 

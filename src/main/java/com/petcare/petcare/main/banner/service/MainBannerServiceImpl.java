@@ -13,6 +13,7 @@
  * 비즈니스 로직은 여기에 작성 (Controller, Mapper에 직접 작성 X)
  *
  * 2026-08-06 박유정 — API 조회 전 종료일 경과 배너 EXPIRED 처리
+ * 2026-08-07 박유정 — 위치별 maxCount (MAIN_MID 1건, Oracle ROWNUM)
  */
 
 package com.petcare.petcare.main.banner.service;
@@ -40,8 +41,10 @@ public class MainBannerServiceImpl implements MainBannerService {
     public List<MainBannerVO> getBannersByPosition(String positionCd) {
         // 2026-08-06 박유정 — 종료일 지난 배너 상태 동기화 후 조회
         bannerExpiryService.expirePastEndDateBanners();
+        // 2026-08-07 박유정 — 위치별 최대 노출 수 (MAIN_MID 1건)
+        int maxCount = BannerConstants.getMaxPerPosition(positionCd);
         List<MainBannerVO> result = mainBannerMapper.selectActiveBannersByPosition(
-                positionCd, BannerConstants.MAX_PER_POSITION);
+                positionCd, maxCount);
         return result;
     }
 }

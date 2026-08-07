@@ -77,6 +77,9 @@
   </div>
 </div>
 
+<%-- 2026-08-07 박유정 — 병원 목록 광고 배너 (POSITION_CD=HOSPITAL, store/list.jsp 동일) --%>
+<%@ include file="/WEB-INF/views/common/ad-banner.jsp" %>
+
 <%-- 검색 폼 (hidden) --%>
 <form id="searchForm" method="get" action="${contextPath}/hospital">
   <input type="hidden" name="keyword"    id="hKeyword"    value="${search.keyword}" />

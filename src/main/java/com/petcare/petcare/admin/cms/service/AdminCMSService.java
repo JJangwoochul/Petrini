@@ -8,6 +8,7 @@
  * - admin/cms/banner-form.jsp 배너 등록·수정
  * - admin/cms/notice-form.jsp 공지 등록·수정
  * - admin/cms/faq-form.jsp    FAQ 등록·수정
+ * - POST /banner/update           배너 정보 수정 (제목·링크·이미지)
  *
  * 구현할 기능 예시
  * - 배너 목록·등록·수정·삭제
@@ -32,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public interface AdminCMSService {
     // 2026-08-06 박유정 — 관리자 배너 목록·건수 (대분류 + 중분류 탭)
     List<MainBannerVO> getBannerListByTabAndCategory(String tab, String category);
@@ -42,8 +45,12 @@ public interface AdminCMSService {
     String approveBanner(Long bannerId);
     void holdBanner(Long bannerId, String holdReason);
     void rejectBanner(Long bannerId, String rejectReason);
+    // 2026-08-07 박유정 — 관리자 배너 상세 조회
     MainBannerVO getBannerDetail(Long bannerId);
     void updateBannerPeriod(Long bannerId, String startDate, String endDate);
+    // 2026-08-07 박유정 — 관리자 배너 정보 수정 (제목·링크·이미지)
+    void updateBannerInfo(Long bannerId, String title, String linkUrl,
+                 MultipartFile bannerImage) throws Exception;
     void deactivateBanner(Long bannerId);
     String activateBanner(Long bannerId);
     void deleteBanner(Long bannerId);

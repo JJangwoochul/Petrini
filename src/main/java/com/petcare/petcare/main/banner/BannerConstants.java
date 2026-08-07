@@ -12,6 +12,14 @@ public final class BannerConstants {
     /** 노출 위치(POSITION_CD)별 최대 배너 수 — 2026-08-06 박유정 */
     public static final int MAX_PER_POSITION = 5;
 
+    /** 2026-08-07 박유정 — 위치별 최대 배너 수 (메인 중간은 1개만) */
+    public static int getMaxPerPosition(String positionCd) {
+        if ("MAIN_MID".equals(positionCd)) {
+            return 1;
+        }
+        return MAX_PER_POSITION;
+    }
+
     /** 관리자 배너 관리 — 대분류 카테고리 — 2026-08-06 박유정 */
     public static final String CATEGORY_MAIN = "main";
     public static final String CATEGORY_STAY = "stay";
