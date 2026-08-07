@@ -80,6 +80,10 @@ public class CouponController {
                 result.put("message", "이미 받은 쿠폰입니다.");
             } else if ("COUPON_EXHAUSTED".equals(e.getMessage()) || "BUDGET_EXHAUSTED".equals(e.getMessage())) {
                 result.put("message", "쿠폰이 모두 소진되었습니다.");
+            } else if ("COUPON_CLOSED".equals(e.getMessage())) {
+                result.put("message", "조기 마감된 쿠폰입니다.");
+            } else if ("COUPON_EXPIRED".equals(e.getMessage())) {
+                result.put("message", "쿠폰 사용 기간이 종료되었습니다.");
             } else {
                 result.put("message", "쿠폰을 받을 수 없습니다.");
             }

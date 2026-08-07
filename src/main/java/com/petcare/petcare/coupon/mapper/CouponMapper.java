@@ -53,4 +53,15 @@ public interface CouponMapper {
     @Param("sort") String sort,
     @Param("keyword") String keyword
 );
+
+// 지윤 26.08.07: 특정 사업자(병원/숙소)가 발급한, 회원이 보유한 사용가능 쿠폰 목록
+List<CouponVO> selectMemberCouponsByBiz(@Param("memberNo") Long memberNo,
+                                        @Param("bizNo") Long bizNo);
+
+// 지윤 26.08.07: 결제 확정 시 서버 재검증용 — 본인 소유 + UNUSED 쿠폰 1건 조회
+CouponVO selectMemberCouponForUse(@Param("memberCouponId") Long memberCouponId,
+                                  @Param("memberNo") Long memberNo);
+
+// 지윤 26.08.07: 쿠폰 사용 확정 (STATUS_CD -> USED)
+int markMemberCouponUsed(@Param("memberCouponId") Long memberCouponId);
 }

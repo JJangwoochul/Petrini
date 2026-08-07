@@ -60,16 +60,39 @@ public void claimCoupon(Long memberNo, Long couponId) {
             throw new IllegalStateException("ALREADY_CLAIMED");
         }
 
-        // 2) 쿠폰 존재 여부만 확인
+        // 2) 쿠폰 존재 및 발급 가능 상태 확인
         CouponVO coupon = eventCouponMapper.selectCouponById(couponId);
         if (coupon == null) {
             throw new IllegalArgumentException("COUPON_NOT_FOUND");
+        }
+
+        // 지윤 26.08.07: 사업자가 조기마감(INACTIVE)한 쿠폰은 발급 불가
+        if ("INACTIVE".equals(coupon.getStatusCd())) {
+            throw new IllegalStateException("COUPON_CLOSED");
+        }
+
+        // 지윤 26.08.07: 수량 소진된 쿠폰은 발급 불가 (사전 체크, 최종 확정은 UPDATE에서)
+        if ("EXHAUSTED".equals(coupon.getStatusCd())
+                || (coupon.getTotalQty() != null && coupon.getIssuedQty() != null
+                    && coupon.getIssuedQty() >= coupon.getTotalQty())) {
+            throw new IllegalStateException("COUPON_EXHAUSTED");
+        }
+
+        // 지윤 26.08.07: 사용기간 종료된 쿠폰은 발급 불가
+        String today = java.time.LocalDate.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        if (coupon.getUseEndDate() != null && coupon.getUseEndDate().compareTo(today) < 0) {
+            throw new IllegalStateException("COUPON_EXPIRED");
         }
 
         // 3) TB_MEMBER_COUPON INSERT
         eventCouponMapper.insertMemberCoupon(memberNo, couponId);
 
         // 4) TB_COUPON 발급수량·예산 갱신
-        eventCouponMapper.updateCouponIssued(couponId, coupon.getDiscountValue());
+        // 지윤 26.08.07: 동시요청으로 그 사이 소진됐으면 0건 갱신 → 트랜잭션 롤백(2번 INSERT도 취소)
+        int updated = eventCouponMapper.updateCouponIssued(couponId, coupon.getDiscountValue());
+        if (updated == 0) {
+            throw new IllegalStateException("COUPON_EXHAUSTED");
+        }
     }
 }

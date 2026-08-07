@@ -179,8 +179,10 @@ public interface BizStayService {
 
 
     // 쿠폰 삭제 (PENDING 상태일 때만)
-
     void deleteCoupon(Long bizNo, Long couponId);
+
+    // 지윤 26.08.07: 쿠폰 조기 마감 (병원/숙소 공용)
+    void closeCoupon(Long bizNo, Long couponId);
 
 
 

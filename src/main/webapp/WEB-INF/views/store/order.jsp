@@ -215,10 +215,12 @@
       <select id="couponSelect" onchange="updateOrderTotal()">
         <option value="0" data-type="" data-value="0" data-min="0">쿠폰 선택 안 함</option>
         <c:forEach var="c" items="${memberCoupons}">
-          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-min="${c.minOrderAmt}">
+          <%-- 지윤 26.08.07: 쿠폰 발급 사업자(bizNo) 추가 — 이 주문에 그 사업자 상품이 없으면 할인 미적용되도록 --%>
+          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-min="${c.minOrderAmt}" data-biz="${c.bizNo}">
             ${c.couponName}
             <c:if test="${c.couponType == 'RATE'}"> (${c.discountValue}% 할인)</c:if>
-            <c:if test="${c.couponType == 'AMOUNT'}"> (<fmt:formatNumber value="${c.discountValue}" pattern="#,###"/>원 할인)</c:if>
+            <%-- 지윤 26.08.07: FIXED로 통일 (biz/store/coupon.jsp·coupon/list.jsp와 동일) --%>
+            <c:if test="${c.couponType == 'FIXED'}"> (<fmt:formatNumber value="${c.discountValue}" pattern="#,###"/>원 할인)</c:if>
           </option>
         </c:forEach>
       </select>
@@ -305,6 +307,13 @@ var contextPath = '${contextPath}';
 //지윤 26.07.09 추가: 쿠폰/포인트 선택 시 결제 예정 금액 실시간 계산
 var PRODUCT_TOTAL = ${productTotal};
 var MEMBER_POINT = ${memberPoint != null ? memberPoint : 0};
+
+//지윤 26.08.07 추가: 사업자(bizNo)별 상품 소계 — 쿠폰이 실제 적용 가능한 대상 금액을 알기 위함
+//백엔드 StoreShopController의 groupSubtotals 계산과 동일한 개념
+var BIZ_SUBTOTALS = {};
+<c:forEach var="item" items="${orderItems}">
+BIZ_SUBTOTALS[${item.bizNo}] = (BIZ_SUBTOTALS[${item.bizNo}] || 0) + ${item.price * item.qty};
+</c:forEach>
 //지윤 26.07.30 추가: 배송비를 전체금액 기준(50000원)이 아니라, JSP에서 사업자별로 이미 계산해둔 합계로 사용
 var TOTAL_DELIVERY_FEE = ${totalDeliveryFee};
 function won(n){ return n.toLocaleString('ko-KR') + '원'; }
@@ -316,18 +325,23 @@ function updateOrderTotal() {
   var couponType = opt.dataset.type;
   var couponValue = parseInt(opt.dataset.value) || 0;
   var minOrderAmt = parseInt(opt.dataset.min) || 0;
+  var couponBizNo = opt.dataset.biz; // 지윤 26.08.07: 쿠폰 발급 사업자
 
   //지윤 26.07.30 수정: 전체금액 기준 계산 -> 사업자별로 미리 합산해둔 TOTAL_DELIVERY_FEE 그대로 사용
   var deliveryFee = TOTAL_DELIVERY_FEE;
 
   var couponDiscount = 0;
   if (couponType) {
-    if (PRODUCT_TOTAL < minOrderAmt) {
-      alert('최소 주문금액 ' + won(minOrderAmt) + ' 이상부터 사용 가능한 쿠폰입니다.');
+    // 지윤 26.08.07: 쿠폰은 발급한 사업자의 상품 소계 기준으로만 적용 (전체 장바구니 금액 X)
+    // 이 주문에 해당 사업자 상품이 없으면 소계 0 -> 최소주문금액 미달로 자동 미적용
+    var bizSubtotal = BIZ_SUBTOTALS[couponBizNo] || 0;
+
+    if (bizSubtotal < minOrderAmt) {
+      alert('이 쿠폰은 발급한 사업자의 상품에만 적용되며, 최소 주문금액 ' + won(minOrderAmt) + ' 이상부터 사용 가능합니다.');
       couponSel.value = '0';
     } else if (couponType === 'RATE') {
-      couponDiscount = Math.floor(PRODUCT_TOTAL * couponValue / 100);
-    } else if (couponType === 'AMOUNT') {
+      couponDiscount = Math.floor(bizSubtotal * couponValue / 100);
+    } else if (couponType === 'FIXED') {
       couponDiscount = couponValue;
     }
   }

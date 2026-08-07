@@ -59,6 +59,9 @@ public interface StayMapper {
     // HYJ 26.07.20 예약 상태 변경
     void updateReservationStatus(Map<String, Object> param);
 
+    // 지윤 26.08.07: 예약에 쿠폰·포인트 사용 내역 기록
+    void updateReservationPaymentInfo(Map<String, Object> param);
+
     // HYJ 26.07.20 결제
     void insertPayment(Map<String, Object> param);
 

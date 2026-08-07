@@ -39,6 +39,8 @@ import com.petcare.petcare.stay.vo.ReservationVO;
 import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.stay.service.StayServiceImpl;
 import com.petcare.petcare.stay.vo.StayVO;
+import com.petcare.petcare.store.vo.CouponVO;
+import com.petcare.petcare.coupon.mapper.CouponMapper;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -62,6 +64,9 @@ public class StayController {
     private BillingCardService billingCardService;
     @Autowired
     private TossBillingService tossBillingService;
+    // 지윤 26.08.07: 등록카드 결제 시 쿠폰 할인 미리계산용
+    @Autowired
+    private CouponMapper couponMapper;
 
     @GetMapping({"", "/"})
     public String list(@ModelAttribute("search") StayVO searchVO, Model model) throws Exception {
@@ -185,6 +190,12 @@ public class StayController {
         member.setPointBalance(held);
         session.setAttribute("memberInfo", member);
         model.addAttribute("memberPoint", held);
+
+        // 지윤 26.08.07: 이 숙소가 발급한, 회원이 사용 가능한 쿠폰 목록
+        StayVO stay = stayService.getStayById(Long.valueOf(reservation.getTargetId()));
+        Long stayBizNo = stay != null ? stay.getBizNo() : null;
+        model.addAttribute("usableCoupons", stayService.getUsableCoupons(member.getMemberNo(), stayBizNo));
+
         return "stay/payment";
     }
 
@@ -199,16 +210,18 @@ public class StayController {
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null) return "redirect:/login";
 
-        // orderId 형식: stay-{resvId}-{usedPoint}-{timestamp}
+        // orderId 형식: stay-{resvId}-{usedPoint}-{couponMemberCouponId}-{timestamp}
+        // 지윤 26.08.07: couponMemberCouponId 추가 (4번째 조각). 기존 형식(4개 조각)도 하위호환 처리
         String[] parts = orderId.split("-");
         Long resvId = Long.parseLong(parts[1]);
         long usedPoint = parts.length >= 4 ? Long.parseLong(parts[2]) : 0;
+        Long couponMemberCouponId = parts.length >= 5 ? Long.parseLong(parts[3]) : 0L;
 
         try {
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
             // 2026/07/31 장우철 — amount 는 토스 위젯 실결제액(confirm 필수)
             stayService.confirmPayment(resvId, paymentKey, orderId, "CARD", kakaoToken,
-                    member.getMemberNo(), usedPoint, amount);
+                    member.getMemberNo(), usedPoint, amount, couponMemberCouponId);
 
             // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
             syncSessionPointBalance(session, member);
@@ -230,6 +243,7 @@ public class StayController {
             @RequestParam Long billingCardId,
             @RequestParam Long resvId,
             @RequestParam(defaultValue = "0") long usedPoint,
+            @RequestParam(defaultValue = "0") Long couponMemberCouponId,
             HttpSession session) {
 
         Map<String, Object> res = new HashMap<>();
@@ -264,20 +278,35 @@ public class StayController {
         }
 
         long total = reservation.getTotalAmount() != null ? reservation.getTotalAmount() : 0L;
+
+        // 지윤 26.08.07: 등록카드 결제도 쿠폰 할인 반영 (실제 확정 검증은 confirmPayment에서 다시 함)
+        // 여기선 청구 금액 산정용으로만 미리 계산
+        long couponDiscountPreview = 0L;
+        if (couponMemberCouponId != null && couponMemberCouponId > 0) {
+            CouponVO couponPreview = couponMapper.selectMemberCouponForUse(couponMemberCouponId, member.getMemberNo());
+            if (couponPreview != null) {
+                couponDiscountPreview = "RATE".equals(couponPreview.getCouponType())
+                        ? total * couponPreview.getDiscountValue() / 100
+                        : couponPreview.getDiscountValue();
+                if (couponDiscountPreview > total) couponDiscountPreview = total;
+            }
+        }
+        long payableAfterCoupon = total - couponDiscountPreview;
+
         if (usedPoint < 0) usedPoint = 0;
-        if (usedPoint > total) usedPoint = total;
+        if (usedPoint > payableAfterCoupon) usedPoint = payableAfterCoupon;
         // 2026/07/27 장우철 — 보유 포인트 초과 사용 불가
         Long heldBal = stayService.getMemberPointBalance(member.getMemberNo());
         long held = heldBal != null ? Math.max(0L, heldBal) : 0L;
         if (usedPoint > held) usedPoint = held;
-        int chargeAmount = (int) (total - usedPoint);
+        int chargeAmount = (int) (payableAfterCoupon - usedPoint);
         if (chargeAmount <= 0) {
             res.put("ok", false);
             res.put("message", "결제 금액이 없습니다. 포인트 전액 결제를 이용해 주세요.");
             return res;
         }
 
-        String tossOrderId = "stay-" + resvId + "-" + usedPoint + "-" + System.currentTimeMillis();
+        String tossOrderId = "stay-" + resvId + "-" + usedPoint + "-" + couponMemberCouponId + "-" + System.currentTimeMillis();
         String orderName = "펫케어 숙소 예약";
         if (reservation.getStayName() != null) {
             orderName = reservation.getStayName();
@@ -303,9 +332,9 @@ public class StayController {
         try {
             String paymentKey = approved.getPaymentKey() != null
                     ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
-            String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
-            stayService.confirmPayment(resvId, paymentKey, tossOrderId, "BILLING",
-                    kakaoToken, member.getMemberNo(), usedPoint, (long) chargeAmount);
+                    String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
+                    stayService.confirmPayment(resvId, paymentKey, tossOrderId, "BILLING",
+                            kakaoToken, member.getMemberNo(), usedPoint, (long) chargeAmount, couponMemberCouponId);
 
             // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
             syncSessionPointBalance(session, member);
@@ -324,6 +353,7 @@ public class StayController {
     @GetMapping("/payment/point-only")
     public String paymentPointOnly(@RequestParam("resvId") Long resvId,
                                     @RequestParam("usedPoint") Long usedPoint,
+                                    @RequestParam(defaultValue = "0") Long couponMemberCouponId,
                                     HttpSession session,
                                     RedirectAttributes rttr) throws Exception {
 
@@ -333,7 +363,7 @@ public class StayController {
         try {
             String kakaoToken = (String) session.getAttribute("kakaoAccessToken");
             stayService.confirmPayment(resvId, "POINT_ONLY", "point-" + resvId + "-" + System.currentTimeMillis(),
-                    "POINT", kakaoToken, member.getMemberNo(), usedPoint, 0L);
+                    "POINT", kakaoToken, member.getMemberNo(), usedPoint, 0L, couponMemberCouponId);
 
             // 2026/07/27 장우철 — 세션 포인트 = DB 실잔액
             syncSessionPointBalance(session, member);

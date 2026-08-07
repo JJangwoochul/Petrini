@@ -724,6 +724,38 @@ public class BizStayController extends BizBaseController {
         return "redirect:/biz/stay/coupon";
     }
 
+    // ── 쿠폰 조기 마감 POST (지윤 26.08.07, store closeCoupon과 동일 패턴) ──
+    @PostMapping("/coupon/close")
+    public String closeCoupon(@RequestParam Long couponId,
+                              HttpSession session,
+                              RedirectAttributes rttr) {
+        MemberVO member = getBizMember(session);
+        if (member == null) return "redirect:/login";
+
+        try {
+            Long bizNo = bizStayService.getBizNo(member.getMemberId());
+            if (bizNo == null) {
+                rttr.addFlashAttribute("errorMsg", "사업자 정보를 찾을 수 없습니다.");
+                return "redirect:/biz/stay/coupon";
+            }
+            bizStayService.closeCoupon(bizNo, couponId);
+            rttr.addFlashAttribute("msg", "쿠폰이 조기 마감되었습니다.");
+        } catch (IllegalStateException e) {
+            if ("NOT_OWNER".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "본인이 등록한 쿠폰만 마감할 수 있습니다.");
+            } else if ("NOT_APPROVED".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "승인된 쿠폰만 조기 마감할 수 있습니다.");
+            } else if ("NOT_ACTIVE".equals(e.getMessage())) {
+                rttr.addFlashAttribute("errorMsg", "현재 게시 중인 쿠폰만 조기 마감할 수 있습니다.");
+            } else {
+                rttr.addFlashAttribute("errorMsg", "쿠폰 조기 마감에 실패했습니다.");
+            }
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "쿠폰 조기 마감 중 오류가 발생했습니다.");
+        }
+        return "redirect:/biz/stay/coupon";
+    }
+
     //
     //HYJ 26.07.31 배너신청
     //

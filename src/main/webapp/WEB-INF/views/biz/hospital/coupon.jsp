@@ -44,6 +44,8 @@
     .cpn-badge.approved { background:#DCFCE7; color:#16A34A; }
     .cpn-badge.rejected { background:#FEE2E2; color:#DC2626; }
     .cpn-badge.exhausted { background:#F1F3F7; color:#999; }
+    /* 지윤 26.08.07: 조기 마감 상태 */
+    .cpn-badge.closed { background:#F1F3F7; color:#666; }
     
     .cpn-card-body {
         display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #E4E6ED;
@@ -189,6 +191,10 @@
                                 <c:when test="${cpn.approvalStatus eq 'PENDING'}">
                                     <span class="cpn-badge pending">승인 대기</span>
                                 </c:when>
+                                <%-- 지윤 26.08.07: 사업자가 조기 마감한 쿠폰 --%>
+                                <c:when test="${cpn.approvalStatus eq 'APPROVED' && cpn.statusCd eq 'INACTIVE'}">
+                                    <span class="cpn-badge closed">조기 마감</span>
+                                </c:when>
                                 <c:when test="${cpn.approvalStatus eq 'APPROVED' && cpn.statusCd eq 'EXHAUSTED'}">
                                     <span class="cpn-badge exhausted">예산 소진</span>
                                 </c:when>
@@ -266,6 +272,16 @@
                                         <button type="submit" class="cpn-btn red">삭제</button>
                                     </form>
                                 </div>
+                            </c:if>
+
+                            <%-- 지윤 26.08.07: 게시 중인 쿠폰만 조기 마감 가능 --%>
+                            <c:if test="${cpn.approvalStatus eq 'APPROVED' && cpn.statusCd eq 'ACTIVE'}">
+                                <div></div>
+                                <form method="post" action="${contextPath}/biz/hospital/coupon/close"
+                                      onsubmit="return confirm('쿠폰을 조기 마감하시겠습니까?\n마감 후 이벤트 화면에서 사라집니다.')">
+                                    <input type="hidden" name="couponId" value="${cpn.couponId}">
+                                    <button type="submit" class="cpn-btn red">조기 마감</button>
+                                </form>
                             </c:if>
                         </div>
                     </div>

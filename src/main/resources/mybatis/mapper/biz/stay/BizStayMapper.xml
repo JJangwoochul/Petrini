@@ -445,6 +445,21 @@
        AND APPROVAL_STATUS = 'PENDING'
   </delete>
 
+  <!--
+    지윤 26.08.07
+    병원/숙소 쿠폰 조기 마감 (store BizStoreMapper.closeCoupon과 동일 패턴)
+    관리자 재승인 없이 사업자가 직접 마감. 기존 발급된 회원 쿠폰은 변경하지 않는다.
+  -->
+  <update id="closeCoupon">
+    UPDATE TB_COUPON
+       SET STATUS_CD = 'INACTIVE',
+           MOD_DATE  = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+     WHERE COUPON_ID = #{couponId}
+       AND BIZ_MEMBER_NO = #{bizMemberNo}
+       AND APPROVAL_STATUS = 'APPROVED'
+       AND STATUS_CD = 'ACTIVE'
+  </update>
+
   <!-- HYJ 26.07.31 쿠폰 삭제 (로그인 ID로 BIZ_NO 조회) -->
   <select id="selectBizNoByBizId" resultType="Long">
       SELECT BIZ_NO FROM TB_BUSINESS WHERE BIZ_ID = #{bizId}
