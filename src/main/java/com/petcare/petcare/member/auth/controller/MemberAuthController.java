@@ -33,6 +33,7 @@ import com.petcare.petcare.member.vo.MemberVO;
 import com.petcare.petcare.common.billing.controller.BillingCardController;
 import com.petcare.petcare.common.billing.service.BillingCardService;
 import com.petcare.petcare.common.billing.vo.BillingIssueResultVO;
+import com.petcare.petcare.common.util.LoginAttemptUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -85,13 +86,30 @@ public class MemberAuthController {
             return "redirect:/login?error=empty";
         }
 
+        // HYJ 26.08.06 잠금 상태 확인 — 5회 실패 후 30분간 차단
+        if (LoginAttemptUtil.isLocked(loginId)) {
+            long remaining = LoginAttemptUtil.getRemainingLockMinutes(loginId);
+            return "redirect:/login?error=locked&minutes=" + remaining;
+        }
+        
         // [2] Service 호출 — TB_MEMBER 조회 + BCrypt 검증, 성공 시 세션용 MemberVO 반환
         try {
             MemberVO member = memberAuthService.login(loginId, loginPw);
             if (member == null) {
+                //HYJ 26.08.06 실패 기록
+                LoginAttemptUtil.recordFailure(loginId);
+                int remaining = LoginAttemptUtil.getRemainingAttempts(loginId);
+                if (remaining == 0) {
+                    return "redirect:/login?error=locked&minutes=30";
+                }
+                return "redirect:/login?error=invalid&remaining=" + remaining;
+                
                 // 회원 없음 / 비밀번호 틀림 → error=invalid
-                return "redirect:/login?error=invalid";
+                // return "redirect:/login?error=invalid";
             }
+
+            // HYJ 26.08.06 성공 시 실패 기록 초기화
+            LoginAttemptUtil.resetAttempts(loginId);
 
             // [3] 로그인 성공 — 세션에 회원 정보 저장 (header.jsp에서 memberInfo로 로그아웃 표시)
             session.setAttribute("memberInfo", member);
