@@ -27,7 +27,9 @@
             <p class="login-error-msg">아이디와 비밀번호를 입력해 주세요.</p>
         </c:if>
         <c:if test="${param.error eq 'invalid'}">
-            <p class="login-error-msg">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+            <p class="login-error-msg">아이디 또는 비밀번호가 올바르지 않습니다.
+                <c:if test="${not empty param.remaining}">(남은 시도: ${param.remaining}회)</c:if>
+            </p>
         </c:if>
         <%-- 2026-07-22 박유정 — 탈퇴 회원 로그인 메시지 (정지는 로그인 허용 → 고객센터) --%>
         <c:if test="${param.error eq 'suspended'}">
@@ -44,6 +46,12 @@
         </c:if>
         <c:if test="${param.error eq 'kakao_not_member'}">
             <p class="login-error-msg">가입된 회원이 아닙니다. 먼저 회원가입을 진행해 주세요.</p>
+        </c:if>
+        <!--HYJ 26.08.06 -->
+        <c:if test="${param.error eq 'locked'}">
+            <p class="login-error-msg">
+                로그인 시도 횟수를 초과했습니다. ${param.minutes}분 후 다시 시도해주세요.
+            </p>
         </c:if>
 
         <%-- 소셜 로그인 --%>

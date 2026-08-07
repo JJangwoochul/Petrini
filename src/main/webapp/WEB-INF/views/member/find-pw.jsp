@@ -34,11 +34,18 @@
             <button type="button" class="btn-submit" id="btnFindPw">임시 비밀번호 발송</button>
         </form>
 
+        <%-- 성공 결과 --%>
         <div id="findPwResult" style="display:none;margin-top:20px;padding:18px;background:var(--primary-light);border-radius:var(--radius-sm);text-align:center">
             <p style="font-size:14px;color:var(--text-sub);line-height:1.7">
                 입력하신 이메일로 임시 비밀번호를 발송했습니다.<br>
                 로그인 후 반드시 비밀번호를 변경해 주세요.
             </p>
+            <a href="${contextPath}/login" style="display:inline-block;margin-top:12px;padding:10px 28px;background:var(--primary);color:#fff;border-radius:var(--radius-sm);font-size:14px;font-weight:700;text-decoration:none">로그인하러 가기</a>
+        </div>
+
+        <%-- 실패 결과 --%>
+        <div id="findPwError" style="display:none;margin-top:20px;padding:18px;background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius-sm);text-align:center">
+            <p style="font-size:14px;color:#B91C1C" id="findPwErrorMsg"></p>
         </div>
 
         <p class="member-footer-link">
@@ -54,12 +61,39 @@
 <script>
 document.getElementById('btnFindPw').addEventListener('click', function () {
     var email = document.getElementById('findPwEmail').value.trim();
-    var name = document.getElementById('findPwName').value.trim();
-    if (!email || !name) {
-        alert('이메일과 이름을 입력해 주세요.');
-        return;
-    }
-    document.getElementById('findPwResult').style.display = 'block';
+    var name  = document.getElementById('findPwName').value.trim();
+    var btn   = this;
+
+    document.getElementById('findPwResult').style.display = 'none';
+    document.getElementById('findPwError').style.display = 'none';
+
+    if (!email) { alert('이메일을 입력해 주세요.'); document.getElementById('findPwEmail').focus(); return; }
+    if (!name)  { alert('이름을 입력해 주세요.'); document.getElementById('findPwName').focus(); return; }
+
+    btn.disabled = true;
+    btn.textContent = '발송 중...';
+
+    var fd = new FormData();
+    fd.append('email', email);
+    fd.append('memberName', name);
+
+    csrfFetch('${contextPath}/find/pw', { method: 'POST', body: fd })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            btn.disabled = false;
+            btn.textContent = '임시 비밀번호 발송';
+            if (data.ok) {
+                document.getElementById('findPwResult').style.display = 'block';
+            } else {
+                document.getElementById('findPwErrorMsg').textContent = data.msg;
+                document.getElementById('findPwError').style.display = 'block';
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.textContent = '임시 비밀번호 발송';
+            alert('비밀번호 찾기 중 오류가 발생했습니다.');
+        });
 });
 </script>
 

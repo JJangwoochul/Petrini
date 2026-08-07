@@ -35,10 +35,16 @@
             <button type="button" class="btn-submit" id="btnFindId">아이디 찾기</button>
         </form>
 
+        <%-- 성공 결과 --%>
         <div id="findIdResult" style="display:none;margin-top:20px;padding:18px;background:var(--primary-light);border-radius:var(--radius-sm);text-align:center">
             <p style="font-size:13px;color:var(--text-sub);margin-bottom:8px">회원님의 아이디는</p>
-            <p style="font-size:18px;font-weight:800;color:var(--primary-dark);margin-bottom:4px" id="foundEmail">min***@email.com</p>
+            <p style="font-size:18px;font-weight:800;color:var(--primary-dark);margin-bottom:4px" id="foundEmail"></p>
             <p style="font-size:12px;color:var(--text-muted)">입니다.</p>
+        </div>
+
+        <%-- 실패 결과 --%>
+        <div id="findIdError" style="display:none;margin-top:20px;padding:18px;background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius-sm);text-align:center">
+            <p style="font-size:14px;color:#B91C1C" id="findIdErrorMsg"></p>
         </div>
 
         <p class="member-footer-link">
@@ -53,13 +59,33 @@
 
 <script>
 document.getElementById('btnFindId').addEventListener('click', function () {
-    var name = document.getElementById('findName').value.trim();
+    var name  = document.getElementById('findName').value.trim();
     var phone = document.getElementById('findPhone').value.trim();
-    if (!name || !phone) {
-        alert('이름과 휴대폰 번호를 입력해 주세요.');
-        return;
-    }
-    document.getElementById('findIdResult').style.display = 'block';
+
+    document.getElementById('findIdResult').style.display = 'none';
+    document.getElementById('findIdError').style.display = 'none';
+
+    if (!name) { alert('이름을 입력해 주세요.'); document.getElementById('findName').focus(); return; }
+    if (!phone) { alert('휴대폰 번호를 입력해 주세요.'); document.getElementById('findPhone').focus(); return; }
+
+    var fd = new FormData();
+    fd.append('memberName', name);
+    fd.append('phone', phone);
+
+    csrfFetch('${contextPath}/find/id', { method: 'POST', body: fd })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                document.getElementById('foundEmail').textContent = data.data;
+                document.getElementById('findIdResult').style.display = 'block';
+            } else {
+                document.getElementById('findIdErrorMsg').textContent = data.msg;
+                document.getElementById('findIdError').style.display = 'block';
+            }
+        })
+        .catch(function() {
+            alert('아이디 찾기 중 오류가 발생했습니다.');
+        });
 });
 </script>
 
