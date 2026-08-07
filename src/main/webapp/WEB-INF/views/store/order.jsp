@@ -267,6 +267,14 @@
 </form>
 </div>
 
+<%-- 2026/08/06 장우철: 결제에서 돌아온 복원값 (XSS 대비 c:out, JS는 data 속성으로 읽음) --%>
+<c:if test="${not empty restoreCouponId or not empty restorePoint or not empty restoreDeliveryMemo}">
+  <div id="restoreOrderMeta" style="display:none"
+       data-coupon-id="<c:out value='${restoreCouponId}'/>"
+       data-point="<c:out value='${restorePoint}'/>"
+       data-memo="<c:out value='${restoreDeliveryMemo}'/>"></div>
+</c:if>
+
 <%-- 지윤 26.07.29 추가: 배송지 목록 모달 (네이버페이 스타일 - 목록조회 + 선택 + 신규등록) --%>
 <div id="addressModalBg" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:999; align-items:center; justify-content:center;">
   <div style="background:#fff; border-radius:16px; padding:24px; max-width:480px; width:90%; max-height:80vh; overflow-y:auto;">
@@ -438,6 +446,45 @@ function toggleMemoInput() {
     customInput.value = '';
   }
 }
+
+//2026/08/06 장우철: 결제→주문서 복원 시 쿠폰/포인트/배송메모 재적용
+(function restoreFromPayment() {
+  var meta = document.getElementById('restoreOrderMeta');
+  if (!meta) return;
+
+  var restoreCouponId = meta.getAttribute('data-coupon-id') || '';
+  var restorePoint = meta.getAttribute('data-point') || '';
+  var restoreMemo = meta.getAttribute('data-memo') || '';
+
+  if (restoreCouponId) {
+    var couponSel = document.getElementById('couponSelect');
+    if (couponSel) couponSel.value = restoreCouponId;
+  }
+  if (restorePoint !== '' && restorePoint !== '0') {
+    var pointInput = document.getElementById('pointInput');
+    if (pointInput) pointInput.value = restorePoint;
+  }
+  if (restoreMemo) {
+    var memoSelect = document.getElementById('deliveryMemoSelect');
+    var customInput = document.getElementById('deliveryMemoCustom');
+    if (!memoSelect) return;
+    var matched = false;
+    for (var i = 0; i < memoSelect.options.length; i++) {
+      if (memoSelect.options[i].value === restoreMemo) {
+        memoSelect.selectedIndex = i;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      memoSelect.value = '직접입력';
+      if (customInput) {
+        customInput.style.display = 'block';
+        customInput.value = restoreMemo;
+      }
+    }
+  }
+})();
 
 //지윤 26.07.09 추가: 페이지 로드 시 배송비/총액 한 번 자동 계산 (쿠폰 안 골라도 정확한 값 보이게)
 updateOrderTotal();

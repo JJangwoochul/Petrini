@@ -24,6 +24,7 @@
 package com.petcare.petcare.admin.community.service;  
 
 import java.util.List;
+import com.petcare.petcare.community.comment.vo.CommunityCommentVO;
 import com.petcare.petcare.community.post.vo.CommunityPostVO;
 
 public interface AdminCommunityService {
@@ -36,6 +37,13 @@ public interface AdminCommunityService {
 
     // 2026-07-15 박유정 — 관리자 게시글 상세
     CommunityPostVO getAdminPostDetail(long postId);
+
+    // 2026/08/07 장우철 — 관리자 상세: 댓글·대댓글 조회 (읽기 전용)
+    List<CommunityCommentVO> getPostComments(long postId);
+
+    //2026/08/06 장우철 — 신고 내역 조회 / 대기 신고 기각
+    java.util.List<com.petcare.petcare.community.report.vo.CommunityReportVO> getPostReports(long postId);
+    int dismissPendingReports(long postId, Long adminNo);
 
     // 2026-07-15 박유정 STEP 7 — 숨김 (STATUS_CD = HIDDEN)
     void hidePost(long postId);

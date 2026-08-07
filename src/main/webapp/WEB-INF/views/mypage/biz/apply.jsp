@@ -11,6 +11,28 @@
     .field-error { font-size: 12px; color: #EF4444; margin-top: 5px; margin-left: 5px; display: none; }
     .field-ok.show    { display: block; }
     .field-error.show { display: block; }
+    /* 2026/08/07 장우철 — 사업자등록증·영업신고증 업로드 미리보기 */
+    .biz-upload-box.has-file { border-style: solid; border-color: var(--primary); background: var(--primary-light); }
+    .biz-upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .biz-upload-preview { display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .biz-upload-box.has-file .biz-upload-placeholder { display: none; }
+    .biz-upload-box.has-file .biz-upload-preview { display: flex; }
+    .biz-upload-preview img {
+        max-width: 100%; max-height: 160px; border-radius: 8px; object-fit: contain;
+        background: #fff; border: 1px solid var(--border);
+    }
+    .biz-upload-preview .biz-pdf-badge {
+        width: 72px; height: 72px; border-radius: 12px; background: #fff;
+        border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 800; color: #B91C1C;
+    }
+    .biz-upload-preview .biz-file-name {
+        font-size: 13px; color: var(--text-main); font-weight: 600; word-break: break-all; margin: 0;
+    }
+    .biz-upload-preview .biz-file-change {
+        font-size: 12px; color: var(--primary); text-decoration: underline; cursor: pointer;
+        background: none; border: none; padding: 0;
+    }
 </style>
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
@@ -230,30 +252,47 @@
                     <div class="biz-grid">
                         <div class="biz-group">
                             <label>사업자등록증 <span class="req">*</span></label>
-                            <div class="biz-upload-box">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                    <polyline points="17 8 12 3 7 8"/>
-                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                </svg>
-                                <p>클릭하여 업로드</p>
-                                <small>JPG, PNG, PDF · 최대 10MB</small>
+                            <%-- 2026/08/07 장우철 — 선택 파일 미리보기 --%>
+                            <div class="biz-upload-box" data-upload="docFile">
+                                <div class="biz-upload-placeholder">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <p>클릭하여 업로드</p>
+                                    <small>JPG, PNG, PDF · 최대 10MB</small>
+                                </div>
+                                <div class="biz-upload-preview">
+                                    <img id="docFilePreviewImg" alt="사업자등록증 미리보기" style="display:none">
+                                    <div id="docFilePreviewPdf" class="biz-pdf-badge" style="display:none">PDF</div>
+                                    <p id="docFileName" class="biz-file-name"></p>
+                                    <button type="button" class="biz-file-change" data-repick="docFile">다른 파일 선택</button>
+                                </div>
                                 <input type="file" id="docFile" name="docFile" accept=".jpg,.jpeg,.png,.pdf"
-                                    style="display:none" onchange="document.getElementById('docFileName').textContent = this.files[0].name">
+                                    style="display:none">
                             </div>
                         </div>
                         <div class="biz-group">
                             <label>영업신고증 <small style="color:var(--text-muted);font-weight:400">(해당 시)</small></label>
-                            <div class="biz-upload-box">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                    <polyline points="17 8 12 3 7 8"/>
-                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                </svg>
-                                <p>클릭하여 업로드</p>
-                                <small>JPG, PNG, PDF · 최대 10MB</small>
+                            <div class="biz-upload-box" data-upload="licenseFile">
+                                <div class="biz-upload-placeholder">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <p>클릭하여 업로드</p>
+                                    <small>JPG, PNG, PDF · 최대 10MB</small>
+                                </div>
+                                <div class="biz-upload-preview">
+                                    <img id="licenseFilePreviewImg" alt="영업신고증 미리보기" style="display:none">
+                                    <div id="licenseFilePreviewPdf" class="biz-pdf-badge" style="display:none">PDF</div>
+                                    <p id="licenseFileName" class="biz-file-name"></p>
+                                    <button type="button" class="biz-file-change" data-repick="licenseFile">다른 파일 선택</button>
+                                </div>
                                 <input type="file" id="licenseFile" name="licenseFile" accept=".jpg,.jpeg,.png,.pdf"
-                                    style="display:none" onchange="document.getElementById('licenseFileName').textContent = this.files[0].name">
+                                    style="display:none">
                             </div>
                         </div>
                     </div>
@@ -414,9 +453,55 @@
     });
 
     $(".biz-upload-box").click(function(e){
-        if (e.target.tagName !== 'INPUT') {
-            $(this).find("input[type='file']").click();
+        if ($(e.target).closest('.biz-file-change').length) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        $(this).find("input[type='file']").click();
+    });
+
+    // 2026/08/07 장우철 — 업로드 파일 미리보기 (이미지 썸네일 / PDF는 뱃지+파일명)
+    var bizUploadObjectUrls = {};
+    function updateBizUploadPreview(inputId) {
+        var input = document.getElementById(inputId);
+        var box = document.querySelector('.biz-upload-box[data-upload="' + inputId + '"]');
+        if (!input || !box) return;
+        var file = input.files && input.files[0];
+        var nameEl = document.getElementById(inputId + 'Name');
+        var imgEl = document.getElementById(inputId + 'PreviewImg');
+        var pdfEl = document.getElementById(inputId + 'PreviewPdf');
+        if (bizUploadObjectUrls[inputId]) {
+            URL.revokeObjectURL(bizUploadObjectUrls[inputId]);
+            delete bizUploadObjectUrls[inputId];
         }
+        if (!file) {
+            box.classList.remove('has-file');
+            if (nameEl) nameEl.textContent = '';
+            if (imgEl) { imgEl.style.display = 'none'; imgEl.removeAttribute('src'); }
+            if (pdfEl) pdfEl.style.display = 'none';
+            return;
+        }
+        box.classList.add('has-file');
+        if (nameEl) nameEl.textContent = file.name;
+        var isImage = /^image\//.test(file.type) || /\.(jpe?g|png)$/i.test(file.name);
+        var isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        if (isImage && imgEl) {
+            var url = URL.createObjectURL(file);
+            bizUploadObjectUrls[inputId] = url;
+            imgEl.src = url;
+            imgEl.style.display = 'block';
+            if (pdfEl) pdfEl.style.display = 'none';
+        } else {
+            if (imgEl) { imgEl.style.display = 'none'; imgEl.removeAttribute('src'); }
+            if (pdfEl) pdfEl.style.display = isPdf ? 'flex' : 'none';
+        }
+    }
+    $('#docFile, #licenseFile').on('change', function () {
+        updateBizUploadPreview(this.id);
+    });
+    $(document).on('click', '.biz-file-change', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('repick');
+        if (id) $('#' + id).click();
     });
 
     // 전체동의 클릭

@@ -28,4 +28,7 @@ public class CommunityReportVO {
     private String reasonDetail; // (미사용) — 상세 사유, DB 미저장 시 폼용
     private String statusCd;     // STATUS_CD — 처리 상태 (PENDING/DISMISSED 등)
     private LocalDateTime regDate; // REG_DATE — 신고 접수일 (조회 시)
+
+    //2026/08/06 장우철 — 관리자 신고내역 표시용
+    private String reporterNickname; // 신고자 닉네임
 }

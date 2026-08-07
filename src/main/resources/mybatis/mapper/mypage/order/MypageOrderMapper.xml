@@ -23,6 +23,7 @@
 <!-- 지윤 26.07.30 수정: TB_PAYMENT.TOSS_ORDER_ID를 ORDER_GROUP_ID로 조회 -> 같은 결제로 쪼개진 여러 사업자 주문을 화면에서 하나로 묶기 위함 -->
 <select id="selectOrderList" resultType="com.petcare.petcare.mypage.order.vo.MypageOrderVO">
     SELECT o.ORDER_ID, o.ORDER_NO, o.ORDER_DATE, o.ORDER_STATUS, o.PAY_AMOUNT, o.CONFIRM_YN,
+           o.CLAIM_STATUS,
            d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO,
            b.BIZ_NAME,
            pay.TOSS_ORDER_ID AS ORDER_GROUP_ID

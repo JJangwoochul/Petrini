@@ -41,6 +41,13 @@
   <h2 class="mp-title">예약 상세</h2>
   <p class="mp-desc">예약번호 <strong><c:out value="${reservation.resvNo}"/></strong></p>
 
+  <c:if test="${not empty msg}">
+    <p style="color:#166534;font-size:14px;margin-bottom:12px"><c:out value="${msg}"/></p>
+  </c:if>
+  <c:if test="${not empty errorMsg}">
+    <p style="color:#B91C1C;font-size:14px;margin-bottom:12px"><c:out value="${errorMsg}"/></p>
+  </c:if>
+
   <div class="rd-card">
     <div class="rd-row">
       <span>상태</span>
@@ -48,8 +55,10 @@
         <c:choose>
           <c:when test="${reservation.statusCd eq 'PENDING'}"><span class="badge-status badge-wait">예약신청</span></c:when>
           <c:when test="${reservation.statusCd eq 'CONFIRMED'}"><span class="badge-status badge-ready">예약확정</span></c:when>
-          <%-- 2026/08/01 장우철 — HEAD(high) CHECKIN/CHECKOUT 유지 + DONE 병원/숙소 표기 --%>
-          <c:when test="${reservation.statusCd eq 'CHECKIN'}"><span class="badge-status badge-ready">체크인</span></c:when>
+          <%-- 2026/08/06 장우철 — 운영 상태만 표시 (환불 신청/거절은 아래 환불 영역) --%>
+          <c:when test="${reservation.statusCd eq 'CHECKIN'}">
+            <span class="badge-status badge-ready">체크인</span>
+          </c:when>
           <c:when test="${reservation.statusCd eq 'CHECKOUT'}"><span class="badge-status badge-ready">체크아웃</span></c:when>
           <c:when test="${reservation.statusCd eq 'DONE'}">
             <span class="badge-status badge-done">
@@ -175,24 +184,61 @@
     </div>
   </c:if>
 
-  <%-- 2026/08/01 장우철 — 체크인만 환불신청 허용 (체크아웃 이후 숨김) --%>
-  <c:if test="${reservation.resvType eq 'STAY' and reservation.statusCd eq 'CHECKIN'}">
+  <%-- 2026/08/06 장우철 — 숙소 환불: 상세 전용 (B: APPROVED/REJECTED, 예약 운영상태 유지) --%>
+  <c:if test="${reservation.resvType eq 'STAY'
+      and (reservation.statusCd eq 'CHECKIN'
+        or reservation.stayRefundStatus eq 'PENDING'
+        or reservation.stayRefundStatus eq 'APPROVED'
+        or reservation.stayRefundStatus eq 'REJECTED')}">
     <div class="rd-cancel" style="background:#F8FAFF;border-color:#C7D2FE">
       <h3 style="margin:0 0 8px">환불 신청</h3>
-      <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">
-        체크인 이후 환불은 관리자 1:1 문의로 접수됩니다.
-      </p>
-      <a class="btn-cancel-stay" style="display:inline-block;text-decoration:none;background:#3B5BDB"
-         href="${contextPath}/member/cs/inquiry/write?resvId=${reservation.resvId}&amp;type=stay_refund">환불 신청하기</a>
+      <c:choose>
+        <c:when test="${reservation.stayRefundStatus eq 'PENDING'}">
+          <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">
+            환불 신청이 접수되어 관리자 검토 중입니다.
+          </p>
+          <span class="btn-cancel-stay" style="display:inline-block;background:#9CA3AF;cursor:default;opacity:.85">환불 신청중</span>
+        </c:when>
+        <c:when test="${reservation.stayRefundStatus eq 'APPROVED'}">
+          <p style="font-size:13px;color:#166534;margin:0 0 12px;line-height:1.5">
+            환불이 승인되어 결제금이 전액 환불됩니다.
+            예약 기간 동안 해당 숙소 이용은 그대로 가능합니다(보상 숙박).
+          </p>
+          <c:if test="${not empty reservation.stayRefundAnswer}">
+            <div class="rd-reason" style="margin-bottom:12px;background:#ECFDF5;color:#166534">
+              <strong style="display:block;margin-bottom:4px;font-size:12px">안내</strong>
+              <c:out value="${reservation.stayRefundAnswer}"/>
+            </div>
+          </c:if>
+          <c:if test="${not empty reservation.refundAmt}">
+            <div class="fee-row" style="margin-bottom:12px">
+              <span>환불금액</span>
+              <strong style="color:#166534"><fmt:formatNumber value="${reservation.refundAmt}" pattern="#,###"/>원</strong>
+            </div>
+          </c:if>
+          <span class="btn-cancel-stay" style="display:inline-block;background:#16A34A;cursor:default;opacity:.9">환불 승인 · 이용 유지</span>
+        </c:when>
+        <c:when test="${reservation.stayRefundStatus eq 'REJECTED'}">
+          <p style="font-size:13px;color:#B91C1C;margin:0 0 12px;line-height:1.5">
+            환불이 거절되었습니다. 재신청할 수 없습니다.
+          </p>
+          <c:if test="${not empty reservation.stayRefundAnswer}">
+            <div class="rd-reason" style="margin-bottom:12px">
+              <strong style="display:block;margin-bottom:4px;font-size:12px">거절 사유</strong>
+              <c:out value="${reservation.stayRefundAnswer}"/>
+            </div>
+          </c:if>
+          <span class="btn-cancel-stay" style="display:inline-block;background:#9CA3AF;cursor:default;opacity:.85">환불 거절 · 재신청 불가</span>
+        </c:when>
+        <c:otherwise>
+          <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">
+            체크인 이후 환불은 관리자 1:1 문의로 접수됩니다.
+          </p>
+          <a class="btn-cancel-stay" style="display:inline-block;text-decoration:none;background:#3B5BDB"
+             href="${contextPath}/member/cs/inquiry/write?resvId=${reservation.resvId}&amp;type=stay_refund">환불 신청하기</a>
+        </c:otherwise>
+      </c:choose>
     </div>
-  </c:if>
-
-  <%-- 2026/07/13 장우철 — 진료완료 + 미작성 시 리뷰·별점 작성 --%>
-  <c:if test="${not empty msg}">
-    <p style="color:#166534;font-size:14px;margin-bottom:12px"><c:out value="${msg}"/></p>
-  </c:if>
-  <c:if test="${not empty errorMsg}">
-    <p style="color:#B91C1C;font-size:14px;margin-bottom:12px"><c:out value="${errorMsg}"/></p>
   </c:if>
 
   <%-- 2026/07/13 장우철 — 완료 안내 / HYJ 26.07.20 숙소 분기 추가 --%>

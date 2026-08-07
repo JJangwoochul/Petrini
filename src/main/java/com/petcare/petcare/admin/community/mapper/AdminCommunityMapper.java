@@ -46,6 +46,11 @@ public interface AdminCommunityMapper {
     // 2026-07-15 박유정 — 관리자 게시글 상세
     CommunityPostVO selectAdminPostDetail(@Param("postId") long postId);
 
+    //2026/08/06 장우철 — 관리자 신고 목록/기각
+    java.util.List<com.petcare.petcare.community.report.vo.CommunityReportVO> selectReportsByPostId(
+            @Param("postId") long postId);
+    int dismissPendingReports(@Param("postId") long postId, @Param("adminNo") Long adminNo);
+
     // 2026-07-15 박유정 STEP 7 — 상태 변경 (숨김/삭제/복구)
     int updatePostStatus(@Param("postId") long postId,
     @Param("statusCd") String statusCd);

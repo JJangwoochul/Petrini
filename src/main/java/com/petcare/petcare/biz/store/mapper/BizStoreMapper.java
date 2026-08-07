@@ -45,15 +45,16 @@ public interface BizStoreMapper {
     Long selectBizNoByBizId(@Param("bizId") String bizId);
 
     //지윤 26.07.14 사업자 상품목록 조회
-    //로그인한 사업자(bizNo)가 등록한 상품만, 상품명 검색(keyword)/카테고리(categoryId)/상태(statusCd) 필터 적용
+    //로그인한 사업자(bizNo)가 등록한 상품만, 상품명 검색(keyword)/카테고리명(categoryName)/상태(statusCd) 필터 적용
     //offset/size로 페이지네이션 처리 (한 페이지에 몇 개씩 보여줄지)
+    //2026/08/06 장우철: categoryId → categoryName (동일 명칭 카테고리 통합 필터)
     List<BizProductVO> selectProductList(@Param("bizNo") Long bizNo, @Param("keyword") String keyword,
-                                          @Param("categoryId") Long categoryId, @Param("statusCd") String statusCd,
+                                          @Param("categoryName") String categoryName, @Param("statusCd") String statusCd,
                                           @Param("offset") int offset, @Param("size") int size);
 
     //지윤 26.07.14 상품목록 전체 개수 조회 (페이지네이션에서 "총 몇 페이지"를 계산하기 위함, 필터 조건은 목록 조회와 동일)
     int selectProductCount(@Param("bizNo") Long bizNo, @Param("keyword") String keyword,
-                            @Param("categoryId") Long categoryId, @Param("statusCd") String statusCd);
+                            @Param("categoryName") String categoryName, @Param("statusCd") String statusCd);
 
     //지윤 26.07.14 상품 등록 시 사용할 다음 PRODUCT_ID를 미리 조회
     //PRODUCT_CD("P-0025" 형식)를 만들려면 새 ID값이 먼저 필요해서, INSERT 전에 이 값부터 뽑음
@@ -89,6 +90,9 @@ public interface BizStoreMapper {
     //지윤 26.07.14 상품 등록/수정 폼의 카테고리 드롭다운용
     //최하위(4단계) 카테고리만 조회 (TB_PRODUCT.CATEGORY_ID가 실제로 참조하는 단계라서 그것만 골라옴)
     List<CategoryVO> selectLeafCategories();
+
+    //2026/08/06 장우철: 상품목록 필터 드롭다운용 카테고리명(중복 제거)
+    List<String> selectFilterCategoryNames();
 
     //지윤 26.07.15 상품 옵션 목록 조회 (목록/상세 화면에서 옵션별(색상, 사이즈) 재고 나눠서 보여줄 때 사용)
     List<OptionVO> selectProductOptions(@Param("productId") Long productId);
@@ -219,6 +223,14 @@ public interface BizStoreMapper {
                              @Param("bizRegNo") String bizRegNo, @Param("bizType") String bizType,
                              @Param("addr") String addr, @Param("addrDetail") String addrDetail,
                              @Param("phone") String phone);
+
+    //2026/08/06 장우철 — 정산 계좌 조회/변경
+    com.petcare.petcare.biz.store.vo.BizInfoVO selectSettleAccount(@Param("bizNo") Long bizNo);
+    int updateSettleAccount(@Param("bizNo") Long bizNo,
+                            @Param("settleBank") String settleBank,
+                            @Param("settleBankCode") String settleBankCode,
+                            @Param("settleAccount") String settleAccount,
+                            @Param("settleHolder") String settleHolder);
 
     // 2026/08/04 장우철 — 상품단위 환불
     java.util.List<com.petcare.petcare.biz.store.vo.BizReturnVO> selectReturnList(

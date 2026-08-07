@@ -22,7 +22,7 @@ public class MemberInquiryVO {
     private String body;
     private String refType;     // RESV / ORDER
     private Long refId;
-    private String statusCd;    // WAIT / ANSWER / DONE
+    private String statusCd;    // WAIT / ANSWER / DONE / APPROVED / REJECTED (숙소환불 B)
     private String answer;
     private Long adminNo;
     private Date applyDate;

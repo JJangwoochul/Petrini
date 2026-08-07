@@ -23,6 +23,9 @@ public interface MemberInquiryMapper {
 
     int countOpenStayRefund(@Param("memberNo") Long memberNo, @Param("resvId") Long resvId);
 
+    // 2026/08/06 장우철 — 거절·승인·레거시 DONE 완료 건수 (재신청 불가)
+    int countRejectedStayRefund(@Param("memberNo") Long memberNo, @Param("resvId") Long resvId);
+
     // 관리자 — 숙소 환불(1:1) 목록
     List<MemberInquiryVO> selectStayRefundList(@Param("statusCd") String statusCd);
 

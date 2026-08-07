@@ -102,9 +102,10 @@ public class BizStoreController extends BizBaseController {
    }
 
     //지윤 26.07.14 수정: 상품목록 실데이터 연동 (검색/카테고리/상태 필터 + 페이지네이션, 페이지당 10개)
+    //2026/08/06 장우철: 카테고리 필터를 ID → 이름(동일명칭 통합)으로 변경
     @GetMapping("/products")
     public String storeProducts(@RequestParam(required = false) String keyword,
-                                 @RequestParam(required = false) Long categoryId,
+                                 @RequestParam(required = false) String categoryName,
                                  @RequestParam(required = false) String statusCd,
                                  @RequestParam(defaultValue = "1") int page,
                                  HttpSession session, Model model) {
@@ -114,13 +115,14 @@ public class BizStoreController extends BizBaseController {
         //로그인 세션엔 bizNo가 없어서, 로그인 ID로 되짚어 조회
         Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
 
-        model.addAttribute("productList", bizStoreService.getProductList(bizNo, keyword, categoryId, statusCd, page));
-        model.addAttribute("totalPages", bizStoreService.getTotalPages(bizNo, keyword, categoryId, statusCd));
-        model.addAttribute("totalCount", bizStoreService.getTotalCount(bizNo, keyword, categoryId, statusCd));
+        model.addAttribute("productList", bizStoreService.getProductList(bizNo, keyword, categoryName, statusCd, page));
+        model.addAttribute("totalPages", bizStoreService.getTotalPages(bizNo, keyword, categoryName, statusCd));
+        model.addAttribute("totalCount", bizStoreService.getTotalCount(bizNo, keyword, categoryName, statusCd));
         model.addAttribute("currentPage", page);
         model.addAttribute("categoryList", bizStoreService.getLeafCategories());
+        model.addAttribute("filterCategoryNames", bizStoreService.getFilterCategoryNames());
         model.addAttribute("selectedKeyword", keyword);
-        model.addAttribute("selectedCategoryId", categoryId);
+        model.addAttribute("selectedCategoryName", categoryName);
         model.addAttribute("selectedStatusCd", statusCd);
         return "biz/store/products";
     }
@@ -463,6 +465,10 @@ return json;
         model.addAttribute("filterMonth", month);
         model.addAttribute("filterStatus", status);
         model.addAttribute("productList", productList);
+        //2026/08/06 장우철 — 정산계좌 모달용
+        com.petcare.petcare.biz.store.vo.BizInfoVO settleAcc = bizStoreService.getSettleAccount(bizNo);
+        model.addAttribute("settleAccountInfo",
+                settleAcc != null ? settleAcc : new com.petcare.petcare.biz.store.vo.BizInfoVO());
         return "biz/store/settlement";
     }
 
@@ -493,6 +499,43 @@ return json;
                 storeSettlementService.getStoreSettlementItems(bizNo, settleId);
         result.put("ok", true);
         result.put("items", items);
+        return result;
+    }
+
+    /**
+     * 2026/08/06 장우철 — 정산 계좌 변경
+     * POST /biz/store/settlement/account
+     * (계좌인증은 /mypage/biz/account/verify 재사용 후 여기로 저장)
+     */
+    @PostMapping("/settlement/account")
+    @ResponseBody
+    public Map<String, Object> updateSettleAccount(HttpSession session,
+                                                   @RequestParam String settleBank,
+                                                   @RequestParam String settleBankCode,
+                                                   @RequestParam String settleAccount,
+                                                   @RequestParam String settleHolder,
+                                                   @RequestParam(required = false) String settleVerifyYn) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO biz = getBizMember(session);
+        if (biz == null) {
+            result.put("ok", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+        Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
+        if (bizNo == null) {
+            result.put("ok", false);
+            result.put("message", "쇼핑 사업자 정보가 없습니다.");
+            return result;
+        }
+        if (!"Y".equals(settleVerifyYn)) {
+            result.put("ok", false);
+            result.put("message", "계좌 인증을 완료한 뒤 저장해 주세요.");
+            return result;
+        }
+        boolean ok = bizStoreService.updateSettleAccount(bizNo, settleBank, settleBankCode, settleAccount, settleHolder);
+        result.put("ok", ok);
+        result.put("message", ok ? "정산 계좌가 저장되었습니다." : "정산 계좌 저장에 실패했습니다.");
         return result;
     }
 

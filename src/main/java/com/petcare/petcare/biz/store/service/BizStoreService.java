@@ -48,10 +48,11 @@ public interface BizStoreService {
     Long getBizNo(String bizId);
 
     //지윤 26.07.15 사업자 상품목록 조회 (할인율 계산 + 옵션별 재고 포함)
-    List<BizProductVO> getProductList(Long bizNo, String keyword, Long categoryId, String statusCd, int pageNo);
+    //2026/08/06 장우철: categoryId → categoryName
+    List<BizProductVO> getProductList(Long bizNo, String keyword, String categoryName, String statusCd, int pageNo);
 
     //지윤 26.07.14 상품목록 총 페이지 수 (페이지네이션용)
-    int getTotalPages(Long bizNo, String keyword, Long categoryId, String statusCd);
+    int getTotalPages(Long bizNo, String keyword, String categoryName, String statusCd);
 
     //지윤 26.07.14 상품 등록 (이미지 여러 장 같이 등록)
     void addProduct(BizProductVO product, List<OptionVO> options, MultipartFile image) throws Exception;
@@ -65,8 +66,11 @@ public interface BizStoreService {
     //지윤 26.07.14 등록/수정 폼 카테고리 드롭다운 목록
     List<CategoryVO> getLeafCategories();
 
+    //2026/08/06 장우철: 상품목록 필터용 카테고리명(중복 제거)
+    List<String> getFilterCategoryNames();
+
     //지윤 26.07.15 상품목록 "총 N개" 표시용 전체 개수 조회
-    int getTotalCount(Long bizNo, String keyword, Long categoryId, String statusCd);
+    int getTotalCount(Long bizNo, String keyword, String categoryName, String statusCd);
 
     //지윤 26.07.20 추가: 사업자 주문 목록 조회 (상태 필터)
     List<BizOrderVO> getOrderList(Long bizNo, String statusCd);
@@ -130,6 +134,11 @@ public interface BizStoreService {
 
     //지윤 26.07.23 추가: 사업자 정보 수정 (등록증 새로 올리면 기존 것 교체)
     void updateBusinessInfo(Long bizNo, com.petcare.petcare.biz.store.vo.BizInfoVO info, org.springframework.web.multipart.MultipartFile certFile) throws Exception;
+
+    //2026/08/06 장우철 — 정산 계좌 조회/변경
+    com.petcare.petcare.biz.store.vo.BizInfoVO getSettleAccount(Long bizNo);
+    boolean updateSettleAccount(Long bizNo, String settleBank, String settleBankCode,
+                                String settleAccount, String settleHolder);
 
     // 2026/08/04 장우철 — 상품단위 환불
     java.util.List<com.petcare.petcare.biz.store.vo.BizReturnVO> getReturnList(Long bizNo, String statusCd);

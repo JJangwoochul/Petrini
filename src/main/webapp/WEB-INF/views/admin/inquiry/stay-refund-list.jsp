@@ -52,7 +52,15 @@
             <td style="padding:12px"><c:out value="${i.stayName}"/></td>
             <td style="padding:12px"><c:out value="${i.memberName}"/></td>
             <td style="padding:12px"><c:out value="${i.resvStatusCd}"/></td>
-            <td style="padding:12px"><c:out value="${i.statusCd}"/></td>
+            <td style="padding:12px">
+              <c:choose>
+                <c:when test="${i.statusCd eq 'WAIT'}">대기</c:when>
+                <c:when test="${i.statusCd eq 'APPROVED'}">승인</c:when>
+                <c:when test="${i.statusCd eq 'REJECTED'}">거절</c:when>
+                <c:when test="${i.statusCd eq 'DONE'}">완료(레거시)</c:when>
+                <c:otherwise><c:out value="${i.statusCd}"/></c:otherwise>
+              </c:choose>
+            </td>
             <td style="padding:12px">
               <a href="${contextPath}/admin/inquiry/stay-refund/detail?inquiryId=${i.inquiryId}" style="color:#3B5BDB;font-weight:600">상세</a>
             </td>

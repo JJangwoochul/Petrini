@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizTypeLabel" value="반려동물 쇼핑몰" />
 <c:set var="bizPage"      value="products" />
@@ -58,10 +59,11 @@
       </select>
       <input type="text" name="keyword" value="${selectedKeyword}" placeholder="상품명을 입력하세요.">
       <span style="font-size:13px;color:#666;margin-left:6px">카테고리</span>
-      <select name="categoryId">
+      <%-- 2026/08/06 장우철: 필터는 카테고리명 1개씩(강아지/사료/시니어). 등록 모달용 categoryList와 분리 --%>
+      <select name="categoryName">
         <option value="">전체</option>
-        <c:forEach var="cat" items="${categoryList}">
-          <option value="${cat.categoryId}" ${selectedCategoryId == cat.categoryId ? 'selected' : ''}>${cat.categoryName}</option>
+        <c:forEach var="catName" items="${filterCategoryNames}">
+          <option value="<c:out value='${catName}'/>" ${selectedCategoryName == catName ? 'selected' : ''}><c:out value="${catName}"/></option>
         </c:forEach>
       </select>
       <span style="font-size:13px;color:#666;margin-left:6px">상태</span>
@@ -146,20 +148,23 @@
       </tbody>
     </table>
 
+    <%-- 2026/08/06 장우철: 필터 없을 때 pageBaseUrl에 ?가 없어 &page= 가 깨지던 문제 수정 (? / & 분기) --%>
+    <%-- 2026/08/06 장우철: 카테고리 필터 파라미터 categoryId → categoryName --%>
     <c:url var="pageBaseUrl" value="/biz/store/products">
       <c:if test="${not empty selectedKeyword}"><c:param name="keyword" value="${selectedKeyword}"/></c:if>
-      <c:if test="${not empty selectedCategoryId}"><c:param name="categoryId" value="${selectedCategoryId}"/></c:if>
+      <c:if test="${not empty selectedCategoryName}"><c:param name="categoryName" value="${selectedCategoryName}"/></c:if>
       <c:if test="${not empty selectedStatusCd}"><c:param name="statusCd" value="${selectedStatusCd}"/></c:if>
     </c:url>
+    <c:set var="pageSep" value="${fn:contains(pageBaseUrl, '?') ? '&' : '?'}"/>
     <div class="prod-pagination">
       <c:if test="${currentPage > 1}">
-        <a href="${pageBaseUrl}&page=${currentPage - 1}"><button>&lt;</button></a>
+        <a href="${pageBaseUrl}${pageSep}page=${currentPage - 1}"><button>&lt;</button></a>
       </c:if>
       <c:forEach begin="1" end="${totalPages}" var="i">
-        <a href="${pageBaseUrl}&page=${i}"><button class="${i == currentPage ? 'active' : ''}">${i}</button></a>
+        <a href="${pageBaseUrl}${pageSep}page=${i}"><button class="${i == currentPage ? 'active' : ''}">${i}</button></a>
       </c:forEach>
       <c:if test="${currentPage < totalPages}">
-        <a href="${pageBaseUrl}&page=${currentPage + 1}"><button>&gt;</button></a>
+        <a href="${pageBaseUrl}${pageSep}page=${currentPage + 1}"><button>&gt;</button></a>
       </c:if>
     </div>
   </div>

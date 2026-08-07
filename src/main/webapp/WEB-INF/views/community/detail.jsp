@@ -245,7 +245,11 @@
         
         <input type="hidden" name="postId" value="${post.postId}">
         <div class="comment-write">
-          <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=ME" alt="내 아바타">
+          <%-- 2026/08/06 장우철 — 로그인 회원 프로필 아바타 --%>
+          <img class="comment-avatar"
+               src="${not empty memberInfo.profileImgUrl ? contextPath.concat(memberInfo.profileImgUrl) : 'https://placehold.co/36x36/EAF7F2/2BAB82?text=ME'}"
+               alt="내 아바타"
+               onerror="this.src='https://placehold.co/36x36/EAF7F2/2BAB82?text=ME'">
           <div class="comment-input-wrap">
             <textarea class="comment-input" name="body"
               placeholder="${post.boardType eq 'LIFE' ? '수의사 답변을 입력하세요...' : '댓글을 입력하세요...'}"
@@ -265,7 +269,11 @@
 
   <c:forEach var="cmt" items="${comments}">
     <div class="comment-item">
-      <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=U" alt="댓글러">
+      <%-- 2026/08/06 장우철 — 댓글 작성자 프로필 아바타 --%>
+      <img class="comment-avatar"
+           src="${not empty cmt.profileImgUrl ? contextPath.concat(cmt.profileImgUrl) : 'https://placehold.co/36x36/EAF7F2/2BAB82?text=U'}"
+           alt="댓글러"
+           onerror="this.src='https://placehold.co/36x36/EAF7F2/2BAB82?text=U'">
       <div class="comment-body">
         <div class="comment-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <span class="comment-name">
@@ -349,7 +357,11 @@
 
     <c:forEach var="reply" items="${cmt.replies}">
       <div class="comment-item reply-item">
-        <img class="comment-avatar" src="https://placehold.co/36x36/EAF7F2/2BAB82?text=R" alt="답글러">
+        <%-- 2026/08/06 장우철 — 답글 작성자 프로필 아바타 --%>
+        <img class="comment-avatar"
+             src="${not empty reply.profileImgUrl ? contextPath.concat(reply.profileImgUrl) : 'https://placehold.co/36x36/EAF7F2/2BAB82?text=R'}"
+             alt="답글러"
+             onerror="this.src='https://placehold.co/36x36/EAF7F2/2BAB82?text=R'">
         <div class="comment-body">
           <div class="comment-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
             <span class="comment-name">

@@ -48,6 +48,7 @@
                      AND R.CHECKOUT_DATE &lt;  TRUNC(#{periodEnd}) + 1)
                  OR (
                         /* 2026/07/31 장우철 — R3-3: 환불거절 후 미정산 이월 */
+                        /* 2026/08/06 장우철 — REJECTED(+레거시 DONE) */
                         R.CHECKOUT_DATE &lt; TRUNC(#{periodStart})
                     AND EXISTS (
                             SELECT 1
@@ -55,7 +56,8 @@
                              WHERE I.REF_TYPE = 'RESV'
                                AND I.REF_ID = R.RESV_ID
                                AND I.INQUIRY_TYPE = 'RESERVE'
-                               AND I.STATUS_CD = 'DONE'
+                               AND I.TITLE LIKE '숙소 환불신청%'
+                               AND I.STATUS_CD IN ('REJECTED', 'DONE')
                         )
                     )
                 )
@@ -73,6 +75,16 @@
                        AND I.REF_ID = R.RESV_ID
                        AND I.INQUIRY_TYPE = 'RESERVE'
                        AND I.STATUS_CD = 'WAIT'
+                )
+           AND  NOT EXISTS (
+                    /* 2026/08/06 장우철 — 환불승인(보상숙박)은 정산 제외 */
+                    SELECT 1
+                      FROM TB_INQUIRY I
+                     WHERE I.REF_TYPE = 'RESV'
+                       AND I.REF_ID = R.RESV_ID
+                       AND I.INQUIRY_TYPE = 'RESERVE'
+                       AND I.TITLE LIKE '숙소 환불신청%'
+                       AND I.STATUS_CD = 'APPROVED'
                 )
         <if test="roomId != null">
            AND  R.ROOM_ID = #{roomId}
@@ -171,6 +183,16 @@
                                   AND I.REF_ID = R.RESV_ID
                                   AND I.INQUIRY_TYPE = 'RESERVE'
                                   AND I.STATUS_CD = 'WAIT'
+                           )
+                       AND NOT EXISTS (
+                               /* 2026/08/06 장우철 — 환불승인(보상숙박) 정산 제외 */
+                               SELECT 1
+                                 FROM TB_INQUIRY I
+                                WHERE I.REF_TYPE = 'RESV'
+                                  AND I.REF_ID = R.RESV_ID
+                                  AND I.INQUIRY_TYPE = 'RESERVE'
+                                  AND I.TITLE LIKE '숙소 환불신청%'
+                                  AND I.STATUS_CD = 'APPROVED'
                            )
                 ), 0)
                 +

@@ -30,6 +30,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.biz.controller.BizBaseController;
 import com.petcare.petcare.biz.stay.service.BizStayService;
+import com.petcare.petcare.biz.store.service.BizStoreService;
+import com.petcare.petcare.biz.store.vo.BizInfoVO;
 import com.petcare.petcare.biz.vo.BizCouponVO;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
@@ -69,6 +71,9 @@ public class BizStayController extends BizBaseController {
     // 2026/07/30 장우철 — 숙소 정산 요약/목록
     @Autowired
     private StaySettlementService staySettlementService;
+    // 2026/08/06 장우철 — 정산계좌(TB_BUSINESS.SETTLE_*)는 쇼핑과 동일 테이블·서비스 재사용
+    @Autowired
+    private BizStoreService bizStoreService;
 
     // 2026-07-14 — 사이드바 예약관리 배지: PENDING 건수
     // 2026-07-28 박유정 — PENDING + CONFIRMED 합산 (BizStayMapper.countPendingReservations)
@@ -384,7 +389,48 @@ public class BizStayController extends BizBaseController {
         model.addAttribute("filterMonth", month);
         model.addAttribute("filterStatus", status);
         model.addAttribute("roomList", roomList);
+        //2026/08/06 장우철 — 정산계좌 모달용 (숙소·쇼핑 공통 SETTLE_*)
+        BizInfoVO settleAcc = bizStoreService.getSettleAccount(bizNo);
+        model.addAttribute("settleAccountInfo",
+                settleAcc != null ? settleAcc : new BizInfoVO());
         return "biz/stay/settlement";
+    }
+
+    /**
+     * 2026/08/06 장우철 — 숙소 정산 계좌 변경
+     * POST /biz/stay/settlement/account
+     */
+    @PostMapping("/settlement/account")
+    @ResponseBody
+    public Map<String, Object> updateStaySettleAccount(HttpSession session,
+                                                       @RequestParam String settleBank,
+                                                       @RequestParam String settleBankCode,
+                                                       @RequestParam String settleAccount,
+                                                       @RequestParam String settleHolder,
+                                                       @RequestParam(required = false) String settleVerifyYn) {
+        Map<String, Object> result = new HashMap<>();
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            result.put("ok", false);
+            result.put("message", "로그인이 필요합니다.");
+            return result;
+        }
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getBizNo() == null) {
+            result.put("ok", false);
+            result.put("message", "숙소 사업자 정보가 없습니다.");
+            return result;
+        }
+        if (!"Y".equals(settleVerifyYn)) {
+            result.put("ok", false);
+            result.put("message", "계좌 인증을 완료한 뒤 저장해 주세요.");
+            return result;
+        }
+        boolean ok = bizStoreService.updateSettleAccount(
+                stay.getBizNo(), settleBank, settleBankCode, settleAccount, settleHolder);
+        result.put("ok", ok);
+        result.put("message", ok ? "정산 계좌가 저장되었습니다." : "정산 계좌 저장에 실패했습니다.");
+        return result;
     }
 
     /**

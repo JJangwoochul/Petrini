@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.petcare.petcare.admin.community.service.AdminCommunityService;
 import com.petcare.petcare.admin.community.vo.AdminCommunityVO;
+import com.petcare.petcare.member.vo.MemberVO;
 
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.petcare.petcare.community.post.vo.CommunityPostVO;
@@ -78,7 +79,43 @@ public class AdminCommunityController extends AdminBaseController {
             return "redirect:/admin/community/list";
         }
         model.addAttribute("post", post);
+        //2026/08/06 장우철 — 신고 내역
+        model.addAttribute("reportList", adminCommunityService.getPostReports(id));
+        // 2026/08/07 장우철 — 댓글·대댓글 (읽기 전용)
+        model.addAttribute("comments", adminCommunityService.getPostComments(id));
         return "admin/community/detail";
+    }
+
+    //2026/08/06 장우철 — 대기 신고 기각 (게시글은 유지)
+    // ADMIN_NO는 TB_ADMIN.ADMIN_NO FK — 세션 adminNo 사용 (memberNo 아님)
+    @PostMapping("/dismiss-reports")
+    public String dismissReports(HttpSession session,
+                                 @RequestParam long postId,
+                                 RedirectAttributes rttr) {
+        MemberVO admin = getAdmin(session);
+        if (admin == null)
+            return redirectToLogin();
+
+        try {
+            Long adminNo = admin.getAdminNo();
+            if (adminNo == null) {
+                rttr.addFlashAttribute("errorMsg", "관리자 정보가 없어 신고를 기각할 수 없습니다. 다시 로그인해 주세요.");
+                return "redirect:/admin/community/detail?id=" + postId;
+            }
+            int updated = adminCommunityService.dismissPendingReports(postId, adminNo);
+            if (updated <= 0) {
+                rttr.addFlashAttribute("errorMsg", "기각할 대기 신고가 없습니다.");
+            } else {
+                rttr.addFlashAttribute("successMsg", "신고 " + updated + "건을 기각 처리했습니다.");
+            }
+            return "redirect:/admin/community/detail?id=" + postId;
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", "게시글을 찾을 수 없습니다.");
+            return "redirect:/admin/community/list";
+        } catch (Exception e) {
+            rttr.addFlashAttribute("errorMsg", "신고 기각 처리 중 오류가 발생했습니다.");
+            return "redirect:/admin/community/detail?id=" + postId;
+        }
     }
 
     // 2026-07-15 박유정 STEP 7 — 게시글 숨김

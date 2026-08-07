@@ -93,9 +93,13 @@
                                         </c:choose>
                                     </td>
                                     <td>
+                                        <%-- 2026/08/06 장우철 — 신고 대기 > 신고 기각 > 게시글 상태 --%>
                                         <c:choose>
                                             <c:when test="${item.pendingReportCount != null && item.pendingReportCount > 0}">
                                                 <span class="adm-badge wait">신고 대기</span>
+                                            </c:when>
+                                            <c:when test="${item.dismissedReportCount != null && item.dismissedReportCount > 0}">
+                                                <span class="adm-badge" style="background:#F1F3F7;color:#666">신고 기각</span>
                                             </c:when>
                                             <c:when test="${item.statusCd eq 'HIDDEN'}">
                                                 <span class="adm-badge cancel">숨김</span>

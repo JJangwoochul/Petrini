@@ -61,6 +61,11 @@ public class MypageReserveVO {
     private Long refundAmt;
     private Date cancelAt;
 
+    // 2026/08/06 장우철 — 숙소 환불신청 UI (PENDING/APPROVED/REJECTED, 예약 운영상태 유지)
+    private String stayRefundStatus;
+    // 2026/08/06 장우철 — 환불 승인/거절 시 관리자 답변
+    private String stayRefundAnswer;
+
     // 2026/07/31 장우철 — 상세 화면 미리보기용 (DB 미저장)
     private Long daysUntilCheckin;
     private Integer cancelFeeRatePercent;

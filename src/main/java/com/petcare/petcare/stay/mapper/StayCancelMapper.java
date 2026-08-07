@@ -28,4 +28,8 @@ public interface StayCancelMapper {
                              @Param("cancelFeeAmt") Long cancelFeeAmt,
                              @Param("refundAmt") Long refundAmt,
                              @Param("allowDone") Boolean allowDone);
+
+    // 2026/08/06 장우철 — 환불승인·보상숙박: 예약 상태 유지, 환불금액만 기록
+    int updateStayRefundAmtKeepStatus(@Param("resvId") Long resvId,
+                                      @Param("refundAmt") Long refundAmt);
 }

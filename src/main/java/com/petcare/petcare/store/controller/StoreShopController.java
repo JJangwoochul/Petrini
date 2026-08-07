@@ -476,6 +476,7 @@ public String payment(@RequestParam(required = false) Long productId,
     }
 
     //지윤 26.07.09 수정: cartItemIds 파라미터 추가 - 장바구니에서 주문하기로 들어온 경우 처리
+    //2026/08/06 장우철: 결제→「주문서로 돌아가기」 시 세션 orderTemp로 주문서 복원
 @GetMapping("/order")
 public String order(@RequestParam(required = false) Long productId,
                 @RequestParam(required = false) Long optionId,
@@ -525,6 +526,37 @@ if (defaultAddr != null) {
         model.addAttribute("orderItems",
                 storeShopService.getCartOrderItems(cartItemIds));
     }
+    // 2026/08/06 장우철: 결제 화면에서 돌아온 경우 — 세션 orderTemp로 상품·배송지 복원
+    else {
+        OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
+        if (orderTemp != null
+                && memberNo.equals(orderTemp.getMemberNo())
+                && orderTemp.getOrderItems() != null
+                && !orderTemp.getOrderItems().isEmpty()) {
+            model.addAttribute("orderItems", orderTemp.getOrderItems());
+            if (orderTemp.getRecvName() != null) {
+                model.addAttribute("memberRecvName", orderTemp.getRecvName());
+            }
+            if (orderTemp.getRecvPhone() != null) {
+                model.addAttribute("memberPhone", orderTemp.getRecvPhone());
+            }
+            if (orderTemp.getZipCode() != null) {
+                model.addAttribute("memberZipCode", orderTemp.getZipCode());
+            }
+            if (orderTemp.getAddr1() != null) {
+                model.addAttribute("memberAddr1", orderTemp.getAddr1());
+            }
+            if (orderTemp.getAddr2() != null) {
+                model.addAttribute("memberAddr2", orderTemp.getAddr2());
+            }
+            model.addAttribute("restoreCouponId", orderTemp.getCouponMemberCouponId());
+            model.addAttribute("restorePoint", orderTemp.getPointUsed());
+            model.addAttribute("restoreDeliveryMemo", orderTemp.getDeliveryMemo());
+        } else {
+            return "redirect:/store/cart";
+        }
+    }
+
     // 기존 쿠폰 조회는 그대로 유지
     model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));
     return "store/order";

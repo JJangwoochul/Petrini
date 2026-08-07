@@ -127,6 +127,7 @@
             <c:when test="${r.statusCd eq 'CONFIRMED'}">
               <span class="badge-status badge-ready">예약확정</span>
             </c:when>
+            <%-- 2026/08/06 장우철 — 숙박 운영 상태만 표시 (환불은 상세에서 확인) --%>
             <c:when test="${r.statusCd eq 'CHECKIN'}">
               <span class="badge-status badge-ready">체크인</span>
             </c:when>

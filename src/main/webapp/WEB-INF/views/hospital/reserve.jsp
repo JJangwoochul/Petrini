@@ -204,6 +204,8 @@
 <script>
 var contextPath = '${contextPath}';
 var hospitalId = ${hospitalId};
+// 2026/08/07 장우철 — CSRF (hold/release POST)
+var csrfToken = '${_csrf}';
 var currentStep = 1;
 var selectedDoctorId = null;
 var selectedDoctorName = '';
@@ -214,6 +216,8 @@ var selectedResvTime = '';
 var selectedResvDate = '';
 var selectedPetCard = null;
 var loadingTimes = false;
+// 2026/08/07 장우철 — 예약 제출 중에는 이탈 해제 스킵 (서버가 hold 소비)
+var skipLeaveHoldRelease = false;
 
 function goStep(n) {
   // 2026/07/16 장우철 — 1·2단계 전환 (선점 성공 후 goStep(2) 호출)
@@ -245,16 +249,60 @@ function goBackToStep1() {
   }
   var body = new URLSearchParams();
   body.append('hospitalId', hospitalId);
+  body.append('_csrf', csrfToken);
   fetch(contextPath + '/hospital/reserve/hold/release', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': csrfToken
     },
     body: body.toString()
   })
     .then(function() { afterRelease(); })
     .catch(function() { afterRelease(); });
+}
+
+/**
+ * 2026/08/07 장우철 — 예약 중 이탈 시 hold 즉시 해제 시도
+ * - 성공하면 다른 회원이 바로 선택 가능
+ * - 실패(브라우저 제한 등)해도 서버 TTL 5분 + 만료 스케줄러가 안전망
+ */
+function releaseHoldOnLeave() {
+  if (skipLeaveHoldRelease) {
+    return;
+  }
+  var holdId = document.getElementById('holdIdInput').value;
+  if (!holdId) {
+    return;
+  }
+  var body = new URLSearchParams();
+  body.append('hospitalId', hospitalId);
+  body.append('_csrf', csrfToken);
+  var url = contextPath + '/hospital/reserve/hold/release';
+  var payload = body.toString();
+  try {
+    if (navigator.sendBeacon) {
+      var blob = new Blob([payload], { type: 'application/x-www-form-urlencoded' });
+      if (navigator.sendBeacon(url, blob)) {
+        document.getElementById('holdIdInput').value = '';
+        return;
+      }
+    }
+  } catch (e) { /* fallback */ }
+  try {
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRF-TOKEN': csrfToken
+      },
+      body: payload,
+      keepalive: true,
+      credentials: 'same-origin'
+    });
+  } catch (e2) { /* TTL 안전망 */ }
+  document.getElementById('holdIdInput').value = '';
 }
 
 function onDateChange() {
@@ -402,12 +450,14 @@ function goToPetStep() {
   body.append('treatTypeId', selectedTreatId);
   body.append('resvDate', selectedResvDate);
   body.append('resvTime', selectedResvTime);
+  body.append('_csrf', csrfToken);
 
   fetch(contextPath + '/hospital/reserve/hold', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': csrfToken
     },
     body: body.toString()
   })
@@ -487,6 +537,8 @@ function submitReserve() {
     return;
   }
   if (confirm('예약을 확정하시겠습니까?')) {
+    // 2026/08/07 장우철 — 제출 시 unload 해제와 경합 방지
+    skipLeaveHoldRelease = true;
     document.getElementById('reserveForm').submit();
   }
 }
@@ -498,6 +550,10 @@ function submitReserve() {
   dateInput.addEventListener('change', onDateChange);
   var firstPet = document.querySelector('.pet-select-card');
   if (firstPet) selectPet(firstPet);
+
+  // 2026/08/07 장우철 — 이탈(닫기/뒤로/다른 페이지) 시 hold 즉시 해제 시도
+  window.addEventListener('pagehide', releaseHoldOnLeave);
+  window.addEventListener('beforeunload', releaseHoldOnLeave);
 })();
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

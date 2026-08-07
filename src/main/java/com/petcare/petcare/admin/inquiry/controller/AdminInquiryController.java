@@ -67,7 +67,7 @@ public class AdminInquiryController extends AdminBaseController {
         }
         try {
             adminInquiryService.approveStayRefund(inquiryId, null, answer);
-            rttr.addFlashAttribute("successMsg", "환불을 승인하고 전액 환불 취소 처리했습니다.");
+            rttr.addFlashAttribute("successMsg", "환불을 승인했습니다. 전액 환불되며 예약 이용은 유지됩니다(보상 숙박).");
         } catch (IllegalArgumentException | IllegalStateException e) {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
         } catch (Exception e) {

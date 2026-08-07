@@ -97,14 +97,16 @@
                 <td><fmt:formatNumber value="${o.payAmount}" pattern="#,###"/>원</td>
                 <%-- 지윤 26.07.20 수정: JS statusBadgeClass 딕셔너리 조회 -> JSTL c:choose로 상태별 배지 클래스 직접 분기 --%>
                 <td>
+                  <%-- 2026/08/06 장우철: 취소신청(PENDING)이면 ORDER_STATUS가 PAID/READY여도 결제취소신청 표시 --%>
                   <c:choose>
                     <c:when test="${o.activeReturnCount != null && o.activeReturnCount > 0}"><span class="bs-badge bs-cancel">환불진행중</span></c:when>
+                    <c:when test="${o.claimStatus == 'PENDING'}"><span class="bs-badge bs-cancel">결제취소신청</span></c:when>
                     <c:when test="${o.orderStatus == 'PAID'}"><span class="bs-badge bs-wait">결제완료</span></c:when>
                     <c:when test="${o.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
                     <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
                     <c:when test="${o.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
                     <c:when test="${o.orderStatus == 'CANCEL'}"><span class="bs-badge bs-cancel">취소완료</span></c:when>
-                    <c:otherwise><span class="bs-badge bs-empty">${o.orderStatus}</span></c:otherwise>
+                    <c:otherwise><span class="bs-badge bs-empty"><c:out value="${o.orderStatus}"/></span></c:otherwise>
                   </c:choose>
                 </td>
                 <%-- 지윤 26.07.20 수정: onclick="openDetail('ORD-2026-0892')" (문자열 주문코드로 배열 검색)
@@ -268,6 +270,8 @@ function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
             var rs = items[i].returnStatusCd;
             if (rs === 'REQUESTED' || rs === 'RETURNING') return '환불진행중';
           }
+          //2026/08/06 장우철: 취소신청 대기면 결제취소신청 표시
+          if (o.claimStatus === 'PENDING') return '결제취소신청';
           return statusLabel[o.orderStatus] || o.orderStatus;
         })();
 
@@ -403,7 +407,7 @@ function saveStatus() {
   formData.set('courierCode', carrierSelect.value);
   formData.set('trackingNo', document.getElementById('dTrackingNo').value.trim());
 
-    fetch(contextPath + '/biz/store/orders/' + currentOrderId + '/status', {
+    csrfFetch(contextPath + '/biz/store/orders/' + currentOrderId + '/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString()

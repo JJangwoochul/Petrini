@@ -252,6 +252,9 @@
 <script>
   // 2026-07-10 장우철 — 서버 목록 → JS (탭 필터·모달)
   // 2026/07/11 장우철 — PENDING/CONFIRMED 분리, 신청→확정→완료 버튼
+  // 2026/08/06 장우철 — CSRF는 문자열로 보관 (UUID 미인용 삽입 시 스크립트 파싱 깨짐)
+  var csrfToken = (document.querySelector('meta[name="_csrf"]') || {}).content
+      || '<c:out value="${_csrf}"/>';
   var reservations = [
     <c:forEach var="r" items="${reservationList}" varStatus="st">
     {
@@ -351,9 +354,8 @@
     form.action = contextPath + '/biz/hospital/reserve/status';
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + resvId + '">' +
-      '<input type="hidden" name="statusCd" value="' + statusCd + '">';
-      //HYJ 26.08.05
-      '<input type="hidden" name="_csrf" value="' + ${_csrf} + '">';
+      '<input type="hidden" name="statusCd" value="' + statusCd + '">' +
+      '<input type="hidden" name="_csrf" value="' + csrfToken + '">';
     document.body.appendChild(form);
     form.submit();
   }
@@ -432,9 +434,8 @@
     form.innerHTML =
       '<input type="hidden" name="resvId" value="' + cancelTargetResvId + '">' +
       '<input type="hidden" name="statusCd" value="CANCEL">' +
-      '<input type="hidden" name="cancelReason" value="">';
-      //HYJ 26.08.05
-      '<input type="hidden" name="_csrf" value="' + ${_csrf} + '">';
+      '<input type="hidden" name="cancelReason" value="">' +
+      '<input type="hidden" name="_csrf" value="' + csrfToken + '">';
     form.querySelector('input[name="cancelReason"]').value = reason;
     document.body.appendChild(form);
     form.submit();

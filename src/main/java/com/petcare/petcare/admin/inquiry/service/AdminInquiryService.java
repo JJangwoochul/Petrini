@@ -1,6 +1,7 @@
 /**
  * 역할: 관리자 숙소 환불(1:1) 승인/거절
  * 2026/07/31 장우철 — R2 2-7 / R3 정산 연결
+ * 2026/08/06 장우철 — B: STATUS APPROVED/REJECTED + 승인 시 보상숙박(예약 유지)
  */
 package com.petcare.petcare.admin.inquiry.service;
 
@@ -43,8 +44,8 @@ public class AdminInquiryService {
     }
 
     /**
-     * 승인: 전액 환불 취소 + 기존 정산 ITEM REFUNDED + 문의 DONE
-     * 2026/07/31 장우철 — R3-2 DONE 예약·기정산 건 포함
+     * 승인: 전액 환불 + 예약 이용 유지(보상 숙박) + 정산 REFUNDED + 문의 APPROVED
+     * 2026/08/06 장우철 — CANCEL 하지 않음
      */
     @Transactional
     public void approveStayRefund(Long inquiryId, Long adminNo, String answer) throws Exception {
@@ -60,28 +61,26 @@ public class AdminInquiryService {
         }
 
         String msg = (answer == null || answer.isBlank())
-                ? "환불 신청이 승인되어 전액 환불 처리되었습니다."
+                ? "환불이 승인되었습니다. 결제금은 전액 환불되며, 예약 기간 동안 숙소 이용은 가능합니다(보상 숙박)."
                 : answer.trim();
 
         Long resvId = detail.getRefId();
 
-        // 이미 정산 묶인 건이면 지급 제외(REFUNDED) + 미지급 마스터 재합산
         staySettlementMapper.updateSettlementItemRefundedByResvId(
-                resvId, "관리자 환불승인");
+                resvId, "관리자 환불승인(이용유지)");
         staySettlementMapper.recalcUnpaidSettlementTotalsByResvId(resvId);
 
-        // DONE 포함 전액 환불 취소 (수수료 0 · 정산 대상 아님)
-        stayFullCancelService.cancelWithFullRefund(
-                resvId, null, "관리자 환불승인: " + msg, "관리자", true);
+        stayFullCancelService.refundPaymentKeepReservation(resvId, "관리자");
 
-        int updated = memberInquiryMapper.updateInquiryAnswer(inquiryId, "DONE", msg, adminNo);
+        int updated = memberInquiryMapper.updateInquiryAnswer(inquiryId, "APPROVED", msg, adminNo);
         if (updated == 0) {
             throw new IllegalStateException("문의 상태 갱신에 실패했습니다.");
         }
     }
 
     /**
-     * 거절: 예약 유지 + 문의 DONE → 다음 정산 기간에 이월 합산(R3-3)
+     * 거절: 예약 유지 + 문의 REJECTED → 다음 정산 기간에 이월 합산(R3-3)
+     * 2026/08/06 장우철 — STATUS_CD = REJECTED (B방식)
      */
     @Transactional
     public void rejectStayRefund(Long inquiryId, Long adminNo, String answer) {
@@ -96,7 +95,7 @@ public class AdminInquiryService {
             throw new IllegalArgumentException("거절 사유를 입력해 주세요.");
         }
         int updated = memberInquiryMapper.updateInquiryAnswer(
-                inquiryId, "DONE", answer.trim(), adminNo);
+                inquiryId, "REJECTED", answer.trim(), adminNo);
         if (updated == 0) {
             throw new IllegalStateException("문의 상태 갱신에 실패했습니다.");
         }

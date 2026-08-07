@@ -26,7 +26,8 @@
       DBMS_LOB.SUBSTR(c.BODY, 32000, 1) AS body,
       c.IS_DELETED  AS isDeleted,
       c.REG_DATE    AS regDate,
-      NVL(m.NICKNAME, '익명') AS nickname
+      NVL(m.NICKNAME, '익명') AS nickname,
+      m.PROFILE_IMG_URL AS profileImgUrl
   </sql>
 
   <!-- 2026/08/03 장우철 — 삭제된 댓글도 조회 (화면에서 '삭제된 댓글입니다' + 대댓글 유지) -->

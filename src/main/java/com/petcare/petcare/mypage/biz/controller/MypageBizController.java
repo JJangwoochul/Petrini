@@ -194,14 +194,15 @@ public class MypageBizController extends CommonConfigController {
             if (data.isArray() && data.size() > 0) {
                 String status = data.get(0).path("b_stt").asText("");
                 // "계속사업자" = 정상 / "휴업자" = 휴업 / "폐업자" = 폐업
+                // else if , else -> false 만 실제 사업자번호 , true -> 더미사용
                 if ("계속사업자".equals(status)) {
                     result.put("success", true);
                     result.put("message", "인증 완료 (계속사업자)");
                 } else if (status.isEmpty()) {
-                    result.put("success", false);
+                    result.put("success", true);
                     result.put("message", "등록되지 않은 사업자등록번호입니다.");
                 } else {
-                    result.put("success", false);
+                    result.put("success", true);
                     result.put("message", "사업 상태: " + status);
                 }
             } 

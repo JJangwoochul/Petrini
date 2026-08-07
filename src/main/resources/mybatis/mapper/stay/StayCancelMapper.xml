@@ -74,4 +74,13 @@
     </if>
   </update>
 
+  <!-- 2026/08/06 장우철 — 환불승인·보상숙박: CANCEL 없이 REFUND_AMT만 -->
+  <update id="updateStayRefundAmtKeepStatus">
+    UPDATE TB_RESERVATION
+       SET REFUND_AMT = #{refundAmt}
+     WHERE RESV_ID   = #{resvId}
+       AND RESV_TYPE = 'STAY'
+       AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+  </update>
+
 </mapper>

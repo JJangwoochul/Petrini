@@ -78,6 +78,29 @@ public class AdminCommunityServiceImpl implements AdminCommunityService {
         return post;
     }
 
+    // 2026/08/07 장우철 — 관리자 상세 댓글 (대댓글 포함, 읽기 전용)
+    @Override
+    public List<com.petcare.petcare.community.comment.vo.CommunityCommentVO> getPostComments(long postId) {
+        return communityCommentService.getCommentList(postId);
+    }
+
+    //2026/08/06 장우철 — 게시글 신고 내역
+    @Override
+    public List<com.petcare.petcare.community.report.vo.CommunityReportVO> getPostReports(long postId) {
+        return adminCommunityMapper.selectReportsByPostId(postId);
+    }
+
+    //2026/08/06 장우철 — 대기 신고 일괄 기각
+    @Override
+    @Transactional
+    public int dismissPendingReports(long postId, Long adminNo) {
+        CommunityPostVO post = adminCommunityMapper.selectAdminPostDetail(postId);
+        if (post == null) {
+            throw new IllegalArgumentException("POST_NOT_FOUND");
+        }
+        return adminCommunityMapper.dismissPendingReports(postId, adminNo);
+    }
+
     // 2026-07-15 박유정 STEP 7 — 숨김 (STATUS_CD = HIDDEN)
     @Override
     public void hidePost(long postId) {

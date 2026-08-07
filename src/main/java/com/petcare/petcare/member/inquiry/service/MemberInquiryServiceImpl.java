@@ -109,6 +109,10 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
         if (memberInquiryMapper.countOpenStayRefund(member.getMemberNo(), resvId) > 0) {
             throw new IllegalStateException("이미 처리 중인 환불 신청이 있습니다.");
         }
+        // 2026/08/06 장우철 — 승인·거절·레거시 DONE 이력 있으면 재신청 불가
+        if (memberInquiryMapper.countRejectedStayRefund(member.getMemberNo(), resvId) > 0) {
+            throw new IllegalStateException("이미 환불 처리가 끝난 예약입니다. 재신청할 수 없습니다.");
+        }
         String body = (content == null || content.isBlank())
                 ? "숙소 이용 중 환불을 신청합니다."
                 : content.trim();

@@ -296,7 +296,8 @@
     return fetch(contextPath + url).then(function (res) { return res.json(); });
   }
   function apiPostJson(url, body) {
-    return fetch(contextPath + url, {
+    // 2026/08/07 장우철 — CSRF (저장 POST 403 → 「네트워크 오류」 방지)
+    return csrfFetch(contextPath + url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)

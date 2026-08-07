@@ -33,6 +33,8 @@
         (SELECT COUNT(*) FROM TB_POST_REPORT R WHERE R.POST_ID = P.POST_ID) AS reportCount,
         (SELECT COUNT(*) FROM TB_POST_REPORT R
          WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'PENDING') AS pendingReportCount,
+        (SELECT COUNT(*) FROM TB_POST_REPORT R
+         WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'DISMISSED') AS dismissedReportCount,
         ROW_NUMBER() OVER (ORDER BY P.REG_DATE DESC) AS rn
       FROM TB_POST P
       JOIN TB_MEMBER M ON M.MEMBER_NO = P.MEMBER_NO
@@ -69,7 +71,8 @@
     </if>
   </select>
 
-    <!-- 2026-07-15 박유정 — 관리자 상세 (신고 제외) -->
+    <!-- 2026-07-15 박유정 — 관리자 상세 -->
+    <!-- 2026/08/06 장우철 — 신고 건수·대기·기각 건수 연동 -->
   <select id="selectAdminPostDetail"
           resultType="com.petcare.petcare.community.post.vo.CommunityPostVO">
     SELECT
@@ -83,12 +86,42 @@
       P.REG_DATE     AS regDate,
       M.NICKNAME     AS authorName,
       M.MEMBER_NAME  AS authorMemberName,
-      M.EMAIL        AS authorEmail
+      M.EMAIL        AS authorEmail,
+      (SELECT COUNT(*) FROM TB_POST_REPORT R WHERE R.POST_ID = P.POST_ID) AS reportCount,
+      (SELECT COUNT(*) FROM TB_POST_REPORT R
+        WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'PENDING') AS pendingReportCount,
+      (SELECT COUNT(*) FROM TB_POST_REPORT R
+        WHERE R.POST_ID = P.POST_ID AND R.STATUS_CD = 'DISMISSED') AS dismissedReportCount
     FROM TB_POST P
     JOIN TB_MEMBER M ON M.MEMBER_NO = P.MEMBER_NO
     WHERE P.POST_ID = #{postId}
       AND P.BOARD_TYPE IN ('TOWN', 'SHARE', 'LIFE')
   </select>
+
+  <!-- 2026/08/06 장우철 — 게시글별 신고 내역 (관리자 모달)
+       REG_DATE 컬럼 없음(INSERT 미사용) → 신고일 미표시 -->
+  <select id="selectReportsByPostId"
+          resultType="com.petcare.petcare.community.report.vo.CommunityReportVO">
+    SELECT R.REPORT_ID   AS reportId,
+           R.POST_ID     AS postId,
+           R.REPORTER_NO AS memberNo,
+           R.REASON      AS reasonCd,
+           R.STATUS_CD   AS statusCd,
+           M.NICKNAME    AS reporterNickname
+      FROM TB_POST_REPORT R
+      LEFT JOIN TB_MEMBER M ON M.MEMBER_NO = R.REPORTER_NO
+     WHERE R.POST_ID = #{postId}
+     ORDER BY R.REPORT_ID DESC
+  </select>
+
+  <!-- 2026/08/06 장우철 — 대기 신고 일괄 기각 -->
+  <update id="dismissPendingReports">
+    UPDATE TB_POST_REPORT
+       SET STATUS_CD = 'DISMISSED',
+           ADMIN_NO  = #{adminNo}
+     WHERE POST_ID = #{postId}
+       AND STATUS_CD = 'PENDING'
+  </update>
 
     <!-- 2026-07-15 박유정 STEP 7 — 게시글 상태 변경 (HIDDEN / DELETED / ACTIVE) -->
   <!-- 2026/08/03 장우철 — DELETED 시 DELETE_DATE 설정, ACTIVE 복구 시 초기화 (LIFE 7일 보관) -->

@@ -34,6 +34,8 @@ public class CommunityCommentVO {
 
     // JOIN TB_MEMBER — 화면 표시용
     private String nickname;       // NICKNAME — 작성자 닉네임
+    //2026/08/06 장우철 — 댓글 아바타용 프로필 사진
+    private String profileImgUrl;  // PROFILE_IMG_URL — TB_MEMBER
 
     // 대댓글 목록 — getCommentList() 에서 parentId 기준으로 묶음
     private List<CommunityCommentVO> replies = new ArrayList<>();  // (VO) — 대댓글 목록

@@ -80,6 +80,8 @@
           </c:forEach>
           <c:choose>
             <c:when test="${refundInProgress}"><span class="badge-status badge-cancel">환불진행중</span></c:when>
+            <%-- 2026/08/06 장우철: 취소신청 대기면 결제취소신청 (사업자 orders와 동일) --%>
+            <c:when test="${o.claimStatus == 'PENDING'}"><span class="badge-status badge-cancel">결제취소신청</span></c:when>
             <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
             <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
             <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>

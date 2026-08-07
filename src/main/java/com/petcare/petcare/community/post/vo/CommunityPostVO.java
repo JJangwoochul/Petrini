@@ -65,6 +65,8 @@ public class CommunityPostVO {
     // ── 관리자 목록 전용 (JOIN·서브쿼리로 채움) / 2026-07-15 ──
     private Integer reportCount;        // 서브쿼리 — TB_POST_REPORT 신고 총 건수
     private Integer pendingReportCount; // 서브쿼리 — TB_POST_REPORT, STATUS_CD='PENDING' 건수
+    //2026/08/06 장우철 — 신고 기각 건수 (관리자 뱃지용)
+    private Integer dismissedReportCount;
 
 
 }

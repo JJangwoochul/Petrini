@@ -68,6 +68,18 @@
        AND REF_TYPE = 'RESV'
        AND REF_ID = #{resvId}
        AND STATUS_CD = 'WAIT'
+       AND TITLE LIKE '숙소 환불신청%'
+  </select>
+
+  <!-- 2026/08/06 장우철 — 처리완료(승인·거절·레거시 DONE) 환불신청 → 재신청 불가 -->
+  <select id="countRejectedStayRefund" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_INQUIRY I
+     WHERE I.MEMBER_NO = #{memberNo}
+       AND I.REF_TYPE = 'RESV'
+       AND I.REF_ID = #{resvId}
+       AND I.TITLE LIKE '숙소 환불신청%'
+       AND I.STATUS_CD IN ('APPROVED', 'REJECTED', 'DONE')
   </select>
 
   <select id="selectStayRefundList" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
@@ -95,9 +107,17 @@
       LEFT JOIN TB_STAY S ON S.STAY_ID = TO_NUMBER(R.TARGET_ID)
      WHERE I.REF_TYPE = 'RESV'
        AND I.INQUIRY_TYPE = 'RESERVE'
-    <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
+    <choose>
+      <when test="statusCd == null or statusCd == '' or statusCd == 'ALL'">
+      </when>
+      <when test="statusCd == 'DONE'">
+       <!-- 2026/08/06 장우철 — 처리완료 = APPROVED/REJECTED + 레거시 DONE -->
+       AND I.STATUS_CD IN ('DONE', 'APPROVED', 'REJECTED')
+      </when>
+      <otherwise>
        AND I.STATUS_CD = #{statusCd}
-    </if>
+      </otherwise>
+    </choose>
      ORDER BY I.REG_DATE DESC, I.INQUIRY_ID DESC
   </select>
 

@@ -64,9 +64,9 @@ public class BizStoreServiceImpl implements BizStoreService {
 
     //지윤 26.07.15 수정: 상품목록 조회 + 할인율 계산 + 상품마다 옵션 목록도 같이 채워넣음 (옵션별 재고 표시용)
     @Override
-    public List<BizProductVO> getProductList(Long bizNo, String keyword, Long categoryId, String statusCd, int pageNo) {
+    public List<BizProductVO> getProductList(Long bizNo, String keyword, String categoryName, String statusCd, int pageNo) {
         int offset = (pageNo - 1) * PAGE_SIZE;
-        List<BizProductVO> list = bizStoreMapper.selectProductList(bizNo, keyword, categoryId, statusCd, offset, PAGE_SIZE);
+        List<BizProductVO> list = bizStoreMapper.selectProductList(bizNo, keyword, categoryName, statusCd, offset, PAGE_SIZE);
         for (BizProductVO p : list) {
             //정가 대비 판매가 할인율 계산 (store 모듈과 동일 로직)
             if (p.getPrice() != null && p.getSalePrice() != null && p.getPrice() > 0) {
@@ -83,8 +83,8 @@ public class BizStoreServiceImpl implements BizStoreService {
 
     //지윤 26.07.14 상품목록 총 페이지 수 (페이지네이션 버튼 개수 계산용)
     @Override
-    public int getTotalPages(Long bizNo, String keyword, Long categoryId, String statusCd) {
-        int totalCount = bizStoreMapper.selectProductCount(bizNo, keyword, categoryId, statusCd);
+    public int getTotalPages(Long bizNo, String keyword, String categoryName, String statusCd) {
+        int totalCount = bizStoreMapper.selectProductCount(bizNo, keyword, categoryName, statusCd);
         return (int) Math.ceil(totalCount / (double) PAGE_SIZE);
     }
 
@@ -199,10 +199,16 @@ public class BizStoreServiceImpl implements BizStoreService {
         return bizStoreMapper.selectLeafCategories();
     }
 
+    //2026/08/06 장우철: 상품목록 필터용 카테고리명(중복 제거)
+    @Override
+    public List<String> getFilterCategoryNames() {
+        return bizStoreMapper.selectFilterCategoryNames();
+    }
+
     //지윤 26.07.15 상품목록 총 개수 (화면에 "총 N개" 표시용)
     @Override
-    public int getTotalCount(Long bizNo, String keyword, Long categoryId, String statusCd) {
-        return bizStoreMapper.selectProductCount(bizNo, keyword, categoryId, statusCd);
+    public int getTotalCount(Long bizNo, String keyword, String categoryName, String statusCd) {
+        return bizStoreMapper.selectProductCount(bizNo, keyword, categoryName, statusCd);
     }
 
     //지윤 26.07.20 추가: 사업자 주문 목록 조회
@@ -466,6 +472,26 @@ public class BizStoreServiceImpl implements BizStoreService {
            fileService.deleteFilesByRef("BIZ_AUTH", bizNo);
            fileService.uploadFile(certFile, "BIZ_AUTH", bizNo);
        }
+   }
+
+   //2026/08/06 장우철 — 정산 계좌 조회
+   @Override
+   public com.petcare.petcare.biz.store.vo.BizInfoVO getSettleAccount(Long bizNo) {
+       return bizStoreMapper.selectSettleAccount(bizNo);
+   }
+
+   //2026/08/06 장우철 — 정산 계좌 변경
+   @Override
+   public boolean updateSettleAccount(Long bizNo, String settleBank, String settleBankCode,
+                                      String settleAccount, String settleHolder) {
+       if (bizNo == null || settleBank == null || settleBank.isBlank()
+               || settleBankCode == null || settleBankCode.isBlank()
+               || settleAccount == null || settleAccount.isBlank()
+               || settleHolder == null || settleHolder.isBlank()) {
+           return false;
+       }
+       return bizStoreMapper.updateSettleAccount(bizNo, settleBank.trim(), settleBankCode.trim(),
+               settleAccount.replaceAll("[^0-9]", ""), settleHolder.trim()) > 0;
    }
 
     // 2026/08/04 장우철 — 환불 목록

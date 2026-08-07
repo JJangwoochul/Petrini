@@ -23,6 +23,7 @@
 
   .settle-filter{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:18px 20px}
   .settle-filter select{border:1px solid var(--biz-border);border-radius:8px;padding:8px 10px;font-size:13px;color:#333}
+  .settle-filter .btn-settle-account{margin-left:auto}
 
   .settle-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .settle-page-head .biz-page-desc{margin:0}
@@ -113,6 +114,8 @@
         <option value="fail" <c:if test="${filterStatus eq 'fail'}">selected</c:if>>지급실패</option>
         <option value="done" <c:if test="${filterStatus eq 'done'}">selected</c:if>>지급완료</option>
       </select>
+      <%-- 2026/08/06 장우철 — 필터 줄 오른쪽 정산계좌 버튼 (숙소·쇼핑 공통) --%>
+      <button type="button" class="biz-btn btn-settle-account" onclick="openSettleAccountModal()">정산계좌</button>
     </form>
   </div>
 
@@ -209,7 +212,60 @@
   </div>
 </main>
 
-<%-- ===== 4-1 중간정산 요청 모달 (UI만, 저장 미연결) ===== --%>
+<%-- 2026/08/06 장우철 — 정산계좌 조회/변경 모달 (숙소) --%>
+<div class="adhoc-modal-bg" id="settleAccountModalBg" onclick="if(event.target===this) closeSettleAccountModal()">
+  <div class="adhoc-modal" role="dialog" aria-labelledby="settleAccountModalTitle">
+    <div class="adhoc-modal-head">
+      <h3 id="settleAccountModalTitle">정산 계좌</h3>
+      <button type="button" class="adhoc-modal-close" onclick="closeSettleAccountModal()" aria-label="닫기">×</button>
+    </div>
+    <div class="adhoc-modal-body">
+      <div class="adhoc-note">
+        현재 등록된 정산 계좌를 확인하고, 변경 시 <b>계좌 인증</b> 후 저장하세요.<br>
+        인증은 사업자 신청과 동일한 금결원(mock/실연동) API를 사용합니다.
+      </div>
+      <div class="adhoc-row">
+        <label>은행<span class="req">*</span></label>
+        <select id="saBankName">
+          <option value="">은행 선택</option>
+          <option value="004" data-name="국민">국민</option>
+          <option value="088" data-name="신한">신한</option>
+          <option value="020" data-name="우리">우리</option>
+          <option value="081" data-name="하나">하나</option>
+          <option value="011" data-name="농협">농협</option>
+          <option value="090" data-name="카카오뱅크">카카오뱅크</option>
+          <option value="092" data-name="토스뱅크">토스뱅크</option>
+        </select>
+      </div>
+      <div class="adhoc-row">
+        <label>예금주<span class="req">*</span></label>
+        <input type="text" id="saAccountHolder" placeholder="대표자명 또는 법인명"
+               style="border:1px solid var(--biz-border);border-radius:8px;padding:9px 11px;font-size:13px;width:100%;box-sizing:border-box">
+      </div>
+      <div class="adhoc-row">
+        <label>계좌번호<span class="req">*</span></label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="saBankAccount" placeholder="숫자만 입력" maxlength="20"
+                 style="flex:1;border:1px solid var(--biz-border);border-radius:8px;padding:9px 11px;font-size:13px">
+          <button type="button" class="biz-btn" id="btnSaVerify" onclick="verifySettleAccount()">계좌 인증</button>
+        </div>
+        <p id="saVerifyResult" class="adhoc-hint" style="margin:4px 0 0"></p>
+      </div>
+      <input type="hidden" id="saSettleBank" value="">
+      <input type="hidden" id="saSettleBankCode" value="">
+      <input type="hidden" id="saSettleAccount" value="">
+      <input type="hidden" id="saSettleHolder" value="">
+      <input type="hidden" id="saSettleVerifyYn" value="">
+      <input type="hidden" id="saBizRegNo" value="<c:out value='${settleAccountInfo.bizRegNo}'/>">
+    </div>
+    <div class="adhoc-modal-foot">
+      <button type="button" class="biz-btn" onclick="closeSettleAccountModal()">닫기</button>
+      <button type="button" class="biz-btn-primary" id="btnSaSave" onclick="saveSettleAccount()">저장</button>
+    </div>
+  </div>
+</div>
+
+<%-- ===== 4-1 중간정산 요청 모달 ===== --%>
 <div class="adhoc-modal-bg" id="adhocModalBg" onclick="if(event.target===this) closeAdhocModal()">
   <div class="adhoc-modal" role="dialog" aria-labelledby="adhocModalTitle">
     <div class="adhoc-modal-head">
@@ -283,6 +339,135 @@
 
 <script>
   var CTX = '${contextPath}';
+  var settleAccountVerified = false;
+  var initialSettle = {
+    bankCode: '<c:out value="${settleAccountInfo.settleBankCode}"/>',
+    bankName: '<c:out value="${settleAccountInfo.settleBank}"/>',
+    account: '<c:out value="${settleAccountInfo.settleAccount}"/>',
+    holder: '<c:out value="${settleAccountInfo.settleHolder}"/>',
+    verifyYn: '<c:out value="${settleAccountInfo.settleVerifyYn}"/>'
+  };
+
+  function clearSettleAccountVerify() {
+    settleAccountVerified = false;
+    document.getElementById('saSettleBank').value = '';
+    document.getElementById('saSettleBankCode').value = '';
+    document.getElementById('saSettleAccount').value = '';
+    document.getElementById('saSettleHolder').value = '';
+    document.getElementById('saSettleVerifyYn').value = '';
+    document.getElementById('saVerifyResult').textContent = '';
+  }
+
+  function openSettleAccountModal() {
+    clearSettleAccountVerify();
+    var bankSel = document.getElementById('saBankName');
+    bankSel.value = initialSettle.bankCode || '';
+    document.getElementById('saAccountHolder').value = initialSettle.holder || '';
+    document.getElementById('saBankAccount').value = initialSettle.account || '';
+    if (initialSettle.verifyYn === 'Y' && initialSettle.account) {
+      document.getElementById('saVerifyResult').style.color = '#2BAB82';
+      document.getElementById('saVerifyResult').textContent =
+        '등록된 계좌: ' + (initialSettle.bankName || '') + ' / ' + (initialSettle.holder || '') + ' (변경 시 재인증 필요)';
+    }
+    document.getElementById('settleAccountModalBg').classList.add('open');
+  }
+
+  function closeSettleAccountModal() {
+    document.getElementById('settleAccountModalBg').classList.remove('open');
+  }
+
+  function verifySettleAccount() {
+    var bankSel = document.getElementById('saBankName');
+    var selected = bankSel.options[bankSel.selectedIndex];
+    var bankCode = selected.value;
+    var bankName = selected.getAttribute('data-name') || selected.textContent;
+    var holder = document.getElementById('saAccountHolder').value.trim();
+    var acct = document.getElementById('saBankAccount').value.replace(/[^0-9]/g, '');
+    var bizRegNo = document.getElementById('saBizRegNo').value || '';
+
+    if (!bankCode) { alert('은행을 선택하세요.'); return; }
+    if (!holder) { alert('예금주를 입력하세요.'); return; }
+    if (acct.length < 8) { alert('계좌번호를 입력하세요.'); return; }
+
+    var btn = document.getElementById('btnSaVerify');
+    btn.disabled = true;
+    btn.textContent = '인증중...';
+
+    var fd = new URLSearchParams();
+    fd.set('bankCodeStd', bankCode);
+    fd.set('bankName', bankName);
+    fd.set('accountNum', acct);
+    fd.set('accountHolder', holder);
+    fd.set('bizRegNo', bizRegNo);
+
+    csrfFetch(CTX + '/mypage/biz/account/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+      body: fd.toString()
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res && res.success) {
+          settleAccountVerified = true;
+          document.getElementById('saBankAccount').value = res.accountNum || acct;
+          document.getElementById('saSettleBank').value = res.bankName || bankName;
+          document.getElementById('saSettleBankCode').value = res.bankCodeStd || bankCode;
+          document.getElementById('saSettleAccount').value = res.accountNum || acct;
+          document.getElementById('saSettleHolder').value = res.accountHolderName || holder;
+          document.getElementById('saSettleVerifyYn').value = 'Y';
+          document.getElementById('saVerifyResult').style.color = '#2BAB82';
+          document.getElementById('saVerifyResult').textContent =
+            '계좌 인증 완료 · ' + (res.bankName || bankName) + ' / ' + (res.accountHolderName || holder)
+            + (res.mock ? ' (더미)' : '');
+        } else {
+          clearSettleAccountVerify();
+          document.getElementById('saVerifyResult').style.color = '#E24B4A';
+          document.getElementById('saVerifyResult').textContent =
+            (res && res.message) ? res.message : '계좌 인증에 실패했습니다.';
+        }
+      })
+      .catch(function () {
+        clearSettleAccountVerify();
+        document.getElementById('saVerifyResult').style.color = '#E24B4A';
+        document.getElementById('saVerifyResult').textContent = '계좌 인증 요청 중 오류가 발생했습니다.';
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = '계좌 인증';
+      });
+  }
+
+  function saveSettleAccount() {
+    if (!settleAccountVerified || document.getElementById('saSettleVerifyYn').value !== 'Y') {
+      alert('계좌 인증을 완료한 뒤 저장해 주세요.');
+      return;
+    }
+    var fd = new URLSearchParams();
+    fd.set('settleBank', document.getElementById('saSettleBank').value);
+    fd.set('settleBankCode', document.getElementById('saSettleBankCode').value);
+    fd.set('settleAccount', document.getElementById('saSettleAccount').value);
+    fd.set('settleHolder', document.getElementById('saSettleHolder').value);
+    fd.set('settleVerifyYn', 'Y');
+
+    var btn = document.getElementById('btnSaSave');
+    btn.disabled = true;
+    csrfFetch(CTX + '/biz/stay/settlement/account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+      body: fd.toString()
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        alert(data.message || (data.ok ? '저장 완료' : '저장 실패'));
+        if (data.ok) location.reload();
+      })
+      .catch(function () { alert('저장 중 오류가 발생했습니다.'); })
+      .finally(function () { btn.disabled = false; });
+  }
+
+  document.getElementById('saBankName').addEventListener('change', clearSettleAccountVerify);
+  document.getElementById('saAccountHolder').addEventListener('input', clearSettleAccountVerify);
+  document.getElementById('saBankAccount').addEventListener('input', clearSettleAccountVerify);
 
   /* ----- 4-2 중간정산 요청 ----- */
   function firstDayOfMonthStr(yyyyMmDd) {
@@ -338,7 +523,7 @@
 
     var btn = document.getElementById('btnAdhocSubmit');
     btn.disabled = true;
-    fetch(CTX + '/biz/stay/settlement/request', {
+    csrfFetch(CTX + '/biz/stay/settlement/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
