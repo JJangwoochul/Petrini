@@ -17,8 +17,8 @@ public class CouponServiceImpl implements CouponService {
     private CouponMapper eventCouponMapper;
 
     @Override
-    public List<CouponVO> getAvailableCoupons(Long memberNo) {
-        return eventCouponMapper.selectAvailableCoupons(memberNo);
+    public List<CouponVO> getAvailableCoupons(Long memberNo, String today) {
+        return eventCouponMapper.selectAvailableCoupons(memberNo, today);
     }
 
     @Override

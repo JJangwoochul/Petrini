@@ -54,7 +54,8 @@ END AS TARGET_ID,
       FROM TB_COUPON C
       LEFT JOIN TB_BUSINESS B ON B.BIZ_NO = C.BIZ_MEMBER_NO
      WHERE C.APPROVAL_STATUS = 'APPROVED'
-       AND C.STATUS_CD != 'INACTIVE'   <!-- 지윤 26.08.07: 조기마감(INACTIVE)은 이벤트탭에서 제외 -->
+       AND C.STATUS_CD != 'INACTIVE'   <!-- 조기마감(INACTIVE)은 이벤트탭에서 제외 -->
+       AND C.USE_END_DATE &gt;= #{today}   <!-- 지윤 26.08.10 추가: 사용기간 지난 쿠폰은 화면에서 제외 -->
      ORDER BY CASE C.STATUS_CD WHEN 'ACTIVE' THEN 1 WHEN 'EXHAUSTED' THEN 2 ELSE 3 END,
               C.REG_DATE DESC
   </select>
@@ -132,11 +133,18 @@ END AS TARGET_ID,
        ACTIVE 상태 + 잔여수량 + 잔여예산 조건을 만족할 때만 실제로 갱신되고,
        그 순간 소진되면 STATUS_CD를 EXHAUSTED로 바로 전환.
        0건 갱신되면(=동시요청으로 이미 소진) 서비스단에서 롤백 처리 -->
+  <!-- 지윤 26.08.10 수정: 예산 소진도 EXHAUSTED로 전환되도록 CASE 조건 추가 -->
   <update id="updateCouponIssued">
     UPDATE TB_COUPON
        SET ISSUED_QTY    = ISSUED_QTY + 1,
            ISSUED_BUDGET = ISSUED_BUDGET + #{discountValue},
-           STATUS_CD     = CASE WHEN ISSUED_QTY + 1 &gt;= TOTAL_QTY THEN 'EXHAUSTED' ELSE STATUS_CD END,
+           STATUS_CD     = CASE
+                                WHEN ISSUED_QTY + 1 &gt;= TOTAL_QTY THEN 'EXHAUSTED'
+                                WHEN TOTAL_BUDGET IS NOT NULL
+                                     AND (TOTAL_BUDGET - (ISSUED_BUDGET + #{discountValue})) &lt; #{discountValue}
+                                     THEN 'EXHAUSTED'
+                                ELSE STATUS_CD
+                            END,
            MOD_DATE      = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
      WHERE COUPON_ID = #{couponId}
        AND STATUS_CD = 'ACTIVE'

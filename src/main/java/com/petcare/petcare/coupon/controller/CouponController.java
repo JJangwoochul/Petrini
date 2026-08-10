@@ -47,10 +47,11 @@ public class CouponController {
     @GetMapping({"", "/"})
     public String eventMain(HttpSession session, Model model) {
         Long memberNo = getMemberNo(session);
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        List<CouponVO> availableCoupons = couponService.getAvailableCoupons(memberNo);
+        List<CouponVO> availableCoupons = couponService.getAvailableCoupons(memberNo, today);
         model.addAttribute("availableCoupons", availableCoupons);
-        model.addAttribute("today", LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+        model.addAttribute("today", today);
 
         return "coupon/list";
     }

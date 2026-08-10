@@ -50,6 +50,12 @@
     background:#F1F3F7;
     color:#666;
 }
+
+/* 지윤 26.08.10 추가: 기간 만료 상태 */
+.cpn-badge.expired {
+    background:#F1F3F7;
+    color:#666;
+}
     .cpn-card-body {
         display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid #E4E6ED;
     }
@@ -190,19 +196,38 @@
                                 <div class="cpn-card-name">${cpn.couponName}</div>
                                 <div class="cpn-card-code">${cpn.couponCode}</div>
                             </div>
+                            <c:set var="isExpired" value="${cpn.useEndDate lt today}" />
+<c:set var="isQtyExhausted" value="${cpn.issuedQty >= cpn.totalQty}" />
+<c:set var="isBudgetExhausted" value="${cpn.totalBudget > 0 && cpn.issuedBudget >= cpn.totalBudget}" />
+
                             <c:choose>
                                 <c:when test="${cpn.approvalStatus eq 'PENDING'}">
                                     <span class="cpn-badge pending">승인 대기</span>
                                 </c:when>
-                               <c:when test="${cpn.approvalStatus eq 'APPROVED'
-                && cpn.statusCd eq 'EXHAUSTED'}">
-    <span class="cpn-badge exhausted">예산 소진</span>
-</c:when>
 
-<%-- 지윤 26.08.06: 사업자가 조기 마감한 쿠폰 --%>
 <c:when test="${cpn.approvalStatus eq 'APPROVED'
                 && cpn.statusCd eq 'INACTIVE'}">
     <span class="cpn-badge closed">조기 마감</span>
+</c:when>
+
+<c:when test="${cpn.approvalStatus eq 'APPROVED'
+                && isExpired}">
+    <span class="cpn-badge expired">기간 만료</span>
+</c:when>
+
+<c:when test="${cpn.approvalStatus eq 'APPROVED'
+                && (cpn.statusCd eq 'EXHAUSTED' || isQtyExhausted || isBudgetExhausted)}">
+    <c:choose>
+        <c:when test="${isQtyExhausted && isBudgetExhausted}">
+            <span class="cpn-badge exhausted">소진 마감</span>
+        </c:when>
+        <c:when test="${isQtyExhausted}">
+            <span class="cpn-badge exhausted">수량 소진 마감</span>
+        </c:when>
+        <c:otherwise>
+            <span class="cpn-badge exhausted">예산 소진 마감</span>
+        </c:otherwise>
+    </c:choose>
 </c:when>
 
 <c:when test="${cpn.approvalStatus eq 'APPROVED'}">
@@ -282,11 +307,12 @@
                             </c:if>
 
                             <%--
-  지윤 26.08.06
-  승인되어 게시 중인 쿠폰에만 조기 마감 버튼 표시
+  지윤 26.08.06 / 26.08.10 수정
+  승인되어 게시 중이고, 아직 기간 만료 안 된 쿠폰에만 조기 마감 버튼 표시
 --%>
 <c:if test="${cpn.approvalStatus eq 'APPROVED'
-              && cpn.statusCd eq 'ACTIVE'}">
+              && cpn.statusCd eq 'ACTIVE'
+              && !isExpired}">
 
     <div></div>
 
