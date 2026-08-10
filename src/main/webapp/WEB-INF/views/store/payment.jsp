@@ -147,7 +147,15 @@
       <input type="checkbox" id="agreePay" checked onchange="document.getElementById('btnPayFinal').disabled=!this.checked">
       <label for="agreePay">주문 내용을 확인했으며 결제에 동의합니다.<a href="#" onclick="event.preventDefault()">전자결제 이용약관 보기</a></label>
     </div>
-   <button id="btnPayFinal" class="btn-pay" onclick="requestPayment()"><fmt:formatNumber value="${finalTotal}" pattern="#,###"/>원 결제하기</button>
+   <%-- 지윤 26.08.07: 쿠폰/포인트로 0원이 되면 버튼 문구도 결제수단 대신 명확히 표시 --%>
+   <c:choose>
+     <c:when test="${finalTotal == 0}">
+       <button id="btnPayFinal" class="btn-pay" onclick="requestPayment()">쿠폰/포인트로 결제하기</button>
+     </c:when>
+     <c:otherwise>
+       <button id="btnPayFinal" class="btn-pay" onclick="requestPayment()"><fmt:formatNumber value="${finalTotal}" pattern="#,###"/>원 결제하기</button>
+     </c:otherwise>
+   </c:choose>
   </div>
 </div>
 <script src="https://js.tosspayments.com/v2/standard"></script>
@@ -229,7 +237,19 @@
     refreshCards();
   })();
 
-  async function requestPayment() {
+ async function requestPayment() {
+    // 지윤 26.08.07: 쿠폰/포인트로 최종금액이 0원이면 토스 위젯을 아예 거치지 않고 서버로 바로 확정 요청
+    // (토스는 0원 결제를 처리하지 못해서 위젯 호출 시 결제하기가 그냥 안 먹힘)
+    var finalTotal = ${finalTotal};
+    if (finalTotal === 0) {
+      if (!document.getElementById('agreePay').checked) {
+        alert('결제에 동의해 주세요.');
+        return;
+      }
+      location.href = ctx + '/store/payment/zero-amount';
+      return;
+    }
+
     // 2026/07/27 장우철 — 등록카드: 토스 창 없이 Ajax 빌링 승인
     if (document.getElementById('payTypeCard').checked) {
       if (!hasRegisteredCard || !selectedBillingCardId) {

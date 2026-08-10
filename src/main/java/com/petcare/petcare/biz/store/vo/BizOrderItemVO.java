@@ -19,6 +19,7 @@ public class BizOrderItemVO {
     private Integer qty;
     private Integer unitPrice;
     private Integer totalPrice;
+    private String thumbnailUrl; // 지윤 26.08.07: 주문상세 화면 상품 썸네일 표시용
 
     // 2026/08/04 장우철 — 상품단위 환불
     private String returnStatusCd;

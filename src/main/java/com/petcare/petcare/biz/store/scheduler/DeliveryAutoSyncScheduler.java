@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
- //import org.springframework.stereotype.Component;  //TEST시 이거 주석처리or해제
+ //import org.springframework.stereotype.Component;  //TEST시 이거 주석처리or해제 -> 실시간 변경
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,7 +31,7 @@ import com.petcare.petcare.biz.store.service.BizStoreService;
 import com.petcare.petcare.common.external.service.SmartTrackerService;
 
 // 지윤 26.07.28: 테스트할 때만 아래 줄 주석 풀기! 평소엔 반드시 주석 상태로 유지 (API 100건/월 제한 보호)
- //@Component //TEST시 이거 주석처리or해제
+ //@Component //TEST시 이거 주석처리or해제 -> 실시간 변경
 public class DeliveryAutoSyncScheduler {
 
     @Autowired

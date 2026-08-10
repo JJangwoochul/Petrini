@@ -328,6 +328,38 @@ public String payment(@RequestParam(required = false) Long productId,
         return "결제 요청 실패: " + code + " - " + message;
     }
 
+    /**
+     * 지윤 26.08.07: 쿠폰·포인트로 최종 결제금액이 0원이 된 경우 전용 경로
+     * 토스 결제위젯은 0원 결제를 처리하지 못해서(최소 결제금액 제한), 아예 위젯을 거치지 않고
+     * 서버에서 바로 주문을 확정 처리한다. (stay/payment의 point-only 흐름과 동일한 패턴)
+     */
+    @GetMapping("/payment/zero-amount")
+    public String zeroAmountOrder(HttpSession session, Model model) {
+        OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
+
+        if (orderTemp == null) {
+            model.addAttribute("noOrderData", true);
+            return "store/order-complete";
+        }
+        // 실제로 0원인 주문만 이 경로로 처리 (클라이언트가 URL 직접 호출해도 방어)
+        if (orderTemp.getFinalTotal() == null || orderTemp.getFinalTotal() != 0) {
+            model.addAttribute("noOrderData", true);
+            return "store/order-complete";
+        }
+
+        String tossOrderId = "zero-" + orderTemp.getMemberNo() + "-" + System.currentTimeMillis();
+        String orderNo = storeShopService.completeOrder(orderTemp, "ZERO_AMOUNT", tossOrderId);
+        session.removeAttribute("orderTemp");
+
+        syncSessionPointBalance(session);
+
+        model.addAttribute("orderNo", orderNo);
+        model.addAttribute("orderItems", orderTemp.getOrderItems());
+        model.addAttribute("payAmount", 0);
+        model.addAttribute("payMethodLabel", "쿠폰/포인트");
+        return "store/order-complete";
+    }
+
     //지윤 26.07.13 수정: 하드코딩된 화면 -> 세션에 저장해둔 주문정보로 실제 DB 저장 후 실데이터 표시
     @GetMapping("/order-complete")
     public String orderComplete(@RequestParam(required = false) String orderId,

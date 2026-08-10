@@ -13,18 +13,348 @@
      Service: BizStoreService.getOrderList / getOrderDetail / updateOrderStatus
      화면 레이아웃(CSS, HTML 뼈대)은 원본 그대로 유지, 데이터 표시/저장 로직만 실데이터로 교체 --%>
 <style>
-  .order-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:20px}
-  .order-detail-grid h4{font-size:13px;font-weight:700;color:#1A1A2E;margin:0 0 10px}
-  .order-info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F0F2F0;font-size:13px}
-  .order-info-row span:first-child{color:#999}
-  .order-info-row span:last-child{color:#1A1A2E;font-weight:600}
-  .order-ship-manage{display:flex;flex-direction:column;gap:10px;margin-top:14px}
-  .order-ship-manage label{font-size:12px;color:#666;display:block;margin-bottom:4px}
-  .order-ship-manage select,.order-ship-manage input{width:100%;border:1px solid var(--biz-border);border-radius:8px;padding:8px 10px;font-size:13px}
-  .order-items-table{padding:0 20px 20px}
-  .order-total-row{display:flex;justify-content:flex-end;gap:16px;padding:14px 4px;font-size:14px;font-weight:700;color:#1A1A2E;border-top:1px solid var(--biz-border)}
-  .order-detail-actions{display:flex;justify-content:center;gap:10px;padding:0 20px 20px}
-  .order-detail-actions .biz-btn-primary{min-width:120px}
+  /* =========================================================
+     주문관리 상세 화면 UI 개선
+     - 기존 데이터/JS 로직은 그대로 유지
+     - 목록/상세 카드 폭 확장
+     - 주문정보/배송정보 2열
+     - 주문상품/결제금액 2열
+     - 반응형 대응
+     ========================================================= */
+
+  /* 이 페이지 전용 전체 폭 */
+  .order-page-wrap{
+    width:100%;
+    max-width:1200px;
+  }
+
+  /* 상세 카드 내부 */
+  .od-card{
+    width:100%;
+    max-width:none;
+    margin:0;
+    padding:24px 28px 28px;
+    box-sizing:border-box;
+  }
+
+  /* 주문 정보 + 배송 정보 */
+  .od-info-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:32px;
+    padding:0;
+  }
+
+  .od-info-grid > div{
+    min-width:0;
+  }
+
+  .od-info-grid h4{
+    font-size:14px;
+    font-weight:800;
+    color:#1A1A2E;
+    margin:0 0 14px;
+    padding-bottom:10px;
+    border-bottom:2px solid #1A1A2E;
+  }
+
+  .od-info-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    min-height:32px;
+    padding:6px 4px;
+    border-bottom:1px solid #F0F2F0;
+    font-size:12px;
+  }
+
+  .od-info-row span:first-child{
+    color:#8A8FA3;
+    flex-shrink:0;
+  }
+
+  .od-info-row span:last-child{
+    color:#1A1A2E;
+    font-weight:600;
+    text-align:right;
+    word-break:break-word;
+  }
+
+  /* 배송 상태/택배사/송장번호 */
+  .od-ship-manage{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .od-ship-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+
+  .od-info-grid label{
+    font-size:11px;
+    color:#666;
+    font-weight:600;
+    display:block;
+    margin-bottom:5px;
+  }
+
+  .od-info-grid select,
+  .od-info-grid input{
+    width:100%;
+    height:38px;
+    border:1px solid #DDE1E8;
+    border-radius:8px;
+    padding:0 11px;
+    background:#fff;
+    font-size:12px;
+    box-sizing:border-box;
+    outline:none;
+  }
+
+  .od-info-grid select:focus,
+  .od-info-grid input:focus{
+    border-color:#2BAB82;
+  }
+
+  /* 주문상품 + 결제금액 좌우 배치 */
+  .od-bottom-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-top:20px;
+  }
+
+  .od-items-box{
+    margin:0;
+    padding:18px 16px 14px;
+    background:#FFFFFF;
+    border:1px solid #E4E6ED;
+    border-radius:12px;
+    box-sizing:border-box;
+  }
+
+  .od-items-box h4{
+    font-size:13px;
+    font-weight:800;
+    color:#1A1A2E;
+    margin:0 0 14px;
+  }
+
+  /* 레이아웃2: 주문상품 테이블형 */
+  .od-item-table{
+    width:100%;
+    border:1px solid #E7E9EF;
+    border-radius:10px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .od-item-head,
+  .od-item-row{
+    display:grid;
+    grid-template-columns:minmax(180px, 1.8fr) minmax(90px, .8fr) 60px 85px 95px;
+    align-items:center;
+  }
+
+  .od-item-head{
+    min-height:38px;
+    background:#F8F9FB;
+    border-bottom:1px solid #E7E9EF;
+    color:#6F7585;
+    font-size:11px;
+    font-weight:700;
+    text-align:center;
+  }
+
+  .od-item-head > span,
+  .od-item-row > div{
+    padding:0 10px;
+    box-sizing:border-box;
+  }
+
+  .od-item-row{
+    min-height:70px;
+    border-bottom:1px solid #EEF0F4;
+  }
+
+  .od-item-row:last-child{
+    border-bottom:none;
+  }
+
+  .od-item-product{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+
+  .od-item-thumb{
+    width:42px;
+    height:42px;
+    border-radius:8px;
+    background:#E4E6ED;
+    flex-shrink:0;
+    overflow:hidden;
+  }
+
+  .od-item-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .od-item-name{
+    font-size:12px;
+    font-weight:700;
+    color:#1A1A2E;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .od-item-option,
+  .od-item-qty,
+  .od-item-unit,
+  .od-item-price{
+    font-size:12px;
+    color:#1A1A2E;
+    text-align:center;
+  }
+
+  .od-item-price{
+    font-weight:800;
+    white-space:nowrap;
+  }
+
+  .od-item-summary{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    margin-top:12px;
+    padding:12px 10px;
+    background:#F2FAF7;
+    border-radius:9px;
+  }
+
+  .od-item-summary > div{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:7px;
+    font-size:12px;
+    color:#33413C;
+    border-right:1px solid #DCEDE6;
+  }
+
+  .od-item-summary > div:last-child{
+    border-right:none;
+  }
+
+  .od-item-summary strong{
+    color:#15966E;
+    font-size:13px;
+  }
+
+  .od-price-box{
+    margin:0;
+    padding:18px 20px;
+    background:#FFFFFF;
+    border:1px solid #E4E6ED;
+    border-radius:12px;
+    box-sizing:border-box;
+  }
+
+  .od-price-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:7px 0;
+    font-size:14px;
+    font-weight:700;
+    color:#1A1A2E;
+  }
+
+  .od-price-row.discount span:first-child{
+    color:#E2445C;
+    font-weight:700;
+  }
+
+  .od-price-row.discount span:last-child{
+    color:#E2445C;
+    font-weight:800;
+  }
+  .od-price-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:10px;
+    padding-top:12px;
+    border-top:2px solid #15966E;
+    font-size:20px;
+    font-weight:900;
+    color:#15966E;
+  }
+
+  /* 하단 버튼 */
+  .od-actions{
+    display:flex;
+    width:100%;
+    box-sizing:border-box;
+    justify-content:center;
+    gap:12px;
+    margin-top:28px;
+    padding-top:20px;
+    border-top:1px solid #EEF0F4;
+    flex-wrap:wrap;
+  }
+
+  .od-actions .biz-btn-primary,
+  .od-actions .biz-btn-ghost{
+    min-width:120px;
+    font-size:13px;
+    padding:10px 16px;
+  }
+
+  /* 작은 화면 대응 */
+  @media (max-width: 900px){
+    .order-page-wrap{
+      max-width:100%;
+    }
+
+    .od-card{
+      padding:20px;
+    }
+
+    .od-info-grid,
+    .od-bottom-grid{
+      grid-template-columns:1fr;
+      gap:18px;
+    }
+
+    .od-item-head,
+    .od-item-row{
+      grid-template-columns:minmax(160px, 1.6fr) minmax(80px, .8fr) 55px 80px 90px;
+    }
+  }
+
+  @media (max-width: 600px){
+    .od-card{
+      padding:16px;
+    }
+
+    .od-ship-row{
+      grid-template-columns:1fr;
+    }
+
+    .od-info-row{
+      align-items:flex-start;
+    }
+  }
 </style>
 
 <main class="biz-main">
@@ -32,6 +362,10 @@
     <h1 class="biz-page-title">주문 관리</h1>
     <p class="biz-page-desc">주문 확인·출고 처리 · 환불 완료 조회</p>
   </div>
+
+  <%-- 지윤 26.08.07: biz-main은 다른 관리자 화면도 같이 쓰는 공통 클래스라 여기서 못 줄임
+       -> 이 페이지 전용 래퍼로 목록 카드 + 상세 카드를 한 번에 좁게 잡음 --%>
+  <div class="order-page-wrap">
 
   <div class="biz-card" style="margin-bottom:16px">
     <div style="padding:20px 20px 0">
@@ -122,85 +456,117 @@
     </c:choose>
   </div>
 
-  <%-- 아래 상세보기 HTML 뼈대(레이아웃)는 원본 그대로, 안 건드림 --%>
   <div class="biz-card" id="detailCard" style="display:none">
     <div class="biz-card-head"><span>주문 상세정보</span></div>
 
-    <div class="order-detail-grid">
-      <div>
-        <h4>주문 정보</h4>
-        <div class="order-info-row"><span>주문번호</span><span id="dOrderNo"></span></div>
-        <div class="order-info-row"><span>주문일</span><span id="dOrderDate"></span></div>
-        <div class="order-info-row"><span>구매자</span><span id="dBuyer"></span></div>
-        <div class="order-info-row"><span>연락처</span><span id="dPhone"></span></div>
-        <div class="order-info-row"><span>이메일</span><span id="dEmail"></span></div>
-        <div class="order-info-row"><span>결제금액</span><span id="dPayAmount"></span></div>
-        <div class="order-info-row"><span>결제방법</span><span id="dPayMethod"></span></div>
-        <div class="order-info-row"><span>주문상태</span><span id="dStatusLabel"></span></div>
-      </div>
+    <div class="od-card">
+      <div class="od-info-grid">
+        <div>
+          <h4>주문 정보</h4>
+          <div class="od-info-row"><span>주문번호</span><span id="dOrderNo"></span></div>
+          <div class="od-info-row"><span>주문일</span><span id="dOrderDate"></span></div>
+          <div class="od-info-row"><span>구매자</span><span id="dBuyer"></span></div>
+          <div class="od-info-row"><span>연락처</span><span id="dPhone"></span></div>
+          <div class="od-info-row"><span>이메일</span><span id="dEmail"></span></div>
+          <div class="od-info-row"><span>결제방법</span><span id="dPayMethod"></span></div>
+          <div class="od-info-row"><span>주문상태</span><span id="dStatusLabel"></span></div>
+        </div>
 
-      <div>
-        <h4>배송 정보</h4>
-        <div class="order-info-row"><span>수령인</span><span id="dReceiver"></span></div>
-        <div class="order-info-row"><span>연락처</span><span id="dReceiverPhone"></span></div>
-        <div class="order-info-row"><span>배송지</span><span id="dAddress"></span></div>
-        <%-- 지윤 26.07.20 삭제: <div class="order-info-row"><span>배송메모</span><span id="dMemo"></span></div>
-             TB_ORDER_DELIVERY에 MEMO 컬럼은 있지만 이번 작업 범위에서 조회 안 함 -> 화면에서도 뺌 (필요하면 나중에 추가) --%>
+        <div>
+          <h4>배송 정보</h4>
+          <div class="od-info-row"><span>수령인</span><span id="dReceiver"></span></div>
+          <div class="od-info-row"><span>연락처</span><span id="dReceiverPhone"></span></div>
+          <div class="od-info-row"><span>배송지</span><span id="dAddress"></span></div>
 
-        <div class="order-ship-manage">
-          <div>
-            <label>주문상태</label>
-            <%-- 지윤 26.07.20 수정: value="paid" 등 소문자 임의값 -> value="PAID" 등 실제 DB(TB_ORDER.ORDER_STATUS) 코드값으로 통일 --%>
-            <%-- 지윤 26.07.27 수정: DONE(배송완료) 옵션 제거 - 사람이 실수로 미리 눌러버리면 실제 배송상태(스마트택배 API)와 어긋나는 문제가 있어서
-            배송완료는 이제 자동완료(level==6) 또는 아래 별도 "배송완료 수동처리" 버튼(확인창 있음)으로만 가능하게 분리함 --%>
-            <%-- 지윤 26.07.28 수정: SHIPPING/CANCEL 옵션도 제거
-     - SHIPPING: 송장번호 입력 시 서버가 자동으로 전환해주므로 수동 선택 불필요
-     - CANCEL: 취소신청(배송전취소 탭) -> [취소승인]/[취소반려] 버튼으로 이미 별도 플로우 있음, 여기서 중복으로 안 둠 --%>
-<select id="dStatusSelect">
-<option value="PAID">결제완료</option>
-<option value="READY">배송준비</option>
-</select>
-          </div>
-          <div>
-            <label>택배사</label>
-            <%-- 지윤 26.07.27 수정: 하드코딩 4개 -> delivery.jsp와 동일하게 스마트택배 API로 전체 목록 채워넣음 --%>
-         <select id="dCarrier">
-         <option value="">선택 안 함</option>
-         </select>
-          </div>
-          <div>
+          <div class="od-ship-manage">
+            <div class="od-ship-row">
+              <div>
+                <label>주문상태</label>
+                <select id="dStatusSelect">
+                  <option value="PAID">결제완료</option>
+                  <option value="READY">배송준비</option>
+                </select>
+              </div>
+              <div>
+                <label>택배사</label>
+                <select id="dCarrier">
+                  <option value="">선택 안 함</option>
+                </select>
+              </div>
+            </div>
             <label>송장번호</label>
             <input type="text" id="dTrackingNo" placeholder="송장번호를 입력하세요">
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="order-items-table">
-      <table class="biz-table">
-        <thead><tr><th>상품명</th><th>옵션</th><th>수량</th><th>상품금액</th><th>합계</th></tr></thead>
-        <tbody id="orderItemsBody"></tbody>
-      </table>
-      <div class="order-total-row">
-        <span>총 결제금액</span>
-        <span id="dTotalAmount"></span>
+      <div id="claimInfoBox" style="display:none; margin:16px 20px 0; padding:14px 16px; background:#FFF5F5; border:1px solid #FFD4D4; border-radius:12px;">
+        <p style="font-weight:700; font-size:12px; color:#E2445C; margin:0 0 8px;">🚫 취소신청 대기중</p>
+        <div class="od-info-row"><span>신청사유</span><span id="dCancelReason"></span></div>
+        <div class="od-info-row"><span>신청일시</span><span id="dRequestedAt"></span></div>
       </div>
+
+      <div class="od-bottom-grid">
+
+    <div class="od-items-box">
+        <h4>주문 상품</h4>
+        <div class="od-item-table">
+          <div class="od-item-head">
+            <span>상품</span>
+            <span>옵션</span>
+            <span>수량</span>
+            <span>판매가</span>
+            <span>상품금액</span>
+          </div>
+          <div id="orderItemsBody"></div>
+        </div>
+        <div class="od-item-summary">
+          <div><span>총 상품</span><strong id="dItemCount">0개</strong></div>
+          <div><span>총 수량</span><strong id="dItemQty">0개</strong></div>
+          <div><span>상품금액</span><strong id="dItemSummaryTotal">0원</strong></div>
+        </div>
     </div>
 
-    <div id="claimInfoBox" style="display:none; margin:0 20px 20px; padding:16px; background:#FFF5F5; border:1px solid #FFD4D4; border-radius:10px;">
-      <p style="font-weight:700; font-size:13px; color:#E2445C; margin:0 0 8px;">🚫 취소신청 대기중</p>
-      <div class="order-info-row"><span>신청사유</span><span id="dCancelReason"></span></div>
-      <div class="order-info-row"><span>신청일시</span><span id="dRequestedAt"></span></div>
+    <div class="od-price-box">
+        <div class="od-price-row">
+            <span>상품 금액</span>
+            <span id="dProductTotal">-</span>
+        </div>
+
+        <div class="od-price-row">
+            <span>배송비</span>
+            <span id="dDeliveryFee">-</span>
+        </div>
+
+        <div class="od-price-row discount">
+            <span id="dCouponLabel">쿠폰 할인</span>
+            <span id="dCouponDiscount">-</span>
+        </div>
+
+        <div class="od-price-row discount">
+            <span>포인트 사용</span>
+            <span id="dPointUsed">-</span>
+        </div>
+
+        <div class="od-price-total">
+            <span>총 결제금액</span>
+            <span id="dTotalAmount">-</span>
+        </div>
     </div>
 
-    <div class="order-detail-actions">
-  <button type="button" class="biz-btn-ghost" onclick="closeDetail()">이전 목록으로</button>
-  <button type="button" class="biz-btn-primary" id="saveBtn" onclick="saveStatus()">상태변경</button>
-  <%-- 지윤 26.07.27 추가: 배송완료 수동처리 (SHIPPING 상태일 때만 노출, 확인창 거쳐야 실행됨) --%>
-  <button type="button" class="biz-btn-primary" id="forceCompleteBtn" style="display:none; background:#2BAB82;" onclick="forceComplete()">배송완료 수동처리</button>
-  <button type="button" class="biz-btn-primary" id="rejectBtn" style="display:none; background:#999;" onclick="rejectCancel()">취소반려</button>
-  <button type="button" class="biz-btn-primary" id="approveBtn" style="display:none; background:#E2445C;" onclick="approveCancel()">취소승인</button>
 </div>
+      <span id="dPayAmount" style="display:none"></span>
+
+      <div class="od-actions">
+        <button type="button" class="biz-btn-ghost" onclick="closeDetail()">이전 목록으로</button>
+        <button type="button" class="biz-btn-primary" id="saveBtn" onclick="saveStatus()">상태변경</button>
+        <button type="button" class="biz-btn-primary" id="forceCompleteBtn" style="display:none; background:#2BAB82;" onclick="forceComplete()">배송완료 수동처리</button>
+        <button type="button" class="biz-btn-primary" id="rejectBtn" style="display:none; background:#999;" onclick="rejectCancel()">취소반려</button>
+        <button type="button" class="biz-btn-primary" id="approveBtn" style="display:none; background:#E2445C;" onclick="approveCancel()">취소승인</button>
+      </div>
+   </div>
+  </div>
+
   </div>
 </main>
 
@@ -297,23 +663,70 @@ dSelect.value = o.orderStatus;
 document.getElementById('dCarrier').value       = o.courierCode || o.courierName || '';
 document.getElementById('dTrackingNo').value    = o.trackingNo || '';
 
-        //지윤 26.07.20 수정: o.items(목업 배열) forEach -> o.itemList(TB_ORDER_ITEM 실데이터) forEach로 교체
+        // 지윤 26.08.07: 주문상품 영역을 테이블형(레이아웃2)으로 정리
         var itemsBody = document.getElementById('orderItemsBody');
         itemsBody.innerHTML = '';
-        (o.itemList || []).forEach(function (it) {
-          //지윤 26.07.20 추가: 옵션 표시 - "기본"이면 색상 생략하는 규칙(products.jsp와 동일 컨벤션) 적용
+
+        var itemList = o.itemList || [];
+        var totalQty = 0;
+
+        itemList.forEach(function (it) {
           var optionText = '';
           if (it.optionColor && it.optionColor !== '기본') optionText += it.optionColor + ' / ';
-          optionText += it.optionSize || '';
-          var tr = document.createElement('tr');
-          tr.innerHTML =
-            '<td>' + it.productName + '</td>' +
-            '<td>' + optionText + '</td>' +
-            '<td>' + it.qty + '개</td>' +
-            '<td>' + fmtWon(it.unitPrice) + '</td>' +
-            '<td>' + fmtWon(it.totalPrice) + '</td>';
-          itemsBody.appendChild(tr);
+          optionText += it.optionSize || '기본';
+          totalQty += Number(it.qty || 0);
+
+          var row = document.createElement('div');
+          row.className = 'od-item-row';
+
+          // 지윤 26.08.07: 실제 서버 응답 필드명(thumbnailUrl)으로 수정 + 로컬 업로드 이미지 /upload/ 접두사 처리
+          var imageHtml = '<div class="od-item-thumb">';
+          var imageUrl = it.thumbnailUrl || '';
+          if (imageUrl) {
+            var imageSrc = imageUrl.indexOf('http') === 0 ? imageUrl : contextPath + '/upload/' + imageUrl;
+            imageHtml += '<img src="' + imageSrc + '" alt="상품 이미지" onerror="this.remove()">';
+          }
+          imageHtml += '</div>';
+
+          row.innerHTML =
+            '<div class="od-item-product">' +
+              imageHtml +
+              '<div class="od-item-name">' + it.productName + '</div>' +
+            '</div>' +
+            '<div class="od-item-option">' + optionText + '</div>' +
+            '<div class="od-item-qty">' + (it.qty || 0) + '개</div>' +
+            '<div class="od-item-unit">' + fmtWon(it.unitPrice) + '</div>' +
+            '<div class="od-item-price">' + fmtWon(it.totalPrice) + '</div>';
+
+          itemsBody.appendChild(row);
         });
+
+        document.getElementById('dItemCount').textContent = itemList.length + '개';
+        document.getElementById('dItemQty').textContent = totalQty + '개';
+        document.getElementById('dItemSummaryTotal').textContent = fmtWon(o.productTotal);
+
+        // 지윤 26.08.07: 결제금액 세부내역 - 쿠폰/포인트 안 썼어도 행 자체는 항상 표시
+        document.getElementById('dProductTotal').textContent = fmtWon(o.productTotal);
+        document.getElementById('dDeliveryFee').textContent  = fmtWon(o.deliveryFee);
+
+        var pointUsed = o.pointUsed || 0;
+        var totalDiscount = o.discountAmount || 0;
+        var couponDiscount = Math.max(0, totalDiscount - pointUsed);
+
+        if (o.couponName && couponDiscount > 0) {
+          document.getElementById('dCouponLabel').textContent = o.couponName + ' 할인';
+          document.getElementById('dCouponDiscount').textContent = '-' + fmtWon(couponDiscount);
+        } else {
+          document.getElementById('dCouponLabel').textContent = '쿠폰 할인';
+          document.getElementById('dCouponDiscount').textContent = '미사용';
+        }
+
+        if (pointUsed > 0) {
+          document.getElementById('dPointUsed').textContent = '-' + pointUsed.toLocaleString('ko-KR') + 'P';
+        } else {
+          document.getElementById('dPointUsed').textContent = '0P';
+        }
+
         document.getElementById('dTotalAmount').textContent = fmtWon(o.payAmount);
 
         var isPending = (o.claimStatus === 'PENDING');

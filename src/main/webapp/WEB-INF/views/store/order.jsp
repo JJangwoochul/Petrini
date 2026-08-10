@@ -344,10 +344,12 @@ function updateOrderTotal() {
   var couponDiscount = 0;
   if (couponType) {
     // 지윤 26.08.07: 쿠폰은 발급한 사업자의 상품 소계 기준으로만 적용 (전체 장바구니 금액 X)
-    // 이 주문에 해당 사업자 상품이 없으면 소계 0 -> 최소주문금액 미달로 자동 미적용
+    // 지윤 26.08.07(수정): 최소주문금액이 0으로 설정된 쿠폰은 "bizSubtotal < minOrderAmt"만으로는
+    // 안 걸러짐(0 < 0은 false) -> 이 주문에 해당 사업자 상품 자체가 있는지도 별도로 확인
+    var hasBizItems = Object.prototype.hasOwnProperty.call(BIZ_SUBTOTALS, couponBizNo);
     var bizSubtotal = BIZ_SUBTOTALS[couponBizNo] || 0;
 
-    if (bizSubtotal < minOrderAmt) {
+    if (!hasBizItems || bizSubtotal < minOrderAmt) {
       alert('이 쿠폰은 발급한 사업자의 상품에만 적용되며, 최소 주문금액 ' + won(minOrderAmt) + ' 이상부터 사용 가능합니다.');
       couponSel.value = '0';
     } else if (couponType === 'RATE') {

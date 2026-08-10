@@ -230,6 +230,7 @@
 
 <!-- 지윤 26.07.20 추가: 주문 상세 조회 (구매자 정보 + 배송정보 + 결제방법 다 조인) -->
 <!-- 지윤 26.07.22 수정: 취소신청 처리에 필요한 컬럼 추가 -->
+<!-- 지윤 26.08.07 수정: 상품금액/배송비/할인합계/쿠폰명 추가 (상세화면에 결제 세부내역 표시 안 되던 문제) -->
 <select id="selectOrderDetail" resultType="com.petcare.petcare.biz.store.vo.BizOrderVO">
     SELECT
         o.ORDER_ID, o.ORDER_NO, o.ORDER_STATUS, o.PAY_AMOUNT, o.ORDER_DATE,
@@ -238,25 +239,36 @@
         p.PAY_METHOD, p.TOSS_PAYMENT_KEY,
         d.COURIER_NAME, d.COURIER_CODE, d.TRACKING_NO, d.DELIVERY_STATUS,
         o.CLAIM_STATUS, o.CANCEL_REASON, o.REQUESTED_AT, o.REFUND_AMOUNT,
-        o.MEMBER_NO, o.POINT_USED, o.MEMBER_COUPON_ID
+        o.MEMBER_NO, o.POINT_USED, o.MEMBER_COUPON_ID,
+        o.TOTAL_AMOUNT AS PRODUCT_TOTAL, o.DELIVERY_FEE, o.DISCOUNT_AMOUNT,
+        c.COUPON_NAME
     FROM TB_ORDER o
     JOIN TB_MEMBER m ON m.MEMBER_NO = o.MEMBER_NO
     LEFT JOIN TB_PAYMENT p ON p.ORDER_ID = o.ORDER_ID
     LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
+    LEFT JOIN TB_MEMBER_COUPON mc ON mc.MEMBER_COUPON_ID = o.MEMBER_COUPON_ID
+    LEFT JOIN TB_COUPON c ON c.COUPON_ID = mc.COUPON_ID
     WHERE o.ORDER_ID = #{orderId} AND o.BIZ_NO = #{bizNo}
 </select>
 
 <!-- 지윤 26.07.20 추가: 주문 상세 - 상품 목록 -->
 <!-- 지윤 26.07.22 수정: OPTION_ID 추가 (취소승인 시 재고복구용) -->
+<!-- 지윤 26.08.07 수정: 상품 썸네일 조인 추가 (TB_FILE, REF_TYPE='PRODUCT' 첫 번째 이미지) -->
 <select id="selectOrderItems" resultType="com.petcare.petcare.biz.store.vo.BizOrderItemVO">
-    SELECT ORDER_ITEM_ID, PRODUCT_ID, OPTION_ID, PRODUCT_NAME, OPTION_COLOR, OPTION_SIZE,
-           QTY, UNIT_PRICE, TOTAL_PRICE,
-           RETURN_STATUS_CD, RETURN_REASON_CD, CLAIM_REASON,
-           RETURN_FEE_AMOUNT, RETURN_FEE_PAYER, REFUND_AMOUNT, RETURN_REJECT_REASON,
-           RETURN_REQUESTED_AT, RETURN_APPROVED_AT, RETURN_REJECTED_AT, RETURN_DONE_AT
-    FROM TB_ORDER_ITEM
-    WHERE ORDER_ID = #{orderId}
-    ORDER BY ORDER_ITEM_ID
+    <!-- 2026/08/10 장우철 — jiyoon 썸네일 조인 + woochul 환불 컬럼 병합 -->
+    SELECT oi.ORDER_ITEM_ID, oi.PRODUCT_ID, oi.OPTION_ID, oi.PRODUCT_NAME,
+           oi.OPTION_COLOR, oi.OPTION_SIZE, oi.QTY, oi.UNIT_PRICE, oi.TOTAL_PRICE,
+           f.FILE_URL AS THUMBNAIL_URL,
+           oi.RETURN_STATUS_CD, oi.RETURN_REASON_CD, oi.CLAIM_REASON,
+           oi.RETURN_FEE_AMOUNT, oi.RETURN_FEE_PAYER, oi.REFUND_AMOUNT, oi.RETURN_REJECT_REASON,
+           oi.RETURN_REQUESTED_AT, oi.RETURN_APPROVED_AT, oi.RETURN_REJECTED_AT, oi.RETURN_DONE_AT
+    FROM TB_ORDER_ITEM oi
+    LEFT JOIN (
+        SELECT REF_ID, FILE_URL, ROW_NUMBER() OVER (PARTITION BY REF_ID ORDER BY FILE_ID) AS RN
+        FROM TB_FILE WHERE REF_TYPE = 'PRODUCT'
+    ) f ON f.REF_ID = oi.PRODUCT_ID AND f.RN = 1
+    WHERE oi.ORDER_ID = #{orderId}
+    ORDER BY oi.ORDER_ITEM_ID
 </select>
 
 <!-- 지윤 26.07.20 추가: 주문 상태 변경 (WHERE절에 BIZ_NO 걸어서 본인 주문만) -->
