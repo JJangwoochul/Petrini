@@ -55,12 +55,13 @@ public class LoggingAspect {
      * 모든 서비스 메서드에 적용
      *
      * 서비스까지 로깅하고 싶으면 이 Pointcut 을 사용
-     * (아래 @Around 에서 controllerMethods() 대신 이걸 참조하면 됨)
+     * (아래 @Around 에서 controllerMethod() 대신 이걸 참조하면 됨)
      */
     @Pointcut("execution(* com.petcare.petcare..service..*(..))")
     public void serviceMethod(){}
 
-    @Around("controllerMethods()")
+    // 2026/08/10 장우철 — @Around pointcut 이름 불일치(controllerMethods → controllerMethod) 수정
+    @Around("controllerMethod()")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         // ── 메서드 정보 추출 ──
         String className = joinPoint.getTarget().getClass().getSimpleName();

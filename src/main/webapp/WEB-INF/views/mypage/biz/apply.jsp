@@ -164,8 +164,8 @@
                                 <option value="" selected>업종을 선택하세요</option>
                                 <option value="HOSPITAL">동물병원</option>
                                 <option value="GROOMING">반려동물 미용</option>
-                                <option value="STAY">펫 호텔·유치원</option>
-                                <option value="STORE">반려동물 용품점</option>
+                                <option value="STAY">숙소</option>
+                                <option value="STORE">쇼핑몰</option>
                                 <option value="STUDIO">스튜디오</option>
                             </select>
                         </div>

@@ -48,6 +48,7 @@ public class BizReturnVO {
     private Date returnDoneAt;
 
     private String tossPaymentKey;
+    private String payMethod; // 2026/08/11 장우철 — BILLING 여부 (토스 취소 시크릿 분기)
     private Integer payAmount;
     private Integer pointUsed;
     private Long memberCouponId;

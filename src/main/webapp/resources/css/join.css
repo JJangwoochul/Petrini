@@ -177,10 +177,32 @@
   color: var(--text-muted);
   display: flex; align-items: center;
   pointer-events: none;
+  z-index: 1;
 }
 .field-icon svg { width: 18px; height: 18px; }
 /* textarea용 field-icon 위치 조정 */
 .field-icon.top { top: 16px; transform: none; }
+
+/* 2026/08/11 장우철 — petcare.css .form-input 보다 우선 (아이콘·placeholder 겹침 방지) */
+.join-body .form-input {
+  width: 100%; height: 52px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 16px 0 44px;
+  font-size: 15px; font-family: var(--font);
+  color: var(--text-main); background: #fff;
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+  box-sizing: border-box;
+}
+.join-body .form-input::placeholder { color: var(--text-muted); }
+.join-body .form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(43,174,126,.12);
+}
+.join-body .form-input.no-icon { padding-left: 16px; }
+.join-body .form-input.is-valid   { border-color: var(--primary); }
+.join-body .form-input.is-invalid { border-color: #EF4444; }
 
 .form-input {
   width: 100%; height: 52px;
@@ -381,13 +403,22 @@
 }
 .pet-photo-preview {
   width: 80px; height: 80px;
+  min-width: 80px; max-width: 80px;
   border-radius: 50%;
   border: 2px solid var(--border);
   overflow: hidden; flex-shrink: 0;
   background: var(--bg-gray);
   display: flex; align-items: center; justify-content: center;
 }
-.pet-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+/* 2026/08/11 장우철 — 미리보기 고정 + 업로드 버튼 글자 겹침 방지 */
+.pet-photo-preview img {
+  width: 100%; height: 100%; object-fit: cover;
+  max-width: none;
+}
+.pet-photo-wrap > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
 .pet-photo-placeholder { color: var(--text-muted); }
 .pet-photo-placeholder svg { width: 32px; height: 32px; }
 .btn-photo-upload {

@@ -36,8 +36,8 @@ public class MemberFindServiceImpl implements MemberFindService {
 
         /**
      * 아이디 찾기
-     * 이름 + 전화번호로 회원을 찾아서 이메일을 마스킹하여 반환
-     * 예) test@email.com → te***@email.com
+     * 이름 + 전화번호로 회원을 찾아서 MEMBER_ID(로그인 아이디) 원문 반환
+     * 2026/08/11 장우철 — EMAIL 대신 MEMBER_ID / 마스킹 제거(찾기 목적상 원문 표시)
      */
     @Override
     @Transactional(readOnly = true)
@@ -45,18 +45,15 @@ public class MemberFindServiceImpl implements MemberFindService {
         if (memberName == null || memberName.isBlank()) return null;
         if (phone == null || phone.isBlank()) return null;
 
-        // 전화번호에서 하이픈 제거 (010-1234-5678 → 01012345678)
-        String cleanPhone = phone.replaceAll("-", "");
-
+        // JSP 입력이 하이픈 포함(010-0000-0000)이고 DB PHONE 도 동일 형식이라 phone 그대로 조회
         MemberFindVO member = memberFindMapper.selectByNameAndPhone(memberName.trim(), phone);
         if (member == null) return null;
 
-        // 이메일을 사용하되, 없으면 아이디 사용
-        String id = member.getEmail();
+        String id = member.getMemberId();
         if (id == null || id.isBlank()) {
-            id = member.getMemberId();
+            return null;
         }
-        return maskEmail(id);
+        return id.trim();
     }
 
     /**
@@ -118,25 +115,6 @@ public class MemberFindServiceImpl implements MemberFindService {
     }
 
     // ── 내부 메서드 ──
-
-    /**
-     * 이메일 마스킹
-     * test@email.com → te***@email.com
-     * abc@email.com  → a***@email.com
-     */
-    private String maskEmail(String email) {
-        if (email == null) return "";
-        int atIdx = email.indexOf('@');
-        if (atIdx <= 0) return "***";
-
-        String local = email.substring(0, atIdx);
-        String domain = email.substring(atIdx);
-
-        if (local.length() <= 2) {
-            return local.charAt(0) + "***" + domain;
-        }
-        return local.substring(0, 2) + "***" + domain;
-    }
 
     /**
      * 임시 비밀번호 생성 (영문+숫자+특수문자 10자리)

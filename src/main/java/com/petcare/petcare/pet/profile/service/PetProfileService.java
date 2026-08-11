@@ -16,8 +16,10 @@ public interface PetProfileService {
 
     PetProfileVO getPetDetail(Long petId, Long memberNo);
 
-    /** 성공 시 null, 실패 시 오류 메시지 */
-    String savePet(PetProfileVO vo, Long memberNo);
+    /** 성공 시 null, 실패 시 오류 메시지
+     * 2026/08/11 장우철 — petPhoto 대표사진(선택) */
+    String savePet(PetProfileVO vo, Long memberNo,
+                   org.springframework.web.multipart.MultipartFile petPhoto);
 
     /** 성공 시 null, 실패 시 오류 메시지 */
     String deletePet(Long petId, Long memberNo);

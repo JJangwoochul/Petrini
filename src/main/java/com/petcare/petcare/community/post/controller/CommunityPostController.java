@@ -44,6 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -487,19 +489,21 @@ public class CommunityPostController {
     @PostMapping("/write")
     public String writeSubmit(
             @Valid @ModelAttribute CommunityPostVO vo,      //HYJ 26.08.06 vo 검증 추가
+            BindingResult bindingResult,                   // 2026/08/10 장우철 — @Valid 실패를 ExHandler로 안 보내고 화면에 표시
             @RequestParam(value = "photos", required = false) MultipartFile[] photos,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
-        
-        //HYJ 26.08.06 @Valid 추가로 자동 검증
-        // 수동 검증 필요 — 직접 if 문으로 체크해야 함 (원래 없었는데 이해를 돕기 위한 예시로 추가)
-        // if (vo.getTitle() == null || vo.getTitle().isBlank()) { ... }
-        // if (vo.getBody() == null || vo.getBody().isBlank()) { ... }
-
 
         boolean isLife = vo.getBoardType() != null && "LIFE".equalsIgnoreCase(vo.getBoardType().trim());
         String lifeListUrl = "/community?boardType=LIFE";
         String loginRedirect = isLife ? lifeListUrl : "/community/write";
+
+        // 2026/08/10 장우철 — 글자수 등 검증 실패 시 write 화면에 메시지 표시
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("validationMessage", resolveValidationMessage(bindingResult));
+            redirectAttributes.addFlashAttribute("communityPostVO", vo);
+            return "redirect:/community/write";
+        }
 
         MemberVO member = getMemberOrNull(session);
         if (member == null) {
@@ -540,6 +544,23 @@ public class CommunityPostController {
             return memberVO;
         }
         return null;
+    }
+
+    /** 2026/08/10 장우철 — body/title Size 실패 메시지를 우선 노출 */
+    private String resolveValidationMessage(BindingResult bindingResult) {
+        FieldError bodyError = bindingResult.getFieldError("body");
+        if (bodyError != null && bodyError.getDefaultMessage() != null) {
+            return bodyError.getDefaultMessage();
+        }
+        FieldError titleError = bindingResult.getFieldError("title");
+        if (titleError != null && titleError.getDefaultMessage() != null) {
+            return titleError.getDefaultMessage();
+        }
+        FieldError first = bindingResult.getFieldError();
+        if (first != null && first.getDefaultMessage() != null) {
+            return first.getDefaultMessage();
+        }
+        return "입력 내용을 확인해 주세요.";
     }
 
     private int countComments(List<CommunityCommentVO> parents) {

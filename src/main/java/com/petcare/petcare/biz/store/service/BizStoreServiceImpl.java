@@ -254,7 +254,13 @@ public class BizStoreServiceImpl implements BizStoreService {
             return "결제 정보를 찾을 수 없습니다.";
         }
 
-        String tossError = tossPaymentService.cancelPayment(order.getTossPaymentKey(), order.getCancelReason());
+        // 2026/08/11 장우철 — P5: PAY_METHOD(빌링/토스)에 맞는 시크릿 + 주문분 부분취소
+        // (과거 BILLING인데 TOSS로 저장된 건은 cancelPaymentSmart 가 반대 시크릿 재시도)
+        Long cancelAmt = order.getPayAmount() != null ? order.getPayAmount().longValue() : null;
+        String reason = order.getCancelReason() != null && !order.getCancelReason().isBlank()
+                ? order.getCancelReason() : "주문 취소 승인";
+        String tossError = tossPaymentService.cancelPaymentSmart(
+                order.getTossPaymentKey(), reason, cancelAmt, order.getPayMethod());
         if (tossError != null) {
             return tossError;
         }
@@ -610,10 +616,12 @@ public class BizStoreServiceImpl implements BizStoreService {
             return "환불 금액이 0원 이하입니다. 반품택배비를 확인해 주세요.";
         }
 
-        String tossError = tossPaymentService.cancelPayment(
+        // 2026/08/11 장우철 — P9: 결제수단(빌링/토스위젯)에 맞는 시크릿으로 부분환불
+        String tossError = tossPaymentService.cancelPaymentSmart(
                 detail.getTossPaymentKey(),
                 "상품 환불(회수완료)",
-                (long) refundAmount);
+                (long) refundAmount,
+                detail.getPayMethod());
         if (tossError != null) {
             return tossError;
         }

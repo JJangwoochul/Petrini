@@ -20,7 +20,7 @@
         </a>
 
         <h1 class="member-title">아이디 찾기</h1>
-        <p class="member-desc">가입 시 등록한 정보로<br>아이디(이메일)를 확인할 수 있습니다</p>
+        <p class="member-desc">가입 시 등록한 정보로<br>아이디를 확인할 수 있습니다</p>
 
         <form class="member-form" id="findIdForm" onsubmit="return false;">
             <div class="form-group">

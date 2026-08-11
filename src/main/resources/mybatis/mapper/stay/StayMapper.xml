@@ -304,12 +304,13 @@
     </update>
 
     <!-- 지윤 26.08.07: 예약에 쿠폰·포인트 사용 내역 기록 (완료화면 정확한 결제금액 표시용) -->
+    <!-- 2026/08/10 장우철 — 쿠폰 미사용 시 memberCouponId null → Oracle ORA-17004 방지 (jdbcType 명시) -->
     <update id="updateReservationPaymentInfo" parameterType="map">
         UPDATE TB_RESERVATION
-           SET MEMBER_COUPON_ID = #{memberCouponId},
-               COUPON_DISCOUNT  = #{couponDiscount},
-               POINT_USED       = #{pointUsed}
-         WHERE RESV_ID = #{resvId}
+           SET MEMBER_COUPON_ID = #{memberCouponId, jdbcType=NUMERIC},
+               COUPON_DISCOUNT  = #{couponDiscount, jdbcType=NUMERIC},
+               POINT_USED       = #{pointUsed, jdbcType=NUMERIC}
+         WHERE RESV_ID = #{resvId, jdbcType=NUMERIC}
     </update>
 
     <!-- HYJ 26.07.20 결제 정보 등록 -->

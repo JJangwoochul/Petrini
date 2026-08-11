@@ -34,6 +34,11 @@ public interface PetProfileMapper {
 
     int updatePet(PetProfileVO vo);
 
+    // 2026/08/11 장우철 — 대표사진 PHOTO_URL 갱신
+    int updatePetPhotoUrl(@Param("petId") Long petId,
+                          @Param("memberNo") Long memberNo,
+                          @Param("photoUrl") String photoUrl);
+
     int deletePet(@Param("petId") Long petId,
                   @Param("memberNo") Long memberNo);
 

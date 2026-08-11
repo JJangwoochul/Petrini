@@ -36,7 +36,20 @@
   </c:if>
 
   <div class="rd-card">
-    <div class="rd-row"><span>상태</span><span><c:out value="${reservation.statusCd}"/></span></div>
+    <div class="rd-row">
+      <span>상태</span>
+      <span>
+        <c:choose>
+          <c:when test="${reservation.statusCd eq 'PENDING'}">예약신청</c:when>
+          <c:when test="${reservation.statusCd eq 'CONFIRMED'}">예약확정</c:when>
+          <c:when test="${reservation.statusCd eq 'CHECKIN'}">체크인</c:when>
+          <c:when test="${reservation.statusCd eq 'CHECKOUT'}">체크아웃</c:when>
+          <c:when test="${reservation.statusCd eq 'DONE'}">이용완료</c:when>
+          <c:when test="${reservation.statusCd eq 'CANCEL' or reservation.statusCd eq 'REJECTED'}">취소</c:when>
+          <c:otherwise><c:out value="${reservation.statusCd}"/></c:otherwise>
+        </c:choose>
+      </span>
+    </div>
     <div class="rd-row"><span>숙소</span><span><c:out value="${reservation.stayName}"/> <c:if test="${not empty reservation.roomName}"> / <c:out value="${reservation.roomName}"/></c:if></span></div>
     <div class="rd-row"><span>회원</span><span><c:out value="${reservation.memberName}"/> (<c:out value="${reservation.memberEmail}"/>)</span></div>
     <div class="rd-row"><span>반려동물</span><span><c:out value="${reservation.petName}"/></span></div>
@@ -54,6 +67,28 @@
       <span>
         <c:if test="${not empty reservation.totalAmount}"><fmt:formatNumber value="${reservation.totalAmount}" pattern="#,###"/>원</c:if>
         <c:if test="${empty reservation.totalAmount}">-</c:if>
+      </span>
+    </div>
+    <%-- 2026/08/11 장우철 — 결제수단·결제일 표시 --%>
+    <div class="rd-row">
+      <span>결제수단</span>
+      <span>
+        <c:choose>
+          <c:when test="${empty reservation.payMethod}">-</c:when>
+          <c:when test="${reservation.payMethod eq 'BILLING'}">등록카드(빌링)</c:when>
+          <c:otherwise>토스결제</c:otherwise>
+        </c:choose>
+      </span>
+    </div>
+    <div class="rd-row">
+      <span>결제일</span>
+      <span>
+        <c:choose>
+          <c:when test="${not empty reservation.payDate}">
+            <fmt:formatDate value="${reservation.payDate}" pattern="yyyy-MM-dd HH:mm"/>
+          </c:when>
+          <c:otherwise>-</c:otherwise>
+        </c:choose>
       </span>
     </div>
     <c:if test="${reservation.statusCd eq 'CANCEL' or reservation.statusCd eq 'REJECTED'}">

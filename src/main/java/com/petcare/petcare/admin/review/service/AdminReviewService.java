@@ -31,8 +31,9 @@ public interface AdminReviewService {
     int getPendingReviewDeleteCount();
 
     // 2026-07-24 박유정 — 삭제 요청 승인 (리뷰 삭제)
-    void approveReviewDeleteRequest(long requestId, long adminNo);
+    // 2026/08/11 장우철 — sourceCd: DELETE_REQ | REPORT
+    void approveReviewDeleteRequest(long requestId, long adminNo, String sourceCd);
 
     // 2026-07-24 박유정 — 삭제 요청 반려 (반려 사유 + 알림)
-    void rejectReviewDeleteRequest(long requestId, String rejectReason, long adminNo);
+    void rejectReviewDeleteRequest(long requestId, String rejectReason, long adminNo, String sourceCd);
 }

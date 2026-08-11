@@ -53,18 +53,23 @@
   <c:if test="${param.error eq 'save'}">
     <div class="write-error">등록에 실패했습니다. 잠시 후 다시 시도해 주세요. (이미지 용량·로그인 계정도 확인해 주세요)</div>
   </c:if>
+  <%-- 2026/08/10 장우철 — @Valid 글자수 등 검증 실패 메시지 --%>
+  <c:if test="${not empty validationMessage}">
+    <div class="write-error">${validationMessage}</div>
+  </c:if>
   <div class="write-form-group">
     <label>게시판 선택</label>
     <select name="boardType" required>
   <option value="">게시판을 선택하세요</option>
-  <option value="TOWN">집사생활</option>
-  <option value="SHARE">무료나눔</option>
-  <option value="LIFE">수의사 상담</option>
+  <option value="TOWN" ${communityPostVO.boardType eq 'TOWN' ? 'selected' : ''}>집사생활</option>
+  <option value="SHARE" ${communityPostVO.boardType eq 'SHARE' ? 'selected' : ''}>무료나눔</option>
+  <option value="LIFE" ${communityPostVO.boardType eq 'LIFE' ? 'selected' : ''}>수의사 상담</option>
 </select>
   </div>
   <div class="write-form-group">
     <label>제목</label>
-    <input type="text" name="title" placeholder="제목을 입력하세요" required>
+    <input type="text" name="title" placeholder="제목을 입력하세요" required
+           value="${communityPostVO.title}" minlength="2" maxlength="100">
   </div>
   <div class="write-form-group">
     <label>내용</label>
@@ -78,7 +83,8 @@
         <button type="button" class="toolbar-btn">목록</button>
         <button type="button" class="toolbar-btn">링크</button>
       </div>
-      <textarea class="write-textarea" name="body" placeholder="내용을 입력하세요..." required></textarea>
+      <textarea class="write-textarea" name="body" placeholder="내용을 입력하세요... (5글자 이상)"
+                required minlength="5" maxlength="5000">${communityPostVO.body}</textarea>
     </div>
   </div>
   <div class="write-form-group">

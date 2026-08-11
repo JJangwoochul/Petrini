@@ -61,6 +61,12 @@ public interface MemberAuthMapper {
     /* 반려동물 1건 INSERT */
     int insertPet(MemberRegisterVO vo);
 
+    // 2026/08/11 장우철 — 가입 시 펫 사진 PHOTO_URL 갱신
+    int updatePetPhotoUrl(
+            @Param("petId") Long petId,
+            @Param("memberNo") Long memberNo,
+            @Param("photoUrl") String photoUrl);
+
     // 2026/07/15 — 카카오 로그인
 
     /** 카카오 PROVIDER_UID 로 TB_MEMBER_SOCIAL → TB_MEMBER 조인 조회 — 없으면 null */

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -54,9 +55,12 @@ public class PetProfileController {
     }
 
     // 2026/07/11 장우철 — 등록·수정 (모달 Ajax)
+    // 2026/08/11 장우철 — petPhoto(대표사진) Multipart 연동
     @PostMapping("/pets/save")
     @ResponseBody
-    public Map<String, Object> savePet(PetProfileVO vo, HttpSession session) {
+    public Map<String, Object> savePet(PetProfileVO vo,
+                                       @RequestParam(value = "petPhoto", required = false) MultipartFile petPhoto,
+                                       HttpSession session) {
         Map<String, Object> result = new HashMap<>();
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null || member.getMemberNo() == null) {
@@ -66,7 +70,7 @@ public class PetProfileController {
         }
 
         boolean isNew = vo.getPetId() == null;
-        String err = petProfileService.savePet(vo, member.getMemberNo());
+        String err = petProfileService.savePet(vo, member.getMemberNo(), petPhoto);
         if (err != null) {
             result.put("success", false);
             result.put("message", err);

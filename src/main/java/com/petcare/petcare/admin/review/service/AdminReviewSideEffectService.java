@@ -61,8 +61,14 @@ public class AdminReviewSideEffectService {
             if (bizMemberNo == null) {
                 return;
             }
-            String linkUrl = "STAY".equals(req.getReviewType())
-                    ? "/biz/stay/reviews" : "/biz/hospital/reviews";
+            String linkUrl;
+            if ("STAY".equals(req.getReviewType())) {
+                linkUrl = "/biz/stay/reviews";
+            } else if ("PRODUCT".equals(req.getReviewType())) {
+                linkUrl = "/biz/store/reviews";
+            } else {
+                linkUrl = "/biz/hospital/reviews";
+            }
             mypageNotifyService.sendReviewDeleteApproveNotification(
                     bizMemberNo, req.getHospitalName(), req.getReviewId(), linkUrl);
         } catch (Exception e) {
@@ -80,8 +86,14 @@ public class AdminReviewSideEffectService {
             if (bizMemberNo == null) {
                 return;
             }
-            String linkUrl = "STAY".equals(req.getReviewType())
-                    ? "/biz/stay/reviews" : "/biz/hospital/reviews";
+            String linkUrl;
+            if ("STAY".equals(req.getReviewType())) {
+                linkUrl = "/biz/stay/reviews";
+            } else if ("PRODUCT".equals(req.getReviewType())) {
+                linkUrl = "/biz/store/reviews";
+            } else {
+                linkUrl = "/biz/hospital/reviews";
+            }
             mypageNotifyService.sendReviewDeleteRejectNotification(
                     bizMemberNo, req.getHospitalName(), rejectReason, linkUrl);
         } catch (Exception e) {

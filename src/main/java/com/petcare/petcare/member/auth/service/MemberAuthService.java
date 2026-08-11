@@ -54,7 +54,9 @@ public interface MemberAuthService {
 
     /**
      * 회원가입 처리 — join.jsp [가입 완료] POST /join
+     * @param petPhoto 선택 — Step3 대표 사진 (없으면 null)
      * @return null 이면 성공, 문자열이면 오류 코드 (join.jsp 에서 메시지 분기)
      */
-    String register(MemberRegisterVO vo);
+    // 2026/08/11 장우철 — 펫 성별·대표사진 Multipart 연동
+    String register(MemberRegisterVO vo, org.springframework.web.multipart.MultipartFile petPhoto);
 }

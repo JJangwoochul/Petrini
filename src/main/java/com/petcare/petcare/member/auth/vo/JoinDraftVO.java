@@ -42,4 +42,6 @@ public class JoinDraftVO {
     // ── 이메일 인증 플래그 (JS 변수 복원용) ──
     private Boolean emailChecked;
     private Boolean emailVerified;
+    // 2026/08/11 장우철 — 아이디 중복확인 플래그 (카드등록 왕복 시 복원)
+    private Boolean idChecked;
 }

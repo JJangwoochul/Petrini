@@ -146,15 +146,11 @@
             <p class="edit-card-desc">등록된 카드가 없습니다. 간편결제를 위해 카드를 등록해 주세요.</p>
             <button type="button" class="btn-verify" id="btnEditCardRegister">카드 등록하기</button>
         </div>
-        <div id="editCardRegistered" class="edit-card-box registered" style="display:none;">
-            <div class="edit-card-info">
-                <span class="edit-card-badge">등록됨</span>
-                <strong id="editCardLabel">-</strong>
-                <span class="edit-card-sub" id="editCardSub">토스 빌링키로 등록된 카드입니다.</span>
-            </div>
-            <div class="edit-card-actions">
+        <%-- 2026/08/11 장우철 — 등록 카드 여러 장 전부 --%>
+        <div id="editCardRegistered" class="edit-card-list-wrap" style="display:none;">
+            <div id="editCardList" class="edit-card-list"></div>
+            <div class="edit-card-actions" style="margin-top:12px;">
                 <button type="button" class="btn-sm" id="btnEditCardChange">카드 추가</button>
-                <button type="button" class="btn-sm danger" id="btnEditCardRemove">등록 해제</button>
             </div>
         </div>
     </div>
@@ -205,22 +201,44 @@
 <script src="${contextPath}/resources/js/billing-card.js"></script>
 <script>
 /* 2026/07/27 장우철 — 회원정보 카드등록 (목록 Ajax + requestBillingAuth) */
+/* 2026/08/11 장우철 — 등록 카드 전부 표시 */
 (function () {
   var empty = document.getElementById('editCardEmpty');
   var registered = document.getElementById('editCardRegistered');
-  var labelEl = document.getElementById('editCardLabel');
-  var currentCardId = null;
+  var listEl = document.getElementById('editCardList');
 
-  function showRegistered(label, cardId) {
-    currentCardId = cardId;
-    labelEl.textContent = label || '등록된 카드';
-    empty.style.display = 'none';
-    registered.style.display = 'flex';
-  }
   function showEmpty() {
-    currentCardId = null;
     empty.style.display = 'block';
     registered.style.display = 'none';
+    if (listEl) listEl.innerHTML = '';
+  }
+
+  function renderCards(cards) {
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    cards.forEach(function (c) {
+      var row = document.createElement('div');
+      row.className = 'edit-card-box registered';
+      row.innerHTML =
+        '<div class="edit-card-info">' +
+          '<span class="edit-card-badge">등록됨</span>' +
+          '<strong></strong>' +
+          '<span class="edit-card-sub">토스 빌링키로 등록된 카드입니다.</span>' +
+        '</div>' +
+        '<div class="edit-card-actions">' +
+          '<button type="button" class="btn-sm danger btn-card-remove">등록 해제</button>' +
+        '</div>';
+      row.querySelector('strong').textContent = c.label || '등록된 카드';
+      row.querySelector('.btn-card-remove').addEventListener('click', async function () {
+        if (!confirm('등록된 카드를 해제할까요?')) return;
+        var res = await PetcareBilling.deleteCard(c.billingCardId, false);
+        if (res.ok) refreshCards();
+        else alert(res.message || '삭제에 실패했습니다.');
+      });
+      listEl.appendChild(row);
+    });
+    empty.style.display = 'none';
+    registered.style.display = 'block';
   }
 
   async function refreshCards() {
@@ -230,8 +248,7 @@
         showEmpty();
         return;
       }
-      var c = data.cards[0];
-      showRegistered(c.label, c.billingCardId);
+      renderCards(data.cards);
     } catch (e) {
       console.error(e);
     }
@@ -246,13 +263,6 @@
 
   document.getElementById('btnEditCardRegister').addEventListener('click', openToss);
   document.getElementById('btnEditCardChange').addEventListener('click', openToss);
-  document.getElementById('btnEditCardRemove').addEventListener('click', async function () {
-    if (!confirm('등록된 카드를 해제할까요?')) return;
-    if (currentCardId == null) { showEmpty(); return; }
-    var res = await PetcareBilling.deleteCard(currentCardId, false);
-    if (res.ok) refreshCards();
-    else alert(res.message || '삭제에 실패했습니다.');
-  });
 
   PetcareBilling.notifyFromQuery();
   refreshCards();

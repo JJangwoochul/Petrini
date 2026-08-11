@@ -44,6 +44,10 @@ public interface AdminReviewMapper {
     AdminReviewDeleteRequestVO selectAdminReviewDeleteRequestDetail(
             @Param("requestId") long requestId);
 
+    // 2026/08/11 장우철 — 쇼핑(TB_REVIEW_REPORT) 삭제요청 단건
+    AdminReviewDeleteRequestVO selectAdminStoreReviewReportDetail(
+            @Param("reportId") long reportId);
+
     // 2026-07-24 박유정 — 승인 처리
     int updateReviewDeleteRequestApproved(
             @Param("requestId") long requestId,

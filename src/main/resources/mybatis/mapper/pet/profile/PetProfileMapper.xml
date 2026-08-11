@@ -144,6 +144,15 @@
            AND NVL(DEL_YN, 'N') = 'N'
     </update>
 
+    <!-- 2026/08/11 장우철 — 대표사진 PHOTO_URL -->
+    <update id="updatePetPhotoUrl">
+        UPDATE TB_PET
+           SET PHOTO_URL = #{photoUrl, jdbcType=VARCHAR}
+         WHERE PET_ID    = #{petId}
+           AND MEMBER_NO = #{memberNo}
+           AND NVL(DEL_YN, 'N') = 'N'
+    </update>
+
     <!-- 예약 이력 없음 → 물리 삭제 -->
     <delete id="deletePet">
         DELETE FROM TB_PET

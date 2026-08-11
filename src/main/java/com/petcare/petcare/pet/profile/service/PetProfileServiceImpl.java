@@ -1,5 +1,6 @@
 /**
  * 2026/07/11 장우철 — PetProfileService 구현
+ * 2026/08/11 장우철 — 대표사진 Multipart 업로드 → TB_PET.PHOTO_URL
  */
 
 package com.petcare.petcare.pet.profile.service;
@@ -8,20 +9,30 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.pet.profile.mapper.PetProfileMapper;
 import com.petcare.petcare.pet.profile.vo.PetProfileVO;
 
 @Service
 public class PetProfileServiceImpl implements PetProfileService {
 
+    private static final Logger log = LoggerFactory.getLogger(PetProfileServiceImpl.class);
+
     @Autowired
     private PetProfileMapper petProfileMapper;
+
+    @Autowired
+    private FileService fileService;
 
     @Override
     public List<PetProfileVO> getPetList(Long memberNo) {
@@ -35,7 +46,7 @@ public class PetProfileServiceImpl implements PetProfileService {
 
     @Override
     @Transactional
-    public String savePet(PetProfileVO vo, Long memberNo) {
+    public String savePet(PetProfileVO vo, Long memberNo, MultipartFile petPhoto) {
         String err = validate(vo);
         if (err != null) {
             return err;
@@ -49,7 +60,7 @@ public class PetProfileServiceImpl implements PetProfileService {
             int count = petProfileMapper.countPetsByMember(memberNo);
             vo.setIsRepresent(count == 0 ? "Y" : "N");
             petProfileMapper.insertPet(vo);
-            return null;
+            return savePetPhoto(vo.getPetId(), memberNo, petPhoto);
         }
 
         PetProfileVO existing = petProfileMapper.selectPetDetail(vo.getPetId(), memberNo);
@@ -57,7 +68,32 @@ public class PetProfileServiceImpl implements PetProfileService {
             return "반려동물을 찾을 수 없습니다.";
         }
         petProfileMapper.updatePet(vo);
-        return null;
+        return savePetPhoto(vo.getPetId(), memberNo, petPhoto);
+    }
+
+    /** 2026/08/11 장우철 — FileService 업로드 후 PHOTO_URL 저장 (선택) */
+    private String savePetPhoto(Long petId, Long memberNo, MultipartFile petPhoto) {
+        if (petId == null || memberNo == null || petPhoto == null || petPhoto.isEmpty()) {
+            return null;
+        }
+        String contentType = petPhoto.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return "이미지 파일만 업로드할 수 있습니다.";
+        }
+        // 대략 5MB
+        if (petPhoto.getSize() > 5L * 1024 * 1024) {
+            return "사진은 최대 5MB까지 업로드할 수 있습니다.";
+        }
+        try {
+            FileVO file = fileService.uploadFile(petPhoto, "PET", petId);
+            String path = file.getFileUrl() == null ? "" : file.getFileUrl().replace('\\', '/');
+            String photoUrl = path.startsWith("/upload/") ? path : "/upload/" + path;
+            petProfileMapper.updatePetPhotoUrl(petId, memberNo, photoUrl);
+            return null;
+        } catch (Exception e) {
+            log.warn("pet photo upload failed (petId={}): {}", petId, e.toString());
+            return "사진 업로드에 실패했습니다. 다시 시도해 주세요.";
+        }
     }
 
     @Override

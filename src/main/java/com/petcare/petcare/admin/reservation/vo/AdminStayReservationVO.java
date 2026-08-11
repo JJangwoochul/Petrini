@@ -33,4 +33,7 @@ public class AdminStayReservationVO {
     private Date cancelAt;
     private Date regDate;
     private String petName;
+    // 2026/08/11 장우철 — 결제수단·결제일 (TB_PAYMENT)
+    private String payMethod;
+    private Date payDate;
 }

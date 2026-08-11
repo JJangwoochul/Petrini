@@ -185,7 +185,8 @@ public class BizStayServiceImpl implements BizStayService {
             stayName = "숙소";
         }
         if ("CONFIRMED".equals(next)) {
-            mypageNotifyService.sendReserveConfirmNotification(
+            // 2026/08/11 장우철 — 숙소 전용 확정 알림 (병원 문구 혼용 방지)
+            mypageNotifyService.sendStayReserveConfirmNotification(
                     current.getMemberNo(), stayName, current.getCheckinDate(), null, resvId);
         } else if ("CHECKIN".equals(next)) {
             // 2026/08/07 장우철 — 체크인 알림

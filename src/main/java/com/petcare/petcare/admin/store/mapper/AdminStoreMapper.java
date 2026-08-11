@@ -33,6 +33,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.petcare.petcare.admin.store.vo.AdminReviewReportVO;
+import com.petcare.petcare.admin.store.vo.AdminStoreOrderVO;
+import com.petcare.petcare.admin.store.vo.AdminStoreProductVO;
 
 @Mapper
 public interface AdminStoreMapper {
@@ -52,4 +54,27 @@ public interface AdminStoreMapper {
 
    //지윤 26.07.21 추가: 반려 처리 완료 표시 (STATUS_CD='DONE' + 처리한 관리자 기록, REVIEW_ID는 그대로 유지)
    int updateReportDone(@Param("reportId") Long reportId, @Param("adminNo") Long adminNo);
+
+    // 2026/08/11 장우철 — 관리자 전 사업자 상품/주문 목록
+    List<AdminStoreProductVO> selectAdminProductList(
+            @Param("keyword") String keyword,
+            @Param("statusCd") String statusCd,
+            @Param("offset") int offset,
+            @Param("size") int size);
+
+    int selectAdminProductCount(
+            @Param("keyword") String keyword,
+            @Param("statusCd") String statusCd);
+
+    List<AdminStoreOrderVO> selectAdminOrderList(
+            @Param("keyword") String keyword,
+            @Param("statusCd") String statusCd,
+            @Param("offset") int offset,
+            @Param("size") int size);
+
+    int selectAdminOrderCount(
+            @Param("keyword") String keyword,
+            @Param("statusCd") String statusCd);
+
+    AdminStoreOrderVO selectAdminOrderDetail(@Param("orderId") Long orderId);
 }

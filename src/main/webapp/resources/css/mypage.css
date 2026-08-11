@@ -707,3 +707,6 @@
 .edit-card-info strong { font-size:16px; color:var(--text-main); }
 .edit-card-sub { font-size:12px; color:var(--text-muted); }
 .edit-card-actions { display:flex; gap:8px; }
+/* 2026/08/11 장우철 — 카드 여러 장 목록 */
+.edit-card-list { display:flex; flex-direction:column; gap:10px; }
+.edit-card-list .edit-card-box.registered { margin:0; }

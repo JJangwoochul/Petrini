@@ -69,7 +69,7 @@
   <c:forEach var="o" items="${orderGroup}">
     <div class="od-section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <p class="od-section-title" style="margin-bottom:0">🏪 ${o.bizName}</p>
+        <p class="od-section-title" style="margin-bottom:0"><c:out value="${o.bizName}"/></p>
         <div style="display:flex;align-items:center;gap:10px">
           <%-- 2026/08/04 장우철 — 환불신청/진행 중이면 배송중 대신 환불진행중 --%>
           <c:set var="refundInProgress" value="false" />
@@ -85,6 +85,8 @@
             <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
             <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
             <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
+            <%-- 2026/08/11 장우철 — P2: 구매확정 표시 --%>
+            <c:when test="${o.orderStatus == 'DONE' && o.confirmYn == 'Y'}"><span class="badge-status badge-done">구매확정</span></c:when>
             <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
             <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
           </c:choose>

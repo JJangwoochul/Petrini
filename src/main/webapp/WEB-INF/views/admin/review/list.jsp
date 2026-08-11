@@ -17,7 +17,7 @@
     <div class="adm-page-head">
         <div class="adm-page-head-left">
             <h1 class="adm-page-title">사업자 리뷰 삭제 요청</h1>
-            <p class="adm-page-desc">병원·숙소 사업자의 리뷰 삭제 요청을 확인하고 처리하세요.</p>
+            <p class="adm-page-desc">병원·숙소·쇼핑 사업자의 리뷰 삭제 요청을 확인하고 처리하세요.</p>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
             <%-- 2026-07-24 박유정 — GET 검색 (keyword, statusCd) --%>
             <form method="get" action="${contextPath}/admin/review/list" class="adm-filter-bar">
                 <input type="text" name="keyword" class="adm-filter-input"
-                       placeholder="병원명, 숙소명, 사업자명, 작성자, 사유 검색" value="${keyword}">
+                       placeholder="병원·숙소·상품명, 사업자명, 작성자, 사유 검색" value="${keyword}">
                 <select name="statusCd" class="adm-filter-select">
                     <option value="ALL" ${statusCd eq 'ALL' ? 'selected' : ''}>상태 전체</option>
                     <option value="PENDING" ${statusCd eq 'PENDING' ? 'selected' : ''}>대기</option>
@@ -71,10 +71,11 @@
                             <c:forEach var="item" items="${list}">
                                 <tr>
                                     <td>${item.requestId}</td>
-                                    <%-- 2026-07-27 박유정 — 병원·숙소 리뷰 구분 --%>
+                                    <%-- 2026/08/11 장우철 — 병원·숙소·쇼핑 유형 --%>
                                     <td>
                                         <c:choose>
                                             <c:when test="${item.reviewType eq 'STAY'}">숙소</c:when>
+                                            <c:when test="${item.reviewType eq 'PRODUCT'}">쇼핑</c:when>
                                             <c:otherwise>병원</c:otherwise>
                                         </c:choose>
                                     </td>
@@ -118,9 +119,9 @@
                                                       class="js-admin-approve-form"
                                                       style="display:inline;margin:0">
                                                     <!--HYJ 26.08.05-->
-                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
-                                                    
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">
                                                     <input type="hidden" name="requestId" value="${item.requestId}">
+                                                    <input type="hidden" name="sourceCd" value="${item.sourceCd}">
                                                     <button type="submit" class="adm-btn red">승인(삭제)</button>
                                                 </form>
                                                 <%-- 2026-07-24 박유정 — 반려 (사유 입력 필수) --%>
@@ -128,9 +129,9 @@
                                                       style="display:inline-flex;gap:6px;margin-left:6px;align-items:center"
                                                       onsubmit="return confirm('반려하시겠습니까?')">
                                                     <!--HYJ 26.08.05-->
-                                                    <input type="hidden" name="_csrf" value="${_csrf}">  
-                                                    
+                                                    <input type="hidden" name="_csrf" value="${_csrf}">
                                                     <input type="hidden" name="requestId" value="${item.requestId}">
+                                                    <input type="hidden" name="sourceCd" value="${item.sourceCd}">
                                                     <input type="text" name="rejectReason" class="adm-filter-input"
                                                            placeholder="반려 사유" required style="width:160px">
                                                     <button type="submit" class="adm-btn gray">반려</button>

@@ -48,6 +48,9 @@ public class MemberRegisterVO {
     private String petName;          // 반려동물 이름 — 비어 있으면 펫 등록 안 함 (TB_PET.PET_NAME)
     private String petBreed;         // 품종 (TB_PET.BREED)
     private Integer petAge;          // 나이(세) (TB_PET.AGE)
+    private String petBirthDate;     // 2026/08/11 장우철 — TB_PET.BIRTH_DATE (yyyy-MM-dd)
+    private String petGender;        // 2026/08/11 장우철 — TB_PET.GENDER (M/F)
+    private String petPhotoUrl;      // 2026/08/11 장우철 — TB_PET.PHOTO_URL
     private Double petWeight;        // 몸무게 kg (TB_PET.WEIGHT)
     private Long petId;              // 반려동물 ID — SEQ_PET 전역 증가 (TB_PET.PET_ID)
 }

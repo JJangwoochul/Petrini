@@ -39,6 +39,12 @@
   .pay-card-preview .label{font-size:12px;font-weight:700;color:#166534;margin-bottom:6px}
   .pay-card-preview .num{font-size:16px;font-weight:800;color:var(--text-main)}
   .pay-card-preview .hint{font-size:12px;color:var(--text-muted);margin-top:8px}
+  /* 2026/08/11 장우철 — 등록카드 2장 이상 선택 */
+  .pay-card-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .pay-card-option{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid #BBF7D0;border-radius:var(--radius-sm);cursor:pointer;background:#fff;margin:0}
+  .pay-card-option:has(input:checked){border-color:var(--primary);background:var(--primary-light)}
+  .pay-card-option input{accent-color:var(--primary);width:16px;height:16px;flex-shrink:0}
+  .pay-card-option-text{font-size:14px;font-weight:700;color:var(--text-main)}
 </style>
 
 <div class="pay-wrap">
@@ -92,10 +98,11 @@
       </label>
     </div>
     <div id="panelCard" class="pay-panel">
-      <div class="pay-card-preview" id="payCardPreviewRegistered">
-        <div class="label">등록된 카드</div>
-        <div class="num">신한카드 ······1234</div>
-        <div class="hint">결제하기를 누르면 등록 카드로 바로 결제됩니다. (결제창 없음)</div>
+      <%-- 2026/08/11 장우철 — 등록카드 목록에서 결제 카드 선택 --%>
+      <div class="pay-card-preview" id="payCardPreviewRegistered" style="display:none">
+        <div class="label">결제할 카드를 선택하세요</div>
+        <div class="pay-card-list" id="payCardList"></div>
+        <div class="hint">선택한 등록 카드로 바로 결제됩니다. (결제창 없음)</div>
       </div>
       <div class="pay-card-preview" id="payCardPreviewEmpty" style="display:none;border-color:var(--border);background:var(--bg-page)">
         <div class="label" style="color:var(--text-muted)">등록된 카드 없음</div>
@@ -216,7 +223,7 @@
     var panelTransfer = document.getElementById('panelTransfer');
     var previewOk = document.getElementById('payCardPreviewRegistered');
     var previewEmpty = document.getElementById('payCardPreviewEmpty');
-    var labelEl = document.getElementById('payCardLabel');
+    var listEl = document.getElementById('payCardList');
 
     function syncPanels() {
       var useCard = card.checked;
@@ -228,20 +235,45 @@
       }
     }
 
+    // 2026/08/11 장우철 — 등록카드 라디오 목록 렌더
+    function renderCardList(cards) {
+      listEl.innerHTML = '';
+      cards.forEach(function (c, i) {
+        var opt = document.createElement('label');
+        opt.className = 'pay-card-option';
+        var radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'billingCardPick';
+        radio.value = c.billingCardId;
+        if (i === 0) radio.checked = true;
+        radio.addEventListener('change', function () {
+          if (radio.checked) selectedBillingCardId = c.billingCardId;
+        });
+        var text = document.createElement('span');
+        text.className = 'pay-card-option-text';
+        text.textContent = c.label || ('카드 #' + c.billingCardId);
+        opt.appendChild(radio);
+        opt.appendChild(text);
+        listEl.appendChild(opt);
+      });
+      selectedBillingCardId = cards[0].billingCardId;
+    }
+
     async function refreshCards() {
       try {
         var data = await PetcareBilling.loadCards();
         if (data.ok && data.cards && data.cards.length > 0) {
           hasRegisteredCard = true;
-          selectedBillingCardId = data.cards[0].billingCardId;
-          if (labelEl) labelEl.textContent = data.cards[0].label;
+          renderCardList(data.cards);
         } else {
           hasRegisteredCard = false;
           selectedBillingCardId = null;
+          listEl.innerHTML = '';
         }
       } catch (e) {
         hasRegisteredCard = false;
         selectedBillingCardId = null;
+        listEl.innerHTML = '';
       }
       syncPanels();
     }

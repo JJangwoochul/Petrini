@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -48,6 +50,9 @@ import jakarta.servlet.http.HttpSession;
 @Controller("stayController")
 @RequestMapping("/stay")
 public class StayController {
+
+    // 2026/08/10 장우철 — 결제 실패 원인 로그용
+    private static final Logger log = LoggerFactory.getLogger(StayController.class);
 
     @Value("${toss.client-key}")
     private String tossApiKey;
@@ -205,7 +210,7 @@ public class StayController {
                                     @RequestParam("paymentKey") String paymentKey,
                                     @RequestParam("amount") Long amount,
                                     HttpSession session,
-                                    Model model) throws Exception {
+                                    RedirectAttributes rttr) throws Exception {
 
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null) return "redirect:/login";
@@ -228,7 +233,11 @@ public class StayController {
 
             return "redirect:/stay/complete?resvId=" + resvId;
         } catch (RuntimeException e) {
-            model.addAttribute("errorMsg", e.getMessage());
+            // 2026/08/10 장우철 — redirect 시 model 은 유실되므로 flash + 로그로 원인 남김
+            // printStackTrace 는 stderr 무단 출력·스택 노출이라 사용하지 않음 (log.error 로 충분)
+            log.error("[Stay paymentSuccess] 결제 확정 실패 orderId={}, amount={}, message={}",
+                    orderId, amount, e.getMessage(), e);
+            rttr.addFlashAttribute("errorMsg", e.getMessage() != null ? e.getMessage() : "결제 확정에 실패했습니다.");
             return "redirect:/stay";
         }
     }

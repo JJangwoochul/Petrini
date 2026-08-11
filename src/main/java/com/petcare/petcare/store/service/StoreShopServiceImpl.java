@@ -219,7 +219,12 @@ public boolean deleteProductQna(Long qnaId, Long memberNo) {
 //쿠폰은 발급 사업자 몫에만, 포인트는 상품금액 비례로 각 주문에 나눠 배분함.
 @Override
 @Transactional
-public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrderId) {
+public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrderId, String payMethod) {
+    // 2026/08/11 장우철 — 빌링/위젯 구분 저장 (취소·환불 시 시크릿 분기용). 미지정이면 TOSS
+    if (payMethod == null || payMethod.isBlank()) {
+        payMethod = "TOSS";
+    }
+    final String resolvedPayMethod = payMethod.trim().toUpperCase();
 
     //1) 상품을 사업자(BIZ_NO)별로 묶음 (LinkedHashMap이라 처음 등장한 순서 유지)
     java.util.Map<Long, java.util.List<CartItemVO>> groups = new java.util.LinkedHashMap<>();
@@ -321,7 +326,8 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
         }
 
         //지윤 26.07.30 수정: 토스 결제 1건에 대해, 사업자 수만큼 TB_PAYMENT도 각각 생성 (같은 paymentKey/orderId 공유, orderId 컬럼만 다름)
-        storeShopMapper.insertPayment(orderId, "TOSS", groupFinalTotal, tossPaymentKey, tossOrderId);
+        // 2026/08/11 장우철 — PAY_METHOD에 BILLING/TOSS/POINT 실제 수단 저장 (기존 하드코딩 TOSS 제거)
+        storeShopMapper.insertPayment(orderId, resolvedPayMethod, groupFinalTotal, tossPaymentKey, tossOrderId);
 
         //지윤 26.07.30 수정: 포인트 사용 이력도 그룹(주문)별로 나눠서 남김
         if (groupPointUsed > 0) {

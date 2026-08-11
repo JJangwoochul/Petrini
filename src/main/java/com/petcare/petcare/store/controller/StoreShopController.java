@@ -348,7 +348,7 @@ public String payment(@RequestParam(required = false) Long productId,
         }
 
         String tossOrderId = "zero-" + orderTemp.getMemberNo() + "-" + System.currentTimeMillis();
-        String orderNo = storeShopService.completeOrder(orderTemp, "ZERO_AMOUNT", tossOrderId);
+        String orderNo = storeShopService.completeOrder(orderTemp, "ZERO_AMOUNT", tossOrderId, "POINT");
         session.removeAttribute("orderTemp");
 
         syncSessionPointBalance(session);
@@ -384,7 +384,7 @@ public String payment(@RequestParam(required = false) Long productId,
             return "store/order-complete";
         }
 
-        String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, orderId);
+        String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, orderId, "TOSS");
         session.removeAttribute("orderTemp"); // 새로고침해도 중복저장 안 되게 바로 비움
 
         //지윤 26.07.23 추가: 주문 시 포인트를 썼으면, 화면이 옛날 세션 값을 계속 보여주던 문제 수정
@@ -474,7 +474,8 @@ public String payment(@RequestParam(required = false) Long productId,
         try {
             String paymentKey = approved.getPaymentKey() != null
                     ? approved.getPaymentKey() : ("BILLING-" + tossOrderId);
-            String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, tossOrderId);
+            // 2026/08/11 장우철 — 빌링 결제는 PAY_METHOD=BILLING 으로 저장 (취소 시 billing 시크릿)
+            String orderNo = storeShopService.completeOrder(orderTemp, paymentKey, tossOrderId, "BILLING");
             session.removeAttribute("orderTemp");
 
             // 2026/07/27 장우철 — 등록카드 결제도 DB 잔액으로 세션 동기화

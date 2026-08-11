@@ -35,10 +35,13 @@ public class AdminReviewDeleteRequestVO {
 
     // ── 조회 전용 (JOIN) ─────────────────────────────────────
 
-    private String hospitalName;     // H.NAME — 병원명
+    private String hospitalName;     // 대상명 — 병원/숙소/상품명
     private String bizName;          // B.BIZ_NAME — 사업자명
     private Double reviewRating;     // R.RATING — 리뷰 평점
     private String reviewContent;    // R.CONTENT — 리뷰 내용
     private String reviewerNickname; // M.NICKNAME — 리뷰 작성자 닉네임
     private Date reviewRegDate;      // R.REG_DATE — 리뷰 작성일
+
+    // 2026/08/11 장우철 — DELETE_REQ(병원·숙소) / REPORT(쇼핑 TB_REVIEW_REPORT)
+    private String sourceCd;
 }

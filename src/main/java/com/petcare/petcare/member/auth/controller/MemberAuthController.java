@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.member.auth.exception.MemberLoginBlockedException;
 import com.petcare.petcare.member.auth.service.EmailService;
@@ -413,14 +414,17 @@ public class MemberAuthController {
      */
     @PostMapping("/join")
     @ResponseBody
-    public String joinPost(MemberRegisterVO vo, HttpSession session) {
+    public String joinPost(MemberRegisterVO vo,
+                           @RequestParam(value = "petPhoto", required = false) MultipartFile petPhoto,
+                           HttpSession session) {
 
         // 카카오 → 회원가입 흐름이면 socialId 를 VO 에 담아서 register() 에서 함께 처리
         KakaoUserVO kakaoUser = (KakaoUserVO) session.getAttribute("kakaoUserInfo");
         if (kakaoUser != null) {
             vo.setSocialId(kakaoUser.getKakaoId());
         }
-        String error = memberAuthService.register(vo);
+        // 2026/08/11 장우철 — Step3 펫 성별(petGender)·대표사진(petPhoto) 저장
+        String error = memberAuthService.register(vo, petPhoto);
         if (error != null) {
             return "ERROR:" + error;
         }

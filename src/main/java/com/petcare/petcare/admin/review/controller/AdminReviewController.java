@@ -71,9 +71,11 @@ public class AdminReviewController extends AdminBaseController {
     }
 
     // 2026-07-24 박유정 — 삭제 요청 승인 (리뷰 삭제)
+    // 2026/08/11 장우철 — sourceCd(DELETE_REQ|REPORT) 로 병원·숙소·쇼핑 분기
     @PostMapping("/approve")
     public String approveReviewDeleteRequest(HttpSession session,
             @RequestParam long requestId,
+            @RequestParam(defaultValue = "DELETE_REQ") String sourceCd,
             RedirectAttributes rttr) {
         MemberVO admin = getAdmin(session);
         if (admin == null)
@@ -81,16 +83,14 @@ public class AdminReviewController extends AdminBaseController {
 
         try {
             long adminNo = resolveAdminNo(admin);
-            adminReviewService.approveReviewDeleteRequest(requestId, adminNo);
+            adminReviewService.approveReviewDeleteRequest(requestId, adminNo, sourceCd);
             rttr.addFlashAttribute("successMsg", "리뷰가 삭제(승인) 처리되었습니다.");
             return "redirect:/admin/review/list?statusCd=APPROVED";
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // 2026-07-28 박유정 — 검증 실패 로그
             log.warn("리뷰 삭제 승인 거부 requestId={}: {}", requestId, e.getMessage());
             rttr.addFlashAttribute("errorMsg", "처리할 수 없는 요청입니다.");
             return "redirect:/admin/review/list?statusCd=PENDING";
         } catch (Exception e) {
-            // 2026-07-28 박유정 — 승인 오류 로그·원인 메시지 flash
             log.error("리뷰 삭제 승인 실패 requestId={}", requestId, e);
             String err = e.getMessage();
             if (err == null && e.getCause() != null) {
@@ -107,6 +107,7 @@ public class AdminReviewController extends AdminBaseController {
     public String rejectReviewDeleteRequest(HttpSession session,
             @RequestParam long requestId,
             @RequestParam String rejectReason,
+            @RequestParam(defaultValue = "DELETE_REQ") String sourceCd,
             RedirectAttributes rttr) {
         MemberVO admin = getAdmin(session);
         if (admin == null)
@@ -119,7 +120,7 @@ public class AdminReviewController extends AdminBaseController {
 
         try {
             adminReviewService.rejectReviewDeleteRequest(
-                    requestId, rejectReason.trim(), resolveAdminNo(admin));
+                    requestId, rejectReason.trim(), resolveAdminNo(admin), sourceCd);
             rttr.addFlashAttribute("successMsg", "삭제 요청이 반려되었습니다.");
             return "redirect:/admin/review/list?statusCd=REJECTED";
         } catch (IllegalArgumentException | IllegalStateException e) {

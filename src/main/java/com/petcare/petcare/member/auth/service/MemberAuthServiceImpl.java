@@ -8,10 +8,15 @@
 
 package com.petcare.petcare.member.auth.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.petcare.petcare.file.service.FileService;
+import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.member.auth.exception.MemberLoginBlockedException;
 import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
 import com.petcare.petcare.member.auth.vo.AdminAuthVO;
@@ -25,13 +30,18 @@ import com.petcare.petcare.member.vo.MemberVO;
 @Service
 public class MemberAuthServiceImpl implements MemberAuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(MemberAuthServiceImpl.class);
+
     private final MemberAuthMapper memberAuthMapper;
     private final PasswordEncoder passwordEncoder;
+    private final FileService fileService;
 
     public MemberAuthServiceImpl(MemberAuthMapper memberAuthMapper,
-                                 PasswordEncoder passwordEncoder) {
+                                 PasswordEncoder passwordEncoder,
+                                 FileService fileService) {
         this.memberAuthMapper = memberAuthMapper;
         this.passwordEncoder = passwordEncoder;
+        this.fileService = fileService;
     }
 
     // 2026/07/06 장우철 — login(로그인)
@@ -309,7 +319,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
      */
     @Override
     @Transactional
-    public String register(MemberRegisterVO vo) {
+    public String register(MemberRegisterVO vo, MultipartFile petPhoto) {
         if (vo == null) {
             return "invalid";
         }
@@ -358,9 +368,12 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         saveAgreement(memberNo, "MARKETING", vo.getAgreeMarketing());
 
         // [7] TB_PET — petName 이 있을 때만 (없으면 Step3 스킵과 동일)
+        // 2026/08/11 장우철 — GENDER·PHOTO_URL 저장 (사진은 INSERT 후 업로드)
         if (hasPetInfo(vo)) {
             vo.setPetType(mapPetSpecies(vo.getPetType()));
+            vo.setPetGender(normalizePetGender(vo.getPetGender()));
             memberAuthMapper.insertPet(vo);
+            savePetPhoto(vo.getPetId(), memberNo, petPhoto);
         }
 
         // HYJ 26.07.15 [8] 카카오 로그인 → 회원가입 흐름이면 SOCIAL_ID 연동
@@ -371,6 +384,39 @@ public class MemberAuthServiceImpl implements MemberAuthService {
         }
 
         return null;
+    }
+
+    /** 2026/08/11 장우철 — TB_PET.GENDER 는 M/F 만 허용 */
+    private String normalizePetGender(String gender) {
+        if (gender == null) {
+            return null;
+        }
+        String g = gender.trim().toUpperCase();
+        if ("M".equals(g) || "F".equals(g)) {
+            return g;
+        }
+        return null;
+    }
+
+    /** 2026/08/11 장우철 — 가입 Step3 대표사진 → FileService + TB_PET.PHOTO_URL */
+    private void savePetPhoto(Long petId, Long memberNo, MultipartFile petPhoto) {
+        if (petId == null || memberNo == null || petPhoto == null || petPhoto.isEmpty()) {
+            return;
+        }
+        String contentType = petPhoto.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            log.warn("join pet photo skipped: not an image (petId={})", petId);
+            return;
+        }
+        try {
+            FileVO file = fileService.uploadFile(petPhoto, "PET", petId);
+            String path = file.getFileUrl() == null ? "" : file.getFileUrl().replace('\\', '/');
+            String photoUrl = path.startsWith("/upload/") ? path : "/upload/" + path;
+            memberAuthMapper.updatePetPhotoUrl(petId, memberNo, photoUrl);
+        } catch (Exception e) {
+            // 가입은 유지 — 사진은 마이페이지에서 재등록 가능
+            log.warn("join pet photo upload failed (petId={}): {}", petId, e.toString());
+        }
     }
 
     // ── 2026/07/07 장우철 — join(회원가입) private 헬퍼 ──

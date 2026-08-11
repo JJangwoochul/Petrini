@@ -52,7 +52,7 @@
 
                     <div class="order-subgroup">
                     <div class="order-subhead">
-                        <span>🏪 ${o.bizName}</span>
+                        <span><c:out value="${o.bizName}"/></span>
                         <div style="display:flex;align-items:center;gap:10px">
                             <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
                             <%-- 2026/08/04 장우철 — 환불신청/진행 중이면 '환불진행중' 표시 --%>
@@ -69,6 +69,8 @@
                                 <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
                                 <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
                                 <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
+                                <%-- 2026/08/11 장우철 — P2: 구매확정 후 배송완료 대신 구매확정 표시 --%>
+                                <c:when test="${o.orderStatus == 'DONE' && o.confirmYn == 'Y'}"><span class="badge-status badge-done">구매확정</span></c:when>
                                 <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
                                 <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
                             </c:choose>

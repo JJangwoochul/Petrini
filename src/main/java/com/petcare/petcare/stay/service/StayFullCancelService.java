@@ -109,7 +109,8 @@ public class StayFullCancelService {
 
         String stayName = resv.getStayName() != null && !resv.getStayName().isBlank()
                 ? resv.getStayName() : "숙소";
-        mypageNotifyService.sendReserveCancelNotification(
+        // 2026/08/11 장우철 — 숙소 전용 취소 알림
+        mypageNotifyService.sendStayReserveCancelNotification(
                 resv.getMemberNo(), stayName, resv.getCheckinDate(), null, reason, resvId);
     }
 

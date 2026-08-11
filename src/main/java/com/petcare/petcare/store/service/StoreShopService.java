@@ -87,7 +87,8 @@ Long addProductQna(Long productId, Long memberNo, String question, Long optionId
 boolean deleteProductQna(Long qnaId, Long memberNo);
 
 //지윤 26.07.13 결제 완료 시 주문/주문상품/결제내역 저장 + 쿠폰사용처리 + 포인트차감 + 주문한 장바구니항목 삭제를 한 트랜잭션으로 처리. 생성된 ORDER_NO 반환
-String completeOrder(OrderTempVO orderTemp, String tossPaymentKey, String tossOrderId);
+/** @param payMethod TOSS(위젯) / BILLING(등록카드) / POINT 등 — TB_PAYMENT.PAY_METHOD */
+String completeOrder(OrderTempVO orderTemp, String tossPaymentKey, String tossOrderId, String payMethod);
 
 // 2026/07/27 장우철 — DB 실제 보유 포인트
 Long getMemberPointBalance(Long memberNo);

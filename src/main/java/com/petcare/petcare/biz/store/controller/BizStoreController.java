@@ -156,19 +156,23 @@ public class BizStoreController extends BizBaseController {
     }
 
     // 2026/08/04 장우철 — 환불신청 목록 (처리용: REQUESTED / RETURNING)
+    // 2026/08/11 장우철 — P8: DONE/REJECTED 탭 추가 (숙소 예약관리와 유사)
     @GetMapping("/refunds")
     public String storeRefunds(@RequestParam(required = false, defaultValue = "REQUESTED") String statusCd,
                                HttpSession session, Model model) {
         MemberVO biz = getBizMember(session);
         if (biz == null) return "redirect:/login";
         Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
-        if (!"RETURNING".equals(statusCd) && !"REQUESTED".equals(statusCd)) {
+        if (!"REQUESTED".equals(statusCd) && !"RETURNING".equals(statusCd)
+                && !"DONE".equals(statusCd) && !"REJECTED".equals(statusCd)) {
             statusCd = "REQUESTED";
         }
         model.addAttribute("returnList", bizStoreService.getReturnList(bizNo, statusCd));
         model.addAttribute("selectedStatusCd", statusCd);
         model.addAttribute("requestedCount", bizStoreService.getReturnRequestedCount(bizNo));
         model.addAttribute("returningCount", bizStoreService.getReturnList(bizNo, "RETURNING").size());
+        model.addAttribute("doneCount", bizStoreService.getReturnList(bizNo, "DONE").size());
+        model.addAttribute("rejectedCount", bizStoreService.getReturnList(bizNo, "REJECTED").size());
         return "biz/store/refunds";
     }
 

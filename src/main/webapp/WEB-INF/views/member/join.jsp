@@ -3,9 +3,10 @@
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <%-- 2026/07/27 장우철 — 토스 카드등록 복귀 시 Step2 부터 표시 (약관 깜빡임 방지) --%>
 <c:set var="joinFromCard" value="${param.card eq 'ok' or param.card eq 'fail'}" />
-<link rel="stylesheet" href="${contextPath}/resources/css/join.css?v=3">
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
+<%-- 2026/08/11 장우철 — join.css 는 header(petcare.css) 이후에 로드해야 .form-input padding 이 덮이지 않음 --%>
+<link rel="stylesheet" href="${contextPath}/resources/css/join.css?v=4">
 
 <main>
   <!-- ══════════════════════════════════════
@@ -336,17 +337,28 @@
             <input type="hidden" id="petType" name="petType" value="">
           </div>
 
-          <!-- 반려동물 이름 -->
-          <div class="form-field">
-            <label class="form-label" for="petName">이름</label>
-            <div style="position:relative;">
-              <span class="field-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-              </span>
-              <input type="text" id="petName" name="petName"
-                     class="form-input" placeholder="반려동물 이름">
+          <!-- 반려동물 이름 + 성별 -->
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="petName">이름</label>
+              <div style="position:relative;">
+                <span class="field-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                </span>
+                <input type="text" id="petName" name="petName"
+                       class="form-input" placeholder="반려동물 이름">
+              </div>
+            </div>
+            <%-- 2026/08/11 장우철 — TB_PET.GENDER (회원가입 Step3에 성별 선택 추가) --%>
+            <div class="form-field">
+              <label class="form-label" for="petGender">성별</label>
+              <select id="petGender" name="petGender" class="form-select no-icon">
+                <option value="">선택</option>
+                <option value="M">수컷</option>
+                <option value="F">암컷</option>
+              </select>
             </div>
           </div>
 
@@ -367,6 +379,20 @@
                 </span>
                 <input type="text" id="petBreed" name="petBreed"
                        class="form-input" placeholder="예) 말티즈, 스코티시폴드">
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="petBirthDate">생년월일</label>
+              <div style="position:relative;">
+                <span class="field-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </span>
+                <input type="date" id="petBirthDate" name="petBirthDate" class="form-input">
               </div>
             </div>
             <div class="form-field">
@@ -993,9 +1019,10 @@
       }
 
       if (idChecked) {
-        document.getElementById('okId').textContent = '사용 가능한 이메일입니다.';
+        document.getElementById('okId').textContent = '사용 가능한 아이디입니다.';
         ok('errId', 'okId');
-        if (emailEl) emailEl.classList.add('is-valid');       
+        var idEl = document.getElementById('id');
+        if (idEl) idEl.classList.add('is-valid');
       }
     }
 
@@ -1209,9 +1236,16 @@
     if (!skipPet) {
       fd.append('petType', document.getElementById('petType').value);
       fd.append('petName', document.getElementById('petName').value.trim());
+      fd.append('petGender', document.getElementById('petGender').value);
       fd.append('petBreed', document.getElementById('petBreed').value.trim());
+      fd.append('petBirthDate', document.getElementById('petBirthDate').value);
       fd.append('petAge', document.getElementById('petAge').value);
       fd.append('petWeight', document.getElementById('petWeight').value);
+      // 2026/08/11 장우철 — 대표사진 실제 업로드 (미리보기만 하던 문제 수정)
+      var petPhotoEl = document.getElementById('petPhoto');
+      if (petPhotoEl && petPhotoEl.files && petPhotoEl.files[0]) {
+        fd.append('petPhoto', petPhotoEl.files[0]);
+      }
     }
 
     var ctx = '${contextPath}';

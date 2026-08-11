@@ -211,8 +211,11 @@
             PET_NAME,
             SPECIES,
             BREED,
+            GENDER,
             AGE,
+            BIRTH_DATE,
             WEIGHT,
+            PHOTO_URL,
             IS_REPRESENT,
             DEL_YN,
             REG_DATE
@@ -222,13 +225,24 @@
             #{petName},
             #{petType},
             #{petBreed, jdbcType=VARCHAR},
+            #{petGender, jdbcType=CHAR},
             #{petAge, jdbcType=NUMERIC},
+            #{petBirthDate, jdbcType=DATE},
             #{petWeight, jdbcType=NUMERIC},
+            #{petPhotoUrl, jdbcType=VARCHAR},
             'Y',
             'N',
             SYSDATE
         )
     </insert>
+
+    <!-- 2026/08/11 장우철 — 가입 시 펫 사진 업로드 후 PHOTO_URL 갱신 -->
+    <update id="updatePetPhotoUrl">
+        UPDATE TB_PET
+           SET PHOTO_URL = #{photoUrl, jdbcType=VARCHAR}
+         WHERE PET_ID = #{petId}
+           AND MEMBER_NO = #{memberNo}
+    </update>
 
 
     <!--

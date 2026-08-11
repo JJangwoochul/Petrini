@@ -629,7 +629,15 @@ function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
         document.getElementById('dEmail').textContent      = o.buyerEmail || '-';
         document.getElementById('dPayAmount').textContent  = fmtWon(o.payAmount);
         //지윤 26.07.20 수정: 결제방법 - 원본은 o.payMethod 목업 문자열, 지금은 TB_PAYMENT.PAY_METHOD 조인값
-        document.getElementById('dPayMethod').textContent  = o.payMethod || '-';
+        // 2026/08/11 장우철 — BILLING/TOSS 한글 라벨
+        document.getElementById('dPayMethod').textContent  = (function(m) {
+          if (!m) return '-';
+          var u = String(m).toUpperCase();
+          if (u === 'BILLING') return '등록카드(빌링)';
+          if (u === 'TOSS' || u === 'CARD' || u === 'NORMAL') return '토스 결제(위젯)';
+          if (u === 'POINT' || u === 'ZERO') return '포인트/쿠폰';
+          return m;
+        })(o.payMethod);
         document.getElementById('dStatusLabel').textContent = (function() {
           var items = o.itemList || [];
           for (var i = 0; i < items.length; i++) {

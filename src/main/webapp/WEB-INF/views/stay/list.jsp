@@ -137,6 +137,15 @@
   <%-- facilityFilter는 JS에서 동적으로 추가 --%>
 </form>
 
+<%-- 2026/08/10 장우철 — 결제 실패 flash 메시지 (paymentSuccess / paymentFail) --%>
+<c:if test="${not empty errorMsg}">
+  <div style="max-width:var(--inner-width);margin:16px auto 0;padding:0 20px;">
+    <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:8px;padding:14px 16px;font-size:14px;color:#B91C1C;line-height:1.6;">
+      ${errorMsg}
+    </div>
+  </div>
+</c:if>
+
 <%-- 본문 --%>
 <div class="stay-wrap">
   <%-- 필터 사이드바 --%>

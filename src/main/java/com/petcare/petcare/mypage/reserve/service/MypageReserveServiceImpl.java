@@ -174,7 +174,8 @@ public class MypageReserveServiceImpl implements MypageReserveService {
 
         // 3) 알림 (본인)
         String stayName = detail.getHospitalName() != null ? detail.getHospitalName() : "숙소";
-        mypageNotifyService.sendReserveCancelNotification(
+        // 2026/08/11 장우철 — 숙소 전용 취소 알림
+        mypageNotifyService.sendStayReserveCancelNotification(
                 memberNo, stayName, detail.getCheckinDate(), null, reason, resvId);
     }
 

@@ -27,7 +27,19 @@
                 <div class="pet-thumb-wrap">
                     <c:choose>
                         <c:when test="${not empty p.photoUrl}">
-                            <img class="pet-thumb" src="${p.photoUrl}" alt="<c:out value='${p.petName}'/>"
+                            <%-- 2026/08/11 장우철 — /upload/... · 상대경로 · 외부 URL 분기 --%>
+                            <c:choose>
+                                <c:when test="${fn:startsWith(p.photoUrl, 'http')}">
+                                    <c:set var="petThumbSrc" value="${p.photoUrl}" />
+                                </c:when>
+                                <c:when test="${fn:startsWith(p.photoUrl, '/')}">
+                                    <c:set var="petThumbSrc" value="${contextPath}${p.photoUrl}" />
+                                </c:when>
+                                <c:otherwise>
+                                    <c:set var="petThumbSrc" value="${contextPath}/upload/${p.photoUrl}" />
+                                </c:otherwise>
+                            </c:choose>
+                            <img class="pet-thumb" src="${petThumbSrc}" alt="<c:out value='${p.petName}'/>"
                                  onerror="this.src='https://placehold.co/300x225/EAF7F2/2BAB82?text=반려동물'">
                         </c:when>
                         <c:otherwise>
@@ -128,7 +140,9 @@
       cursor: pointer; overflow: hidden; position: relative; transition: var(--transition);
   }
   .pm-photo-circle:hover { border-color: var(--primary); background: var(--primary-light); }
-  .pm-photo-circle img { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; }
+  .pm-photo-circle img { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; inset: 0; }
+  .pm-photo-circle.has-img img { display: block; }
+  .pm-photo-circle.has-img svg { display: none; }
   .pm-photo-circle svg { width: 28px; height: 28px; stroke: var(--text-muted); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .pm-photo-hint { font-size: 12px; color: var(--text-muted); }
 
@@ -181,11 +195,13 @@
     </div>
     <div class="pm-body">
       <div class="pm-photo-wrap">
-        <div class="pm-photo-circle" onclick="alert('사진 업로드 — 추후 연동 예정')">
+        <%-- 2026/08/11 장우철 — 대표사진 클릭 업로드 (추후 연동 제거) --%>
+        <div class="pm-photo-circle" id="pm-photo-circle" onclick="document.getElementById('pm-photo').click()">
           <img id="pm-preview" src="" alt="미리보기">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
-        <span class="pm-photo-hint">클릭하여 사진 등록 (선택 · 추후 연동)</span>
+        <input type="file" id="pm-photo" name="petPhoto" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+        <span class="pm-photo-hint">클릭하여 사진 등록 (선택 · JPG/PNG 최대 5MB)</span>
       </div>
 
       <input type="hidden" id="pm-petId" value="">
@@ -282,6 +298,58 @@ const PET_LIST = ${empty petListJson ? '[]' : petListJson};
 const PET_MAP = {};
 PET_LIST.forEach(function (p) { PET_MAP[p.petId] = p; });
 
+// 2026/08/11 장우철 — PHOTO_URL → 브라우저 src
+function toPetPhotoSrc(url) {
+    if (!url) return '';
+    if (url.indexOf('http') === 0) return url;
+    if (url.charAt(0) === '/') return CTX + url;
+    return CTX + '/upload/' + url;
+}
+
+function clearPetPhotoPreview() {
+    var input = document.getElementById('pm-photo');
+    var preview = document.getElementById('pm-preview');
+    var circle = document.getElementById('pm-photo-circle');
+    if (input) input.value = '';
+    if (preview) {
+        preview.removeAttribute('src');
+        preview.src = '';
+    }
+    if (circle) circle.classList.remove('has-img');
+}
+
+function setPetPhotoPreview(src) {
+    var preview = document.getElementById('pm-preview');
+    var circle = document.getElementById('pm-photo-circle');
+    if (!preview || !circle) return;
+    if (!src) {
+        clearPetPhotoPreview();
+        return;
+    }
+    preview.src = src;
+    circle.classList.add('has-img');
+}
+
+document.getElementById('pm-photo').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+        alert('이미지 파일만 선택할 수 있습니다.');
+        this.value = '';
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        alert('사진은 최대 5MB까지 업로드할 수 있습니다.');
+        this.value = '';
+        return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+        setPetPhotoPreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+});
+
 function speciesToKind(species) {
     if (species === 'DOG') return 'dog';
     if (species === 'CAT') return 'cat';
@@ -365,6 +433,12 @@ function openPetModal(petId) {
     document.getElementById('pm-birth').value = petData && petData.birthDate ? String(petData.birthDate).substring(0, 10) : '';
     document.getElementById('pm-weight').value = petData && petData.weight != null ? petData.weight : '';
 
+    // 2026/08/11 장우철 — 기존 대표사진 미리보기 / 신규는 초기화
+    clearPetPhotoPreview();
+    if (petData && petData.photoUrl) {
+        setPetPhotoPreview(toPetPhotoSrc(petData.photoUrl));
+    }
+
     if (petData) {
         const kind = speciesToKind(petData.species);
         document.getElementById('pm-kind').value = kind;
@@ -423,6 +497,12 @@ async function savePet() {
 
     const memo = document.getElementById('pm-memo').value.trim();
     if (memo) fd.append('memo', memo);
+
+    // 2026/08/11 장우철 — 선택한 대표사진 전송
+    const photoInput = document.getElementById('pm-photo');
+    if (photoInput && photoInput.files && photoInput.files[0]) {
+        fd.append('petPhoto', photoInput.files[0]);
+    }
 
     const btn = document.getElementById('pm-save-btn');
     btn.disabled = true;

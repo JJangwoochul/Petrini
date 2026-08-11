@@ -95,6 +95,37 @@ public class TossPaymentService {
         return payMethod != null && "BILLING".equalsIgnoreCase(payMethod.trim());
     }
 
+    /**
+     * 2026/08/11 장우철 — 카드 실결제 키가 아니면 토스 취소 스킵 (포인트·가짜키)
+     */
+    public static boolean isSkipCancelPaymentKey(String paymentKey) {
+        if (paymentKey == null || paymentKey.isBlank()) return true;
+        String k = paymentKey.trim();
+        return k.startsWith("ZERO") || k.startsWith("POINT") || k.startsWith("BILLING-");
+    }
+
+    /**
+     * 2026/08/11 장우철 — PAY_METHOD로 시크릿 선택.
+     * 과거 쇼핑 주문이 빌링인데 PAY_METHOD=TOSS 로 잘못 저장된 건 → FORBIDDEN 시 반대 시크릿 1회 재시도.
+     */
+    public String cancelPaymentSmart(String paymentKey, String cancelReason, Long cancelAmount,
+                                     String payMethod) {
+        if (isSkipCancelPaymentKey(paymentKey)) {
+            return null;
+        }
+        boolean billing = isBillingPayMethod(payMethod);
+        String err = cancelPayment(paymentKey, cancelReason, cancelAmount, billing);
+        if (err != null && isSecretMismatchError(err)) {
+            err = cancelPayment(paymentKey, cancelReason, cancelAmount, !billing);
+        }
+        return err;
+    }
+
+    private static boolean isSecretMismatchError(String err) {
+        String e = err.toLowerCase();
+        return e.contains("forbidden") || e.contains("허용되지 않은");
+    }
+
     private String resolveCancelSecret(boolean billingPayment) {
         if (billingPayment) {
             if (tossBillingSecretKey == null || tossBillingSecretKey.isBlank()) {
