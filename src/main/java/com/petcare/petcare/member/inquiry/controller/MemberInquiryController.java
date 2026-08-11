@@ -58,7 +58,9 @@ public class MemberInquiryController {
             return "redirect:/login?redirect=" + redirect;
         }
         if (resvId != null && "stay_refund".equalsIgnoreCase(type)) {
-            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId);
+            // 2026-08-10 박유정 — getMyReservationDetail 3번째 인자(resvType) 추가 대응 (null=병원·숙소)
+            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(
+                    member.getMemberNo(), resvId, null);
             model.addAttribute("stayRefund", true);
             model.addAttribute("resvId", resvId);
             model.addAttribute("reservation", detail);

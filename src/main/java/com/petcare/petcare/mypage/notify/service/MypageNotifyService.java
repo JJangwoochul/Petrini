@@ -144,4 +144,11 @@ public interface MypageNotifyService {
 
     // 2026-08-06 박유정 — 배너 신청 반려 알림 (사업자)
     void sendBannerRejectNotification(Long memberNo, String bannerTitle, String positionLabel, String rejectReason, String linkUrl);
+
+    /** 재능나눔 참여 신청 → 병원 사업자 알림 — 2026-08-10 박유정 */
+    void sendTalentApplyToBizNotification(Long bizMemberNo, String talentTitle,
+    String applicantNickname, String linkUrl);
+    /** 재능나눔 신청 확인 → 신청 회원 알림 — 2026-08-10 박유정 */
+    void sendTalentApplyConfirmNotification(Long memberNo, String talentTitle,
+     String bizName, String linkUrl);
 }

@@ -82,7 +82,8 @@
     <include refid="talentColumns"/>
     FROM TB_TALENT T
     JOIN TB_BUSINESS B ON B.BIZ_NO = T.BIZ_NO
-    WHERE T.STATUS_CD = 'APPROVED'
+    <!-- 2026-08-10 박유정 — APPROVED(모집중) + DONE(모집마감) 목록 노출 -->
+    WHERE T.STATUS_CD IN ('APPROVED', 'DONE')
     <if test="talentType != null and talentType != ''">
       AND T.TALENT_TYPE = #{talentType}
     </if>
@@ -152,5 +153,32 @@
       AND STATUS_CD = 'APPROVED'
       AND ROWNUM = 1
   </select>
+
+  <!-- 2026-08-10 박유정 — 병원 수동 모집 마감 권한 -->
+  <select id="countTalentOwnedByBiz" resultType="int">
+  SELECT COUNT(*)
+  FROM TB_TALENT T
+  JOIN TB_BUSINESS B ON B.BIZ_NO = T.BIZ_NO
+  WHERE T.TALENT_ID = #{talentId}
+    AND B.BIZ_ID = #{bizId}
+    AND T.STATUS_CD = 'APPROVED'
+</select>
+
+<!-- 2026-08-10 박유정 — BIZ_ID → MEMBER_NO (재능나눔 신청 알림)
+     AdminBizMapper 와 동일: MEMBER_ID 또는 EMAIL 로 조회 -->
+<select id="selectMemberNoByBizId" resultType="long">
+  SELECT MEMBER_NO
+  FROM TB_MEMBER
+  WHERE MEMBER_ID = #{bizId}
+     OR EMAIL = #{bizId}
+  FETCH FIRST 1 ROW ONLY
+</select>
+
+  <!-- 2026-08-10 박유정 — 대표 이미지 업로드 후 THUMB_URL 저장 -->
+  <update id="updateTalentThumbUrl" parameterType="com.petcare.petcare.give.talent.vo.GiveTalentVO">
+    UPDATE TB_TALENT
+    SET THUMB_URL = #{thumbUrl, jdbcType=VARCHAR}
+    WHERE TALENT_ID = #{talentId}
+  </update>
 
 </mapper>

@@ -54,22 +54,46 @@ public class MypageReserveController {
     }
 
     // 2026/07/11 장우철 — 예약 상세 (/mypage/reserve/detail?resvId=)
+    // 2026-08-10 박유정 — resvType=TALENT 재능나눔 신청 상세 분기
     @GetMapping("/reserve/detail")
     public String reserveDetail(@RequestParam("resvId") Long resvId,
+                                @RequestParam(value = "resvType", required = false) String resvType,
                                 HttpSession session,
                                 Model model) {
         MemberVO member = (MemberVO) session.getAttribute("memberInfo");
         if (member == null || member.getMemberNo() == null) {
-            return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId;
+            String redirect = "/mypage/reserve/detail?resvId=" + resvId;
+            if (resvType != null && !resvType.isBlank()) {
+                redirect += "&resvType=" + resvType;
+            }
+            return "redirect:/login?redirect=" + redirect;
         }
 
         MypageReserveVO detail =
-                mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId);
+                mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId, resvType);
         if (detail == null) {
             return "redirect:/mypage/reserve?error=notfound";
         }
         model.addAttribute("reservation", detail);
         return "mypage/reserve-detail";
+    }
+
+    // 2026-08-10 박유정 — 재능나눔 참여 신청 취소
+    @PostMapping("/reserve/talent-cancel")
+    public String cancelTalentApply(@RequestParam("resvId") Long resvId,
+                                    HttpSession session,
+                                    RedirectAttributes rttr) {
+        MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+        if (member == null || member.getMemberNo() == null) {
+            return "redirect:/login?redirect=/mypage/reserve/detail?resvId=" + resvId + "&resvType=TALENT";
+        }
+        try {
+            mypageReserveService.cancelTalentApply(member.getMemberNo(), resvId);
+            rttr.addFlashAttribute("msg", "재능나눔 신청이 취소되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/mypage/reserve/detail?resvId=" + resvId + "&resvType=TALENT";
     }
 
     // 2026/07/13 장우철 — 진료완료 예약 병원 리뷰·별점 등록

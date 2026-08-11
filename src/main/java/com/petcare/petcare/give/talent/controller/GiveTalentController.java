@@ -25,6 +25,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.petcare.petcare.give.talent.service.GiveTalentService;
 import com.petcare.petcare.give.talent.vo.GiveTalentVO;
 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.petcare.petcare.give.talent.vo.GiveTalentApplyVO;
+import com.petcare.petcare.member.vo.MemberVO;
+import jakarta.servlet.http.HttpSession;
+
 @Controller("giveTalentController")
 @RequestMapping("/give/talent")
 public class GiveTalentController {
@@ -53,18 +59,70 @@ public class GiveTalentController {
         return "give/talent/list";
     }
 
-    /**
-     * 재능나눔 상세 — APPROVED(승인) 글만 노출 (목록과 동일)
-     */
-    @GetMapping("/detail")
-    public String talentDetail(@RequestParam long id, Model model) {
-        GiveTalentVO talent = giveTalentService.getTalentDetail(id);
-        if (talent == null
-                || talent.getStatusCd() == null
-                || !"APPROVED".equalsIgnoreCase(talent.getStatusCd().trim())) {
-            return "redirect:/give/talent/list";
-        }
-        model.addAttribute("talent", talent);
-        return "give/talent/detail";
+/**
+ * 재능나눔 상세 — APPROVED(모집중) 또는 DONE(모집마감) 글 노출
+ * 2026-08-10 박유정 — myApply, recruitmentOpen 추가 (STEP 4)
+ */
+@GetMapping("/detail")
+public String talentDetail(@RequestParam long id,
+                           Model model,
+                           HttpSession session) {
+    GiveTalentVO talent = giveTalentService.getTalentDetail(id);
+    if (talent == null || talent.getStatusCd() == null) {
+        return "redirect:/give/talent/list";
     }
+
+    String status = talent.getStatusCd().trim().toUpperCase();
+    // PENDING, REJECTED 는 사용자에게 안 보임
+    if (!"APPROVED".equals(status) && !"DONE".equals(status)) {
+        return "redirect:/give/talent/list";
+    }
+
+    model.addAttribute("talent", talent);
+    model.addAttribute("recruitmentOpen", giveTalentService.isRecruitmentOpen(talent));
+    model.addAttribute("recruitmentLabel", giveTalentService.getRecruitmentStatusLabel(talent));
+
+    // 로그인했으면 내 신청 여부 조회
+    MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+    GiveTalentApplyVO myApply = null;
+    if (member != null && member.getMemberNo() != null) {
+        myApply = giveTalentService.getMyApply(id, member.getMemberNo());
+    }
+    model.addAttribute("myApply", myApply);
+    model.addAttribute("isLoggedIn", member != null);
+
+    return "give/talent/detail";
+}
+
+/**
+ * 일반 회원 참여 신청
+ * POST /give/talent/apply
+ * 2026-08-10 박유정 — STEP 4
+ */
+@PostMapping("/apply")
+public String applyTalent(@RequestParam long talentId,
+                          @RequestParam(required = false) String message,
+                          HttpSession session,
+                          RedirectAttributes rttr) {
+    MemberVO member = (MemberVO) session.getAttribute("memberInfo");
+    if (member == null || member.getMemberNo() == null) {
+        return "redirect:/login";
+    }
+
+    try {
+        giveTalentService.applyForTalent(member.getMemberNo(), talentId, message);
+        rttr.addFlashAttribute("msg", "참여 신청이 완료되었습니다.");
+    } catch (IllegalStateException e) {
+        String err = "신청할 수 없습니다.";
+        switch (e.getMessage()) {
+            case "TALENT_NOT_FOUND" -> err = "재능나눔을 찾을 수 없습니다.";
+            case "TALENT_NOT_OPEN"  -> err = "모집이 마감되었습니다.";
+            case "ALREADY_APPLIED"  -> err = "이미 신청하셨습니다.";
+            default -> { }
+        }
+        rttr.addFlashAttribute("errorMsg", err);
+    }
+
+    return "redirect:/give/talent/detail?id=" + talentId;
+}
 }

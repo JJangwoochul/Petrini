@@ -3,7 +3,8 @@
   역할: 사용자 재능나눔 상세 (give/talent/detail)
 
   - 박유정 / 2026-07-13~14
-
+  - 2026-08-10 박유정 — STEP 4: 모집중/마감, 참여 신청 폼
+  2. ${talent} — APPROVED(모집중) 또는 DONE(모집마감) 노출
   [화면 흐름]
   1. GET /give/talent/detail?id=번호
   2. ${talent} — APPROVED 글만 노출 (미승인·반려 시 목록 redirect)
@@ -104,6 +105,28 @@
   .tac-info-row span:last-child{font-weight:700;color:var(--text-main);text-align:right}
 
   .tac-divider{height:1px;background:var(--border);margin:14px 0}
+
+  .tac-status-badge{display:inline-block;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;margin-bottom:12px}
+  
+  .tac-status-open{background:#DCFCE7;color:#16A34A}
+
+  .tac-status-closed{background:#F3F4F6;color:#6B7280}
+
+  .tac-apply-form{margin-top:12px}
+  
+  .tac-apply-form textarea{width:100%;min-height:80px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;box-sizing:border-box;resize:vertical}
+  
+  .tac-apply-btn{width:100%;margin-top:10px;padding:12px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  
+  .tac-apply-btn:disabled{background:#D1D5DB;cursor:not-allowed}
+  
+  .tac-alert{padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px}
+  
+  .tac-alert.ok{background:#DCFCE7;color:#166534}
+  
+  .tac-alert.err{background:#FEE2E2;color:#B91C1C}
+  
+  .tac-alert.info{background:#EFF6FF;color:#1D4ED8}
 
 </style>
 
@@ -249,6 +272,23 @@
 
     <h3>제공자 정보</h3>
 
+        <%-- 2026-08-10 박유정 — 모집중/모집마감 뱃지 --%>
+    <c:choose>
+      <c:when test="${recruitmentOpen}">
+        <span class="tac-status-badge tac-status-open">${recruitmentLabel}</span>
+      </c:when>
+      <c:otherwise>
+        <span class="tac-status-badge tac-status-closed">${recruitmentLabel}</span>
+      </c:otherwise>
+    </c:choose>
+    <%-- 신청 결과 메시지 (redirect 후 1회) --%>
+    <c:if test="${not empty msg}">
+      <div class="tac-alert ok">${msg}</div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+      <div class="tac-alert err">${errorMsg}</div>
+    </c:if>
+
     <div class="tac-provider-box">
 
       <c:choose>
@@ -289,24 +329,57 @@
 
     <div class="tac-divider"></div>
 
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.6">
+    <%-- 2026-08-10 박유정 — 참여 신청 UI (STEP 4) --%>
+    <c:choose>
 
-      참여를 원하시면 아래 연락처로 직접 문의해 주세요.
+      <%-- 1) 이미 신청함 --%>
+      <c:when test="${not empty myApply}">
+        <div class="tac-alert info">
+          <c:choose>
+            <c:when test="${myApply.statusCd eq 'CONFIRMED'}">
+              병원에서 확인 완료되었습니다.
+            </c:when>
+            <c:otherwise>
+              신청 완료 · 병원 확인 대기 중입니다.
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </c:when>
 
-    </div>
+      <%-- 2) 모집중 + 아직 신청 안 함 --%>
+      <c:when test="${recruitmentOpen}">
+        <c:choose>
+          <c:when test="${isLoggedIn}">
+            <form class="tac-apply-form" method="post" action="${contextPath}/give/talent/apply">
+            <input type="hidden" name="_csrf" value="${_csrf}">
+              <input type="hidden" name="talentId" value="${talent.talentId}">
+              <label style="font-size:13px;font-weight:600;color:var(--text-sub)">신청 메시지 (선택)</label>
+              <textarea name="message" placeholder="간단한 메시지를 남겨주세요."></textarea>
+              <button type="submit" class="tac-apply-btn">참여 신청하기</button>
+            </form>
+          </c:when>
+          <c:otherwise>
+            <a href="${contextPath}/login" class="tac-apply-btn" style="display:block;text-align:center;text-decoration:none;line-height:1.2">
+              로그인 후 신청하기
+            </a>
+          </c:otherwise>
+        </c:choose>
+      </c:when>
 
+      <%-- 3) 모집마감 --%>
+      <c:otherwise>
+        <div class="tac-alert err">모집이 마감되었습니다.</div>
+      </c:otherwise>
+
+    </c:choose>
+
+    <div class="tac-divider"></div>
     <div class="tac-info-row"><span>문의 연락처</span><span style="color:var(--primary);font-weight:800">${talent.contact}</span></div>
-
     <div style="font-size:12px;color:var(--text-muted);margin-top:14px;line-height:1.6">
-
       · 무료 재능나눔 서비스입니다.<br>
-
-      · 신청·일정은 제공 사업자와 직접 조율해 주세요.
-
+      · 일정은 제공 사업자와 조율해 주세요.
     </div>
-
-  </div>
-
+  </div> 
 </div>
 
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

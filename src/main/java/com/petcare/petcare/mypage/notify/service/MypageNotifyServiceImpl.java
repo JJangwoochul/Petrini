@@ -792,4 +792,48 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
     private String nullToDash(String s) {
         return (s == null || s.isBlank()) ? "-" : s;
     }
+
+// 2026-08-10 박유정 — 재능나눔 참여 신청 → 병원 알림
+@Override
+@Transactional
+public void sendTalentApplyToBizNotification(Long bizMemberNo, String talentTitle,
+                                            String applicantNickname, String linkUrl) {
+    if (bizMemberNo == null) {
+        return;
+    }
+    String title = (talentTitle != null && !talentTitle.isBlank()) ? talentTitle.trim() : "재능나눔";
+    String nick = (applicantNickname != null && !applicantNickname.isBlank()) ? applicantNickname.trim() : "회원";
+    String content = "[" + title + "] 에 새 참여 신청이 있습니다.\n\n신청자: " + nick;
+
+    MypageNotifyVO vo = new MypageNotifyVO();
+    vo.setMemberNo(bizMemberNo);
+    vo.setNotiType("BIZ");
+    vo.setTitle("재능나눔 참여 신청이 도착했습니다");
+    vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+    vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/biz/hospital/talent");
+    vo.setIsRead("N");
+    mypageNotifyMapper.insertNotification(vo);
+}
+
+// 2026-08-10 박유정 — 재능나눔 확인 → 회원 알림
+@Override
+@Transactional
+public void sendTalentApplyConfirmNotification(Long memberNo, String talentTitle,
+                                               String bizName, String linkUrl) {
+    if (memberNo == null) {
+        return;
+    }
+    String title = (talentTitle != null && !talentTitle.isBlank()) ? talentTitle.trim() : "재능나눔";
+    String biz = (bizName != null && !bizName.isBlank()) ? bizName.trim() : "제공 사업자";
+    String content = "[" + title + "] 참여 신청이 " + biz + " 에서 확인되었습니다.";
+
+    MypageNotifyVO vo = new MypageNotifyVO();
+    vo.setMemberNo(memberNo);
+    vo.setNotiType("USER");
+    vo.setTitle("재능나눔 신청이 확인되었습니다");
+    vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+    vo.setLinkUrl(linkUrl != null && !linkUrl.isBlank() ? linkUrl : "/give/talent/list");
+    vo.setIsRead("N");
+    mypageNotifyMapper.insertNotification(vo);
+}
 }

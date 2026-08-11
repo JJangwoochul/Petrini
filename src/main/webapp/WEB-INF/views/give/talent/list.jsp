@@ -104,6 +104,9 @@
         transition:var(--transition); white-space:nowrap;
     }
     .btn-biz-talent:hover { background:#fff; color:var(--primary-dark); }
+
+    .tt-recruit-open  { background:#DCFCE7; color:#16A34A; }
+    .tt-recruit-closed{ background:#F3F4F6; color:#6B7280; }
 </style>
 
     <%-- 사업자 재능나눔 유도 배너 --%>
@@ -212,6 +215,16 @@
                 <span class="talent-tag tt-edu">기타</span>
               </c:if>
               <span class="talent-tag tt-new">사업자 제공</span>
+
+        <%-- 2026-08-10 박유정 — 모집중/모집마감 뱃지 --%>
+        <c:choose>
+         <c:when test="${item.statusCd eq 'APPROVED' && item.capacity != null && item.currentCnt != null && item.currentCnt < item.capacity}">
+           <span class="talent-tag tt-recruit-open">모집중</span>
+          </c:when>
+          <c:otherwise>
+            <span class="talent-tag tt-recruit-closed">모집마감</span>
+         </c:otherwise>
+        </c:choose>
             </div>
 
             <div class="talent-title">${item.title}</div>

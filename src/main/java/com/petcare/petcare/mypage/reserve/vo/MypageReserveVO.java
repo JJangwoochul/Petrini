@@ -66,4 +66,10 @@ public class MypageReserveVO {
     private Integer cancelFeeRatePercent;
     private String cancelFeeTierLabel;
     private Boolean cancelable;
+
+    // 2026-08-10 박유정 — 재능나눔 참여 신청 (예약내역 통합 표시)
+    private String talentTitle;
+    private String bizName;
+    private String thumbUrl;
+    private String talentSchedule;
 }
