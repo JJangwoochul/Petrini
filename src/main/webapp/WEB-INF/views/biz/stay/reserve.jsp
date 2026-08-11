@@ -81,6 +81,7 @@
     <div class="rv-modal-body">
       <div class="rv-row"><span>예약자</span><span id="mdMember">-</span></div>
       <div class="rv-row"><span>반려동물</span><span id="mdPet">-</span></div>
+      <div class="rv-row"><span>동반 마리수</span><span id="mdPetCnt">-</span></div>
       <div class="rv-row"><span>객실</span><span id="mdRoom">-</span></div>
       <div class="rv-row"><span>체크인</span><span id="mdCheckin">-</span></div>
       <div class="rv-row"><span>체크아웃</span><span id="mdCheckout">-</span></div>
@@ -284,6 +285,9 @@
         var petLabel = data.petName || '-';
         if (data.petBreed) petLabel += ' (' + data.petBreed + ')';
         document.getElementById('mdPet').textContent = petLabel;
+        var petCnt = data.petCnt != null ? data.petCnt : 1;
+        document.getElementById('mdPetCnt').textContent = petCnt + '마리'
+            + (petCnt > 1 ? ' (대표 펫 + 추가 ' + (petCnt - 1) + ')' : '');
         document.getElementById('mdRoom').textContent = data.roomName || '-';
         document.getElementById('mdCheckin').textContent = data.checkinDate ? String(data.checkinDate).substring(0, 10) : '-';
         document.getElementById('mdCheckout').textContent = data.checkoutDate ? String(data.checkoutDate).substring(0, 10) : '-';

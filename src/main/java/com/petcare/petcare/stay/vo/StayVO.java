@@ -45,7 +45,8 @@ public class StayVO implements Mapperable {
     private String checkIn;       // CHECK_IN (15:00)
     private String checkOut;      // CHECK_OUT (11:00)
     private String description;   // DESCRIPTION (공간 소개)
-    private String petFee;        // PET_FEE (반려동물 추가 비용 없음)
+    // 2026/08/11 장우철 — PET_FEE NUMBER (추가 1마리당·1박 요금, 0이면 추가비 없음)
+    private Long   petFee;
 
     // 2026-07-28 박유정 — TB_STAY 평균별점·리뷰수 (병원 HospitalVO와 동일)
     private Double avgRating;     // AVG_RATING

@@ -14,6 +14,19 @@ public final class StayCancelFeeCalculator {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
 
+    /**
+     * 2026/08/11 장우철 — 플랫폼 고정 환불 정책 문구 (사업자 수정 불가, TB_STAY.REFUND_POLICY 저장용)
+     */
+    public static final String FIXED_POLICY_TEXT =
+            "입실일 기준 취소수수료\n"
+            + "· 10일 전 이상: 전액 환불 (수수료 0%)\n"
+            + "· 7일 전: 수수료 10%\n"
+            + "· 5일 전: 수수료 30%\n"
+            + "· 3일 전: 수수료 50%\n"
+            + "· 1일 전: 수수료 80%\n"
+            + "· 당일: 수수료 90%\n"
+            + "체크인 이후는 예약 취소 대신 환불 신청을 이용해 주세요.";
+
     private StayCancelFeeCalculator() {
     }
 

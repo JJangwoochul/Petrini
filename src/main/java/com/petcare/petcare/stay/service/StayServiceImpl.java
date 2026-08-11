@@ -77,6 +77,8 @@ public class StayServiceImpl implements StayService {
         if (stay != null) {
             List<StayRoomVO> rooms = stayMapper.selectRoomsByStayId(stayId);
             stay.setRooms(rooms);
+            // 2026/08/11 장우철 — 고객 노출 환불정책은 플랫폼 고정 문구
+            stay.setRefundPolicy(StayCancelFeeCalculator.FIXED_POLICY_TEXT);
         }
         return stay;
     }
@@ -107,6 +109,7 @@ public class StayServiceImpl implements StayService {
     }
 
     // HYJ 26.07.20 예약 생성 (비관적 락 + 가용성 검증)
+    // 2026/08/11 장우철 — PET_CNT·PET_FEE(추가 마리×박) 반영
     @Override
     public Long createStayReservation(ReservationVO vo) {
         // 2026-08-05 박유정 — PET_ID NOT NULL 제약 (반려동물 미선택 시 INSERT 방지)
@@ -120,6 +123,16 @@ public class StayServiceImpl implements StayService {
             throw new RuntimeException("존재하지 않는 객실입니다.");
         }
 
+        int petLimit = room.getPetLimit() > 0 ? room.getPetLimit() : 1;
+        int petCnt = vo.getPetCnt() != null ? vo.getPetCnt() : 1;
+        if (petCnt < 1) {
+            throw new RuntimeException("반려동물을 1마리 이상 선택해 주세요.");
+        }
+        if (petCnt > petLimit) {
+            throw new RuntimeException("이 객실은 반려동물 최대 " + petLimit + "마리까지 가능합니다.");
+        }
+        vo.setPetCnt(petCnt);
+
         // 2. 날짜 겹침 확인
         Map<String, Object> param = new HashMap<>();
         param.put("roomId", vo.getRoomId());
@@ -130,10 +143,16 @@ public class StayServiceImpl implements StayService {
             throw new RuntimeException("해당 날짜에 이미 예약이 있습니다.");
         }
 
-        // 3. 금액 계산 (서버에서 재계산)
+        // 3. 금액 계산 (서버에서 재계산) — 객실가×박 + max(0,펫수-1)×PET_FEE×박
         int nightCnt = vo.getNightCnt();
-        long totalAmount = (long) room.getPricePerNight() * nightCnt;
-        vo.setTotalAmount(totalAmount);
+        if (nightCnt <= 0) {
+            throw new RuntimeException("숙박 일수가 올바르지 않습니다.");
+        }
+        StayVO stay = stayMapper.selectStayById(room.getStayId());
+        long petFeeAmt = (stay != null && stay.getPetFee() != null) ? stay.getPetFee() : 0L;
+        long roomAmount = (long) room.getPricePerNight() * nightCnt;
+        long extraPetAmount = Math.max(0, petCnt - 1) * petFeeAmt * nightCnt;
+        vo.setTotalAmount(roomAmount + extraPetAmount);
 
         // 4. PENDING 상태로 예약 INSERT
         vo.setResvType("STAY");

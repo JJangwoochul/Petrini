@@ -36,7 +36,9 @@ public class MypageAddressServiceImpl implements MypageAddressService {
             mypageAddressMapper.clearDefaultAddress(memberNo);
         }
         Long addrId = mypageAddressMapper.selectNextAddrId();
-        mypageAddressMapper.insertAddress(addrId, memberNo, recvName, recvPhone, zipCode, addr1, addr2,
+        // 2026/08/11 장우철 — 배송지 전화 하이픈 정규화
+        String phone = com.petcare.petcare.common.util.PhoneNormalizeUtil.toHyphenPhone(recvPhone);
+        mypageAddressMapper.insertAddress(addrId, memberNo, recvName, phone, zipCode, addr1, addr2,
                 setDefault ? "Y" : "N");
     }
 
@@ -52,7 +54,8 @@ public class MypageAddressServiceImpl implements MypageAddressService {
     @Override
     public boolean updateAddress(Long addrId, Long memberNo, String recvName, String recvPhone,
                                   String zipCode, String addr1, String addr2) {
-        return mypageAddressMapper.updateAddress(addrId, memberNo, recvName, recvPhone, zipCode, addr1, addr2) > 0;
+        String phone = com.petcare.petcare.common.util.PhoneNormalizeUtil.toHyphenPhone(recvPhone);
+        return mypageAddressMapper.updateAddress(addrId, memberNo, recvName, phone, zipCode, addr1, addr2) > 0;
     }
 
     //지윤 26.07.29 추가: 배송지 삭제

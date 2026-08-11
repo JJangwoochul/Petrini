@@ -121,8 +121,12 @@
           <textarea name="petPolicy" placeholder="입실 가능 반려동물 크기, 종류, 동반 조건 등을 입력하세요.">${stay.petPolicy}</textarea>
         </div>
         <div class="pf-group full">
-          <label>반려동물 추가 비용</label>
-          <input type="text" name="petFee" value="${stay.petFee}" placeholder="예: 1마리당 10,000원 추가 / 추가 비용 없음">
+          <label>반려동물 추가 비용 (원 / 추가 1마리·1박)</label>
+          <input type="number" name="petFee" min="0" step="1000" value="${stay.petFee != null ? stay.petFee : 0}"
+                 placeholder="0이면 추가비 없음. 예: 10000">
+          <p style="margin:6px 0 0;font-size:12px;color:#64748B;line-height:1.5">
+            1마리는 객실요금만, 2마리부터 (마리수−1) × 금액 × 박수가 추가됩니다. 숫자만 입력하세요.
+          </p>
         </div>
       </div>
     </div>
@@ -134,8 +138,9 @@
         환불 정책
       </div>
       <div class="pf-group full">
-        <label>환불 규정</label>
-        <textarea name="refundPolicy" placeholder="체크인 7일 전: 100% 환불 / 3일 전: 50% 환불 등">${stay.refundPolicy}</textarea>
+        <label>환불 규정 <span style="font-weight:500;color:#64748B">(플랫폼 고정 · 수정 불가)</span></label>
+        <%-- 2026/08/11 장우철 — StayCancelFeeCalculator 고정 문구, name 없음 → POST 무시 --%>
+        <div style="border:1px solid var(--border,#E2E8E4);border-radius:8px;padding:14px 16px;background:#F8FAFC;font-size:13px;line-height:1.7;color:#334155;white-space:pre-line"><c:out value="${stay.refundPolicy}"/></div>
       </div>
     </div>
 

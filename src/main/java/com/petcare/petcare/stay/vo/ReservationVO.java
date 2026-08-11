@@ -15,6 +15,8 @@ public class ReservationVO {
     private String  resvType;       // HOSPITAL / STAY / GROOMING / STUDIO
     private Long    memberNo;
     private Long    petId;
+    // 2026/08/11 장우철 — 숙소 다펫: 대표 PET_ID + 마리수
+    private Integer petCnt;
     private String  targetId;
     private Long    roomId;
     private String  serviceName;

@@ -150,12 +150,18 @@
           <c:set var="phoneMidVal" value="" />
           <c:set var="phoneEndVal" value="" />
           <c:if test="${not empty memberPhone}">
+            <%-- 2026/08/11 장우철 — 하이픈·숫자만 모두 지원 (컨트롤러 정규화 + 방어) --%>
             <c:set var="phoneParts" value="${fn:split(memberPhone, '-')}" />
-            <c:if test="${fn:length(phoneParts) == 3}">
-              <c:set var="phonePrefixVal" value="${phoneParts[0]}" />
-              <c:set var="phoneMidVal" value="${phoneParts[1]}" />
-              <c:set var="phoneEndVal" value="${phoneParts[2]}" />
-            </c:if>
+            <c:choose>
+              <c:when test="${fn:length(phoneParts) == 3}">
+                <c:set var="phonePrefixVal" value="${phoneParts[0]}" />
+                <c:set var="phoneMidVal" value="${phoneParts[1]}" />
+                <c:set var="phoneEndVal" value="${phoneParts[2]}" />
+              </c:when>
+              <c:otherwise>
+                <c:set var="phoneDigitsOnly" value="${fn:replace(fn:replace(fn:replace(memberPhone,'-',''),' ',''),'.','')}" />
+              </c:otherwise>
+            </c:choose>
           </c:if>
           <select id="phonePrefix" style="width:90px">
             <option value="010" ${phonePrefixVal == '010' ? 'selected' : ''}>010</option>
@@ -172,6 +178,19 @@
         </div>
       </div>
       <%-- After --%>
+      <script>
+      (function() {
+        var raw = '${phoneDigitsOnly}';
+        if (raw && raw.length >= 10) {
+          var p = document.getElementById('phonePrefix');
+          var m = document.getElementById('phoneMid');
+          var e = document.getElementById('phoneEnd');
+          if (p) p.value = raw.substring(0, 3);
+          if (m && !m.value) m.value = raw.substring(3, 7);
+          if (e && !e.value) e.value = raw.substring(7, 11);
+        }
+      })();
+      </script>
       <div class="order-form-group full">
         <label>주소</label>
         <div class="addr-row">

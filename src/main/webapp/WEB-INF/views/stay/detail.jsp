@@ -150,8 +150,10 @@
         <c:if test="${not empty stay.petPolicy}">
           <div class="sd-info-row"><label>반려동물 조건</label><span>${stay.petPolicy}</span></div>
         </c:if>
-        <c:if test="${not empty stay.petFee}">
-          <div class="sd-info-row"><label>추가 요금</label><span>${stay.petFee}</span></div>
+        <c:if test="${stay.petFee != null && stay.petFee > 0}">
+          <div class="sd-info-row"><label>추가 요금</label>
+            <span>추가 1마리당 <fmt:formatNumber value="${stay.petFee}" pattern="#,###"/>원 / 박</span>
+          </div>
         </c:if>
       </div>
     </div>
@@ -183,11 +185,11 @@
       </div>
     </c:if>
 
-    <%-- 환불 정책 --%>
+    <%-- 환불 정책 — 2026/08/11 장우철: 플랫폼 고정 문구 --%>
     <c:if test="${not empty stay.refundPolicy}">
       <div class="sd-section">
         <h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>환불 / 이용 규칙</h3>
-        <p class="sd-desc">${stay.refundPolicy}</p>
+        <p class="sd-desc" style="white-space:pre-line">${stay.refundPolicy}</p>
       </div>
     </c:if>
 
@@ -307,10 +309,10 @@
 
     <c:choose>
       <c:when test="${not empty stay.refundPolicy}">
-        <div class="rc-notice">${stay.refundPolicy}</div>
+        <div class="rc-notice" style="white-space:pre-line">${stay.refundPolicy}</div>
       </c:when>
       <c:otherwise>
-        <div class="rc-notice">· 예약 확정 후 이메일로 안내드립니다.<br>· 취소는 체크인 3일 전까지 전액 환불됩니다.</div>
+        <div class="rc-notice">입실일 기준 취소수수료가 적용됩니다. (10일 전 전액 환불 ~ 당일 90%)</div>
       </c:otherwise>
     </c:choose>
   </div>

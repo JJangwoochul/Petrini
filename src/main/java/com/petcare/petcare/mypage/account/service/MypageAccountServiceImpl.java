@@ -143,7 +143,8 @@ public class MypageAccountServiceImpl implements MypageAccountService {
         // 회원 이름·전화번호를 수령인 정보로 사용
         MypageAccountVO profile = mypageAccountMapper.selectMemberProfile(memberNo);
         String recvName  = profile.getMemberName();
-        String recvPhone = vo.getPhone();
+        // 2026/08/11 장우철 — 기본배송지 전화 하이픈 정규화 (주문서 SSR 파싱용)
+        String recvPhone = com.petcare.petcare.common.util.PhoneNormalizeUtil.toHyphenPhone(vo.getPhone());
 
         MypageAddressVO existing = mypageAddressMapper.selectDefaultAddress(memberNo);
 

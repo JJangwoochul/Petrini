@@ -542,16 +542,18 @@ if (memberInfo != null) {
 model.addAttribute("memberPoint", heldPoint);
 
 //지윤 26.07.29 수정: 배송지록(TB_MEMBER_ADDRESS)에 기본배송지가 있으면 그걸 우선 사용, 없으면 기존처럼 회원정보(TB_MEMBER) 주소로 fallback
+// 2026/08/11 장우철 — 전화 숫자만(01012341234)도 주문서에 들어가도록 하이픈 정규화
 com.petcare.petcare.mypage.address.vo.MypageAddressVO defaultAddr = mypageAddressService.getDefaultAddress(memberNo);
 if (defaultAddr != null) {
     model.addAttribute("memberRecvName", defaultAddr.getRecvName());
-    model.addAttribute("memberPhone", defaultAddr.getRecvPhone());
+    model.addAttribute("memberPhone", com.petcare.petcare.common.util.PhoneNormalizeUtil.toHyphenPhone(defaultAddr.getRecvPhone()));
     model.addAttribute("memberZipCode", defaultAddr.getZipCode());
     model.addAttribute("memberAddr1", defaultAddr.getAddr1());
     model.addAttribute("memberAddr2", defaultAddr.getAddr2());
 } else {
     model.addAttribute("memberRecvName", memberInfo != null ? memberInfo.getMemberName() : "");
-    model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null ? memberInfo.getPhone() : "");
+    model.addAttribute("memberPhone", memberInfo != null && memberInfo.getPhone() != null
+            ? com.petcare.petcare.common.util.PhoneNormalizeUtil.toHyphenPhone(memberInfo.getPhone()) : "");
     model.addAttribute("memberZipCode", memberInfo != null && memberInfo.getZipcode() != null ? memberInfo.getZipcode() : "");
     model.addAttribute("memberAddr1", memberInfo != null && memberInfo.getAddr1() != null ? memberInfo.getAddr1() : "");
     model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
@@ -579,7 +581,8 @@ if (defaultAddr != null) {
                 model.addAttribute("memberRecvName", orderTemp.getRecvName());
             }
             if (orderTemp.getRecvPhone() != null) {
-                model.addAttribute("memberPhone", orderTemp.getRecvPhone());
+                model.addAttribute("memberPhone",
+                        com.petcare.petcare.common.util.PhoneNormalizeUtil.toHyphenPhone(orderTemp.getRecvPhone()));
             }
             if (orderTemp.getZipCode() != null) {
                 model.addAttribute("memberZipCode", orderTemp.getZipCode());

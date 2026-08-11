@@ -172,6 +172,9 @@
         <c:out value="${reservation.petName}"/>
         <c:if test="${not empty reservation.petSpecies}"> (<c:out value="${reservation.petSpecies}"/>
           <c:if test="${not empty reservation.petBreed}"> / <c:out value="${reservation.petBreed}"/></c:if>)</c:if>
+        <c:if test="${reservation.resvType eq 'STAY' and reservation.petCnt != null and reservation.petCnt > 1}">
+          · 총 ${reservation.petCnt}마리
+        </c:if>
       </span>
     </div>
     <div class="rd-row">

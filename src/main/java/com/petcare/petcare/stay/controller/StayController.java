@@ -145,9 +145,11 @@ public class StayController {
 
         
     // ── HYJ 26.07.20 예약 저장 → 결제 페이지로 이동──
+    // 2026/08/11 장우철 — 다펫: petIds → 대표 petId + petCnt
     @PostMapping("/reserve")
     public String saveReserve(@ModelAttribute ReservationVO vo,
                               @RequestParam("stayId") Long stayId,
+                              @RequestParam(value = "petIds", required = false) java.util.List<Long> petIds,
                               HttpSession session,
                               RedirectAttributes rttr) throws Exception {
 
@@ -156,6 +158,13 @@ public class StayController {
 
         vo.setMemberNo(member.getMemberNo());
         vo.setTargetId(String.valueOf(stayId));
+
+        if (petIds != null && !petIds.isEmpty()) {
+            vo.setPetId(petIds.get(0));
+            vo.setPetCnt(petIds.size());
+        } else if (vo.getPetCnt() == null) {
+            vo.setPetCnt(1);
+        }
 
         try {
             

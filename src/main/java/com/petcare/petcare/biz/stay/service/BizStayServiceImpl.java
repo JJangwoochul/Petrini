@@ -80,6 +80,10 @@ public class BizStayServiceImpl implements BizStayService {
             bizStayMapper.insertStay(bizId);
             stay = bizStayMapper.selectStayByBizId(bizId);
         }
+        if (stay != null) {
+            // 2026/08/11 장우철 — 프로필 화면에도 고정 환불정책 표시
+            stay.setRefundPolicy(com.petcare.petcare.stay.service.StayCancelFeeCalculator.FIXED_POLICY_TEXT);
+        }
         return stay;
     }
     @Override
@@ -104,6 +108,11 @@ public class BizStayServiceImpl implements BizStayService {
                 vo.setLat(coords.get("lat"));
                 vo.setLng(coords.get("lng"));
             }
+        }
+        // 2026/08/11 장우철 — 환불정책 플랫폼 고정 / PET_FEE null → 0
+        vo.setRefundPolicy(com.petcare.petcare.stay.service.StayCancelFeeCalculator.FIXED_POLICY_TEXT);
+        if (vo.getPetFee() == null || vo.getPetFee() < 0) {
+            vo.setPetFee(0L);
         }
         
         bizStayMapper.updateStayProfile(vo);

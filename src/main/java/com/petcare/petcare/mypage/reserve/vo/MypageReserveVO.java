@@ -28,6 +28,8 @@ public class MypageReserveVO {
     private String resvType;        // RESV_TYPE — 예약 유형 (HOSPITAL/STAY)
     private Long memberNo;          // MEMBER_NO — 회원 번호
     private Long petId;             // PET_ID — 반려동물 FK
+    // 2026/08/11 장우철 — 숙소 다펫 마리수
+    private Integer petCnt;         // PET_CNT
     private String targetId;        // TARGET_ID — 병원·숙소 ID
     private Date resvDate;          // RESV_DATE — 예약일
     private String resvTime;        // RESV_TIME — 예약 시간

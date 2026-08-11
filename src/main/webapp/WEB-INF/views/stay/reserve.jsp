@@ -29,7 +29,9 @@
   .pet-pick-card{display:flex;align-items:center;gap:12px;border:2px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;cursor:pointer;transition:.2s}
   .pet-pick-card:hover{border-color:var(--primary)}
   .pet-pick-card.selected{border-color:var(--primary);background:var(--primary-light)}
-  .pet-pick-card input[type="radio"]{display:none}
+  .pet-pick-card input[type="radio"],
+  .pet-pick-card input[type="checkbox"]{display:none}
+  .pet-limit-hint{font-size:13px;color:var(--text-muted);margin:0 0 12px;line-height:1.5}
   .pet-pick-name{font-size:14px;font-weight:700;color:var(--text-main)}
   .pet-pick-meta{font-size:12px;color:var(--text-muted)}
   .price-summary{background:var(--bg-page);border-radius:var(--radius-sm);padding:18px}
@@ -104,8 +106,10 @@
             <c:forEach var="room" items="${stay.rooms}">
               <option value="${room.roomId}"
                       data-price="${room.pricePerNight}"
+                      data-petlimit="${room.petLimit}"
                       ${room.roomId == roomId ? 'selected' : ''}>
                 ${room.name} — <fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원/박
+                (반려동물 최대 ${room.petLimit}마리)
               </option>
             </c:forEach>
           </select>
@@ -125,18 +129,21 @@
       <div id="availabilityMsg"></div>
     </div>
 
-    <%-- 반려동물 선택 --%>
+    <%-- 반려동물 선택 — 2026/08/11 장우철: PET_LIMIT에 따라 단건/다건 --%>
     <div class="res-section">
       <h3>
         <svg viewBox="0 0 24 24"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><circle cx="4" cy="8" r="2"/><path d="M12 10c-1.5 2-3 3.5-3 5a3 3 0 006 0c0-1.5-1.5-3-3-5z"/></svg>
         함께 가는 반려동물
       </h3>
+      <p class="pet-limit-hint" id="petLimitHint">객실을 선택하면 동반 가능 마리수가 표시됩니다.</p>
+      <input type="hidden" name="petCnt" id="petCntInput" value="1">
       <c:choose>
         <c:when test="${not empty petList}">
-          <div class="pet-pick-grid">
+          <div class="pet-pick-grid" id="petPickGrid">
             <c:forEach var="pet" items="${petList}" varStatus="st">
-              <label class="pet-pick-card ${st.index == 0 ? 'selected' : ''}" onclick="selPet(this)">
-                <input type="radio" name="petId" value="${pet.petId}" ${st.index == 0 ? 'checked' : ''}>
+              <label class="pet-pick-card ${st.index == 0 ? 'selected' : ''}">
+                <input type="checkbox" name="petIds" value="${pet.petId}" class="pet-check"
+                       ${st.index == 0 ? 'checked' : ''} onchange="onPetToggle(this)">
                 <div>
                   <div class="pet-pick-name">${pet.petName}</div>
                   <div class="pet-pick-meta">${pet.breed} · ${pet.age}세</div>
@@ -147,7 +154,7 @@
         </c:when>
         <c:otherwise>
           <p style="color:var(--text-muted);font-size:14px">
-            등록된 반려동물이 없습니다. <%-- 2026-08-05 박유정 — 링크 /mypage/pets 로 수정 --%>
+            등록된 반려동물이 없습니다.
             <a href="${contextPath}/mypage/pets" style="color:var(--primary)">반려동물 등록</a> 후 이용해주세요.
           </p>
         </c:otherwise>
@@ -178,9 +185,7 @@
       </h3>
       <div class="price-summary">
         <div class="ps-row"><span>숙박 요금</span><span id="priceLabel">객실과 날짜를 선택하세요</span></div>
-        <c:if test="${not empty stay.petFee}">
-          <div class="ps-row"><span>반려동물 추가 비용</span><span>${stay.petFee}</span></div>
-        </c:if>
+        <div class="ps-row" id="petFeeRow" style="display:none"><span>반려동물 추가 비용</span><span id="petFeeLabel">-</span></div>
         <div class="ps-row total"><span>총 결제금액</span><span id="totalLabel">-</span></div>
       </div>
       <button type="button" class="btn-pay-submit" id="submitBtn" disabled onclick="showConfirmModal()">예약 신청하기</button>
@@ -210,18 +215,63 @@
 
 <script>
   var contextPath = '${contextPath}';
-  <%-- 2026-08-05 박유정 — 반려동물 없으면 petId 미전송 → TB_RESERVATION.PET_ID NOT NULL 오류 방지 --%>
   var hasPet = ${not empty petList};
+  var petFeeAmt = ${stay.petFee != null ? stay.petFee : 0};
 
-  // 오늘 날짜를 min으로 설정
   var today = new Date().toISOString().split('T')[0];
   document.getElementById('checkinDate').min = today;
   document.getElementById('checkoutDate').min = today;
 
-  function selPet(el) {
-    document.querySelectorAll('.pet-pick-card').forEach(function(c){ c.classList.remove('selected'); });
-    el.classList.add('selected');
-    el.querySelector('input[type="radio"]').checked = true;
+  function getPetLimit() {
+    var roomSel = document.getElementById('roomSelect');
+    if (!roomSel.value) return 1;
+    var lim = Number(roomSel.options[roomSel.selectedIndex].dataset.petlimit);
+    return lim > 0 ? lim : 1;
+  }
+
+  function getSelectedPetCount() {
+    return document.querySelectorAll('.pet-check:checked').length;
+  }
+
+  function syncPetUi() {
+    var limit = getPetLimit();
+    var hint = document.getElementById('petLimitHint');
+    if (hint) {
+      hint.textContent = '이 객실은 반려동물 최대 ' + limit + '마리까지 가능합니다.'
+          + (limit >= 2 ? ' (추가 마리당 ' + Number(petFeeAmt).toLocaleString() + '원 × 박수)' : '');
+    }
+    var checked = document.querySelectorAll('.pet-check:checked');
+    if (checked.length > limit) {
+      for (var i = limit; i < checked.length; i++) {
+        checked[i].checked = false;
+        checked[i].closest('.pet-pick-card').classList.remove('selected');
+      }
+    }
+    document.querySelectorAll('.pet-pick-card').forEach(function(card) {
+      var input = card.querySelector('.pet-check');
+      if (input && input.checked) card.classList.add('selected');
+      else card.classList.remove('selected');
+    });
+    document.getElementById('petCntInput').value = String(Math.max(1, getSelectedPetCount()) || 1);
+  }
+
+  function onPetToggle(el) {
+    var limit = getPetLimit();
+    var checked = document.querySelectorAll('.pet-check:checked');
+    if (limit <= 1) {
+      document.querySelectorAll('.pet-check').forEach(function(c) {
+        if (c !== el) {
+          c.checked = false;
+          c.closest('.pet-pick-card').classList.remove('selected');
+        }
+      });
+      el.checked = true;
+    } else if (checked.length > limit) {
+      el.checked = false;
+      alert('이 객실은 최대 ' + limit + '마리까지 선택할 수 있습니다.');
+    }
+    syncPetUi();
+    calcPrice();
   }
 
   function calcPrice() {
@@ -230,8 +280,8 @@
     var co = document.getElementById('checkoutDate').value;
     var availMsg = document.getElementById('availabilityMsg');
     availMsg.innerHTML = '';
+    syncPetUi();
 
-    // 체크인 선택 시 체크아웃 min을 다음날로
     if (ci) {
       var nextDay = new Date(ci);
       nextDay.setDate(nextDay.getDate() + 1);
@@ -242,16 +292,17 @@
       }
     }
 
+    var petFeeRow = document.getElementById('petFeeRow');
     if (!roomSel.value || !ci || !co) {
       document.getElementById('priceLabel').textContent = '객실과 날짜를 선택하세요';
       document.getElementById('totalLabel').textContent = '-';
+      if (petFeeRow) petFeeRow.style.display = 'none';
       document.getElementById('submitBtn').disabled = true;
       document.getElementById('submitBtn').textContent = '예약 신청하기';
       return;
     }
 
     var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
-
     if (nights <= 0) {
       document.getElementById('priceLabel').textContent = '체크아웃은 체크인 이후여야 합니다';
       document.getElementById('totalLabel').textContent = '-';
@@ -260,16 +311,29 @@
     }
 
     var price = Number(roomSel.options[roomSel.selectedIndex].dataset.price);
-    var total = price * nights;
+    var petCnt = getSelectedPetCount();
+    if (petCnt < 1) petCnt = 0;
+    var roomTotal = price * nights;
+    var extraPets = Math.max(0, petCnt - 1);
+    var petExtra = extraPets * Number(petFeeAmt) * nights;
+    var total = roomTotal + petExtra;
 
     document.getElementById('nightCntInput').value = nights;
     document.getElementById('totalAmountInput').value = total;
+    document.getElementById('petCntInput').value = String(Math.max(1, petCnt));
     document.getElementById('priceLabel').textContent =
         price.toLocaleString() + '원 × ' + nights + '박';
-    document.getElementById('totalLabel').textContent =
-        total.toLocaleString() + '원';
+    if (petFeeRow) {
+      if (petExtra > 0) {
+        petFeeRow.style.display = '';
+        document.getElementById('petFeeLabel').textContent =
+            Number(petFeeAmt).toLocaleString() + '원 × 추가 ' + extraPets + '마리 × ' + nights + '박';
+      } else {
+        petFeeRow.style.display = 'none';
+      }
+    }
+    document.getElementById('totalLabel').textContent = total.toLocaleString() + '원';
 
-    // 가용성 AJAX 체크
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('submitBtn').textContent = '예약 가능 여부 확인 중...';
     availMsg.innerHTML = '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
@@ -287,12 +351,14 @@
             + 'background:#F0FDF4;border:1px solid #BBF7D0;color:#16A34A;margin-top:10px">'
             + '✓ 예약 가능한 날짜입니다.</div>';
         if (!hasPet) {
-          <%-- 2026-08-05 박유정 — 펫 미등록 시 예약 버튼 비활성화 --%>
           availMsg.innerHTML += '<div style="padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600;'
               + 'background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;margin-top:8px">'
               + '✕ 반려동물을 등록한 후 예약할 수 있습니다.</div>';
           document.getElementById('submitBtn').disabled = true;
           document.getElementById('submitBtn').textContent = '반려동물 등록 필요';
+        } else if (getSelectedPetCount() < 1) {
+          document.getElementById('submitBtn').disabled = true;
+          document.getElementById('submitBtn').textContent = '반려동물 선택 필요';
         } else {
           document.getElementById('submitBtn').disabled = false;
           document.getElementById('submitBtn').textContent =
@@ -315,8 +381,13 @@
     xhr.send();
   }
 
-  // detail에서 넘어온 초기값이 있으면 자동 계산
+  document.getElementById('roomSelect').addEventListener('change', function() {
+    syncPetUi();
+    calcPrice();
+  });
+
   window.addEventListener('DOMContentLoaded', function() {
+    syncPetUi();
     var roomSel = document.getElementById('roomSelect');
     var ci = document.getElementById('checkinDate').value;
     if (roomSel.value && ci) {
@@ -324,12 +395,14 @@
     }
   });
 
-  // 예약 확인 모달
-  // 2026-08-05 박유정 — 반려동물 미선택 시 예약 모달 진입 차단
   function showConfirmModal() {
-    var petRadio = document.querySelector('input[name="petId"]:checked');
-    if (!petRadio || !petRadio.value) {
+    if (getSelectedPetCount() < 1) {
       alert('반려동물을 선택해 주세요.\n등록된 반려동물이 없으면 마이페이지에서 등록 후 이용해 주세요.');
+      return;
+    }
+    var limit = getPetLimit();
+    if (getSelectedPetCount() > limit) {
+      alert('이 객실은 최대 ' + limit + '마리까지 가능합니다.');
       return;
     }
 
@@ -339,9 +412,10 @@
     var co = document.getElementById('checkoutDate').value;
     var nights = Math.round((new Date(co) - new Date(ci)) / 86400000);
     var total = document.getElementById('totalLabel').textContent;
+    var petCnt = getSelectedPetCount();
 
     document.getElementById('confirmSummary').textContent =
-        roomName + ' · ' + ci + ' ~ ' + co + ' (' + nights + '박) · ' + total;
+        roomName + ' · ' + ci + ' ~ ' + co + ' (' + nights + '박) · 반려동물 ' + petCnt + '마리 · ' + total;
     document.getElementById('confirmModal').classList.add('show');
   }
 
@@ -354,7 +428,6 @@
     document.getElementById('reserveForm').submit();
   }
 
-  // 모달 바깥 클릭 시 닫기
   document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) closeConfirmModal();
   });
