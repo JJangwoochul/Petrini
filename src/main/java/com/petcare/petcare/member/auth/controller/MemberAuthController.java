@@ -445,6 +445,7 @@ public class MemberAuthController {
     @GetMapping("/testUser")
     public String testLogin(HttpSession session) {
         MemberVO member = new MemberVO();
+        member.setMemberNo(1L);
         member.setMemberId("user");
         member.setMemberName("테스트");
         member.setRole("USER");

@@ -42,6 +42,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 
+import com.petcare.petcare.admin.cms.vo.FaqVO;
+
+import com.petcare.petcare.admin.cms.vo.NoticeVO;
+
 @Service
 public class AdminCMSServiceImpl implements AdminCMSService {
     private static volatile boolean testStayBannersCleaned = false;
@@ -461,5 +465,179 @@ public class AdminCMSServiceImpl implements AdminCMSService {
             case "STORE", "SHOP" -> "/biz/store/banner";
             default -> "/mypage/biz";
         };
+    }
+
+    // 2026-08-11 박유정 — FAQ CMS
+    @Override
+    @Transactional(readOnly = true)
+    public List<FaqVO> getFaqList() {
+        return adminCMSMapper.selectFaqList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FaqVO getFaqById(Long faqId) {
+        if (faqId == null) {
+            return null;
+        }
+        return adminCMSMapper.selectFaqById(faqId);
+    }
+
+    @Override
+    @Transactional
+    public void createFaq(FaqVO faq) {
+        validateFaq(faq, false);
+        applyFaqDefaults(faq);
+        adminCMSMapper.insertFaq(faq);
+    }
+
+    @Override
+    @Transactional
+    public void updateFaq(FaqVO faq) {
+        validateFaq(faq, true);
+        applyFaqDefaults(faq);
+        if (adminCMSMapper.selectFaqById(faq.getFaqId()) == null) {
+            throw new IllegalArgumentException("수정할 FAQ를 찾을 수 없습니다.");
+        }
+        adminCMSMapper.updateFaq(faq);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFaq(Long faqId) {
+        if (faqId == null) {
+            throw new IllegalArgumentException("FAQ ID가 없습니다.");
+        }
+        if (adminCMSMapper.selectFaqById(faqId) == null) {
+            throw new IllegalArgumentException("삭제할 FAQ를 찾을 수 없습니다.");
+        }
+        adminCMSMapper.deleteFaq(faqId);
+    }
+
+    // 2026-08-11 박유정 — FAQ 입력값 검증
+    private void validateFaq(FaqVO faq, boolean isUpdate) {
+        if (faq == null) {
+            throw new IllegalArgumentException("FAQ 정보가 없습니다.");
+        }
+        if (isUpdate && faq.getFaqId() == null) {
+            throw new IllegalArgumentException("FAQ ID가 없습니다.");
+        }
+        if (faq.getCategoryCd() == null || faq.getCategoryCd().isBlank()) {
+            throw new IllegalArgumentException("카테고리를 선택해 주세요.");
+        }
+        if (faq.getQuestion() == null || faq.getQuestion().trim().isEmpty()) {
+            throw new IllegalArgumentException("질문을 입력해 주세요.");
+        }
+        if (faq.getAnswer() == null || faq.getAnswer().trim().isEmpty()) {
+            throw new IllegalArgumentException("답변을 입력해 주세요.");
+        }
+        faq.setCategoryCd(faq.getCategoryCd().trim());
+        faq.setQuestion(faq.getQuestion().trim());
+        faq.setAnswer(faq.getAnswer().trim());
+    }
+
+    // 2026-08-11 박유정 — FAQ 기본값
+    private void applyFaqDefaults(FaqVO faq) {
+        if (faq.getVisibleYn() == null || faq.getVisibleYn().isBlank()) {
+            faq.setVisibleYn("Y");
+        } else {
+            faq.setVisibleYn(faq.getVisibleYn().trim().toUpperCase());
+        }
+        if (faq.getSortOrder() == null) {
+            faq.setSortOrder(0);
+        }
+    }
+
+    // 2026-08-11 박유정 — 공지사항 CMS
+    @Override
+    @Transactional(readOnly = true)
+    public List<NoticeVO> getNoticeList() {
+        return adminCMSMapper.selectNoticeList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public NoticeVO getNoticeById(Long noticeId) {
+        if (noticeId == null) {
+            return null;
+        }
+        return adminCMSMapper.selectNoticeById(noticeId);
+    }
+
+    @Override
+    @Transactional
+    public void createNotice(NoticeVO notice) {
+        validateNotice(notice, false);
+        applyNoticeDefaults(notice);
+        adminCMSMapper.insertNotice(notice);
+    }
+
+    @Override
+    @Transactional
+    public void updateNotice(NoticeVO notice) {
+        validateNotice(notice, true);
+        applyNoticeDefaults(notice);
+        if (adminCMSMapper.selectNoticeById(notice.getNoticeId()) == null) {
+            throw new IllegalArgumentException("수정할 공지를 찾을 수 없습니다.");
+        }
+        adminCMSMapper.updateNotice(notice);
+    }
+
+    @Override
+    @Transactional
+    public void deleteNotice(Long noticeId) {
+        if (noticeId == null) {
+            throw new IllegalArgumentException("공지 ID가 없습니다.");
+        }
+        if (adminCMSMapper.selectNoticeById(noticeId) == null) {
+            throw new IllegalArgumentException("삭제할 공지를 찾을 수 없습니다.");
+        }
+        adminCMSMapper.deleteNotice(noticeId);
+    }
+
+    // 2026-08-11 박유정 — 공지 입력값 검증
+    private void validateNotice(NoticeVO notice, boolean isUpdate) {
+        if (notice == null) {
+            throw new IllegalArgumentException("공지 정보가 없습니다.");
+        }
+        if (isUpdate && notice.getNoticeId() == null) {
+            throw new IllegalArgumentException("공지 ID가 없습니다.");
+        }
+        if (notice.getTitle() == null || notice.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("제목을 입력해 주세요.");
+        }
+        if (notice.getBody() == null || notice.getBody().trim().isEmpty()) {
+            throw new IllegalArgumentException("내용을 입력해 주세요.");
+        }
+        notice.setTitle(notice.getTitle().trim());
+        notice.setBody(notice.getBody().trim());
+        if (notice.getWriterName() != null) {
+            notice.setWriterName(notice.getWriterName().trim());
+        }
+    }
+
+    // 2026-08-11 박유정 — 공지 기본값
+    private void applyNoticeDefaults(NoticeVO notice) {
+        if (notice.getNoticeTypeCd() == null || notice.getNoticeTypeCd().isBlank()) {
+            notice.setNoticeTypeCd("NOTICE");
+        } else {
+            notice.setNoticeTypeCd(notice.getNoticeTypeCd().trim().toUpperCase());
+        }
+        if (notice.getWriterName() == null || notice.getWriterName().isBlank()) {
+            notice.setWriterName("펫린이 운영팀");
+        }
+        if (notice.getPinYn() == null || notice.getPinYn().isBlank()) {
+            notice.setPinYn("N");
+        } else {
+            notice.setPinYn(notice.getPinYn().trim().toUpperCase());
+        }
+        if (notice.getVisibleYn() == null || notice.getVisibleYn().isBlank()) {
+            notice.setVisibleYn("Y");
+        } else {
+            notice.setVisibleYn(notice.getVisibleYn().trim().toUpperCase());
+        }
+        if (notice.getViewCount() == null) {
+            notice.setViewCount(0);
+        }
     }
 }

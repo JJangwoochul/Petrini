@@ -12,7 +12,7 @@
            I.BODY         AS body,
            I.REF_TYPE     AS refType,
            I.REF_ID       AS refId,
-           I.STATUS_CD    AS statusCd,
+           TRIM(I.STATUS_CD) AS statusCd,
            I.ANSWER       AS answer,
            I.APPLY_DATE   AS applyDate,
            I.ANSWER_DATE  AS answerDate,
@@ -30,7 +30,7 @@
            I.BODY         AS body,
            I.REF_TYPE     AS refType,
            I.REF_ID       AS refId,
-           I.STATUS_CD    AS statusCd,
+           TRIM(I.STATUS_CD) AS statusCd,
            I.ANSWER       AS answer,
            I.APPLY_DATE   AS applyDate,
            I.ANSWER_DATE  AS answerDate,
@@ -70,6 +70,50 @@
        AND STATUS_CD = 'WAIT'
   </select>
 
+  <!-- 2026-08-11 박유정 — 사업자 숙소 환불신청 대기 건수 -->
+  <select id="countPendingStayRefundByStayId" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_INQUIRY I
+      JOIN TB_RESERVATION R ON R.RESV_ID = I.REF_ID AND R.RESV_TYPE = 'STAY'
+     WHERE I.REF_TYPE = 'RESV'
+       AND I.INQUIRY_TYPE = 'RESERVE'
+       AND I.STATUS_CD = 'WAIT'
+       AND TO_NUMBER(R.TARGET_ID) = #{stayId}
+  </select>
+
+  <!-- 2026-08-11 박유정 — 사업자 숙소 환불신청 목록 -->
+  <select id="selectStayRefundListByStayId" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+    SELECT I.INQUIRY_ID   AS inquiryId,
+           I.INQUIRY_TYPE AS inquiryType,
+           I.MEMBER_NO    AS memberNo,
+           M.MEMBER_NAME  AS memberName,
+           M.EMAIL        AS memberEmail,
+           I.TITLE        AS title,
+           I.BODY         AS body,
+           I.REF_TYPE     AS refType,
+           I.REF_ID       AS refId,
+           TRIM(I.STATUS_CD) AS statusCd,
+           I.ANSWER       AS answer,
+           I.APPLY_DATE   AS applyDate,
+           I.ANSWER_DATE  AS answerDate,
+           I.REG_DATE     AS regDate,
+           R.RESV_NO      AS resvNo,
+           R.STATUS_CD    AS resvStatusCd,
+           R.TOTAL_AMOUNT AS totalAmount,
+           S.NAME         AS stayName
+      FROM TB_INQUIRY I
+      JOIN TB_MEMBER M ON M.MEMBER_NO = I.MEMBER_NO
+      JOIN TB_RESERVATION R ON R.RESV_ID = I.REF_ID AND R.RESV_TYPE = 'STAY'
+      LEFT JOIN TB_STAY S ON S.STAY_ID = TO_NUMBER(R.TARGET_ID)
+     WHERE I.REF_TYPE = 'RESV'
+       AND I.INQUIRY_TYPE = 'RESERVE'
+       AND TO_NUMBER(R.TARGET_ID) = #{stayId}
+    <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
+       AND I.STATUS_CD = #{statusCd}
+    </if>
+     ORDER BY I.REG_DATE DESC, I.INQUIRY_ID DESC
+  </select>
+
   <select id="selectStayRefundList" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
     SELECT I.INQUIRY_ID   AS inquiryId,
            I.INQUIRY_TYPE AS inquiryType,
@@ -80,7 +124,7 @@
            I.BODY         AS body,
            I.REF_TYPE     AS refType,
            I.REF_ID       AS refId,
-           I.STATUS_CD    AS statusCd,
+           TRIM(I.STATUS_CD) AS statusCd,
            I.ANSWER       AS answer,
            I.APPLY_DATE   AS applyDate,
            I.ANSWER_DATE  AS answerDate,
@@ -111,7 +155,7 @@
            I.BODY         AS body,
            I.REF_TYPE     AS refType,
            I.REF_ID       AS refId,
-           I.STATUS_CD    AS statusCd,
+           TRIM(I.STATUS_CD) AS statusCd,
            I.ANSWER       AS answer,
            I.APPLY_DATE   AS applyDate,
            I.ANSWER_DATE  AS answerDate,
@@ -137,5 +181,52 @@
      WHERE INQUIRY_ID = #{inquiryId}
        AND STATUS_CD  = 'WAIT'
   </update>
+<!-- 2026-08-11 박유정 — 관리자 일반 1:1 문의 목록 -->
+<select id="selectGeneralInquiryList"
+        resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+  SELECT I.INQUIRY_ID      AS inquiryId,
+         I.INQUIRY_TYPE    AS inquiryType,
+         I.MEMBER_NO       AS memberNo,
+         M.MEMBER_NAME     AS memberName,
+         M.EMAIL           AS memberEmail,
+         I.TITLE           AS title,
+         I.BODY            AS body,
+         I.REF_TYPE        AS refType,
+         I.REF_ID          AS refId,
+         TRIM(I.STATUS_CD) AS statusCd,
+         I.ANSWER          AS answer,
+         I.APPLY_DATE      AS applyDate,
+         I.ANSWER_DATE     AS answerDate,
+         I.REG_DATE        AS regDate
+    FROM TB_INQUIRY I
+    JOIN TB_MEMBER M ON M.MEMBER_NO = I.MEMBER_NO
+   WHERE (I.REF_TYPE IS NULL OR I.REF_TYPE &lt;&gt; 'RESV')
+  <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
+     AND TRIM(I.STATUS_CD) = #{statusCd}
+  </if>
+   ORDER BY I.REG_DATE DESC, I.INQUIRY_ID DESC
+</select>
 
+<!-- 2026-08-11 박유정 — 관리자 일반 1:1 문의 상세 -->
+<select id="selectGeneralInquiryDetail"
+        resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
+  SELECT I.INQUIRY_ID      AS inquiryId,
+         I.INQUIRY_TYPE    AS inquiryType,
+         I.MEMBER_NO       AS memberNo,
+         M.MEMBER_NAME     AS memberName,
+         M.EMAIL           AS memberEmail,
+         I.TITLE           AS title,
+         I.BODY            AS body,
+         I.REF_TYPE        AS refType,
+         I.REF_ID          AS refId,
+         TRIM(I.STATUS_CD) AS statusCd,
+         I.ANSWER          AS answer,
+         I.APPLY_DATE      AS applyDate,
+         I.ANSWER_DATE     AS answerDate,
+         I.REG_DATE        AS regDate
+    FROM TB_INQUIRY I
+    JOIN TB_MEMBER M ON M.MEMBER_NO = I.MEMBER_NO
+   WHERE I.INQUIRY_ID = #{inquiryId}
+     AND (I.REF_TYPE IS NULL OR I.REF_TYPE &lt;&gt; 'RESV')
+</select>
 </mapper>

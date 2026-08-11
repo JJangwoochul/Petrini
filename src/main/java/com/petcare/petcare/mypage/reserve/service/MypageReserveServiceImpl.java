@@ -206,8 +206,8 @@ public class MypageReserveServiceImpl implements MypageReserveService {
 
         // 3) 알림 (본인)
         String stayName = detail.getHospitalName() != null ? detail.getHospitalName() : "숙소";
-        mypageNotifyService.sendReserveCancelNotification(
-                memberNo, stayName, detail.getCheckinDate(), null, reason, resvId);
+        mypageNotifyService.sendStayReserveCancelNotification(
+                memberNo, stayName, detail.getCheckinDate(), detail.getCheckoutDate(), reason, resvId);
     }
 
     // 2026/07/13 장우철 — DONE + 미작성 예약만 병원 리뷰 INSERT 후 평점 갱신

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.petcare.petcare.member.inquiry.service.MemberInquiryService;
 import com.petcare.petcare.member.vo.InquiryVO;
@@ -40,10 +41,9 @@ public class MemberInquiryController {
         if (member == null) {
             return "redirect:/login?redirect=/member/cs/inquiry";
         }
-        model.addAttribute("inquiries", inquiryService.getListForMemberNo(member.getMemberNo()));
+        model.addAttribute("inquiries", inquiryService.getListForSessionMember(member));
         return "member/cs-inquiry-list";
     }
-
     @GetMapping("/inquiry/write")
     public String inquiryWriteForm(HttpSession session,
                                    @RequestParam(value = "resvId", required = false) Long resvId,
@@ -75,7 +75,8 @@ public class MemberInquiryController {
             @RequestParam String content,
             @RequestParam(value = "resvId", required = false) Long resvId,
             @RequestParam(value = "type", required = false) String type,
-            HttpSession session) {
+            HttpSession session,
+            RedirectAttributes rttr) {
 
         MemberVO member = getMemberOrRedirect(session);
         if (member == null) {
@@ -85,7 +86,8 @@ public class MemberInquiryController {
         if (category == null || category.isBlank()
                 || title == null || title.isBlank()
                 || content == null || content.isBlank()) {
-            return "redirect:/member/cs/inquiry/write?error=empty";
+            rttr.addFlashAttribute("errorMsg", "문의 유형, 제목, 내용을 모두 입력해 주세요.");
+            return "redirect:/member/cs/inquiry/write";
         }
 
         InquiryVO inquiry;
@@ -96,11 +98,14 @@ public class MemberInquiryController {
                 inquiry = inquiryService.create(member, category, title, content);
             }
         } catch (IllegalArgumentException | IllegalStateException e) {
-            return "redirect:/member/cs/inquiry/write?error=fail";
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/member/cs/inquiry/write";
         }
-        if (inquiry == null) {
-            return "redirect:/member/cs/inquiry?error=db";
+        if (inquiry == null || inquiry.getId() <= 0) {
+            rttr.addFlashAttribute("errorMsg", "문의 등록에 실패했습니다. 다시 로그인 후 시도해 주세요.");
+            return "redirect:/member/cs/inquiry/write";
         }
+        rttr.addFlashAttribute("successMsg", "문의가 등록되었습니다.");
         return "redirect:/member/cs/inquiry/detail?id=" + inquiry.getId();
     }
 
@@ -115,7 +120,7 @@ public class MemberInquiryController {
             return "redirect:/login?redirect=/member/cs/inquiry/detail?id=" + id;
         }
 
-        Optional<InquiryVO> inquiry = inquiryService.findForMemberNo(member.getMemberNo(), id);
+        Optional<InquiryVO> inquiry = inquiryService.findForSessionMember(member, id);
         if (inquiry.isEmpty()) {
             return "redirect:/member/cs/inquiry";
         }

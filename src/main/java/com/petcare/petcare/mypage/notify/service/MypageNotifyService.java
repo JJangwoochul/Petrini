@@ -39,6 +39,21 @@ public interface MypageNotifyService {
     void sendReserveCancelNotification(Long memberNo, String hospitalName, java.util.Date resvDate,
                                        String resvTime, String cancelReason, Long resvId);
 
+    // 2026-08-11 박유정 — 숙소 예약 취소 알림 (병원 문구와 분리)
+    void sendStayReserveCancelNotification(Long memberNo, String stayName,
+                                           java.util.Date checkinDate, java.util.Date checkoutDate,
+                                           String cancelReason, Long resvId);
+
+    // 2026-08-11 박유정 — 숙소 환불 신청·처리 알림
+    void sendStayRefundRequestToBizNotification(Long bizMemberNo, String stayName,
+                                                String resvNo, java.util.Date applyDate, Long resvId);
+    void sendStayRefundRequestToMemberNotification(Long memberNo, String stayName,
+                                                   java.util.Date applyDate, Long resvId);
+    void sendStayRefundApprovedToMemberNotification(Long memberNo, String stayName,
+                                                    java.util.Date applyDate, Long refundAmount, Long resvId);
+    void sendStayRefundRejectedToMemberNotification(Long memberNo, String stayName,
+                                                    java.util.Date applyDate, String rejectReason, Long resvId);
+
     // 2026/07/13 장우철 — 진료완료 알림 → 예약 상세(리뷰 작성)
     void sendReserveDoneNotification(Long memberNo, String hospitalName, java.util.Date resvDate,
                                      String resvTime, Long resvId);

@@ -15,11 +15,22 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.petcare.petcare.member.cs.service.MemberCsService;
+
+import com.petcare.petcare.admin.cms.vo.NoticeVO;
+
 @Controller
 public class MemberCsController {
 
+    private final MemberCsService memberCsService;
+    public MemberCsController(MemberCsService memberCsService) {
+        this.memberCsService = memberCsService;
+    }
+  
     @GetMapping("/member/cs")
-    public String cs() {
+    public String cs(Model model) {
+        model.addAttribute("faqList", memberCsService.getVisibleFaqList());
+        model.addAttribute("noticeList", memberCsService.getVisibleNoticeList());
         return "member/cs";
     }
 

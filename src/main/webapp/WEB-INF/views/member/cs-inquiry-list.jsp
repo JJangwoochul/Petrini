@@ -150,6 +150,17 @@
         <a href="${contextPath}/member/cs/inquiry/write" class="btn-inquiry-write">문의 작성</a>
     </div>
 
+    <c:if test="${not empty successMsg}">
+        <div class="cs-form-error" style="background:#ECFDF5;border-color:#BBF7D0;color:#166534;margin-bottom:16px">
+            <c:out value="${successMsg}"/>
+        </div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+        <div class="cs-form-error" style="margin-bottom:16px">
+            <c:out value="${errorMsg}"/>
+        </div>
+    </c:if>
+
     <div class="cs-inquiry-list">
         <div class="cs-inquiry-list-head">
             <span>유형</span>

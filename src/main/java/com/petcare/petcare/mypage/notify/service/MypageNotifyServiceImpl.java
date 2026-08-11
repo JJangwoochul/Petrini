@@ -266,6 +266,137 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         mypageNotifyMapper.insertNotification(vo);
     }
 
+    // 2026-08-11 박유정 — 숙소 예약 취소 알림
+    @Override
+    @Transactional
+    public void sendStayReserveCancelNotification(Long memberNo, String stayName,
+                                                  java.util.Date checkinDate, java.util.Date checkoutDate,
+                                                  String cancelReason, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String period = formatStayPeriod(checkinDate, checkoutDate);
+        String safeName = stayName != null ? stayName : "숙소";
+        String reason = (cancelReason != null && !cancelReason.isBlank()) ? cancelReason.trim() : "-";
+        String content = "[" + safeName + "] 예약이 취소되었습니다.\n\n숙박 기간: " + period
+                + "\n취소 사유: " + reason;
+        if (content.length() > 500) {
+            content = content.substring(0, 497) + "...";
+        }
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 예약이 취소되었습니다");
+        vo.setContent(content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-08-11 박유정 — 숙소 환불 신청 → 사업자 알림
+    @Override
+    @Transactional
+    public void sendStayRefundRequestToBizNotification(Long bizMemberNo, String stayName,
+                                                       String resvNo, java.util.Date applyDate, Long resvId) {
+        if (bizMemberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String safeResvNo = (resvNo != null && !resvNo.isBlank()) ? resvNo : String.valueOf(resvId);
+        String content = "[" + safeName + "] 환불 신청이 접수되었습니다.\n\n"
+                + "예약번호: " + safeResvNo + "\n"
+                + "환불 신청일시: " + formatDateTime(applyDate) + "\n"
+                + "처리 상태: 대기\n\n"
+                + "환불 신청 메뉴에서 확인해 주세요. (관리자 승인 후 환불됩니다)";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(bizMemberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 환불 신청이 접수되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl("/biz/stay/refunds?status=WAIT");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-08-11 박유정 — 숙소 환불 신청 접수 → 회원 알림
+    @Override
+    @Transactional
+    public void sendStayRefundRequestToMemberNotification(Long memberNo, String stayName,
+                                                          java.util.Date applyDate, Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String content = "[" + safeName + "] 환불 신청이 접수되었습니다.\n\n"
+                + "환불 신청일시: " + formatDateTime(applyDate) + "\n"
+                + "환불 승인: 대기\n"
+                + "환불: 미처리";
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 환불 신청이 접수되었습니다");
+        vo.setContent(content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-08-11 박유정 — 숙소 환불 승인 → 회원 알림 (예약 취소 문구 없음)
+    @Override
+    @Transactional
+    public void sendStayRefundApprovedToMemberNotification(Long memberNo, String stayName,
+                                                           java.util.Date applyDate, Long refundAmount,
+                                                           Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String amountText = refundAmount != null ? String.format("%,d원 환불 완료", refundAmount) : "환불 완료";
+        String content = "[" + safeName + "] 환불이 승인되었습니다.\n\n"
+                + "환불 신청일시: " + formatDateTime(applyDate) + "\n"
+                + "환불 승인: 승인\n"
+                + "환불: " + amountText;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 환불이 승인되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
+    // 2026-08-11 박유정 — 숙소 환불 거절 → 회원 알림
+    @Override
+    @Transactional
+    public void sendStayRefundRejectedToMemberNotification(Long memberNo, String stayName,
+                                                           java.util.Date applyDate, String rejectReason,
+                                                           Long resvId) {
+        if (memberNo == null) {
+            return;
+        }
+        String safeName = stayName != null ? stayName : "숙소";
+        String reason = (rejectReason != null && !rejectReason.isBlank()) ? rejectReason.trim() : "-";
+        String content = "[" + safeName + "] 환불 신청이 거절되었습니다.\n\n"
+                + "환불 신청일시: " + formatDateTime(applyDate) + "\n"
+                + "환불 승인: 거절\n"
+                + "환불: 없음\n"
+                + "거절 사유: " + reason;
+
+        MypageNotifyVO vo = new MypageNotifyVO();
+        vo.setMemberNo(memberNo);
+        vo.setNotiType("RESERVE");
+        vo.setTitle("숙소 환불 신청이 거절되었습니다");
+        vo.setContent(content.length() > 500 ? content.substring(0, 497) + "..." : content);
+        vo.setLinkUrl(resvId != null ? "/mypage/reserve/detail?resvId=" + resvId : "/mypage/reserve");
+        vo.setIsRead("N");
+        mypageNotifyMapper.insertNotification(vo);
+    }
+
     // 2026/07/13 장우철 — 진료완료 알림 (상세에서 리뷰 작성)
     @Override
     @Transactional
@@ -551,6 +682,13 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         String checkin = checkinDate != null ? sdf.format(checkinDate) : "-";
         String checkout = checkoutDate != null ? sdf.format(checkoutDate) : "-";
         return checkin + " ~ " + checkout;
+    }
+
+    private String formatDateTime(java.util.Date date) {
+        if (date == null) {
+            return "-";
+        }
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(date);
     }
 
     private String resolveBizTypeLabel(String bizType) {

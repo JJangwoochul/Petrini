@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class MemberInquiryVO {
     private Long inquiryId;
-    private String inquiryType; // VET/PARTNER/ORDER/RESERVE/ETC
+    private String inquiryType; // MEMBER / RESERVE / ETC
     private Long memberNo;
     private String memberName;
     private String memberEmail;

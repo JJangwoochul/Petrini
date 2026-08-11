@@ -1,8 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="cs" />
-<c:set var="noticeId" value="${empty noticeId ? '1' : noticeId}" />
 
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
@@ -69,6 +69,7 @@
     font-size: 15px;
     color: var(--text-sub);
     line-height: 1.85;
+    white-space: pre-wrap;   /* ← 줄바꿈 유지 (DB 본문) */
 }
 .cs-notice-detail-body p { margin: 0 0 14px; }
 .cs-notice-detail-body ul {
@@ -91,58 +92,26 @@
 
     <article class="cs-notice-detail-card">
         <c:choose>
-        <c:when test="${noticeId eq '1'}">
-            <span class="cs-notice-detail-badge">공지</span>
-            <h1 class="cs-notice-detail-title">7월 여름맞이 최대 30% 할인 이벤트 안내</h1>
-            <div class="cs-notice-detail-meta">2025.07.01 · 펫린이 운영팀</div>
-            <div class="cs-notice-detail-body">
-                <p>안녕하세요, 펫린이입니다.</p>
-                <p>여름맞이 대축제가 시작되었습니다. 사료·간식·용품 전 품목 최대 30% 할인과 추가 쿠폰 혜택을 만나보세요.</p>
-                <ul>
-                    <li>이벤트 기간: 2025.07.01 ~ 2025.07.31</li>
-                    <li>할인 범위: 쇼핑몰 전 품목 최대 30%</li>
-                    <li>추가 혜택: 결제 금액별 쿠폰 자동 발급</li>
-                </ul>
-                <p>자세한 내용은 이벤트 페이지에서 확인해 주세요.</p>
-            </div>
-        </c:when>
-
-        <c:when test="${noticeId eq '2'}">
-            <span class="cs-notice-detail-badge">공지</span>
-            <h1 class="cs-notice-detail-title">PetCare 서비스 이용약관 개정 안내</h1>
-            <div class="cs-notice-detail-meta">2025.06.20 · 펫린이 운영팀</div>
-            <div class="cs-notice-detail-body">
-                <p>펫린이 서비스 이용약관이 아래와 같이 개정됩니다.</p>
-                <ul>
-                    <li>시행일: 2025.07.01</li>
-                    <li>개정 사유: 회원 보호 및 서비스 정책 명확화</li>
-                    <li>주요 변경: 환불·취소 정책, 개인정보 처리 관련 조항 보완</li>
-                </ul>
-                <p>개정 약관은 고객센터 &gt; 이용약관 메뉴에서 확인하실 수 있습니다. 시행일 이후 서비스 이용 시 개정 약관에 동의한 것으로 간주됩니다.</p>
-            </div>
-        </c:when>
-
-        <c:when test="${noticeId eq '3'}">
-            <span class="cs-notice-detail-badge info">안내</span>
-            <h1 class="cs-notice-detail-title">시스템 점검 안내 (6/15 02:00~04:00)</h1>
-            <div class="cs-notice-detail-meta">2025.06.10 · 펫린이 운영팀</div>
-            <div class="cs-notice-detail-body">
-                <p>보다 안정적인 서비스 제공을 위해 아래와 같이 시스템 점검이 진행됩니다.</p>
-                <ul>
-                    <li>점검 일시: 2025.06.15 (일) 02:00 ~ 04:00</li>
-                    <li>점검 내용: 서버 안정화 및 보안 패치</li>
-                    <li>영향 범위: 점검 시간 동안 일부 기능 이용 제한</li>
-                </ul>
-                <p>점검 시간은 작업 상황에 따라 변경될 수 있습니다. 이용에 불편을 드려 죄송합니다.</p>
-            </div>
-        </c:when>
-
-        <c:otherwise>
-            <div class="cs-notice-empty">
-                <p>요청하신 공지를 찾을 수 없습니다.</p>
-                <a href="${contextPath}/member/cs" class="cs-notice-back" style="margin-top:16px">목록으로 돌아가기</a>
-            </div>
-        </c:otherwise>
+            <c:when test="${not empty notice}">
+                <span class="cs-notice-detail-badge${notice.noticeTypeCd eq 'INFO' ? ' info' : ''}">
+                    <c:choose>
+                        <c:when test="${notice.noticeTypeCd eq 'INFO'}">안내</c:when>
+                        <c:otherwise>공지</c:otherwise>
+                    </c:choose>
+                </span>
+                <h1 class="cs-notice-detail-title"><c:out value="${notice.title}"/></h1>
+                <div class="cs-notice-detail-meta">
+                    <fmt:formatDate value="${notice.regDate}" pattern="yyyy.MM.dd"/>
+                    · <c:out value="${notice.writerName}"/>
+                </div>
+                <div class="cs-notice-detail-body"><c:out value="${notice.body}"/></div>
+            </c:when>
+            <c:otherwise>
+                <div class="cs-notice-empty">
+                    <p>요청하신 공지를 찾을 수 없습니다.</p>
+                    <a href="${contextPath}/member/cs" class="cs-notice-back" style="margin-top:16px">목록으로 돌아가기</a>
+                </div>
+            </c:otherwise>
         </c:choose>
     </article>
 </div>

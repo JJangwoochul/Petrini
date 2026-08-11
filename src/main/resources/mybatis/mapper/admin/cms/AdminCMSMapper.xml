@@ -154,4 +154,133 @@
         JOIN   TB_MEMBER M ON M.MEMBER_ID = B.BIZ_ID
         WHERE  B.BIZ_NO = #{bizNo}
     </select>
+
+    <!-- 2026-08-11 박유정 — FAQ CMS -->
+    <select id="selectFaqList" resultType="com.petcare.petcare.admin.cms.vo.FaqVO">
+        SELECT F.FAQ_ID      AS faqId,
+               F.CATEGORY_CD AS categoryCd,
+               F.QUESTION    AS question,
+               F.ANSWER      AS answer,
+               F.VISIBLE_YN  AS visibleYn,
+               F.SORT_ORDER  AS sortOrder,
+               F.REG_DATE    AS regDate,
+               F.MOD_DATE    AS modDate
+          FROM TB_FAQ F
+         ORDER BY F.SORT_ORDER ASC, F.FAQ_ID DESC
+    </select>
+
+    <select id="selectFaqById" parameterType="long"
+            resultType="com.petcare.petcare.admin.cms.vo.FaqVO">
+        SELECT F.FAQ_ID      AS faqId,
+               F.CATEGORY_CD AS categoryCd,
+               F.QUESTION    AS question,
+               F.ANSWER      AS answer,
+               F.VISIBLE_YN  AS visibleYn,
+               F.SORT_ORDER  AS sortOrder,
+               F.REG_DATE    AS regDate,
+               F.MOD_DATE    AS modDate
+          FROM TB_FAQ F
+         WHERE F.FAQ_ID = #{faqId}
+    </select>
+
+    <insert id="insertFaq" parameterType="com.petcare.petcare.admin.cms.vo.FaqVO">
+        <selectKey keyProperty="faqId" resultType="long" order="BEFORE">
+            SELECT NVL(MAX(FAQ_ID), 0) + 1 FROM TB_FAQ
+        </selectKey>
+        INSERT INTO TB_FAQ (
+            FAQ_ID, CATEGORY_CD, QUESTION, ANSWER,
+            VISIBLE_YN, SORT_ORDER, REG_DATE
+        ) VALUES (
+            #{faqId},
+            #{categoryCd},
+            #{question},
+            #{answer, jdbcType=CLOB},
+            #{visibleYn},
+            #{sortOrder, jdbcType=NUMERIC},
+            SYSDATE
+        )
+    </insert>
+
+    <update id="updateFaq" parameterType="com.petcare.petcare.admin.cms.vo.FaqVO">
+        UPDATE TB_FAQ
+           SET CATEGORY_CD = #{categoryCd},
+               QUESTION    = #{question},
+               ANSWER      = #{answer, jdbcType=CLOB},
+               VISIBLE_YN  = #{visibleYn},
+               SORT_ORDER  = #{sortOrder, jdbcType=NUMERIC},
+               MOD_DATE    = SYSDATE
+         WHERE FAQ_ID = #{faqId}
+    </update>
+
+    <delete id="deleteFaq" parameterType="long">
+        DELETE FROM TB_FAQ WHERE FAQ_ID = #{faqId}
+    </delete>
+
+    <!-- 2026-08-11 박유정 — 공지사항 CMS -->
+    <select id="selectNoticeList" resultType="com.petcare.petcare.admin.cms.vo.NoticeVO">
+        SELECT N.NOTICE_ID      AS noticeId,
+               N.NOTICE_TYPE_CD AS noticeTypeCd,
+               N.TITLE          AS title,
+               N.BODY           AS body,
+               N.WRITER_NAME    AS writerName,
+               TRIM(N.PIN_YN)     AS pinYn,
+               TRIM(N.VISIBLE_YN) AS visibleYn,
+               N.VIEW_COUNT     AS viewCount,
+               N.REG_DATE       AS regDate,
+               N.MOD_DATE       AS modDate
+          FROM TB_NOTICE N
+         ORDER BY TRIM(N.PIN_YN) DESC, N.REG_DATE DESC, N.NOTICE_ID DESC
+    </select>
+
+    <select id="selectNoticeById" parameterType="long"
+            resultType="com.petcare.petcare.admin.cms.vo.NoticeVO">
+        SELECT N.NOTICE_ID      AS noticeId,
+               N.NOTICE_TYPE_CD AS noticeTypeCd,
+               N.TITLE          AS title,
+               N.BODY           AS body,
+               N.WRITER_NAME    AS writerName,
+               TRIM(N.PIN_YN)     AS pinYn,
+               TRIM(N.VISIBLE_YN) AS visibleYn,
+               N.VIEW_COUNT     AS viewCount,
+               N.REG_DATE       AS regDate,
+               N.MOD_DATE       AS modDate
+          FROM TB_NOTICE N
+         WHERE N.NOTICE_ID = #{noticeId}
+    </select>
+
+    <insert id="insertNotice" parameterType="com.petcare.petcare.admin.cms.vo.NoticeVO">
+        <selectKey keyProperty="noticeId" resultType="long" order="BEFORE">
+            SELECT NVL(MAX(NOTICE_ID), 0) + 1 FROM TB_NOTICE
+        </selectKey>
+        INSERT INTO TB_NOTICE (
+            NOTICE_ID, NOTICE_TYPE_CD, TITLE, BODY, WRITER_NAME,
+            PIN_YN, VISIBLE_YN, VIEW_COUNT, REG_DATE
+        ) VALUES (
+            #{noticeId},
+            #{noticeTypeCd},
+            #{title},
+            #{body, jdbcType=CLOB},
+            #{writerName, jdbcType=VARCHAR},
+            #{pinYn},
+            #{visibleYn},
+            NVL(#{viewCount, jdbcType=NUMERIC}, 0),
+            SYSDATE
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="com.petcare.petcare.admin.cms.vo.NoticeVO">
+        UPDATE TB_NOTICE
+           SET NOTICE_TYPE_CD = #{noticeTypeCd},
+               TITLE          = #{title},
+               BODY           = #{body, jdbcType=CLOB},
+               WRITER_NAME    = #{writerName, jdbcType=VARCHAR},
+               PIN_YN         = #{pinYn},
+               VISIBLE_YN     = #{visibleYn},
+               MOD_DATE       = SYSDATE
+         WHERE NOTICE_ID = #{noticeId}
+    </update>
+
+    <delete id="deleteNotice" parameterType="long">
+        DELETE FROM TB_NOTICE WHERE NOTICE_ID = #{noticeId}
+    </delete>
 </mapper>

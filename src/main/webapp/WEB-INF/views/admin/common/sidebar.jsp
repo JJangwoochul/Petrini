@@ -73,6 +73,9 @@
         <a href="${contextPath}/admin/inquiry/stay-refund?status=WAIT" class="adm-nav-link ${adminPage eq 'stay-refund' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             숙소 환불 신청
+            <c:if test="${pendingStayRefundCount > 0}">
+              <span class="adm-nav-badge">${pendingStayRefundCount}</span>
+            </c:if>
         </a>
         <a href="${contextPath}/admin/biz/talent?status=PENDING" class="adm-nav-link ${adminPage eq 'biz-talent' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
@@ -116,6 +119,14 @@
         <a href="${contextPath}/admin/cms/faq" class="adm-nav-link ${adminPage eq 'cms-faq' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             FAQ
+        </a>
+        <%-- 2026-08-11 박유정 — 일반 1:1 문의 답변 (숙소 환불 제외) --%>
+        <a href="${contextPath}/admin/inquiry/general?status=WAIT" class="adm-nav-link ${adminPage eq 'general-inquiry' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            1:1 문의
+            <c:if test="${pendingGeneralInquiryCount > 0}">
+              <span class="adm-nav-badge">${pendingGeneralInquiryCount}</span>
+            </c:if>
         </a>
 
         <div class="adm-nav-group">통계</div>

@@ -46,6 +46,12 @@
       </svg>
       예약 관리<c:if test="${pendingReserveCount > 0}"><span class="biz-nav-badge">${pendingReserveCount}</span></c:if>
     </a>
+    <a href="${contextPath}/biz/stay/refunds" class="biz-nav-link ${bizPage eq 'refunds' ? 'active' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+      </svg>
+      환불 신청<c:if test="${not empty stayRefundRequestCount && stayRefundRequestCount > 0}"><span class="biz-nav-badge">${stayRefundRequestCount}</span></c:if>
+    </a>
     <a href="${contextPath}/biz/stay/calendar" class="biz-nav-link ${bizPage eq 'calendar' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>

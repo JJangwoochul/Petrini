@@ -30,12 +30,15 @@ public class AdminInquiryController extends AdminBaseController {
     @GetMapping({ "", "/stay-refund" })
     public String stayRefundList(HttpSession session,
                                  @RequestParam(value = "status", required = false, defaultValue = "WAIT") String status,
+                                 @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
                                  Model model) {
         if (getAdmin(session) == null) {
             return redirectToLogin();
         }
-        model.addAttribute("list", adminInquiryService.getStayRefundList(status));
+        model.addAttribute("list", adminInquiryService.getStayRefundList(status, keyword));
         model.addAttribute("status", status);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("statusCounts", adminInquiryService.getStayRefundStatusCounts());
         return "admin/inquiry/stay-refund-list";
     }
 
@@ -92,5 +95,63 @@ public class AdminInquiryController extends AdminBaseController {
             rttr.addFlashAttribute("errorMsg", e.getMessage());
         }
         return "redirect:/admin/inquiry/stay-refund/detail?inquiryId=" + inquiryId;
+    }
+
+    // 2026-08-11 박유정 — 관리자 일반 1:1 문의
+
+    /** 목록 */
+    @GetMapping("/general")
+    public String generalInquiryList(HttpSession session,
+                                     @RequestParam(value = "status", required = false, defaultValue = "WAIT") String status,
+                                     @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
+                                     Model model) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        model.addAttribute("list", adminInquiryService.getGeneralInquiryList(status, keyword));
+        model.addAttribute("status", status);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("statusCounts", adminInquiryService.getGeneralInquiryStatusCounts());
+        model.addAttribute("adminPage", "general-inquiry");
+        return "admin/inquiry/general-list";
+    }
+
+    /** 상세 */
+    @GetMapping("/general/detail")
+    public String generalInquiryDetail(HttpSession session,
+                                       @RequestParam("inquiryId") Long inquiryId,
+                                       Model model,
+                                       RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        MemberInquiryVO detail = adminInquiryService.getGeneralInquiryDetail(inquiryId);
+        if (detail == null) {
+            rttr.addFlashAttribute("errorMsg", "문의를 찾을 수 없습니다.");
+            return "redirect:/admin/inquiry/general";
+        }
+        model.addAttribute("inquiry", detail);
+        model.addAttribute("adminPage", "general-inquiry");
+        return "admin/inquiry/general-detail";
+    }
+
+    /** 답변 등록 */
+    @PostMapping("/general/answer")
+    public String generalInquiryAnswer(HttpSession session,
+                                       @RequestParam("inquiryId") Long inquiryId,
+                                       @RequestParam("answer") String answer,
+                                       RedirectAttributes rttr) {
+        MemberVO admin = getAdmin(session);
+        if (admin == null) {
+            return redirectToLogin();
+        }
+        try {
+            adminInquiryService.answerGeneralInquiry(
+                    inquiryId, admin.getMemberNo(), answer);
+            rttr.addFlashAttribute("successMsg", "답변이 등록되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/inquiry/general/detail?inquiryId=" + inquiryId;
     }
 }

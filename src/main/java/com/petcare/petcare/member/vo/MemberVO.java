@@ -48,6 +48,5 @@ public class MemberVO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // 2026-08-04 박유정 — 프로필 사진 URL (TB_MEMBER.PROFILE_IMG_URL, 세션·사이드바 표시용)
-    private String profileImgUrl;
+    private String profileImgUrl;   // PROFILE_IMG_URL — 프로필 사진 URL (세션·사이드바 표시)
 }

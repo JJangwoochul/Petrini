@@ -12,6 +12,8 @@
  *
  * 2026-08-06 박유정 — 배너 신청 대기(PENDING) 건수 배지 추가
  * (admin/common/sidebar.jsp 배너 관리 메뉴)
+ *
+ * 2026-08-11 박유정 — 1:1 문의·숙소 환불신청 대기(WAIT) 건수 배지 추가
  */
 
 package com.petcare.petcare.admin.controller;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 import com.petcare.petcare.admin.biz.service.AdminBizService;
 import com.petcare.petcare.admin.cms.service.AdminCMSService;
+import com.petcare.petcare.admin.inquiry.service.AdminInquiryService;
 import com.petcare.petcare.admin.settlement.service.AdminSettlementService;
 import com.petcare.petcare.admin.review.service.AdminReviewService;
 import com.petcare.petcare.give.talent.service.GiveTalentService;
@@ -50,6 +53,10 @@ public class AdminSidebarAdvice {
     // 2026-08-06 박유정 — 배너 신청 대기 건수 (AdminCMSService)
     @Autowired
     private AdminCMSService adminCMSService;
+
+    // 2026-08-11 박유정 — 1:1 문의·숙소 환불신청 대기 건수
+    @Autowired
+    private AdminInquiryService adminInquiryService;
 
     // 2026/07/11 장우철 — sidebar 사업자 승인 메뉴 배지 (더미 3 제거)
     @ModelAttribute("pendingBizApproveCount")
@@ -119,6 +126,34 @@ public class AdminSidebarAdvice {
         }
         try {
             return adminCMSService.getPendingBannerCount();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 2026-08-11 박유정 — sidebar 숙소 환불신청 메뉴 배지
+    @ModelAttribute("pendingStayRefundCount")
+    public int pendingStayRefundCount(HttpSession session) {
+        MemberVO m = (MemberVO) session.getAttribute("memberInfo");
+        if (m == null || !"ADMIN".equals(m.getRole())) {
+            return 0;
+        }
+        try {
+            return adminInquiryService.countPendingStayRefund();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 2026-08-11 박유정 — sidebar 1:1 문의 메뉴 배지
+    @ModelAttribute("pendingGeneralInquiryCount")
+    public int pendingGeneralInquiryCount(HttpSession session) {
+        MemberVO m = (MemberVO) session.getAttribute("memberInfo");
+        if (m == null || !"ADMIN".equals(m.getRole())) {
+            return 0;
+        }
+        try {
+            return adminInquiryService.countPendingGeneralInquiry();
         } catch (Exception e) {
             return 0;
         }

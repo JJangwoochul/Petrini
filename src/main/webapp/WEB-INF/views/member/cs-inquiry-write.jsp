@@ -126,6 +126,9 @@
           </c:choose>
         </h1>
 
+        <c:if test="${not empty errorMsg}">
+            <p class="cs-form-error"><c:out value="${errorMsg}"/></p>
+        </c:if>
         <c:if test="${param.error eq 'empty'}">
             <p class="cs-form-error">문의 유형, 제목, 내용을 모두 입력해 주세요.</p>
         </c:if>
@@ -145,14 +148,16 @@
             </c:if>
 
             <c:if test="${!stayRefund}">
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;line-height:1.6;padding:12px 14px;background:#F8FAFC;border:1px solid var(--border);border-radius:var(--radius-sm)">
+                주문·배송, 결제·환불 문의는 <a href="${contextPath}/member/cs" style="color:var(--primary);font-weight:700;text-decoration:none">고객센터 FAQ</a>를 먼저 확인해 주세요.<br>
+                숙소 환불 신청은 예약 상세 화면에서 별도로 접수됩니다.
+            </p>
             <div class="cs-form-group">
                 <label for="category">문의 유형</label>
                 <select id="category" name="category" required>
                     <option value="">유형을 선택하세요</option>
-                    <option value="주문/배송">주문/배송</option>
+                    <option value="회원">회원 (계정·정지 등)</option>
                     <option value="예약">예약</option>
-                    <option value="회원">회원</option>
-                    <option value="결제/환불">결제/환불</option>
                     <option value="기타">기타</option>
                 </select>
             </div>

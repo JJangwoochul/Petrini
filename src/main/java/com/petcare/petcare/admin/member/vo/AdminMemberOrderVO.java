@@ -3,7 +3,12 @@
  *
  * - 박유정 / 2026-07-21 STEP 11
  *
- * 참고 테이블: TB_ORDER, TB_ORDER_ITEM
+ * 참고 테이블
+ * - TB_ORDER
+ * - TB_ORDER_ITEM
+ *
+ * [ORDER_STATUS]
+ * - PAID / SHIPPING / DELIVERED / CANCEL 등
  */
 
 package com.petcare.petcare.admin.member.vo;
@@ -15,11 +20,16 @@ import lombok.Setter;
 @Setter
 public class AdminMemberOrderVO {
 
-    private Long orderId;          // ORDER_ID
-    private String orderNo;        // ORDER_NO
-    private String orderStatus;    // ORDER_STATUS — PAID / SHIPPING / DELIVERED / CANCEL 등
-    private Long payAmount;        // PAY_AMOUNT
-    private String orderDate;      // ORDER_DATE
-    private String firstProductName; // 첫 상품명 (TB_ORDER_ITEM)
-    private Integer itemCount;     // 주문 상품 건수
+    // ── TB_ORDER 컬럼 ──────────────────────────────────────────
+
+    private Long orderId;            // ORDER_ID — 주문 번호 (PK)
+    private String orderNo;          // ORDER_NO — 주문번호 (화면 표시)
+    private String orderStatus;      // ORDER_STATUS — 주문 상태
+    private Long payAmount;            // PAY_AMOUNT — 실결제 금액
+    private String orderDate;          // ORDER_DATE — 주문일
+
+    // ── 조회 전용 (TB_ORDER_ITEM) ──────────────────────────────
+
+    private String firstProductName;   // PRODUCT_NAME — 대표 상품명 (첫 항목)
+    private Integer itemCount;         // (집계) — 주문 상품 건수
 }

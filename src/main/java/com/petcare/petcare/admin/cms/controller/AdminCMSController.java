@@ -33,6 +33,10 @@ import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.petcare.petcare.admin.cms.vo.FaqVO;
+
+import com.petcare.petcare.admin.cms.vo.NoticeVO;
+
 @Controller
 @RequestMapping("/admin/cms")
 public class AdminCMSController extends AdminBaseController {
@@ -201,43 +205,227 @@ public class AdminCMSController extends AdminBaseController {
         }
     }
     
+    // 2026-08-11 박유정 — 공지사항 목록
     @GetMapping("/notice")
-    public String cmsNotice(HttpSession session) {
-        if (getAdmin(session) == null) 
+    public String cmsNotice(HttpSession session, Model model) {
+        if (getAdmin(session) == null) {
             return redirectToLogin();
-
+        }
+        model.addAttribute("noticeList", adminCMSService.getNoticeList());
+        model.addAttribute("adminPage", "cms-notice");
         return "admin/cms/notice";
     }
 
-    @GetMapping("/faq")
-    public String cmsFaq(HttpSession session) {
-        if (getAdmin(session) == null) 
-            return redirectToLogin();
-
-        return "admin/cms/faq";
-    }
-
-    @GetMapping("/banner/form")
-    public String bannerForm(HttpSession session) {
-        if (getAdmin(session) == null)
-            return redirectToLogin();
-
-        return "admin/cms/banner-form";
-    }
-
+    // 2026-08-11 박유정 — 공지 등록/수정 폼
     @GetMapping("/notice/form")
-    public String noticeForm(HttpSession session) {
-        if (getAdmin(session) == null)
+    public String noticeForm(@RequestParam(value = "noticeId", required = false) Long noticeId,
+                             HttpSession session,
+                             Model model,
+                             RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
             return redirectToLogin();
-
+        }
+        if (noticeId != null) {
+            NoticeVO notice = adminCMSService.getNoticeById(noticeId);
+            if (notice == null) {
+                rttr.addFlashAttribute("errorMsg", "공지를 찾을 수 없습니다.");
+                return "redirect:/admin/cms/notice";
+            }
+            model.addAttribute("notice", notice);
+            model.addAttribute("isEdit", true);
+        } else {
+            model.addAttribute("isEdit", false);
+        }
+        model.addAttribute("adminPage", "cms-notice");
         return "admin/cms/notice-form";
     }
 
-    @GetMapping("/faq/form")
-    public String faqForm(HttpSession session) {
-        if (getAdmin(session) == null)
+    // 2026-08-11 박유정 — 공지 등록
+    @PostMapping("/notice/save")
+    public String noticeSave(@RequestParam String title,
+                             @RequestParam String body,
+                             @RequestParam(required = false, defaultValue = "NOTICE") String noticeTypeCd,
+                             @RequestParam(required = false) String writerName,
+                             @RequestParam(required = false, defaultValue = "N") String pinYn,
+                             @RequestParam(required = false, defaultValue = "N") String visibleYn,
+                             HttpSession session,
+                             RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
             return redirectToLogin();
+        }
+        try {
+            NoticeVO notice = new NoticeVO();
+            notice.setTitle(title);
+            notice.setBody(body);
+            notice.setNoticeTypeCd(noticeTypeCd);
+            notice.setWriterName(writerName);
+            notice.setPinYn(pinYn);
+            notice.setVisibleYn(visibleYn);
+            adminCMSService.createNotice(notice);
+            rttr.addFlashAttribute("successMsg", "공지가 등록되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/admin/cms/notice/form";
+        }
+        return "redirect:/admin/cms/notice";
+    }
 
+    // 2026-08-11 박유정 — 공지 수정
+    @PostMapping("/notice/update")
+    public String noticeUpdate(@RequestParam Long noticeId,
+                               @RequestParam String title,
+                               @RequestParam String body,
+                               @RequestParam(required = false, defaultValue = "NOTICE") String noticeTypeCd,
+                               @RequestParam(required = false) String writerName,
+                               @RequestParam(required = false, defaultValue = "N") String pinYn,
+                               @RequestParam(required = false, defaultValue = "N") String visibleYn,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        try {
+            NoticeVO notice = new NoticeVO();
+            notice.setNoticeId(noticeId);
+            notice.setTitle(title);
+            notice.setBody(body);
+            notice.setNoticeTypeCd(noticeTypeCd);
+            notice.setWriterName(writerName);
+            notice.setPinYn(pinYn);
+            notice.setVisibleYn(visibleYn);
+            adminCMSService.updateNotice(notice);
+            rttr.addFlashAttribute("successMsg", "공지가 수정되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/admin/cms/notice/form?noticeId=" + noticeId;
+        }
+        return "redirect:/admin/cms/notice";
+    }
+
+    // 2026-08-11 박유정 — 공지 삭제
+    @PostMapping("/notice/delete")
+    public String noticeDelete(@RequestParam Long noticeId,
+                               HttpSession session,
+                               RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        try {
+            adminCMSService.deleteNotice(noticeId);
+            rttr.addFlashAttribute("successMsg", "공지가 삭제되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/cms/notice";
+    }
+
+    // 2026-08-11 박유정 — FAQ 목록
+    @GetMapping("/faq")
+    public String cmsFaq(HttpSession session, Model model) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        model.addAttribute("faqList", adminCMSService.getFaqList());
+        model.addAttribute("adminPage", "cms-faq");
+        return "admin/cms/faq";
+    }
+
+    // 2026-08-11 박유정 — FAQ 등록/수정 폼
+    @GetMapping("/faq/form")
+    public String faqForm(@RequestParam(value = "faqId", required = false) Long faqId,
+                          HttpSession session,
+                          Model model,
+                          RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        if (faqId != null) {
+            FaqVO faq = adminCMSService.getFaqById(faqId);
+            if (faq == null) {
+                rttr.addFlashAttribute("errorMsg", "FAQ를 찾을 수 없습니다.");
+                return "redirect:/admin/cms/faq";
+            }
+            model.addAttribute("faq", faq);
+            model.addAttribute("isEdit", true);
+        } else {
+            model.addAttribute("isEdit", false);
+        }
+        model.addAttribute("adminPage", "cms-faq");
         return "admin/cms/faq-form";
+    }
+
+    // 2026-08-11 박유정 — FAQ 등록
+    @PostMapping("/faq/save")
+    public String faqSave(@RequestParam String categoryCd,
+                          @RequestParam String question,
+                          @RequestParam String answer,
+                          @RequestParam(required = false, defaultValue = "N") String visibleYn,
+                          @RequestParam(required = false) Integer sortOrder,
+                          HttpSession session,
+                          RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        try {
+            FaqVO faq = new FaqVO();
+            faq.setCategoryCd(categoryCd);
+            faq.setQuestion(question);
+            faq.setAnswer(answer);
+            faq.setVisibleYn(visibleYn);
+            faq.setSortOrder(sortOrder);
+            adminCMSService.createFaq(faq);
+            rttr.addFlashAttribute("successMsg", "FAQ가 등록되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/admin/cms/faq/form";
+        }
+        return "redirect:/admin/cms/faq";
+    }
+
+    // 2026-08-11 박유정 — FAQ 수정
+    @PostMapping("/faq/update")
+    public String faqUpdate(@RequestParam Long faqId,
+                            @RequestParam String categoryCd,
+                            @RequestParam String question,
+                            @RequestParam String answer,
+                            @RequestParam(required = false, defaultValue = "N") String visibleYn,
+                            @RequestParam(required = false) Integer sortOrder,
+                            HttpSession session,
+                            RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        try {
+            FaqVO faq = new FaqVO();
+            faq.setFaqId(faqId);
+            faq.setCategoryCd(categoryCd);
+            faq.setQuestion(question);
+            faq.setAnswer(answer);
+            faq.setVisibleYn(visibleYn);
+            faq.setSortOrder(sortOrder);
+            adminCMSService.updateFaq(faq);
+            rttr.addFlashAttribute("successMsg", "FAQ가 수정되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/admin/cms/faq/form?faqId=" + faqId;
+        }
+        return "redirect:/admin/cms/faq";
+    }
+
+    // 2026-08-11 박유정 — FAQ 삭제
+    @PostMapping("/faq/delete")
+    public String faqDelete(@RequestParam Long faqId,
+                            HttpSession session,
+                            RedirectAttributes rttr) {
+        if (getAdmin(session) == null) {
+            return redirectToLogin();
+        }
+        try {
+            adminCMSService.deleteFaq(faqId);
+            rttr.addFlashAttribute("successMsg", "FAQ가 삭제되었습니다.");
+        } catch (IllegalArgumentException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/cms/faq";
     }
 }

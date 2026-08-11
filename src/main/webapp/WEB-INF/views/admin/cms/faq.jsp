@@ -1,10 +1,22 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="adminPage"   value="cms-faq" />
 <%@ include file="/WEB-INF/views/admin/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/admin/common/sidebar.jsp" %>
 <main class="adm-main">
+    <c:if test="${not empty successMsg}">
+        <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">
+            <c:out value="${successMsg}"/>
+        </div>
+    </c:if>
+    <c:if test="${not empty errorMsg}">
+        <div style="background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">
+            <c:out value="${errorMsg}"/>
+        </div>
+    </c:if>
     <div class="adm-page-head">
         <div class="adm-page-head-left">
             <h1 class="adm-page-title">FAQ</h1>
@@ -28,34 +40,48 @@
                     <tr><th>번호</th><th>카테고리</th><th>질문</th><th>노출</th><th>등록일</th><th>관리</th></tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>4</td><td>주문/배송</td>
-                        <td><strong>배송은 얼마나 걸리나요?</strong></td>
-                        <td><span class="adm-badge active">노출</span></td>
-                        <td>2025.06.15</td>
-                        <td><a href="${contextPath}/admin/cms/faq/form?mode=edit&id=4" class="adm-btn blue">수정</a></td>
-                    </tr>
-                    <tr>
-                        <td>3</td><td>회원</td>
-                        <td><strong>비밀번호를 잊어버렸어요.</strong></td>
-                        <td><span class="adm-badge active">노출</span></td>
-                        <td>2025.06.10</td>
-                        <td><a href="${contextPath}/admin/cms/faq/form?mode=edit&id=3" class="adm-btn blue">수정</a></td>
-                    </tr>
-                    <tr>
-                        <td>2</td><td>예약</td>
-                        <td><strong>병원 예약을 취소하고 싶어요.</strong></td>
-                        <td><span class="adm-badge active">노출</span></td>
-                        <td>2025.06.05</td>
-                        <td><a href="${contextPath}/admin/cms/faq/form?mode=edit&id=2" class="adm-btn blue">수정</a></td>
-                    </tr>
-                    <tr>
-                        <td>1</td><td>서비스</td>
-                        <td><strong>PetCare는 어떤 서비스인가요?</strong></td>
-                        <td><span class="adm-badge active">노출</span></td>
-                        <td>2025.05.20</td>
-                        <td><a href="${contextPath}/admin/cms/faq/form?mode=edit&id=1" class="adm-btn blue">수정</a></td>
-                    </tr>
+                    <c:choose>
+                        <c:when test="${empty faqList}">
+                            <tr>
+                                <td colspan="6" style="text-align:center;padding:40px;color:#999">
+                                    등록된 FAQ가 없습니다.
+                                </td>
+                            </tr>
+                        </c:when>
+                        <c:otherwise>
+                            <c:forEach var="item" items="${faqList}">
+                                <tr>
+                                    <td><c:out value="${item.faqId}"/></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${item.categoryCd eq 'SERVICE'}">서비스</c:when>
+                                            <c:when test="${item.categoryCd eq 'ORDER'}">주문/배송</c:when>
+                                            <c:when test="${item.categoryCd eq 'MEMBER'}">회원</c:when>
+                                            <c:when test="${item.categoryCd eq 'RESERVE'}">예약</c:when>
+                                            <c:otherwise><c:out value="${item.categoryCd}"/></c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td><strong><c:out value="${item.question}"/></strong></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${item.visibleYn eq 'Y'}">
+                                                <span class="adm-badge active">노출</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="adm-badge">숨김</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <fmt:formatDate value="${item.regDate}" pattern="yyyy.MM.dd"/>
+                                    </td>
+                                    <td>
+                                        <a href="${contextPath}/admin/cms/faq/form?faqId=${item.faqId}" class="adm-btn blue">수정</a>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
                 </tbody>
             </table>
         </div>

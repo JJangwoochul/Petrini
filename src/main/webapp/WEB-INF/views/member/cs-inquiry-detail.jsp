@@ -122,6 +122,12 @@
         문의 목록
     </a>
 
+    <c:if test="${not empty successMsg}">
+        <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">
+            <c:out value="${successMsg}"/>
+        </div>
+    </c:if>
+
     <article class="cs-inquiry-detail-card">
         <div class="cs-inquiry-detail-meta">
             <span class="cs-inquiry-detail-cat">${inquiry.category}</span>
