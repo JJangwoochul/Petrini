@@ -1,7 +1,16 @@
 /**
- * 2026/07/11 장우철 — 마이페이지 반려동물 프로필 VO
+ * 역할: 반려동물 프로필 데이터 객체
+ *
+ * - 장우철 / 2026/07/11 — TB_PET 기본 필드
+ * - 박유정 / 2026-07-28 — FUR_COLOR, NEUTER_YN, TRAITS, MEMO
  *
  * 참고 테이블: TB_PET
+ *
+ * [SPECIES]
+ * - DOG / CAT / ETC
+ *
+ * [NEUTER_YN]
+ * - Y / N / U (미확인)
  */
 
 package com.petcare.petcare.pet.profile.vo;
@@ -16,24 +25,27 @@ import lombok.Setter;
 @Setter
 public class PetProfileVO {
 
-    private Long petId;
-    private Long memberNo;
-    private String petName;
-    private String species;      // DOG / CAT / ETC
-    private String breed;
-    private String gender;       // M / F
-    private LocalDate birthDate;
-    private Integer age;
-    private Double weight;
-    private String furColor;   // 2026-07-28 박유정 — 털 색상 (TB_PET.FUR_COLOR)
-    private String neuterYn;   // 2026-07-28 박유정 — 중성화 Y/N/U (TB_PET.NEUTER_YN)
-    private String traits;     // 2026-07-28 박유정 — 성격/특징, 쉼표 구분 (TB_PET.TRAITS)
-    private String memo;       // 2026-07-28 박유정 — 메모 (TB_PET.MEMO)
-    private String isRepresent;  // Y / N
-    private String photoUrl;
-    private String delYn;        // 2026/07/11 장우철 — Y=삭제(소프트), N=정상
-    private LocalDateTime regDate;
+    // ── TB_PET 컬럼 ────────────────────────────────────────────
 
-    // 화면용 (dog/cat/etc) — 폼 바인딩, DB 저장 전 DOG/CAT/ETC 로 변환
-    private String kind;
+    private Long petId;             // PET_ID — 반려동물 번호 (PK)
+    private Long memberNo;          // MEMBER_NO — 보호자 회원 FK
+    private String petName;         // PET_NAME — 이름
+    private String species;         // SPECIES — 종 (DOG/CAT/ETC)
+    private String breed;           // BREED — 품종
+    private String gender;          // GENDER — 성별 (M/F)
+    private LocalDate birthDate;    // BIRTH_DATE — 생년월일
+    private Integer age;            // AGE — 나이
+    private Double weight;          // WEIGHT — 체중 (kg)
+    private String furColor;        // FUR_COLOR — 털 색상
+    private String neuterYn;        // NEUTER_YN — 중성화 (Y/N/U)
+    private String traits;          // TRAITS — 성격/특징 (쉼표 구분)
+    private String memo;            // MEMO — 메모
+    private String isRepresent;     // IS_REPRESENT — 대표 반려동물 (Y/N)
+    private String photoUrl;        // PHOTO_URL — 사진 URL
+    private String delYn;           // DEL_YN — 삭제 여부 (Y=소프트삭제)
+    private LocalDateTime regDate;  // REG_DATE — 등록일
+
+    // ── 폼 전용 (DB 미저장) ────────────────────────────────────
+
+    private String kind;            // (폼) — 화면용 종 (dog/cat → DOG/CAT 변환)
 }

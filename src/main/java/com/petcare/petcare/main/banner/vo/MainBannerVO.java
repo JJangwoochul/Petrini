@@ -7,32 +7,46 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 역할: TB_BANNER 배너 VO
+ * 역할: 배너 광고 데이터 객체
  *
- * 2026-08-06 박유정
- * - HOLD(노출예정) 상태, effectiveStatusLabel, displayScheduleNote 추가
- * - 관리자·사업자 화면 라벨 / 노출 페이지 안내
+ * - 박유정 / 2026-08-06 — HOLD(노출예정), effectiveStatusLabel, displayScheduleNote
+ *
+ * 참고 테이블
+ * - TB_BANNER
+ * - TB_BUSINESS (JOIN — bizName, bizType)
+ * - TB_FILE (JOIN — imageUrl)
+ *
+ * [STATUS_CD]
+ * - PENDING   심사중
+ * - HOLD      노출예정
+ * - ACTIVE    노출중
+ * - REJECTED  반려
+ * - EXPIRED   미노출
  */
-@Getter @Setter
+@Getter
+@Setter
 public class MainBannerVO {
-    // TB_BANNER
-    private Long bannerId;
-    private Long bizNo;
-    private String title;
-    private String positionCd;
-    private Long fileId;
-    private String linkUrl;
-    // 2026/08/03 장우철 — 로컬 DDL START/END_DATE = DATE (VARCHAR2 아님). INSERT는 Mapper TO_DATE 사용
-    private String startDate;
-    private String endDate;
-    private String statusCd;        // PENDING / HOLD / ACTIVE / REJECTED / EXPIRED — 2026-08-06 박유정 HOLD 추가
-    private String rejectReason;    // 반려·대기 사유 공용 — 2026-08-06 박유정
-    private java.util.Date regDate;
 
-    // 조인 필드
-    private String bizName;         // TB_BUSINESS.BIZ_NAME
-    private String bizType;         // TB_BUSINESS.BIZ_TYPE (알림 링크용)
-    private String imageUrl;        // TB_FILE.FILE_URL (배너 이미지)
+    // ── TB_BANNER 컬럼 ─────────────────────────────────────────
+
+    private Long bannerId;          // BANNER_ID — 배너 번호 (PK)
+    private Long bizNo;             // BIZ_NO — 사업자 번호 (FK)
+    private String title;           // TITLE — 배너 제목
+    private String positionCd;      // POSITION_CD — 노출 위치 (MAIN_HERO/STORE 등)
+    private Long fileId;            // FILE_ID — 배너 이미지 파일 FK
+    private String linkUrl;         // LINK_URL — 클릭 시 이동 URL
+    // 2026/08/03 장우철 — 로컬 DDL START/END_DATE = DATE. INSERT는 Mapper TO_DATE 사용
+    private String startDate;       // START_DATE — 노출 시작일 (yyyy-MM-dd)
+    private String endDate;         // END_DATE — 노출 종료일 (yyyy-MM-dd)
+    private String statusCd;        // STATUS_CD — 승인·노출 상태
+    private String rejectReason;    // REJECT_REASON — 반려·대기(HOLD) 사유
+    private java.util.Date regDate; // REG_DATE — 등록일
+
+    // ── 조회 전용 (JOIN) ─────────────────────────────────────
+
+    private String bizName;         // B.BIZ_NAME — 업체명
+    private String bizType;         // B.BIZ_TYPE — 업종 (알림 링크용)
+    private String imageUrl;        // F.FILE_URL — 배너 이미지 URL
 
     // 2026-08-06 박유정 — 위치 코드 → 한글 라벨 (STORE=쇼핑)
     public String getPositionLabel() {

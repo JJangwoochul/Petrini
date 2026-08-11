@@ -226,7 +226,7 @@
     <p class="comment-error">신고 시퀀스(SEQ_TB_POST_REPORT)가 DB에 없습니다.</p>
   </c:if>
   <c:if test="${param.error eq 'member'}">
-    <p class="comment-error">회원 정보를 확인할 수 없습니다. <strong>회원가입 계정으로 로그인</strong>했는지 확인해 주세요. (/testUser 는 DB에 없어서 댓글 등록이 안 됩니다)</p>
+    <p class="comment-error">회원 정보를 확인할 수 없습니다. <strong>회원가입 계정으로 로그인</strong>했는지 확인해 주세요.</p>
   </c:if>
   <c:if test="${param.error eq 'seq'}">
     <p class="comment-error">댓글 시퀀스(SEQ_TB_POST_COMMENT)가 DB에 없습니다. DBA 또는 팀원에게 시퀀스 생성을 요청해 주세요.</p>

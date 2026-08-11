@@ -3,11 +3,14 @@
  *
  * 2026/07/11 장우철 — 마이페이지 예약 목록·상세 (2차)
  * - 박유정 / 2026-07-29 — addStayReview 후 TB_STAY AVG_RATING·REVIEW_CNT 갱신
+ * - 박유정 / 2026-08-10 — 재능나눔 참여 신청 예약내역 통합·취소
  */
 
 package com.petcare.petcare.mypage.reserve.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.petcare.petcare.common.external.service.TossPaymentService;
+import com.petcare.petcare.give.talent.service.GiveTalentService;
 import com.petcare.petcare.hospital.vo.HospitalReviewVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper;
@@ -38,35 +42,79 @@ public class MypageReserveServiceImpl implements MypageReserveService {
     private TossPaymentService tossPaymentService;
     @Autowired
     private MypageReservePointService mypageReservePointService;
+    // 2026-08-10 박유정 — 재능나눔 신청 취소 위임
+    @Autowired
+    private GiveTalentService giveTalentService;
 
+    // 2026-08-10 박유정 — 예약 + 재능나눔 신청 목록 병합 (type=talent 필터)
     @Override
     @Transactional(readOnly = true)
     public List<MypageReserveVO> getMyReservationList(Long memberNo, String statusFilter, String typeFilter) {
         if (memberNo == null) {
             return Collections.emptyList();
         }
-        // 2026/07/21 장우철 — 상태·유형 필터 정규화 (all/빈값 → null)
         String status = (statusFilter == null || statusFilter.isBlank() || "all".equalsIgnoreCase(statusFilter))
                 ? null : statusFilter.trim().toLowerCase();
         String type = (typeFilter == null || typeFilter.isBlank() || "all".equalsIgnoreCase(typeFilter))
                 ? null : typeFilter.trim().toLowerCase();
-        if (type != null && !"hospital".equals(type) && !"stay".equals(type)) {
+        if (type != null && !"hospital".equals(type) && !"stay".equals(type) && !"talent".equals(type)) {
             type = null;
         }
-        return mypageReserveMapper.selectMyReservationList(memberNo, status, type);
+
+        List<MypageReserveVO> list = new ArrayList<>();
+        if (type == null || "hospital".equals(type) || "stay".equals(type)) {
+            String reservationType = "talent".equals(type) ? null : type;
+            list.addAll(mypageReserveMapper.selectMyReservationList(memberNo, status, reservationType));
+        }
+        if (type == null || "talent".equals(type)) {
+            list.addAll(mypageReserveMapper.selectMyTalentApplyList(memberNo, status));
+        }
+
+        list.sort(Comparator
+                .comparing(MypageReserveVO::getRegDate, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(MypageReserveVO::getResvId, Comparator.nullsLast(Comparator.reverseOrder())));
+        return list;
     }
 
+    // 2026-08-10 박유정 — resvType=TALENT 이면 TB_TALENT_APPLY 상세
     @Override
     @Transactional(readOnly = true)
-    public MypageReserveVO getMyReservationDetail(Long memberNo, Long resvId) {
+    public MypageReserveVO getMyReservationDetail(Long memberNo, Long resvId, String resvType) {
         if (memberNo == null || resvId == null) {
             return null;
+        }
+        if ("TALENT".equalsIgnoreCase(resvType)) {
+            MypageReserveVO detail = mypageReserveMapper.selectMyTalentApplyDetail(memberNo, resvId);
+            if (detail != null && "PENDING".equalsIgnoreCase(detail.getStatusCd())) {
+                detail.setCancelable(true);
+            } else if (detail != null) {
+                detail.setCancelable(false);
+            }
+            return detail;
         }
         MypageReserveVO detail = mypageReserveMapper.selectMyReservationDetail(memberNo, resvId);
         if (detail != null) {
             fillStayCancelPreview(detail);
         }
         return detail;
+    }
+
+    // 2026-08-10 박유정 — 마이페이지에서 재능나눔 신청 취소
+    @Override
+    @Transactional
+    public void cancelTalentApply(Long memberNo, Long applyId) {
+        if (memberNo == null || applyId == null) {
+            throw new IllegalArgumentException("신청 정보가 올바르지 않습니다.");
+        }
+        try {
+            giveTalentService.cancelMyApply(applyId, memberNo);
+        } catch (IllegalStateException e) {
+            switch (e.getMessage()) {
+                case "NOT_OWNER" -> throw new IllegalStateException("본인 신청만 취소할 수 있습니다.");
+                case "NOT_CANCELABLE" -> throw new IllegalStateException("확인 대기 중인 신청만 취소할 수 있습니다.");
+                default -> throw e;
+            }
+        }
     }
 
     /** 2026/07/31 장우철 — CONFIRMED 숙소면 취소 수수료 미리보기 채움 */
@@ -174,9 +222,9 @@ public class MypageReserveServiceImpl implements MypageReserveService {
 
         // 3) 알림 (본인)
         String stayName = detail.getHospitalName() != null ? detail.getHospitalName() : "숙소";
-        // 2026/08/11 장우철 — 숙소 전용 취소 알림
+        // 2026/08/11 장우철 — 숙소 전용 취소 알림 (checkin~checkout 기간 표시)
         mypageNotifyService.sendStayReserveCancelNotification(
-                memberNo, stayName, detail.getCheckinDate(), null, reason, resvId);
+                memberNo, stayName, detail.getCheckinDate(), detail.getCheckoutDate(), reason, resvId);
     }
 
     // 2026/07/13 장우철 — DONE + 미작성 예약만 병원 리뷰 INSERT 후 평점 갱신

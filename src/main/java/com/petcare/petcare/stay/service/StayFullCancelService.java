@@ -35,7 +35,7 @@ public class StayFullCancelService {
     @Transactional
     public void cancelWithFullRefund(Long resvId, Long stayId, String cancelReason, String actorLabel)
             throws Exception {
-        cancelWithFullRefund(resvId, stayId, cancelReason, actorLabel, false);
+        cancelWithFullRefund(resvId, stayId, cancelReason, actorLabel, false, false);
     }
 
     /**
@@ -44,6 +44,16 @@ public class StayFullCancelService {
     @Transactional
     public void cancelWithFullRefund(Long resvId, Long stayId, String cancelReason, String actorLabel,
                                      boolean allowDone)
+            throws Exception {
+        cancelWithFullRefund(resvId, stayId, cancelReason, actorLabel, allowDone, false);
+    }
+
+    /**
+     * @param skipCancelNotification true 이면 취소 알림 생략 (관리자 환불승인 시 별도 환불 알림 사용)
+     */
+    @Transactional
+    public void cancelWithFullRefund(Long resvId, Long stayId, String cancelReason, String actorLabel,
+                                     boolean allowDone, boolean skipCancelNotification)
             throws Exception {
         if (resvId == null) {
             throw new IllegalArgumentException("예약 정보가 올바르지 않습니다.");
@@ -107,11 +117,14 @@ public class StayFullCancelService {
             throw new IllegalStateException("예약을 취소할 수 없습니다. 상태를 확인해 주세요.");
         }
 
-        String stayName = resv.getStayName() != null && !resv.getStayName().isBlank()
-                ? resv.getStayName() : "숙소";
-        // 2026/08/11 장우철 — 숙소 전용 취소 알림
-        mypageNotifyService.sendStayReserveCancelNotification(
-                resv.getMemberNo(), stayName, resv.getCheckinDate(), null, reason, resvId);
+        // 2026/08/11 장우철 — 숙소 전용 취소 알림 + yujeong skipCancelNotification
+        if (!skipCancelNotification) {
+            String stayName = resv.getStayName() != null && !resv.getStayName().isBlank()
+                    ? resv.getStayName() : "숙소";
+            mypageNotifyService.sendStayReserveCancelNotification(
+                    resv.getMemberNo(), stayName, resv.getCheckinDate(), resv.getCheckoutDate(),
+                    reason, resvId);
+        }
     }
 
     /**

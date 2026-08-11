@@ -28,6 +28,14 @@ public interface MypageReserveMapper {
     MypageReserveVO selectMyReservationDetail(@Param("memberNo") Long memberNo,
                                               @Param("resvId") Long resvId);
 
+    // 2026-08-10 박유정 — 재능나눔 참여 신청 목록 (마이페이지 예약내역)
+    List<MypageReserveVO> selectMyTalentApplyList(@Param("memberNo") Long memberNo,
+                                                  @Param("statusFilter") String statusFilter);
+
+    // 2026-08-10 박유정 — 재능나눔 참여 신청 상세 (마이페이지 예약내역)
+    MypageReserveVO selectMyTalentApplyDetail(@Param("memberNo") Long memberNo,
+                                            @Param("applyId") Long applyId);
+
     // 2026/07/13 장우철 — 예약당 병원 리뷰 1건 여부
     int countHospitalReviewByResvId(@Param("resvId") Long resvId,
                                     @Param("memberNo") Long memberNo);

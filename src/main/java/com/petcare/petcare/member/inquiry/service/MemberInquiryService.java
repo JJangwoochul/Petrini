@@ -16,9 +16,13 @@ public interface MemberInquiryService {
 
     List<InquiryVO> getListForMemberNo(Long memberNo);
 
+    List<InquiryVO> getListForSessionMember(MemberVO member);
+
     Optional<InquiryVO> findForMember(String memberId, long id);
 
     Optional<InquiryVO> findForMemberNo(Long memberNo, long id);
+
+    Optional<InquiryVO> findForSessionMember(MemberVO member, long id);
 
     InquiryVO create(MemberVO member, String category, String title, String content);
 

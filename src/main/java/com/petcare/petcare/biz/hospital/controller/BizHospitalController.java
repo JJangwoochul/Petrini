@@ -89,6 +89,20 @@ public class BizHospitalController extends BizBaseController {
         }
     }
 
+    // 2026-08-10 박유정 — 재능나눔 참여 신청 확인 대기 건수 (사이드바 뱃지)
+    @ModelAttribute("pendingTalentApplyCount")
+    public int pendingTalentApplyCount(HttpSession session) {
+        try {
+            MemberVO member = getBizMember(session);
+            if (member == null || member.getMemberId() == null) {
+                return 0;
+            }
+            return giveTalentService.countPendingAppliesByBizId(member.getMemberId());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     // 2026/07/11 장우철 — 캘린더 메뉴: 오늘 예약확정(CONFIRMED) 건수
     @ModelAttribute("todayConfirmedCount")
     public int todayConfirmedCount(HttpSession session) {
@@ -521,13 +535,15 @@ public class BizHospitalController extends BizBaseController {
         MemberVO member = getBizMember(session);
         if (member == null)
             return "redirect:/login";
-
-        model.addAttribute("talentList",
-                giveTalentService.getTalentListByBizId(member.getMemberId()));
+        String bizId = member.getMemberId();
+        model.addAttribute("talentList", giveTalentService.getTalentListByBizId(bizId));
+        // 2026-08-10 박유정 — 참여 신청자 목록 (STEP 6)
+        model.addAttribute("applyList", giveTalentService.getAppliesByBizId(bizId));
         return "biz/hospital/talent";
     }
 
     // 2026-07-14 박유정 — STEP 4 재능나눔 신청 POST → GiveTalentService.applyTalent (PENDING)
+    // 2026-08-10 박유정 — thumbImage 대표 이미지 multipart 추가
     @PostMapping("/talent")
     public String hospitalTalentSubmit(@RequestParam String title,
                                        @RequestParam int capacity,
@@ -536,6 +552,7 @@ public class BizHospitalController extends BizBaseController {
                                        @RequestParam String location,
                                        @RequestParam(required = false) String contact,
                                        @RequestParam String body,
+                                       @RequestParam(value = "thumbImage", required = false) MultipartFile thumbImage,
                                        HttpSession session,
                                        RedirectAttributes rttr) {
         MemberVO member = getBizMember(session);
@@ -553,7 +570,7 @@ public class BizHospitalController extends BizBaseController {
         vo.setBody(body.trim());
 
         try {
-            giveTalentService.applyTalent(member.getMemberId(), vo);
+            giveTalentService.applyTalent(member.getMemberId(), vo, thumbImage);
             rttr.addFlashAttribute("msg", "재능나눔 신청이 완료되었습니다.");
         } catch (IllegalStateException e) {
             String err = "신청할 수 없습니다.";
@@ -984,4 +1001,48 @@ public class BizHospitalController extends BizBaseController {
         }
         return "redirect:/biz/hospital/banner";
     }
+
+    /**
+ * 재능나눔 참여 신청 확인
+ * POST /biz/hospital/talent/confirm
+ * 2026-08-10 박유정 — STEP 6
+ */
+@PostMapping("/talent/confirm")
+public String hospitalTalentConfirm(@RequestParam long applyId,
+                                    HttpSession session,
+                                    RedirectAttributes rttr) {
+    MemberVO member = getBizMember(session);
+    if (member == null) {
+        return "redirect:/login";
+    }
+    try {
+        giveTalentService.confirmApply(applyId, member.getMemberId());
+        rttr.addFlashAttribute("msg", "신청을 확인했습니다.");
+    } catch (IllegalStateException e) {
+        rttr.addFlashAttribute("errorMsg", "확인할 수 없습니다.");
+    }
+    return "redirect:/biz/hospital/talent";
+}
+
+/**
+ * 재능나눔 모집 수동 마감
+ * POST /biz/hospital/talent/close
+ * 2026-08-10 박유정 — STEP 7-B
+ */
+@PostMapping("/talent/close")
+public String hospitalTalentClose(@RequestParam long talentId,
+                                  HttpSession session,
+                                  RedirectAttributes rttr) {
+    MemberVO member = getBizMember(session);
+    if (member == null) {
+        return "redirect:/login";
+    }
+    try {
+        giveTalentService.closeRecruitment(talentId, member.getMemberId());
+        rttr.addFlashAttribute("msg", "모집을 마감했습니다.");
+    } catch (IllegalStateException e) {
+        rttr.addFlashAttribute("errorMsg", "마감할 수 없습니다. (본인 글이 아니거나 이미 마감됨)");
+    }
+    return "redirect:/biz/hospital/talent";
+}
 }

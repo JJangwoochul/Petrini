@@ -14,7 +14,7 @@
 
 <div class="mp-section active">
     <h2 class="mp-title">예약내역</h2>
-    <p class="mp-desc">병원·숙소 예약 현황을 확인하고 상세를 볼 수 있습니다.</p>
+    <p class="mp-desc">병원·숙소 예약과 재능나눔 참여 신청을 확인할 수 있습니다.</p>
 
     <c:if test="${param.error eq 'notfound'}">
       <p style="color:#B91C1C;font-size:14px;margin-bottom:12px">예약을 찾을 수 없습니다.</p>
@@ -24,6 +24,7 @@
     </c:if>
 
     <%-- 2026/07/21 장우철 — 좌측 상태 필터 + 우측 유형(전체/병원/숙소) 드롭다운 --%>
+    <%-- 2026-08-10 박유정 — 재능나눔 유형·카드 표시 추가 --%>
     <c:set var="curType" value="${empty typeFilter ? 'all' : typeFilter}" />
     <c:set var="curStatus" value="${empty statusFilter ? 'all' : statusFilter}" />
     <div class="order-filter-bar">
@@ -46,6 +47,7 @@
           <option value="all" ${curType eq 'all' ? 'selected' : ''}>전체</option>
           <option value="hospital" ${curType eq 'hospital' ? 'selected' : ''}>병원</option>
           <option value="stay" ${curType eq 'stay' ? 'selected' : ''}>숙소</option>
+          <option value="talent" ${curType eq 'talent' ? 'selected' : ''}>재능나눔</option>
         </select>
       </div>
     </div>
@@ -55,11 +57,22 @@
     </c:if>
 
     <c:forEach var="r" items="${reservationList}">
-      <a href="${contextPath}/mypage/reserve/detail?resvId=${r.resvId}"
+      <c:url var="detailUrl" value="/mypage/reserve/detail">
+        <c:param name="resvId" value="${r.resvId}"/>
+        <c:if test="${r.resvType eq 'TALENT'}">
+          <c:param name="resvType" value="TALENT"/>
+        </c:if>
+      </c:url>
+      <a href="${contextPath}${detailUrl}"
          class="resv-card" style="text-decoration:none;color:inherit;display:flex;cursor:pointer">
 
         <%-- 썸네일 --%>
         <c:choose>
+          <c:when test="${r.resvType eq 'TALENT'}">
+            <img class="resv-thumb"
+                 src="${not empty r.thumbUrl ? contextPath.concat(r.thumbUrl) : 'https://placehold.co/88x88/EAF7F2/2BAB82?text=재능'}"
+                 alt="재능나눔">
+          </c:when>
           <c:when test="${r.resvType eq 'STAY'}">
             <img class="resv-thumb" src="https://placehold.co/88x88/E0F2FE/0284C7?text=숙소" alt="숙소">
           </c:when>
@@ -71,13 +84,16 @@
         <div class="resv-info">
             <%-- 카테고리 --%>
             <c:choose>
+              <c:when test="${r.resvType eq 'TALENT'}"><span class="category">재능나눔</span></c:when>
               <c:when test="${r.resvType eq 'STAY'}"><span class="category">펫 숙소</span></c:when>
               <c:otherwise><span class="category">동물병원</span></c:otherwise>
             </c:choose>
 
-            <%-- 장소명 --%>
+            <%-- 장소명 / 제목 --%>
             <div class="rname">
-              <%-- <c:out value="${not empty r.hospitalName ? r.hospitalName : '-'}"/> --%>
+              <c:if test="${r.resvType eq 'TALENT'}">
+                <c:out value="${not empty r.talentTitle ? r.talentTitle : '-'}"/>
+              </c:if>
               <c:if test="${r.resvType eq 'STAY' and not empty r.roomName}"> <c:out value="${r.stayName}"/> — <c:out value="${r.roomName}"/></c:if>
               <c:if test="${r.resvType eq 'HOSPITAL' and not empty r.hospitalName}"><c:out value="${r.hospitalName}"/></c:if>
             </div>
@@ -85,6 +101,16 @@
             <%-- 일정 --%>
             <div class="rmeta">
               <c:choose>
+                <c:when test="${r.resvType eq 'TALENT'}">
+                  <span>제공: <c:out value="${not empty r.bizName ? r.bizName : '-'}"/></span>
+                  <c:if test="${not empty r.talentSchedule}">
+                    <span>일정: <c:out value="${r.talentSchedule}"/></span>
+                  </c:if>
+                  <c:if test="${not empty r.hospitalAddr}">
+                    <span><c:out value="${r.hospitalAddr}"/></span>
+                  </c:if>
+                  <span>신청일: <fmt:formatDate value="${r.regDate}" pattern="yyyy.MM.dd"/></span>
+                </c:when>
                 <c:when test="${r.resvType eq 'STAY'}">
                   <span>
                     <fmt:formatDate value="${r.checkinDate}" pattern="yyyy.MM.dd"/>
@@ -109,18 +135,29 @@
                   </c:if>
                 </c:otherwise>
               </c:choose>
-              <c:if test="${not empty r.hospitalAddr}">
+              <c:if test="${r.resvType ne 'TALENT' and not empty r.hospitalAddr}">
                 <span><c:out value="${r.hospitalAddr}"/></span>
               </c:if>
+              <c:if test="${r.resvType ne 'TALENT' and not empty r.petName}">
               <span>반려동물: <c:out value="${r.petName}"/>
                 <c:if test="${not empty r.petSpecies}"> (<c:out value="${r.petSpecies}"/>)</c:if>
               </span>
+              </c:if>
             </div>
         </div>
 
         <%-- 상태 배지 --%>
         <div class="resv-right">
           <c:choose>
+            <c:when test="${r.resvType eq 'TALENT' and r.statusCd eq 'PENDING'}">
+              <span class="badge-status badge-wait">확인대기</span>
+            </c:when>
+            <c:when test="${r.resvType eq 'TALENT' and r.statusCd eq 'CONFIRMED'}">
+              <span class="badge-status badge-ready">확인완료</span>
+            </c:when>
+            <c:when test="${r.resvType eq 'TALENT' and r.statusCd eq 'CANCELLED'}">
+              <span class="badge-status badge-cancel">취소</span>
+            </c:when>
             <c:when test="${r.statusCd eq 'PENDING'}">
               <span class="badge-status badge-wait">예약신청</span>
             </c:when>

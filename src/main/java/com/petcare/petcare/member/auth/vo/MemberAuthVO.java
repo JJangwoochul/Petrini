@@ -33,7 +33,6 @@ public class MemberAuthVO {
     private String zipcode;       // 우편번호 — TB_MEMBER.ZIP_CODE
     private String addr1;         // 기본 주소 — TB_MEMBER.ADDR1
     private String addr2;         // 상세 주소 — TB_MEMBER.ADDR2
-    // 2026-08-04 박유정 — 프로필 사진 URL (TB_MEMBER.PROFILE_IMG_URL, 로그인 조회·세션 전달용)
-    private String profileImgUrl;
+    private String profileImgUrl;   // PROFILE_IMG_URL — 프로필 사진 URL (로그인 조회·세션 전달)
 }
 

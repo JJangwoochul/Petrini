@@ -157,6 +157,73 @@
      ORDER BY R.RESV_DATE DESC, R.RESV_TIME DESC, R.RESV_ID DESC
   </select>
 
+  <!-- 2026-08-10 박유정 — 재능나눔 참여 신청 (마이페이지 예약내역) -->
+  <select id="selectMyTalentApplyList"
+          resultType="com.petcare.petcare.mypage.reserve.vo.MypageReserveVO">
+    SELECT A.APPLY_ID     AS resvId,
+           ('TA' || A.APPLY_ID) AS resvNo,
+           'TALENT'       AS resvType,
+           A.MEMBER_NO    AS memberNo,
+           A.TALENT_ID    AS targetId,
+           A.REG_DATE     AS resvDate,
+           A.REG_DATE     AS regDate,
+           T.SCHEDULE     AS resvTime,
+           T.SCHEDULE     AS talentSchedule,
+           T.DURATION     AS endTime,
+           A.MESSAGE      AS requestMemo,
+           A.STATUS_CD    AS statusCd,
+           T.TITLE        AS talentTitle,
+           T.LOCATION     AS hospitalAddr,
+           B.BIZ_NAME     AS bizName,
+           T.THUMB_URL    AS thumbUrl
+      FROM TB_TALENT_APPLY A
+      JOIN TB_TALENT T ON T.TALENT_ID = A.TALENT_ID
+      JOIN TB_BUSINESS B ON B.BIZ_NO = T.BIZ_NO
+     WHERE A.MEMBER_NO = #{memberNo}
+    <choose>
+      <when test="statusFilter == 'pending'">
+       AND A.STATUS_CD = 'PENDING'
+      </when>
+      <when test="statusFilter == 'confirmed'">
+       AND A.STATUS_CD = 'CONFIRMED'
+      </when>
+      <when test="statusFilter == 'done'">
+       AND A.STATUS_CD = 'CONFIRMED'
+      </when>
+      <when test="statusFilter == 'cancel'">
+       AND A.STATUS_CD = 'CANCELLED'
+      </when>
+    </choose>
+     ORDER BY A.REG_DATE DESC, A.APPLY_ID DESC
+  </select>
+
+  <!-- 2026-08-10 박유정 — 재능나눔 참여 신청 상세 (마이페이지 예약내역) -->
+  <select id="selectMyTalentApplyDetail"
+          resultType="com.petcare.petcare.mypage.reserve.vo.MypageReserveVO">
+    SELECT A.APPLY_ID     AS resvId,
+           ('TA' || A.APPLY_ID) AS resvNo,
+           'TALENT'       AS resvType,
+           A.MEMBER_NO    AS memberNo,
+           A.TALENT_ID    AS targetId,
+           A.REG_DATE     AS resvDate,
+           A.REG_DATE     AS regDate,
+           T.SCHEDULE     AS resvTime,
+           T.SCHEDULE     AS talentSchedule,
+           T.DURATION     AS endTime,
+           A.MESSAGE      AS requestMemo,
+           A.STATUS_CD    AS statusCd,
+           T.TITLE        AS talentTitle,
+           T.LOCATION     AS hospitalAddr,
+           B.BIZ_NAME     AS bizName,
+           T.THUMB_URL    AS thumbUrl,
+           DBMS_LOB.SUBSTR(T.BODY, 32000, 1) AS symptoms
+      FROM TB_TALENT_APPLY A
+      JOIN TB_TALENT T ON T.TALENT_ID = A.TALENT_ID
+      JOIN TB_BUSINESS B ON B.BIZ_NO = T.BIZ_NO
+     WHERE A.MEMBER_NO = #{memberNo}
+       AND A.APPLY_ID  = #{applyId}
+  </select>
+
   <select id="selectMyReservationDetail"
           resultType="com.petcare.petcare.mypage.reserve.vo.MypageReserveVO">
     SELECT  R.RESV_ID       AS resvId,

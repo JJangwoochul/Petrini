@@ -45,4 +45,14 @@ public interface GiveTalentMapper {
     int countTalentByStatus(@Param("statusCd") String statusCd);
 
     int updateTalentStatus(GiveTalentVO vo);
+
+    /** 병원 수동 마감 — 내 글인지 + APPROVED 인지 (1이면 OK) — 2026-08-10 박유정 */
+    int countTalentOwnedByBiz(@Param("talentId") long talentId,
+    @Param("bizId") String bizId);
+
+    /** 알림 수신자(사업자) MEMBER_NO — 2026-08-10 박유정 */
+    Long selectMemberNoByBizId(@Param("bizId") String bizId);
+
+    /** 대표 이미지 URL 갱신 — 2026-08-10 박유정 */
+    int updateTalentThumbUrl(GiveTalentVO vo);
 }

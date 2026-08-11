@@ -38,6 +38,8 @@ import com.petcare.petcare.main.banner.BannerConstants;
 import com.petcare.petcare.main.banner.mapper.MainBannerMapper;
 import com.petcare.petcare.main.banner.service.BannerExpiryService;
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
+import com.petcare.petcare.member.inquiry.mapper.MemberInquiryMapper;
+import com.petcare.petcare.member.inquiry.vo.MemberInquiryVO;
 import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.stay.service.StayFullCancelService;
 import com.petcare.petcare.stay.vo.ReservationVO;
@@ -55,6 +57,8 @@ public class BizStayServiceImpl implements BizStayService {
     private FileService fileService;
     @Autowired
     private MypageNotifyService mypageNotifyService;
+    @Autowired
+    private MemberInquiryMapper memberInquiryMapper;
     @Autowired
     private StayFullCancelService stayFullCancelService;
     @Autowired
@@ -569,5 +573,27 @@ public class BizStayServiceImpl implements BizStayService {
     @Override
     public List<com.petcare.petcare.stay.vo.StayReviewVO> getRecentReviews(Long stayId) {
         return bizStayMapper.selectRecentReviews(stayId);
+    }
+
+    // 2026-08-11 박유정 — 사업자 숙소 환불신청 대기 건수
+    @Override
+    @Transactional(readOnly = true)
+    public int countPendingStayRefundRequests(Long stayId) {
+        if (stayId == null) {
+            return 0;
+        }
+        return memberInquiryMapper.countPendingStayRefundByStayId(stayId);
+    }
+
+    // 2026-08-11 박유정 — 사업자 숙소 환불신청 목록
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberInquiryVO> getStayRefundList(Long stayId, String statusCd) {
+        if (stayId == null) {
+            return List.of();
+        }
+        String status = (statusCd == null || statusCd.isBlank() || "ALL".equalsIgnoreCase(statusCd))
+                ? null : statusCd.trim().toUpperCase();
+        return memberInquiryMapper.selectStayRefundListByStayId(stayId, status);
     }
 }

@@ -35,6 +35,9 @@ import org.apache.ibatis.annotations.Mapper;
 
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
+import com.petcare.petcare.admin.cms.vo.FaqVO;
+
+import com.petcare.petcare.admin.cms.vo.NoticeVO;
 
 @Mapper
 public interface AdminCMSMapper {
@@ -67,4 +70,22 @@ public interface AdminCMSMapper {
     int deleteTestStayBanners();
 
     Long selectMemberNoByBizNo(Long bizNo);
+
+    // 2026-08-11 박유정 — FAQ CMS
+    List<FaqVO> selectFaqList();
+
+    FaqVO selectFaqById(Long faqId);
+
+    void insertFaq(FaqVO faq);
+
+    void updateFaq(FaqVO faq);
+
+    void deleteFaq(Long faqId);
+
+    // 2026-08-11 박유정 — 공지사항 CMS
+    List<NoticeVO> selectNoticeList();
+    NoticeVO selectNoticeById(Long noticeId);
+    void insertNotice(NoticeVO notice);
+    void updateNotice(NoticeVO notice);
+    void deleteNotice(Long noticeId);
 }

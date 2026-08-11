@@ -1,18 +1,17 @@
 /**
- * 역할: 관리자 커뮤니티 게시글 관리용 데이터 객체
+ * 역할: 관리자 커뮤니티 VO (레거시 placeholder)
  *
- * 필드 예시
- * - postId, memberId, title, content, category, status, createdAt
+ * - 박유정 / 2026-07-10 — 실제 구현은 CommunityPostVO 사용
  *
  * 참고 테이블
- * - TB_COMMUNITY_POST
+ * - TB_POST (BOARD_TYPE = TOWN/SHARE/LIFE)
  * - TB_POST_REPORT
  *
- * DB 컬럼명은 팀 VO 규칙(camelCase)에 맞게 작성
- *
- * - 박유정 / 2026-07-10 — 신고 테이블명 TB_POST_REPORT 반영
+ * @see com.petcare.petcare.community.post.vo.CommunityPostVO
  */
 
 package com.petcare.petcare.admin.community.vo;
 
-public class AdminCommunityVO {}
+public class AdminCommunityVO {
+    // 필드 없음 — CommunityPostVO로 관리자 목록·상세 처리
+}

@@ -56,6 +56,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
+import com.petcare.petcare.member.inquiry.vo.MemberInquiryVO;
 import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Controller("bizStayController")
@@ -98,6 +99,20 @@ public class BizStayController extends BizBaseController {
             StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
             if (stay == null || stay.getStayId() == null) return 0;
             return bizStayService.countTodayConfirmedReservations(stay.getStayId());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 2026-08-11 박유정 — 사이드바 환불신청 배지: 대기 건수
+    @ModelAttribute("stayRefundRequestCount")
+    public int stayRefundRequestCount(HttpSession session) {
+        try {
+            MemberVO member = getBizMember(session);
+            if (member == null || member.getMemberId() == null) return 0;
+            StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+            if (stay == null || stay.getStayId() == null) return 0;
+            return bizStayService.countPendingStayRefundRequests(stay.getStayId());
         } catch (Exception e) {
             return 0;
         }
@@ -208,6 +223,30 @@ public class BizStayController extends BizBaseController {
         model.addAttribute("stay", stay);
         model.addAttribute("calendarReservations", calendarReservations);
         return "biz/stay/calendar";
+    }
+
+    // 2026-08-11 박유정 — 사업자 숙소 환불신청 목록 (조회 전용, 승인은 관리자)
+    @GetMapping("/refunds")
+    public String stayRefunds(HttpSession session, Model model,
+                              @RequestParam(value = "status", defaultValue = "WAIT") String status) {
+        MemberVO member = getBizMember(session);
+        if (member == null) {
+            return "redirect:/login";
+        }
+        StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
+        if (stay == null || stay.getStayId() == null) {
+            return "redirect:/mypage/biz";
+        }
+        List<MemberInquiryVO> refundList = bizStayService.getStayRefundList(stay.getStayId(), status);
+        int waitCount = bizStayService.countPendingStayRefundRequests(stay.getStayId());
+        int doneCount = bizStayService.getStayRefundList(stay.getStayId(), "DONE").size();
+        model.addAttribute("stay", stay);
+        model.addAttribute("refundList", refundList);
+        model.addAttribute("status", status);
+        model.addAttribute("waitCount", waitCount);
+        model.addAttribute("doneCount", doneCount);
+        model.addAttribute("allCount", waitCount + doneCount);
+        return "biz/stay/refunds";
     }
 
     // 2026-07-28 박유정 — 사업자 숙소 리뷰관리 (DB 목록 → JSP JSON)

@@ -38,8 +38,19 @@
 
 <%-- 2026/07/11 장우철 — 마이페이지 예약 상세 (2차) --%>
 <div class="mp-section active">
-  <h2 class="mp-title">예약 상세</h2>
-  <p class="mp-desc">예약번호 <strong><c:out value="${reservation.resvNo}"/></strong></p>
+  <h2 class="mp-title">
+    <c:choose>
+      <c:when test="${reservation.resvType eq 'TALENT'}">재능나눔 신청 상세</c:when>
+      <c:otherwise>예약 상세</c:otherwise>
+    </c:choose>
+  </h2>
+  <p class="mp-desc">
+    <c:choose>
+      <c:when test="${reservation.resvType eq 'TALENT'}">신청번호</c:when>
+      <c:otherwise>예약번호</c:otherwise>
+    </c:choose>
+    <strong><c:out value="${reservation.resvNo}"/></strong>
+  </p>
 
   <c:if test="${not empty msg}">
     <p style="color:#166534;font-size:14px;margin-bottom:12px"><c:out value="${msg}"/></p>
@@ -48,6 +59,58 @@
     <p style="color:#B91C1C;font-size:14px;margin-bottom:12px"><c:out value="${errorMsg}"/></p>
   </c:if>
 
+  <c:choose>
+    <%-- 2026-08-10 박유정 — 재능나눔 참여 신청 상세 (예약내역 통합) --%>
+    <c:when test="${reservation.resvType eq 'TALENT'}">
+      <div class="rd-card">
+        <div class="rd-row">
+          <span>상태</span>
+          <span>
+            <c:choose>
+              <c:when test="${reservation.statusCd eq 'PENDING'}"><span class="badge-status badge-wait">확인대기</span></c:when>
+              <c:when test="${reservation.statusCd eq 'CONFIRMED'}"><span class="badge-status badge-ready">확인완료</span></c:when>
+              <c:when test="${reservation.statusCd eq 'CANCELLED'}"><span class="badge-status badge-cancel">취소</span></c:when>
+              <c:otherwise><c:out value="${reservation.statusCd}"/></c:otherwise>
+            </c:choose>
+          </span>
+        </div>
+        <div class="rd-row"><span>재능나눔</span><span><c:out value="${reservation.talentTitle}"/></span></div>
+        <div class="rd-row"><span>제공 사업자</span><span><c:out value="${not empty reservation.bizName ? reservation.bizName : '-'}"/></span></div>
+        <div class="rd-row"><span>장소</span><span><c:out value="${not empty reservation.hospitalAddr ? reservation.hospitalAddr : '-'}"/></span></div>
+        <div class="rd-row"><span>진행 일정</span><span><c:out value="${not empty reservation.talentSchedule ? reservation.talentSchedule : '-'}"/></span></div>
+        <c:if test="${not empty reservation.endTime}">
+          <div class="rd-row"><span>소요 시간</span><span><c:out value="${reservation.endTime}"/></span></div>
+        </c:if>
+        <div class="rd-row"><span>신청일</span><span><fmt:formatDate value="${reservation.regDate}" pattern="yyyy-MM-dd HH:mm"/></span></div>
+        <div class="rd-row"><span>신청 메시지</span><span><c:out value="${not empty reservation.requestMemo ? reservation.requestMemo : '-'}"/></span></div>
+        <c:if test="${not empty reservation.symptoms}">
+          <div class="rd-row" style="display:block;border-bottom:none;padding-bottom:0">
+            <span style="display:block;margin-bottom:6px">서비스 설명</span>
+            <div style="text-align:left;font-weight:400;line-height:1.6;white-space:pre-line;color:#444"><c:out value="${reservation.symptoms}"/></div>
+          </div>
+        </c:if>
+      </div>
+
+      <c:if test="${reservation.cancelable eq true}">
+        <div class="rd-cancel">
+          <h3>신청 취소</h3>
+          <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.5">
+            병원 확인 전(PENDING)인 경우에만 취소할 수 있습니다.
+          </p>
+          <form method="post" action="${contextPath}/mypage/reserve/talent-cancel"
+                onsubmit="return confirm('재능나눔 신청을 취소하시겠습니까?');">
+            <input type="hidden" name="_csrf" value="${_csrf}">
+            <input type="hidden" name="resvId" value="${reservation.resvId}">
+            <button type="submit" class="btn-cancel-stay">신청 취소하기</button>
+          </form>
+        </div>
+      </c:if>
+
+      <a class="btn-sm" style="display:inline-block;margin-right:8px;text-decoration:none"
+         href="${contextPath}/give/talent/detail?id=${reservation.targetId}">재능나눔 글 보기</a>
+      <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/reserve'">← 목록으로</button>
+    </c:when>
+    <c:otherwise>
   <div class="rd-card">
     <div class="rd-row">
       <span>상태</span>
@@ -324,6 +387,8 @@
   </c:if>
 
   <button type="button" class="btn-sm" onclick="location.href='${contextPath}/mypage/reserve'">← 목록으로</button>
+    </c:otherwise>
+  </c:choose>
 </div>
 
 </div>

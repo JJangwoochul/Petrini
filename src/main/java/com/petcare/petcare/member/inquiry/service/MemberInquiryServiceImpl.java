@@ -15,10 +15,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.petcare.petcare.member.auth.mapper.MemberAuthMapper;
+import com.petcare.petcare.member.auth.vo.MemberAuthVO;
 import com.petcare.petcare.member.inquiry.mapper.MemberInquiryMapper;
 import com.petcare.petcare.member.inquiry.vo.MemberInquiryVO;
 import com.petcare.petcare.member.vo.InquiryVO;
 import com.petcare.petcare.member.vo.MemberVO;
+import com.petcare.petcare.mypage.notify.service.MypageNotifyService;
 import com.petcare.petcare.mypage.reserve.mapper.MypageReserveMapper;
 import com.petcare.petcare.mypage.reserve.vo.MypageReserveVO;
 
@@ -29,6 +32,10 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
     private MemberInquiryMapper memberInquiryMapper;
     @Autowired
     private MypageReserveMapper mypageReserveMapper;
+    @Autowired
+    private MemberAuthMapper memberAuthMapper;
+    @Autowired
+    private MypageNotifyService mypageNotifyService;
 
     @Override
     @Transactional(readOnly = true)
@@ -37,6 +44,7 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
         return List.of();
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<InquiryVO> getListForMemberNo(Long memberNo) {
         if (memberNo == null) {
@@ -52,10 +60,17 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<InquiryVO> getListForSessionMember(MemberVO member) {
+        return getListForMemberNo(resolveMemberNo(member));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<InquiryVO> findForMember(String memberId, long id) {
         return Optional.empty();
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Optional<InquiryVO> findForMemberNo(Long memberNo, long id) {
         if (memberNo == null) {
@@ -63,6 +78,12 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
         }
         MemberInquiryVO row = memberInquiryMapper.selectByIdAndMemberNo(id, memberNo);
         return row == null ? Optional.empty() : Optional.of(toInquiryVO(row));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<InquiryVO> findForSessionMember(MemberVO member, long id) {
+        return findForMemberNo(resolveMemberNo(member), id);
     }
 
     @Override
@@ -74,19 +95,42 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
     @Transactional
     public InquiryVO create(MemberVO member, String category, String title, String content,
                             String refType, Long refId) {
-        if (member == null || member.getMemberNo() == null) {
-            return null;
+        Long memberNo = resolveMemberNo(member);
+        if (memberNo == null) {
+            throw new IllegalArgumentException("회원 정보가 올바르지 않습니다. 다시 로그인해 주세요.");
         }
         MemberInquiryVO vo = new MemberInquiryVO();
         vo.setInquiryType(mapCategoryToType(category));
-        vo.setMemberNo(member.getMemberNo());
+        vo.setMemberNo(memberNo);
         vo.setTitle(title.trim());
         vo.setBody(content.trim());
         vo.setRefType(refType);
         vo.setRefId(refId);
         vo.setStatusCd("WAIT");
         memberInquiryMapper.insertInquiry(vo);
+        if (vo.getInquiryId() == null || vo.getInquiryId() <= 0) {
+            throw new IllegalStateException("문의 등록에 실패했습니다.");
+        }
         return toInquiryVO(vo);
+    }
+
+    // 2026-08-11 박유정 — 세션 memberNo 없을 때 로그인 ID로 조회
+    private Long resolveMemberNo(MemberVO member) {
+        if (member == null) {
+            return null;
+        }
+        if (member.getMemberNo() != null) {
+            return member.getMemberNo();
+        }
+        String loginId = member.getMemberId();
+        if (loginId == null || loginId.isBlank()) {
+            loginId = member.getEmail();
+        }
+        if (loginId == null || loginId.isBlank()) {
+            return null;
+        }
+        MemberAuthVO found = memberAuthMapper.selectMemberByLoginId(loginId.trim());
+        return found != null ? found.getMemberNo() : null;
     }
 
     /**
@@ -117,7 +161,26 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
                 ? "숙소 이용 중 환불을 신청합니다."
                 : content.trim();
         String title = "숙소 환불신청 #" + (detail.getResvNo() != null ? detail.getResvNo() : resvId);
-        return create(member, "예약", title, body, "RESV", resvId);
+        InquiryVO created = create(member, "예약", title, body, "RESV", resvId);
+
+        // 2026-08-11 박유정 — 환불 신청 알림 (회원·사업자)
+        try {
+            String stayName = detail.getHospitalName() != null ? detail.getHospitalName() : "숙소";
+            java.util.Date applyDate = created.getCreatedAt() != null
+                    ? Date.from(created.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant())
+                    : new Date();
+            mypageNotifyService.sendStayRefundRequestToMemberNotification(
+                    member.getMemberNo(), stayName, applyDate, resvId);
+            if (detail.getTargetId() != null && !detail.getTargetId().isBlank()) {
+                Long stayId = Long.parseLong(detail.getTargetId().trim());
+                Long bizMemberNo = mypageReserveMapper.selectStayMemberNo(stayId);
+                mypageNotifyService.sendStayRefundRequestToBizNotification(
+                        bizMemberNo, stayName, detail.getResvNo(), applyDate, resvId);
+            }
+        } catch (Exception ignored) {
+            // 알림 실패해도 환불 신청은 유지
+        }
+        return created;
     }
 
     private String mapCategoryToType(String category) {
@@ -125,29 +188,36 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
             return "ETC";
         }
         String c = category.trim();
-        if (c.contains("예약") || c.contains("환불")) {
+        if (c.contains("회원") || c.contains("계정") || c.contains("정지")) {
+            return "MEMBER";
+        }
+        if (c.contains("예약")) {
             return "RESERVE";
         }
-        if (c.contains("주문") || c.contains("배송")) {
-            return "ORDER";
-        }
-        if (c.contains("수의사") || c.contains("진료")) {
-            return "VET";
-        }
-        if (c.contains("제휴")) {
-            return "PARTNER";
-        }
         return "ETC";
+    }
+
+    // 2026-08-11 박유정 — INQUIRY_TYPE → 화면 표시명 (회원/예약/기타)
+    private String toCategoryLabel(String inquiryType) {
+        if (inquiryType == null || inquiryType.isBlank()) {
+            return "기타";
+        }
+        return switch (inquiryType.trim().toUpperCase()) {
+            case "MEMBER" -> "회원";
+            case "RESERVE" -> "예약";
+            case "ETC" -> "기타";
+            default -> "기타";
+        };
     }
 
     private InquiryVO toInquiryVO(MemberInquiryVO row) {
         InquiryVO vo = new InquiryVO();
         vo.setId(row.getInquiryId() != null ? row.getInquiryId() : 0L);
         vo.setMemberId(row.getMemberNo() != null ? String.valueOf(row.getMemberNo()) : null);
-        vo.setCategory(row.getInquiryType());
+        vo.setCategory(toCategoryLabel(row.getInquiryType()));
         vo.setTitle(row.getTitle());
         vo.setContent(row.getBody());
-        if ("WAIT".equalsIgnoreCase(row.getStatusCd())) {
+        if ("WAIT".equalsIgnoreCase(trimStatus(row.getStatusCd()))) {
             vo.setStatus("WAIT");
         } else {
             vo.setStatus("ANSWERED");
@@ -156,6 +226,10 @@ public class MemberInquiryServiceImpl implements MemberInquiryService {
         vo.setCreatedAt(toLocalDateTime(row.getRegDate() != null ? row.getRegDate() : row.getApplyDate()));
         vo.setAnsweredAt(toLocalDateTime(row.getAnswerDate()));
         return vo;
+    }
+
+    private String trimStatus(String statusCd) {
+        return statusCd == null ? "" : statusCd.trim();
     }
 
     private LocalDateTime toLocalDateTime(Date date) {

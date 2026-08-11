@@ -41,10 +41,9 @@ public class MemberInquiryController {
         if (member == null) {
             return "redirect:/login?redirect=/member/cs/inquiry";
         }
-        model.addAttribute("inquiries", inquiryService.getListForMemberNo(member.getMemberNo()));
+        model.addAttribute("inquiries", inquiryService.getListForSessionMember(member));
         return "member/cs-inquiry-list";
     }
-
     @GetMapping("/inquiry/write")
     public String inquiryWriteForm(HttpSession session,
                                    @RequestParam(value = "resvId", required = false) Long resvId,
@@ -60,8 +59,10 @@ public class MemberInquiryController {
             return "redirect:/login?redirect=" + redirect;
         }
         // 2026/08/06 장우철 — 진행중/거절 시 작성 폼 진입 차단
+        // 2026-08-10 박유정 — getMyReservationDetail 3번째 인자(resvType) 추가 대응 (null=병원·숙소)
         if (resvId != null && "stay_refund".equalsIgnoreCase(type)) {
-            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(member.getMemberNo(), resvId);
+            MypageReserveVO detail = mypageReserveService.getMyReservationDetail(
+                    member.getMemberNo(), resvId, null);
             if (detail == null || !"STAY".equalsIgnoreCase(detail.getResvType())) {
                 rttr.addFlashAttribute("errorMsg", "숙소 예약을 찾을 수 없습니다.");
                 return "redirect:/mypage/reserve";
@@ -107,7 +108,8 @@ public class MemberInquiryController {
         if (category == null || category.isBlank()
                 || title == null || title.isBlank()
                 || content == null || content.isBlank()) {
-            return "redirect:/member/cs/inquiry/write?error=empty";
+            rttr.addFlashAttribute("errorMsg", "문의 유형, 제목, 내용을 모두 입력해 주세요.");
+            return "redirect:/member/cs/inquiry/write";
         }
 
         InquiryVO inquiry;
@@ -118,19 +120,21 @@ public class MemberInquiryController {
                 inquiry = inquiryService.create(member, category, title, content);
             }
         } catch (IllegalArgumentException | IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
             if (resvId != null && "stay_refund".equalsIgnoreCase(type)) {
-                rttr.addFlashAttribute("errorMsg", e.getMessage());
                 return "redirect:/mypage/reserve/detail?resvId=" + resvId;
             }
-            return "redirect:/member/cs/inquiry/write?error=fail";
+            return "redirect:/member/cs/inquiry/write";
         }
-        if (inquiry == null) {
-            return "redirect:/member/cs/inquiry?error=db";
+        if (inquiry == null || inquiry.getId() <= 0) {
+            rttr.addFlashAttribute("errorMsg", "문의 등록에 실패했습니다. 다시 로그인 후 시도해 주세요.");
+            return "redirect:/member/cs/inquiry/write";
         }
         if (resvId != null && "stay_refund".equalsIgnoreCase(type)) {
             rttr.addFlashAttribute("msg", "환불 신청이 접수되었습니다. 관리자 검토 후 처리됩니다.");
             return "redirect:/mypage/reserve/detail?resvId=" + resvId;
         }
+        rttr.addFlashAttribute("successMsg", "문의가 등록되었습니다.");
         return "redirect:/member/cs/inquiry/detail?id=" + inquiry.getId();
     }
 
@@ -145,7 +149,7 @@ public class MemberInquiryController {
             return "redirect:/login?redirect=/member/cs/inquiry/detail?id=" + id;
         }
 
-        Optional<InquiryVO> inquiry = inquiryService.findForMemberNo(member.getMemberNo(), id);
+        Optional<InquiryVO> inquiry = inquiryService.findForSessionMember(member, id);
         if (inquiry.isEmpty()) {
             return "redirect:/member/cs/inquiry";
         }
