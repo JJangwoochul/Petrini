@@ -18,7 +18,9 @@ public interface CouponMapper {
 
     // 받을 수 있는 쿠폰 목록 (APPROVED + ACTIVE + 기간 내 + 잔여 수량)
     // 로그인 상태면 이미 받았는지 체크 (alreadyClaimed)
-    List<CouponVO> selectAvailableCoupons(@Param("memberNo") Long memberNo);
+    // 지윤 26.08.10 수정: 기간만료 쿠폰 제외용 today 파라미터 추가
+    List<CouponVO> selectAvailableCoupons(@Param("memberNo") Long memberNo,
+                                          @Param("today") String today);
 
     // 보유 쿠폰 목록 (TB_MEMBER_COUPON JOIN TB_COUPON)
     List<CouponVO> selectMyCoupons(@Param("memberNo") Long memberNo);

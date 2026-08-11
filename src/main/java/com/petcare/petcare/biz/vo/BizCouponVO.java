@@ -20,6 +20,7 @@ public class BizCouponVO {
     private String couponName;       // 쿠폰명
     private String couponType;       // 할인 유형 (FIXED / RATE)
     private Integer discountValue;   // 할인값 (정액=원, 정률=%)
+    private Integer maxDiscountAmt;  // 정률(RATE) 쿠폰 최대 할인금액 (FIXED는 NULL) // 지윤 26.08.11 추가
     private Integer minOrderAmt;     // 최소 주문 금액
 
     private Integer totalBudget;     // 총 예산

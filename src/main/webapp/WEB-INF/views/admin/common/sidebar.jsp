@@ -78,9 +78,13 @@
             </c:if>
         </a>
         <!--HYJ 26.07.29 쿠폰 승인-->
+        <!-- 지윤 26.08.11 추가: 승인대기 건수 뱃지 (AdminSidebarAdvice.pendingCouponApproveCount) -->
         <a href="${contextPath}/admin/biz/coupon/list" class="adm-nav-link ${adminPage eq 'coupon-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
             쿠폰 승인
+            <c:if test="${pendingCouponApproveCount > 0}">
+              <span class="adm-nav-badge">${pendingCouponApproveCount}</span>
+            </c:if>
         </a>
         <%-- 2026-07-24 박유정 — 사업자 리뷰 삭제 요청 --%>
         <a href="${contextPath}/admin/review/list?statusCd=PENDING" class="adm-nav-link ${adminPage eq 'review-list' ? 'active' : ''}">

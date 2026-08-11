@@ -110,17 +110,15 @@
 
       <c:forEach var="cpn" items="${availableCoupons}">
         <%--
-          지윤 26.08.07
-          - 조기마감(INACTIVE)은 쿼리 단계에서 이미 제외되어 여기 안 옴
-          - isExpired : 기간 만료 → 목록엔 남되 버튼 비활성(마감)
-          - isExhausted : 수량/예산 소진 → 목록엔 남고 버튼은 눌리게 둠(클릭 시 서버가 소진 응답)
-          - isEnded : "버튼을 미리 막아야 하는" 케이스만 (기간만료). 소진은 제외!
+          지윤 26.08.10 수정
+          - 조기마감(INACTIVE), 기간만료는 쿼리 단계에서 이미 제외되어 여기 안 옴
+          - isExhausted : 수량 또는 예산 소진 → 목록엔 남고 버튼은 눌리게 둠(클릭 시 서버가 소진 응답)
         --%>
-        <c:set var="isExpired" value="${cpn.useEndDate < today}" />
-        <c:set var="isExhausted" value="${cpn.statusCd eq 'EXHAUSTED' || cpn.issuedQty >= cpn.totalQty}" />
-        <c:set var="isEnded" value="${isExpired}" />
+        <c:set var="isExhausted" value="${cpn.statusCd eq 'EXHAUSTED'
+                                          || cpn.issuedQty >= cpn.totalQty
+                                          || (cpn.totalBudget > 0 && cpn.issuedBudget >= cpn.totalBudget)}" />
 
-        <div class="cp-ticket ${isEnded ? 'ended' : ''}" data-biz-type="${cpn.bizType}">
+        <div class="cp-ticket" data-biz-type="${cpn.bizType}">
           <div class="cp-ticket-left">
             <c:choose>
               <c:when test="${cpn.couponType eq 'FIXED'}">
@@ -138,7 +136,6 @@
               <div class="cp-ticket-name">
                 ${cpn.couponName}
                 <c:if test="${isExhausted}"><span class="cp-ticket-badge exhausted">소진</span></c:if>
-                <c:if test="${isExpired && !isExhausted}"><span class="cp-ticket-badge expired">기간만료</span></c:if>
               </div>
               <div class="cp-ticket-cond">
                 <c:if test="${cpn.minOrderAmt > 0}"><fmt:formatNumber value="${cpn.minOrderAmt}" type="number"/>원 이상 구매 시</c:if>
@@ -146,9 +143,6 @@
               </div>
               <div class="cp-ticket-date">
   ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}까지
-  <c:if test="${!isExhausted}">
-    · 잔여 ${cpn.totalQty - cpn.issuedQty}장
-  </c:if>
 </div>
 
 <%--
@@ -189,10 +183,7 @@
               <c:when test="${cpn.alreadyClaimed}">
                 <button class="cp-ticket-btn claimed" disabled>다운 완료</button>
               </c:when>
-              <c:when test="${isEnded}">
-                <button class="cp-ticket-btn claimed" disabled>마감</button>
-              </c:when>
-              <%-- 지윤 26.08.07: 소진(isExhausted)은 여기 안 걸림 → 버튼 그대로 눌림,
+              <%-- 지윤 26.08.10: 소진(isExhausted)도 버튼은 그대로 둠 →
                    claimCoupon() 호출 시 서버가 COUPON_EXHAUSTED로 막고 alert로 안내 --%>
               <c:otherwise>
                 <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">다운</button>

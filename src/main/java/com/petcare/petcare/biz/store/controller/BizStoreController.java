@@ -11,6 +11,8 @@
 
 package com.petcare.petcare.biz.store.controller;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -869,6 +871,12 @@ public String couponList(
     model.addAttribute(
             "couponList",
             bizStoreService.getCouponList(bizNo)
+    );
+
+    // 지윤 26.08.10 추가: 기간만료 배지 판단용
+    model.addAttribute(
+            "today",
+            LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     );
 
     return "biz/store/coupon";

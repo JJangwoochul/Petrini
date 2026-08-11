@@ -179,9 +179,16 @@ public class StayServiceImpl implements StayService {
             if (total < minOrderAmt) {
                 throw new RuntimeException("최소 예약금액 미달로 쿠폰을 사용할 수 없습니다.");
             }
-            couponDiscount = "RATE".equals(coupon.getCouponType())
-                    ? total * coupon.getDiscountValue() / 100
-                    : coupon.getDiscountValue();
+            if ("RATE".equals(coupon.getCouponType())) {
+                long rawDiscount = total * coupon.getDiscountValue() / 100;
+                // 지윤 26.08.11 수정: 최대할인금액 캡 적용. maxDiscountAmt가 NULL/0인 레거시 쿠폰은 캡 미적용
+                Integer maxAmt = coupon.getMaxDiscountAmt();
+                couponDiscount = (maxAmt != null && maxAmt > 0)
+                        ? Math.min(rawDiscount, (long) maxAmt)
+                        : rawDiscount;
+            } else {
+                couponDiscount = coupon.getDiscountValue();
+            }
             if (couponDiscount > total) {
                 couponDiscount = total;
             }

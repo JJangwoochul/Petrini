@@ -8,7 +8,7 @@ import com.petcare.petcare.store.vo.StoreShopVO;
 public interface CouponService {
 
     // 받을 수 있는 쿠폰 목록
-    List<CouponVO> getAvailableCoupons(Long memberNo);
+    List<CouponVO> getAvailableCoupons(Long memberNo, String today);
 
     // 보유 쿠폰 목록
     List<CouponVO> getMyCoupons(Long memberNo);

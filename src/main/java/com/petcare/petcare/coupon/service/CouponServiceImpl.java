@@ -17,8 +17,8 @@ public class CouponServiceImpl implements CouponService {
     private CouponMapper eventCouponMapper;
 
     @Override
-    public List<CouponVO> getAvailableCoupons(Long memberNo) {
-        return eventCouponMapper.selectAvailableCoupons(memberNo);
+    public List<CouponVO> getAvailableCoupons(Long memberNo, String today) {
+        return eventCouponMapper.selectAvailableCoupons(memberNo, today);
     }
 
     @Override
@@ -89,8 +89,14 @@ public void claimCoupon(Long memberNo, Long couponId) {
         eventCouponMapper.insertMemberCoupon(memberNo, couponId);
 
         // 4) TB_COUPON 발급수량·예산 갱신
+        // 지윤 26.08.11 수정: RATE 쿠폰은 discountValue(%)가 아니라 maxDiscountAmt(원)을 예산에 누적해야
+        // TOTAL_BUDGET(=maxDiscountAmt × 수량)과 실제 소진 체크가 맞아떨어짐
+        int budgetUnit = "RATE".equals(coupon.getCouponType())
+        ? (coupon.getMaxDiscountAmt() != null ? coupon.getMaxDiscountAmt() : 0)
+        : coupon.getDiscountValue();
+
         // 지윤 26.08.07: 동시요청으로 그 사이 소진됐으면 0건 갱신 → 트랜잭션 롤백(2번 INSERT도 취소)
-        int updated = eventCouponMapper.updateCouponIssued(couponId, coupon.getDiscountValue());
+        int updated = eventCouponMapper.updateCouponIssued(couponId, budgetUnit);
         if (updated == 0) {
             throw new IllegalStateException("COUPON_EXHAUSTED");
         }

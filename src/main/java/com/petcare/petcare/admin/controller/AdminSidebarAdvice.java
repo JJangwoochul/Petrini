@@ -12,6 +12,8 @@
  *
  * 2026-08-06 박유정 — 배너 신청 대기(PENDING) 건수 배지 추가
  * (admin/common/sidebar.jsp 배너 관리 메뉴)
+ *
+ * 2026/08/11 장우철 — jiyoon merge: 쿠폰 승인 대기 배지 유지 (배너 배지와 병존)
  */
 
 package com.petcare.petcare.admin.controller;
@@ -119,6 +121,21 @@ public class AdminSidebarAdvice {
         }
         try {
             return adminCMSService.getPendingBannerCount();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 지윤 26.08.11 추가: sidebar 쿠폰 승인 메뉴 배지 (pendingBizApproveCount 패턴 동일)
+    @ModelAttribute("pendingCouponApproveCount")
+    public int pendingCouponApproveCount(HttpSession session) {
+        MemberVO m = (MemberVO) session.getAttribute("memberInfo");
+        if (m == null || !"ADMIN".equals(m.getRole())) {
+            return 0;
+        }
+        try {
+            Integer pending = adminBizService.getCouponStatusCounts().get("PENDING");
+            return pending != null ? pending : 0;
         } catch (Exception e) {
             return 0;
         }

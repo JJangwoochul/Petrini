@@ -692,7 +692,7 @@
 
 <!-- 지윤 26.08.06 쿠폰 기능-->
 <select id="selectCouponListByBizNo" parameterType="long" resultType="com.petcare.petcare.biz.vo.BizCouponVO">
-  SELECT COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MIN_ORDER_AMT,
+  SELECT COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MAX_DISCOUNT_AMT, MIN_ORDER_AMT,
          TOTAL_BUDGET, ISSUED_BUDGET, TOTAL_QTY, ISSUED_QTY, USE_START_DATE, USE_END_DATE,
          BIZ_MEMBER_NO, APPROVAL_STATUS, REJECT_REASON, APPROVAL_DATE, STATUS_CD, REG_DATE, MOD_DATE
     FROM TB_COUPON
@@ -701,7 +701,7 @@
 </select>
 
 <select id="selectCouponById" parameterType="long" resultType="com.petcare.petcare.biz.vo.BizCouponVO">
-  SELECT COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MIN_ORDER_AMT,
+  SELECT COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MAX_DISCOUNT_AMT, MIN_ORDER_AMT,
          TOTAL_BUDGET, ISSUED_BUDGET, TOTAL_QTY, ISSUED_QTY, USE_START_DATE, USE_END_DATE,
          BIZ_MEMBER_NO, APPROVAL_STATUS, REJECT_REASON, APPROVAL_DATE, STATUS_CD, REG_DATE, MOD_DATE
     FROM TB_COUPON
@@ -710,11 +710,11 @@
 
 <insert id="insertCoupon" parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
   INSERT INTO TB_COUPON (
-      COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MIN_ORDER_AMT,
+      COUPON_ID, COUPON_CODE, COUPON_NAME, COUPON_TYPE, DISCOUNT_VALUE, MAX_DISCOUNT_AMT, MIN_ORDER_AMT,
       TOTAL_BUDGET, ISSUED_BUDGET, TOTAL_QTY, ISSUED_QTY, USE_START_DATE, USE_END_DATE,
       BIZ_MEMBER_NO, BIZ_NO, APPROVAL_STATUS, STATUS_CD, REG_DATE
   ) VALUES (
-      SEQ_COUPON.NEXTVAL, #{couponCode}, #{couponName}, #{couponType}, #{discountValue}, #{minOrderAmt},
+      SEQ_COUPON.NEXTVAL, #{couponCode}, #{couponName}, #{couponType}, #{discountValue}, #{maxDiscountAmt, jdbcType=NUMERIC}, #{minOrderAmt},
       #{totalBudget}, #{issuedBudget}, #{totalQty}, #{issuedQty}, #{useStartDate}, #{useEndDate},
       #{bizMemberNo}, #{bizMemberNo}, #{approvalStatus}, #{statusCd}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
   )
@@ -723,6 +723,7 @@
 <update id="updateCoupon" parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
   UPDATE TB_COUPON
      SET COUPON_NAME = #{couponName}, COUPON_TYPE = #{couponType}, DISCOUNT_VALUE = #{discountValue},
+         MAX_DISCOUNT_AMT = #{maxDiscountAmt, jdbcType=NUMERIC},
          MIN_ORDER_AMT = #{minOrderAmt}, TOTAL_BUDGET = #{totalBudget}, TOTAL_QTY = #{totalQty},
          USE_START_DATE = #{useStartDate}, USE_END_DATE = #{useEndDate},
          MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
