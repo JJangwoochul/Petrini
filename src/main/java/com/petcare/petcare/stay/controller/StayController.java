@@ -285,9 +285,16 @@ public class StayController {
         if (couponMemberCouponId != null && couponMemberCouponId > 0) {
             CouponVO couponPreview = couponMapper.selectMemberCouponForUse(couponMemberCouponId, member.getMemberNo());
             if (couponPreview != null) {
-                couponDiscountPreview = "RATE".equals(couponPreview.getCouponType())
-                        ? total * couponPreview.getDiscountValue() / 100
-                        : couponPreview.getDiscountValue();
+                if ("RATE".equals(couponPreview.getCouponType())) {
+                    long rawDiscount = total * couponPreview.getDiscountValue() / 100;
+                    // 지윤 26.08.11 수정: 최대할인금액 캡 적용 (실제 확정은 confirmPayment/StayServiceImpl에서 재검증)
+                    Integer maxAmt = couponPreview.getMaxDiscountAmt();
+                    couponDiscountPreview = (maxAmt != null && maxAmt > 0)
+                            ? Math.min(rawDiscount, (long) maxAmt)
+                            : rawDiscount;
+                } else {
+                    couponDiscountPreview = couponPreview.getDiscountValue();
+                }
                 if (couponDiscountPreview > total) couponDiscountPreview = total;
             }
         }

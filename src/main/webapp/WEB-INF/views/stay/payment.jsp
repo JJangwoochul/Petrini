@@ -124,11 +124,13 @@
       <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:8px">보유 쿠폰</div>
       <select id="couponSelect" onchange="calcFinalAmount()"
               style="width:100%;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;font-size:14px;outline:none;font-family:inherit">
-        <option value="0" data-type="" data-value="0" data-min="0">쿠폰 선택 안 함</option>
+        <option value="0" data-type="" data-value="0" data-max="0" data-min="0">쿠폰 선택 안 함</option>
         <c:forEach var="c" items="${usableCoupons}">
-          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-min="${c.minOrderAmt}">
+          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-max="${c.maxDiscountAmt}" data-min="${c.minOrderAmt}">
             ${c.couponName}
-            <c:if test="${c.couponType == 'RATE'}"> (${c.discountValue}% 할인)</c:if>
+            <c:if test="${c.couponType == 'RATE'}">
+              (${c.discountValue}% 할인, 최대 <fmt:formatNumber value="${c.maxDiscountAmt}" pattern="#,###"/>원)
+            </c:if>
             <c:if test="${c.couponType == 'FIXED'}"> (<fmt:formatNumber value="${c.discountValue}" pattern="#,###"/>원 할인)</c:if>
           </option>
         </c:forEach>
@@ -265,6 +267,7 @@
     var opt = couponSel.options[couponSel.selectedIndex];
     var couponType = opt.dataset.type;
     var couponValue = parseInt(opt.dataset.value) || 0;
+    var couponMax = parseInt(opt.dataset.max) || 0;
     var minOrderAmt = parseInt(opt.dataset.min) || 0;
 
     couponMemberCouponId = parseInt(couponSel.value) || 0;
@@ -276,7 +279,8 @@
         couponSel.value = '0';
         couponMemberCouponId = 0;
       } else if (couponType === 'RATE') {
-        couponDiscount = Math.floor(totalAmount * couponValue / 100);
+        var rawDiscount = Math.floor(totalAmount * couponValue / 100);
+        couponDiscount = couponMax > 0 ? Math.min(rawDiscount, couponMax) : rawDiscount;
       } else if (couponType === 'FIXED') {
         couponDiscount = couponValue;
       }

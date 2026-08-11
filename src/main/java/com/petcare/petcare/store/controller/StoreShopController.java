@@ -249,9 +249,15 @@ public String payment(@RequestParam(required = false) Long productId,
                 Long couponBizNo = c.getBizNo() != null ? Long.valueOf(c.getBizNo()) : null;
                 int couponTargetAmt = groupSubtotals.getOrDefault(couponBizNo, 0);
                 if (couponTargetAmt >= c.getMinOrderAmt()) {
-                    couponDiscount = "RATE".equals(c.getCouponType())
-                            ? couponTargetAmt * c.getDiscountValue() / 100
-                            : c.getDiscountValue();
+                    if ("RATE".equals(c.getCouponType())) {
+                        int rawDiscount = couponTargetAmt * c.getDiscountValue() / 100;
+                        Integer maxAmt = c.getMaxDiscountAmt();
+                        couponDiscount = (maxAmt != null && maxAmt > 0)
+                                ? Math.min(rawDiscount, maxAmt)
+                                : rawDiscount;
+                    } else {
+                        couponDiscount = c.getDiscountValue();
+                    }
                     couponName = c.getCouponName();
                     couponBizNoStr = c.getBizNo();
                 }

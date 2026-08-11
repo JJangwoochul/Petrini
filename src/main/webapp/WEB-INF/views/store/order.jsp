@@ -213,13 +213,14 @@
     <div class="order-form-group">
       <label>보유 쿠폰</label>
       <select id="couponSelect" onchange="updateOrderTotal()">
-        <option value="0" data-type="" data-value="0" data-min="0">쿠폰 선택 안 함</option>
+        <option value="0" data-type="" data-value="0" data-max="0" data-min="0">쿠폰 선택 안 함</option>
         <c:forEach var="c" items="${memberCoupons}">
-          <%-- 지윤 26.08.07: 쿠폰 발급 사업자(bizNo) 추가 — 이 주문에 그 사업자 상품이 없으면 할인 미적용되도록 --%>
-          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-min="${c.minOrderAmt}" data-biz="${c.bizNo}">
+          <%-- 지윤 26.08.11 추가: data-max = 정률쿠폰 최대할인금액(원), FIXED는 사용 안 함 --%>
+          <option value="${c.memberCouponId}" data-type="${c.couponType}" data-value="${c.discountValue}" data-max="${c.maxDiscountAmt}" data-min="${c.minOrderAmt}" data-biz="${c.bizNo}">
             ${c.couponName}
-            <c:if test="${c.couponType == 'RATE'}"> (${c.discountValue}% 할인)</c:if>
-            <%-- 지윤 26.08.07: FIXED로 통일 (biz/store/coupon.jsp·coupon/list.jsp와 동일) --%>
+            <c:if test="${c.couponType == 'RATE'}">
+              (${c.discountValue}% 할인, 최대 <fmt:formatNumber value="${c.maxDiscountAmt}" pattern="#,###"/>원)
+            </c:if>
             <c:if test="${c.couponType == 'FIXED'}"> (<fmt:formatNumber value="${c.discountValue}" pattern="#,###"/>원 할인)</c:if>
           </option>
         </c:forEach>
@@ -324,6 +325,7 @@ function updateOrderTotal() {
   var opt = couponSel.options[couponSel.selectedIndex];
   var couponType = opt.dataset.type;
   var couponValue = parseInt(opt.dataset.value) || 0;
+  var couponMax = parseInt(opt.dataset.max) || 0; // 지윤 26.08.11 추가: 정률쿠폰 최대할인금액
   var minOrderAmt = parseInt(opt.dataset.min) || 0;
   var couponBizNo = opt.dataset.biz; // 지윤 26.08.07: 쿠폰 발급 사업자
 
@@ -342,9 +344,12 @@ function updateOrderTotal() {
       alert('이 쿠폰은 발급한 사업자의 상품에만 적용되며, 최소 주문금액 ' + won(minOrderAmt) + ' 이상부터 사용 가능합니다.');
       couponSel.value = '0';
     } else if (couponType === 'RATE') {
-      couponDiscount = Math.floor(bizSubtotal * couponValue / 100);
-    } else if (couponType === 'FIXED') {
-      couponDiscount = couponValue;
+    var rawDiscount = Math.floor(bizSubtotal * couponValue / 100);
+   // 지윤 26.08.11 수정: 최대할인금액 캡 적용 (없으면 무제한으로 새던 버그 수정)
+   // couponMax가 0(=DB에 값 없는 레거시 쿠폰)이면 캡 미적용, 있으면 min으로 제한
+   couponDiscount = couponMax > 0 ? Math.min(rawDiscount, couponMax) : rawDiscount;
+} else if (couponType === 'FIXED') {
+   couponDiscount = couponValue;
     }
   }
 

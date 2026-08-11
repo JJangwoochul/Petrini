@@ -100,4 +100,19 @@ public class AdminSidebarAdvice {
             return 0;
         }
     }
+
+    // 지윤 26.08.11 추가: sidebar 쿠폰 승인 메뉴 배지 (pendingBizApproveCount 패턴 동일)
+    @ModelAttribute("pendingCouponApproveCount")
+    public int pendingCouponApproveCount(HttpSession session) {
+        MemberVO m = (MemberVO) session.getAttribute("memberInfo");
+        if (m == null || !"ADMIN".equals(m.getRole())) {
+            return 0;
+        }
+        try {
+            Integer pending = adminBizService.getCouponStatusCounts().get("PENDING");
+            return pending != null ? pending : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 }

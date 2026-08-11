@@ -20,14 +20,33 @@
         </div>
 
         <div class="footer-right">
-            <div class="footer-info">
-                <p><span class="footer-info-label">대표이사</span> 장우철, 하예주, 곽지윤, 박유정</p>
-                <p><span class="footer-info-label">사업자번호</span> 000-00000-00</p>
-                <p><span class="footer-info-label">주소</span> 대전광역시 서구 대덕대로 182 오라클빌딩 3층, 10층</p>
-                <p><span class="footer-info-label">이메일</span> <a class="footer-info-value" href="mailto:asdfg@gmail.com">asdfg@gmail.com</a></p>
-                <p><span class="footer-info-label">고객센터</span> 1588-0000</p>
-            </div>
+    <div class="footer-team">
+        <div class="footer-member">
+            <p class="footer-member-name">하예주</p>
+            <p><span class="footer-info-label">연락처</span> 010-0000-0000</p>
+            <p><span class="footer-info-label">이메일</span> <a class="footer-info-value" href="mailto:yeju@example.com">example@example.com</a></p>
+            <p><span class="footer-info-label">주소</span> 대전 서구 대덕대로 182</p>
         </div>
+        <div class="footer-member">
+            <p class="footer-member-name">박유정</p>
+            <p><span class="footer-info-label">연락처</span> 010-0000-0000</p>
+            <p><span class="footer-info-label">이메일</span> <a class="footer-info-value" href="mailto:yujeong@example.com">example@example.com</a></p>
+            <p><span class="footer-info-label">주소</span> 대전 서구 대덕대로 182</p>
+        </div>
+        <div class="footer-member">
+            <p class="footer-member-name">장우철</p>
+            <p><span class="footer-info-label">연락처</span> 010-0000-0000</p>
+            <p><span class="footer-info-label">이메일</span> <a class="footer-info-value" href="mailto:woochul@example.com">example@example.com</a></p>
+            <p><span class="footer-info-label">주소</span> 대전 서구 대덕대로 182</p>
+        </div>
+        <div class="footer-member">
+            <p class="footer-member-name">곽지윤</p>
+            <p><span class="footer-info-label">연락처</span> 010-0000-0000</p>
+            <p><span class="footer-info-label">이메일</span> <a class="footer-info-value" href="mailto:jiyoon@example.com">example@example.com</a></p>
+            <p><span class="footer-info-label">주소</span> 대전 서구 대덕대로 182</p>
+        </div>
+    </div>
+</div>
     </div>
 </footer>
 <script>window.__CONTEXT_PATH__ = '${contextPath}';</script>

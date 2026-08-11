@@ -352,7 +352,7 @@
             <div class="cpn-modal-body">
                 <div class="cpn-form-group">
                     <label>쿠폰명 <span style="color:#DC2626">*</span></label>
-                    <input type="text" name="couponName" placeholder="예: 여름 할인 쿠폰" required>
+                    <input type="text" name="couponName" id="couponName" placeholder="예: 여름 할인 쿠폰" required>
                 </div>
                 <div class="cpn-form-row">
                     <div class="cpn-form-group">
@@ -362,26 +362,37 @@
                             <option value="RATE">정률 할인 (%)</option>
                         </select>
                     </div>
-                    <div class="cpn-form-group">
-                        <label id="discountLabel">할인 금액 (원) <span style="color:#DC2626">*</span></label>
-                        <input type="number" name="discountValue" id="discountValue"
-                               placeholder="5000" min="1" required>
-                    </div>
-                </div>
-                <div class="cpn-form-row">
-                    <div class="cpn-form-group">
-                        <label>총 예산 (원) <span style="color:#DC2626">*</span></label>
-                        <input type="number" name="totalBudget" placeholder="500000" min="1" required>
-                    </div>
-                    <div class="cpn-form-group">
-                        <label>발급 수량 (장) <span style="color:#DC2626">*</span></label>
-                        <input type="number" name="totalQty" placeholder="100" min="1" required>
-                    </div>
-                </div>
-                <div class="cpn-form-group">
-                    <label>최소 주문 금액 (원)</label>
-                    <input type="number" name="minOrderAmt" placeholder="10000" min="0" value="0">
-                </div>
+                   <div class="cpn-form-group">
+    <label id="discountLabel">할인 금액 (원) <span style="color:#DC2626">*</span></label>
+    <input type="number" name="discountValue" id="discountValue"
+           placeholder="0" min="1" required oninput="calcTotalBudget()">
+</div>
+</div>
+<%-- 지윤 26.08.11 추가: 정률(RATE) 쿠폰 전용, 기본 숨김 --%>
+<div class="cpn-form-row" id="maxDiscountRow" style="display:none">
+    <div class="cpn-form-group">
+        <label>최대 할인 금액 (원) <span style="color:#DC2626">*</span></label>
+        <input type="number" name="maxDiscountAmt" id="maxDiscountAmt"
+               placeholder="0" min="1" oninput="calcTotalBudget()">
+    </div>
+</div>
+<div class="cpn-form-row">
+    <div class="cpn-form-group">
+        <label>총 예산 (원, 자동계산) <span style="color:#DC2626">*</span></label>
+        <input type="number" name="totalBudget" id="totalBudget"
+       placeholder="0" min="1" required readonly
+       style="background:#F3F4F6; cursor:not-allowed;">
+    </div>
+    <div class="cpn-form-group">
+        <label>발급 수량 (장) <span style="color:#DC2626">*</span></label>
+        <input type="number" name="totalQty" id="totalQty"
+               placeholder="0" min="1" required oninput="calcTotalBudget()">
+    </div>
+</div>
+<div class="cpn-form-group">
+    <label>최소 주문 금액 (원)</label>
+    <input type="number" name="minOrderAmt" id="minOrderAmt" placeholder="0" min="0">
+</div>
                 <div class="cpn-form-row">
                     <div class="cpn-form-group">
                         <label>사용 시작일 <span style="color:#DC2626">*</span></label>
@@ -406,6 +417,16 @@
 
 <script>
 function openApplyModal() {
+    document.getElementById('couponName').value = '';
+    document.getElementById('discountValue').value = '';
+    document.getElementById('maxDiscountAmt').value = '';
+    document.getElementById('totalBudget').value = '';
+    document.getElementById('totalQty').value = '';
+    document.getElementById('minOrderAmt').value = '';
+    document.getElementById('useStartDateInput').value = '';
+    document.getElementById('useEndDateInput').value = '';
+    document.getElementById('couponType').value = 'FIXED';
+    toggleDiscountLabel();
     document.getElementById('applyModal').classList.add('show');
 }
 function closeApplyModal() {
@@ -416,15 +437,36 @@ function toggleDiscountLabel() {
     var type = document.getElementById('couponType').value;
     var label = document.getElementById('discountLabel');
     var input = document.getElementById('discountValue');
+    var maxRow = document.getElementById('maxDiscountRow');
+    var maxInput = document.getElementById('maxDiscountAmt');
+    input.value = ''; // 할인유형 바뀌면 이전 값(정액 5000원 → 정률 5000%로 남는 것) 초기화
+    document.getElementById('totalQty').value = ''; // 발급수량도 할인유형 바뀔 때 초기화
     if (type === 'RATE') {
         label.innerHTML = '할인율 (%) <span style="color:#DC2626">*</span>';
-        input.placeholder = '10';
+        input.placeholder = '0';
         input.max = 100;
+        maxRow.style.display = '';
+        maxInput.setAttribute('required', 'required');
     } else {
         label.innerHTML = '할인 금액 (원) <span style="color:#DC2626">*</span>';
-        input.placeholder = '5000';
+        input.placeholder = '0';
         input.removeAttribute('max');
+        maxRow.style.display = 'none';
+        maxInput.removeAttribute('required');
+        maxInput.value = '';
     }
+    calcTotalBudget();
+}
+
+// 지윤 26.08.11 추가: 총예산 자동계산
+// 정액(FIXED) = 할인금액 × 발급수량 / 정률(RATE) = 최대할인금액 × 발급수량
+function calcTotalBudget() {
+    var type = document.getElementById('couponType').value;
+    var discountValue = parseInt(document.getElementById('discountValue').value) || 0;
+    var maxDiscountAmt = parseInt(document.getElementById('maxDiscountAmt').value) || 0;
+    var totalQty = parseInt(document.getElementById('totalQty').value) || 0;
+    var unitCost = (type === 'RATE') ? maxDiscountAmt : discountValue;
+    document.getElementById('totalBudget').value = unitCost * totalQty;
 }
 
 function validateForm() {
@@ -438,7 +480,13 @@ function validateForm() {
         alert('종료일이 시작일보다 빠를 수 없습니다.');
         return false;
     }
-    // date → YYYYMMDD 변환
+    // 지윤 26.08.11 추가: 정률인데 최대할인금액 비어있으면 막기
+    if (document.getElementById('couponType').value === 'RATE'
+        && !document.getElementById('maxDiscountAmt').value) {
+        alert('최대 할인 금액을 입력해주세요.');
+        return false;
+    }
+    calcTotalBudget(); // 제출 직전 최종 재계산(안전장치)
     document.getElementById('useStartDate').value = startInput.value.replace(/-/g, '');
     document.getElementById('useEndDate').value   = endInput.value.replace(/-/g, '');
     return true;
@@ -447,6 +495,13 @@ function validateForm() {
 // 모달 외부 클릭 닫기
 document.getElementById('applyModal').addEventListener('click', function(e) {
     if (e.target === this) closeApplyModal();
+});
+
+// 숫자칸 타이핑 중 "010"처럼 앞자리 0이 안 지워지는 문제 방지
+['discountValue', 'maxDiscountAmt', 'totalQty', 'minOrderAmt'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', function() {
+        this.value = this.value.replace(/^0+(?=\d)/, '');
+    });
 });
 </script>
 

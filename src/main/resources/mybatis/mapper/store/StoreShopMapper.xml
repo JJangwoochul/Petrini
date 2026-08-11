@@ -400,6 +400,7 @@ SELECT
 <select id="selectMemberCoupons" resultType="com.petcare.petcare.store.vo.CouponVO">
     SELECT mc.MEMBER_COUPON_ID, c.COUPON_ID, c.COUPON_NAME, c.COUPON_TYPE,
            c.DISCOUNT_VALUE,
+           c.MAX_DISCOUNT_AMT,
            c.MIN_ORDER_AMT,
            c.BIZ_NO
     FROM TB_MEMBER_COUPON mc

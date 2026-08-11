@@ -323,15 +323,16 @@
     <!-- HYJ 26.07.29 사업자 본인 쿠폰 목록 -->
   <!-- 2026/08/01 장우철 — BIZ_MEMBER_NO = TB_BUSINESS.BIZ_NO -->
   <select id="selectCouponListByBizNo"
-          parameterType="long"
-          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
-    SELECT COUPON_ID,
-           COUPON_CODE,
-           COUPON_NAME,
-           COUPON_TYPE,
-           DISCOUNT_VALUE,
-           MIN_ORDER_AMT,
-           TOTAL_BUDGET,
+        parameterType="long"
+        resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+  SELECT COUPON_ID,
+         COUPON_CODE,
+         COUPON_NAME,
+         COUPON_TYPE,
+         DISCOUNT_VALUE,
+         MAX_DISCOUNT_AMT,
+         MIN_ORDER_AMT,
+         TOTAL_BUDGET,
            ISSUED_BUDGET,
            TOTAL_QTY,
            ISSUED_QTY,
@@ -350,15 +351,17 @@
   </select>
 
   <!-- HYJ 26.07.29 쿠폰 상세 1건 -->
-  <select id="selectCouponById"
-          parameterType="long"
-          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
-    SELECT COUPON_ID,
-           COUPON_CODE,
-           COUPON_NAME,
-           COUPON_TYPE,
-           DISCOUNT_VALUE,
-           MIN_ORDER_AMT,
+  <!-- 지윤 26.08.11: 정률쿠폰 최대할인금액(MAX_DISCOUNT_AMT) 조회 컬럼 추가 -->
+<select id="selectCouponById"
+        parameterType="long"
+        resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+  SELECT COUPON_ID,
+         COUPON_CODE,
+         COUPON_NAME,
+         COUPON_TYPE,
+         DISCOUNT_VALUE,
+         MAX_DISCOUNT_AMT, 
+         MIN_ORDER_AMT,
            TOTAL_BUDGET,
            ISSUED_BUDGET,
            TOTAL_QTY,
@@ -377,65 +380,52 @@
   </select>
 
   <!-- HYJ 26.07.29 쿠폰 신청 INSERT -->
-  <!-- 2026/08/01 장우철 — BIZ_MEMBER_NO/BIZ_NO 모두 TB_BUSINESS.BIZ_NO -->
-  <insert id="insertCoupon"
-          parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
-    INSERT INTO TB_COUPON (
-        COUPON_ID,
-        COUPON_CODE,
-        COUPON_NAME,
-        COUPON_TYPE,
-        DISCOUNT_VALUE,
-        MIN_ORDER_AMT,
-        TOTAL_BUDGET,
-        ISSUED_BUDGET,
-        TOTAL_QTY,
-        ISSUED_QTY,
-        USE_START_DATE,
-        USE_END_DATE,
-        BIZ_MEMBER_NO,
-        BIZ_NO,
-        APPROVAL_STATUS,
-        STATUS_CD,
-        REG_DATE
-    ) VALUES (
-        SEQ_COUPON.NEXTVAL,
-        #{couponCode},
-        #{couponName},
-        #{couponType},
-        #{discountValue},
-        #{minOrderAmt},
-        #{totalBudget},
-        #{issuedBudget},
-        #{totalQty},
-        #{issuedQty},
-        #{useStartDate},
-        #{useEndDate},
-        #{bizMemberNo},
-        #{bizMemberNo},
-        #{approvalStatus},
-        #{statusCd},
-        TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
-    )
-  </insert>
+<!-- 2026/08/01 장우철 — BIZ_MEMBER_NO/BIZ_NO 모두 TB_BUSINESS.BIZ_NO -->
+<!-- 지윤 26.08.11: 정률쿠폰 최대할인금액(MAX_DISCOUNT_AMT) 컬럼 추가 -->
+<insert id="insertCoupon"
+        parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
+  INSERT INTO TB_COUPON (
+      COUPON_ID, COUPON_CODE, 
+      COUPON_NAME, 
+      COUPON_TYPE, 
+      DISCOUNT_VALUE,
+      MAX_DISCOUNT_AMT, 
+      MIN_ORDER_AMT,
+      TOTAL_BUDGET, 
+      ISSUED_BUDGET, 
+      TOTAL_QTY, 
+      ISSUED_QTY, 
+      USE_START_DATE, 
+      USE_END_DATE,
+      BIZ_MEMBER_NO, BIZ_NO, APPROVAL_STATUS, STATUS_CD, REG_DATE
+  ) VALUES (
+      SEQ_COUPON.NEXTVAL, #{couponCode}, #{couponName}, #{couponType}, #{discountValue},
+      #{maxDiscountAmt, jdbcType=NUMERIC}, 
+      #{minOrderAmt},
+      #{totalBudget}, #{issuedBudget}, #{totalQty}, #{issuedQty}, #{useStartDate}, #{useEndDate},
+      #{bizMemberNo}, #{bizMemberNo}, #{approvalStatus}, #{statusCd}, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+  )
+</insert>
 
   <!-- HYJ 26.07.29 쿠폰 수정 (PENDING일 때만) -->
-  <update id="updateCoupon"
-          parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
-    UPDATE TB_COUPON
-       SET COUPON_NAME    = #{couponName},
-           COUPON_TYPE    = #{couponType},
-           DISCOUNT_VALUE = #{discountValue},
-           MIN_ORDER_AMT  = #{minOrderAmt},
-           TOTAL_BUDGET   = #{totalBudget},
-           TOTAL_QTY      = #{totalQty},
-           USE_START_DATE = #{useStartDate},
-           USE_END_DATE   = #{useEndDate},
-           MOD_DATE       = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
-     WHERE COUPON_ID      = #{couponId}
-       AND BIZ_MEMBER_NO  = #{bizMemberNo}
-       AND APPROVAL_STATUS = 'PENDING'
-  </update>
+  <!-- 지윤 26.08.11: 정률쿠폰 최대할인금액(MAX_DISCOUNT_AMT) 갱신 추가 -->
+<update id="updateCoupon"
+        parameterType="com.petcare.petcare.biz.vo.BizCouponVO">
+  UPDATE TB_COUPON
+     SET COUPON_NAME    = #{couponName},
+         COUPON_TYPE s   = #{couponType},
+         DISCOUNT_VALUE = #{discountValue},
+         MAX_DISCOUNT_AMT = #{maxDiscountAmt, jdbcType=NUMERIC}, 
+         MIN_ORDER_AMT  = #{minOrderAmt},
+         TOTAL_BUDGET   = #{totalBudget},
+         TOTAL_QTY      = #{totalQty},
+         USE_START_DATE = #{useStartDate},
+         USE_END_DATE   = #{useEndDate},
+         MOD_DATE       = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+   WHERE COUPON_ID      = #{couponId}
+     AND BIZ_MEMBER_NO  = #{bizMemberNo}
+     AND APPROVAL_STATUS = 'PENDING'
+</update>
 
   <!-- HYJ 26.07.29 쿠폰 삭제 (PENDING일 때만) -->
   <delete id="deleteCoupon">

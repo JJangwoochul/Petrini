@@ -16,6 +16,7 @@ public class CouponVO {
     private String couponName;
     private String couponType;
     private Integer discountValue;
+    private Integer maxDiscountAmt; // 정률(RATE) 쿠폰 최대 할인금액 (FIXED는 NULL) // 지윤 26.08.11 추가
     private Integer minOrderAmt;
     private String bizNo; //지윤 26.07.30 추가: 이 쿠폰이 어느 사업자 발급인지
     private String bizType;      //2026.08.06 지윤 추가: HOSPITAL/STAY/STORE 등 업종

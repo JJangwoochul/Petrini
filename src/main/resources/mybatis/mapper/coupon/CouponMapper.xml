@@ -17,6 +17,7 @@
            C.COUPON_NAME,
            C.COUPON_TYPE,
            C.DISCOUNT_VALUE,
+           C.MAX_DISCOUNT_AMT,
            C.MIN_ORDER_AMT,
            C.TOTAL_QTY,
            C.ISSUED_QTY,
@@ -74,6 +75,7 @@ END AS TARGET_ID,
            C.COUPON_NAME,
            C.COUPON_TYPE,
            C.DISCOUNT_VALUE,
+           C.MAX_DISCOUNT_AMT,
            C.MIN_ORDER_AMT,
            C.USE_START_DATE,
            C.USE_END_DATE,
@@ -159,6 +161,7 @@ END AS TARGET_ID,
     SELECT COUPON_ID,
            COUPON_TYPE,
            DISCOUNT_VALUE,
+           MAX_DISCOUNT_AMT,
            TOTAL_BUDGET,
            ISSUED_BUDGET,
            TOTAL_QTY,
@@ -308,17 +311,18 @@ END AS TARGET_ID,
   <select id="selectMemberCouponsByBiz"
           resultType="com.petcare.petcare.store.vo.CouponVO">
     SELECT MC.MEMBER_COUPON_ID,
-           C.COUPON_ID,
-           C.COUPON_NAME,
-           C.COUPON_TYPE,
-           C.DISCOUNT_VALUE,
-           C.MIN_ORDER_AMT,
-           TO_CHAR(C.BIZ_NO) AS BIZ_NO
-      FROM TB_MEMBER_COUPON MC
-      JOIN TB_COUPON C ON C.COUPON_ID = MC.COUPON_ID
-     WHERE MC.MEMBER_NO = #{memberNo}
-       AND MC.STATUS_CD = 'UNUSED'
-       AND C.BIZ_NO = #{bizNo}
+       C.COUPON_ID,
+       C.COUPON_NAME,
+       C.COUPON_TYPE,
+       C.DISCOUNT_VALUE,
+       C.MAX_DISCOUNT_AMT,
+       C.MIN_ORDER_AMT,
+       TO_CHAR(C.BIZ_NO) AS BIZ_NO
+  FROM TB_MEMBER_COUPON MC
+  JOIN TB_COUPON C ON C.COUPON_ID = MC.COUPON_ID
+  WHERE MC.MEMBER_NO = #{memberNo}
+   AND MC.STATUS_CD = 'UNUSED'
+   AND C.BIZ_NO = #{bizNo}
        AND C.USE_END_DATE &gt;= TO_CHAR(SYSDATE, 'YYYYMMDD')
      ORDER BY MC.MEMBER_COUPON_ID
   </select>
@@ -329,20 +333,21 @@ END AS TARGET_ID,
     (클라이언트가 보낸 memberCouponId를 그대로 믿지 않고 여기서 다시 확인)
   -->
   <select id="selectMemberCouponForUse"
-          resultType="com.petcare.petcare.store.vo.CouponVO">
-    SELECT MC.MEMBER_COUPON_ID,
-           C.COUPON_ID,
-           C.COUPON_NAME,
-           C.COUPON_TYPE,
-           C.DISCOUNT_VALUE,
-           C.MIN_ORDER_AMT,
-           TO_CHAR(C.BIZ_NO) AS BIZ_NO
-      FROM TB_MEMBER_COUPON MC
-      JOIN TB_COUPON C ON C.COUPON_ID = MC.COUPON_ID
-     WHERE MC.MEMBER_COUPON_ID = #{memberCouponId}
-       AND MC.MEMBER_NO = #{memberNo}
-       AND MC.STATUS_CD = 'UNUSED'
-  </select>
+        resultType="com.petcare.petcare.store.vo.CouponVO">
+  SELECT MC.MEMBER_COUPON_ID,
+         C.COUPON_ID,
+         C.COUPON_NAME,
+         C.COUPON_TYPE,
+         C.DISCOUNT_VALUE,
+         C.MAX_DISCOUNT_AMT,
+         C.MIN_ORDER_AMT,
+         TO_CHAR(C.BIZ_NO) AS BIZ_NO
+    FROM TB_MEMBER_COUPON MC
+    JOIN TB_COUPON C ON C.COUPON_ID = MC.COUPON_ID
+   WHERE MC.MEMBER_COUPON_ID = #{memberCouponId}
+     AND MC.MEMBER_NO = #{memberNo}
+     AND MC.STATUS_CD = 'UNUSED'
+</select>
 
   <!-- 지윤 26.08.07: 쿠폰 사용 확정 -->
   <update id="markMemberCouponUsed">
