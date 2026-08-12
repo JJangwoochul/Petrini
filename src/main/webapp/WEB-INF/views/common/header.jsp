@@ -41,6 +41,8 @@
             <c:when test="${not empty memberInfo}">
                 <c:if test="${memberInfo.role eq 'ADMIN'}">
                     <a href="${contextPath}/admin">관리자페이지</a>
+                    <%-- 2026/08/12 장우철 — 스케줄러 QA 수동 실행 --%>
+                    <a href="${contextPath}/admin/scheduler">스케줄러</a>
                 </c:if>
                 <a href="${contextPath}/member/logout">로그아웃</a>
             </c:when>

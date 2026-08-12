@@ -15,6 +15,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -34,6 +36,8 @@ import com.petcare.petcare.file.service.FileService;
 import com.petcare.petcare.file.vo.FileVO;
 import com.petcare.petcare.hospital.service.HospitalService;
 import com.petcare.petcare.hospital.vo.HospitalVO;
+import com.petcare.petcare.hospital.vo.HospitalDoctorVO;
+import com.petcare.petcare.hospital.vo.HospitalTreatTypeVO;
 import com.petcare.petcare.hospital.vo.ReservationVO;
 import com.petcare.petcare.member.vo.MemberVO;
 
@@ -78,6 +82,26 @@ public class HospitalController extends CommonConfigController {
         model.addAttribute("imgList", imgList);
         // 2026/07/13 장우철 — 더미 리뷰 대신 DB 리뷰 목록
         model.addAttribute("reviewList", hospitalService.getHospitalReviews(hospitalId));
+
+        // 2026/08/11 장우철 — 병원 상세 예약카드: 대표의사(정렬1) 기준 오늘 남은 슬롯 표시
+        int todayAvailableSlots = 0;
+        try {
+            List<HospitalDoctorVO> doctors = hospitalService.getActiveDoctorsForReserve(hospitalId);
+            List<HospitalTreatTypeVO> treatTypes = hospitalService.getActiveTreatTypesForReserve(hospitalId);
+            if (doctors != null && !doctors.isEmpty()
+                    && treatTypes != null && !treatTypes.isEmpty()) {
+                Long repDoctorId = doctors.get(0).getDoctorId();
+                Long repTreatTypeId = treatTypes.get(0).getTreatTypeId();
+                LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+                Date todayDate = java.sql.Date.valueOf(today);
+                List<String> times = hospitalService.getAvailableReserveTimes(
+                        hospitalId, repDoctorId, repTreatTypeId, todayDate);
+                todayAvailableSlots = times != null ? times.size() : 0;
+            }
+        } catch (Exception ignored) {
+            todayAvailableSlots = 0;
+        }
+        model.addAttribute("todayAvailableSlots", todayAvailableSlots);
 
         return "hospital/detail";
     }

@@ -70,11 +70,14 @@
 .review-bar-row { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-muted); }
 .review-bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
 .review-bar-fill { height:100%; background:var(--yellow); border-radius:3px; }
-.review-card { border:1px solid var(--border); border-radius:var(--radius-md); padding:18px; margin-bottom:14px; }
+.review-card { border:1px solid var(--border); border-radius:var(--radius-md); padding:18px; margin-bottom:14px; overflow:hidden; min-width:0; }
 .review-card-head { display:flex; justify-content:space-between; margin-bottom:10px; }
 .reviewer { font-size:14px; font-weight:700; color:var(--text-main); }
 .review-date { font-size:12px; color:var(--text-muted); }
-.review-text { font-size:14px; color:var(--text-sub); line-height:1.6; }
+.review-text { font-size:14px; color:var(--text-sub); line-height:1.6; word-break:break-word; overflow-wrap:anywhere; }
+/* 2026/08/12 장우철 — 사장님 답글 긴 문자열 줄바꿈 */
+.review-biz-reply { margin-top:10px; padding:12px 14px; background:#EAF7F2; border-left:3px solid #2BAB82; border-radius:8px; max-width:100%; box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word; }
+.review-biz-reply-text { margin-top:4px; font-size:14px; color:var(--text-sub); line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
 .review-report-btn { margin-top:10px; background:none; border:none; color:var(--text-muted); font-size:12px; text-decoration:underline; cursor:pointer; padding:0; }
 .review-report-btn:hover { color:var(--accent); }
 </style>
@@ -292,8 +295,9 @@
               </div>
             </c:if>
             <c:if test="${not empty rv.bizReply}">
-              <div class="review-text" style="margin-top:10px;padding:12px 14px;background:#EAF7F2;border-left:3px solid #2BAB82;border-radius:8px">
-                <b style="color:#1F8464">사장님 답글</b><br>${rv.bizReply}
+              <div class="review-biz-reply">
+                <b style="color:#1F8464">사장님 답글</b>
+                <div class="review-biz-reply-text"><c:out value="${rv.bizReply}"/></div>
               </div>
             </c:if>
             <%-- 지윤 26.07.21 추가: 리뷰 신고 - 로그인했고 본인 리뷰가 아닐 때만 노출 --%>

@@ -28,13 +28,16 @@
   .dept-tags{display:flex;flex-wrap:wrap;gap:6px}
   .dept-tag{font-size:12px;background:#fff;border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-sub)}
   /* 리뷰 */
-  .review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
+  .review-item{border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;overflow:hidden;min-width:0}
   .review-item-head{display:flex;justify-content:space-between;margin-bottom:8px}
   .reviewer-name{font-size:14px;font-weight:700;color:var(--text-main)}
   .review-item-stars{display:flex;gap:2px}
   .review-item-stars svg{width:13px;height:13px;fill:var(--yellow)}
   .review-item-date{font-size:12px;color:var(--text-muted)}
-  .review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6}
+  .review-item-text{font-size:14px;color:var(--text-sub);line-height:1.6;word-break:break-word;overflow-wrap:anywhere}
+  /* 2026/08/12 장우철 — 사업자 답글 긴 문자열 줄바꿈 */
+  .review-biz-reply{margin-top:10px;padding:10px 12px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-sub);max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;word-break:break-word}
+  .review-biz-reply-text{margin-top:4px;white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere;word-break:break-word}
   /* 사이드 예약 카드 */
   .reserve-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:24px;position:sticky;top:20px}
   .reserve-card h3{font-size:16px;font-weight:800;margin:0 0 20px;color:var(--text-main)}
@@ -147,8 +150,9 @@
         </div>
         <div class="review-item-text"><c:out value="${rv.content}"/></div>
         <c:if test="${not empty rv.bizReply}">
-          <div style="margin-top:10px;padding:10px 12px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-sub)">
-            <strong>병원 답글</strong><br><c:out value="${rv.bizReply}"/>
+          <div class="review-biz-reply">
+            <strong>병원 답글</strong>
+            <div class="review-biz-reply-text"><c:out value="${rv.bizReply}"/></div>
           </div>
         </c:if>
       </div>
@@ -157,9 +161,7 @@
 
   <div class="reserve-card">
     <h3>예약하기</h3>
-    <div class="reserve-info-row"><span>진료 대기시간</span><strong>약 10분</strong></div>
-    <div class="reserve-info-row"><span>오늘 예약 가능</span><strong style="color:var(--primary)">8슬롯 남음</strong></div>
-    <div class="reserve-info-row"><span>진료비</span><strong>기본 15,000원~</strong></div>
+    <div class="reserve-info-row"><span>오늘 예약 가능</span><strong style="color:var(--primary)">${todayAvailableSlots}슬롯</strong></div>
     <button class="btn-reserve-big" onclick="location.href='${contextPath}/hospital/reserve?id=${hospital.hospitalId}'">예약하기</button>
     <button class="btn-call" onclick="location.href='tel:${hospital.phone}'"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.86 9.87 19.79 19.79 0 01.75 1.22 2 2 0 012.72 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.356 1.844.559 2.81.7A2 2 0 0122 16.92z"/></svg>${hospital.phone}</button>
   </div>

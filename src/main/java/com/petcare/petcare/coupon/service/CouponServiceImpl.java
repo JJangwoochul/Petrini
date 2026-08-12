@@ -86,7 +86,11 @@ public void claimCoupon(Long memberNo, Long couponId) {
         }
 
         // 3) TB_MEMBER_COUPON INSERT
-        eventCouponMapper.insertMemberCoupon(memberNo, couponId);
+        // 동시 클릭/동시 요청 시에도 중복발급이 안 되도록 Mapper 레벨에서 "조건부 INSERT"를 수행
+        int inserted = eventCouponMapper.insertMemberCoupon(memberNo, couponId);
+        if (inserted == 0) {
+            throw new IllegalStateException("ALREADY_CLAIMED");
+        }
 
         // 4) TB_COUPON 발급수량·예산 갱신
         // 지윤 26.08.11 수정: RATE 쿠폰은 discountValue(%)가 아니라 maxDiscountAmt(원)을 예산에 누적해야

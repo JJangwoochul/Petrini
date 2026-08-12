@@ -58,9 +58,12 @@
   text-decoration:underline;
 }
 
-.cp-ticket-btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);background:#F59E0B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .cp-ticket-btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);background:#F59E0B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
   .cp-ticket-btn:hover{background:#D97706}
-  .cp-ticket-btn.claimed{background:#F5F5F5;color:#aaa;cursor:not-allowed}
+  .cp-ticket-btn.claimed,
+  .cp-ticket-btn.exhausted{background:#F5F5F5;color:#aaa;cursor:not-allowed}
+  .cp-ticket-btn.exhausted:hover,
+  .cp-ticket-btn.claimed:hover{background:#F5F5F5}
   .cp-ticket.ended{opacity:.5}
   .cp-ticket-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;margin-left:8px}
   .cp-ticket-badge.expired{background:#FEE2E2;color:#DC2626}
@@ -112,7 +115,7 @@
         <%--
           지윤 26.08.10 수정
           - 조기마감(INACTIVE), 기간만료는 쿼리 단계에서 이미 제외되어 여기 안 옴
-          - isExhausted : 수량 또는 예산 소진 → 목록엔 남고 버튼은 눌리게 둠(클릭 시 서버가 소진 응답)
+          2026/08/12 장우철 — 소진 쿠폰은 버튼 비활성화 (받기 불가)
         --%>
         <c:set var="isExhausted" value="${cpn.statusCd eq 'EXHAUSTED'
                                           || cpn.issuedQty >= cpn.totalQty
@@ -181,12 +184,13 @@
             </div>
             <c:choose>
               <c:when test="${cpn.alreadyClaimed}">
-                <button class="cp-ticket-btn claimed" disabled>다운 완료</button>
+                <button class="cp-ticket-btn claimed" disabled>받기 완료</button>
               </c:when>
-              <%-- 지윤 26.08.10: 소진(isExhausted)도 버튼은 그대로 둠 →
-                   claimCoupon() 호출 시 서버가 COUPON_EXHAUSTED로 막고 alert로 안내 --%>
+              <c:when test="${isExhausted}">
+                <button class="cp-ticket-btn exhausted" disabled>소진됨</button>
+              </c:when>
               <c:otherwise>
-                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">다운</button>
+                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">받기</button>
               </c:otherwise>
             </c:choose>
           </div>
@@ -235,7 +239,7 @@ function claimCoupon(btn, couponId) {
         if (xhr.status === 200) {
             var res = JSON.parse(xhr.responseText);
             if (res.ok) {
-                btn.textContent = '다운 완료';
+                btn.textContent = '받기 완료';
                 btn.disabled = true;
                 btn.classList.add('claimed');
                 alert(res.message);
@@ -245,6 +249,13 @@ function claimCoupon(btn, couponId) {
                         location.href = '${contextPath}/login';
                     }
                 } else {
+                    // 2026/08/12 장우철 — 소진 응답 시 버튼도 즉시 비활성화
+                    if (res.message && res.message.indexOf('소진') >= 0) {
+                        btn.textContent = '소진됨';
+                        btn.disabled = true;
+                        btn.classList.add('exhausted');
+                        btn.onclick = null;
+                    }
                     alert(res.message);
                 }
             }

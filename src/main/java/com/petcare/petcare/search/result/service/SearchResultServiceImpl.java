@@ -72,28 +72,29 @@ public class SearchResultServiceImpl implements SearchResultService {
     private List<SearchSection> buildSections(String keyword, int limit) {
         List<SearchSection> sections = new ArrayList<>();
 
-        // 상품
+        // 상품 — StoreShopController.detail: GET /store/detail?id=
         List<SearchResultVO> products = searchMapper.searchProducts(keyword, limit);
         if (!products.isEmpty()) {
-            sections.add(new SearchSection("쇼핑", toItems(products, "store", "쇼핑", "/store/detail?productId=")));
+            sections.add(new SearchSection("쇼핑", toItems(products, "store", "쇼핑", "/store/detail?id=")));
         }
 
-        // 병원
+        // 병원 — HospitalController.detail: GET /hospital/detail?id=
         List<SearchResultVO> hospitals = searchMapper.searchHospitals(keyword, limit);
         if (!hospitals.isEmpty()) {
-            sections.add(new SearchSection("병원", toItems(hospitals, "hospital", "병원", "/hospital/detail?hospitalId=")));
+            sections.add(new SearchSection("병원", toItems(hospitals, "hospital", "병원", "/hospital/detail?id=")));
         }
 
-        // 숙소
+        // 숙소 — StayController.detail: GET /stay/detail?id=
         List<SearchResultVO> stays = searchMapper.searchStays(keyword, limit);
         if (!stays.isEmpty()) {
-            sections.add(new SearchSection("숙소", toItems(stays, "stay", "숙소", "/stay/detail?stayId=")));
+            sections.add(new SearchSection("숙소", toItems(stays, "stay", "숙소", "/stay/detail?id=")));
         }
 
         // 커뮤니티
         List<SearchResultVO> posts = searchMapper.searchPosts(keyword, limit);
         if (!posts.isEmpty()) {
-            sections.add(new SearchSection("커뮤니티", toItems(posts, "community", "커뮤니티", "/community/post/")));
+            // CommunityPostController 상세 라우트: GET /community/detail?id=번호
+            sections.add(new SearchSection("커뮤니티", toItems(posts, "community", "커뮤니티", "/community/detail?id=")));
         }
 
         return sections;

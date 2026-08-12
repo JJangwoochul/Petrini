@@ -115,18 +115,29 @@ END AS TARGET_ID,
 
   <!-- 쿠폰 받기 (TB_MEMBER_COUPON INSERT) -->
   <insert id="insertMemberCoupon">
+    <!-- 2026/08/12 장우철 — 동시 요청/더블클릭 대응
+      - 같은 (MEMBER_NO, COUPON_ID)가 이미 있으면 INSERT 0건 처리
+      - Service에서 inserted==0이면 ALREADY_CLAIMED로 처리
+    -->
     INSERT INTO TB_MEMBER_COUPON (
-        MEMBER_COUPON_ID,
-        MEMBER_NO,
-        COUPON_ID,
-        STATUS_CD,
-        REG_DATE
-    ) VALUES (
-        SEQ_MEMBER_COUPON.NEXTVAL,
-        #{memberNo},
-        #{couponId},
-        'UNUSED',
-        TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+      MEMBER_COUPON_ID,
+      MEMBER_NO,
+      COUPON_ID,
+      STATUS_CD,
+      REG_DATE
+    )
+    SELECT
+      SEQ_MEMBER_COUPON.NEXTVAL,
+      #{memberNo},
+      #{couponId},
+      'UNUSED',
+      TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+    FROM DUAL
+    WHERE NOT EXISTS (
+      SELECT 1
+        FROM TB_MEMBER_COUPON
+       WHERE MEMBER_NO = #{memberNo}
+         AND COUPON_ID = #{couponId}
     )
   </insert>
 
@@ -271,7 +282,8 @@ END AS TARGET_ID,
       ) SALES
         ON SALES.PRODUCT_ID = P.PRODUCT_ID
 
-     WHERE TO_CHAR(P.BIZ_NO) = #{bizNo}
+    <!-- 2026/08/12 장우철 — bizNo 타입/공백 차이로 필터가 누락되는 케이스 대응 -->
+    WHERE TO_CHAR(P.BIZ_NO) = TRIM(#{bizNo})
   AND P.STATUS_CD = 'NORMAL'
 
 <!-- 지윤 26.08.06: 상품명 또는 브랜드명 검색 -->

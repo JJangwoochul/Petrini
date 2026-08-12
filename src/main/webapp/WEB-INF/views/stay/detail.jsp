@@ -7,13 +7,16 @@
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <style>
-  .sd-wrap { max-width: var(--inner-width); margin: 32px auto 80px; padding: 0 20px; display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: flex-start; }
+  .sd-wrap { max-width: var(--inner-width); margin: 32px auto 80px; padding: 0 20px; }
+  .sd-hero { display: grid; grid-template-columns: 1fr 320px; gap: 28px; align-items: start; margin-bottom: 22px; }
+  .sd-main { min-width: 0; }
   .sd-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); text-decoration:none; margin-bottom:18px; transition:var(--transition); }
   .sd-back:hover { color: var(--primary); }
   .sd-back svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-  .sd-gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; border-radius:var(--radius-md); overflow:hidden; height:360px; margin-bottom:22px; }
-  .sd-gallery img { width:100%; height:100%; object-fit:cover; display:block; }
+  .sd-gallery { display:grid; grid-template-columns:2fr 1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; border-radius:var(--radius-md); overflow:hidden; height:360px; max-height:360px; }
+  .sd-gallery img { width:100%; height:100%; object-fit:cover; display:block; min-height:0; }
   .sd-gallery img:first-child { grid-row: span 2; }
+  .sd-gallery--empty { display:flex; align-items:center; justify-content:center; background:var(--bg-page); border:1px dashed var(--border); color:var(--text-muted); font-size:14px; font-weight:600; }
   .sd-badge { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; background:var(--primary-light); color:var(--primary-dark); margin-bottom:10px; }
   .sd-title { font-size:26px; font-weight:800; color:var(--text-main); margin-bottom:10px; line-height:1.3; }
   .sd-loc { display:flex; align-items:center; gap:5px; font-size:14px; color:var(--text-muted); margin-bottom:14px; }
@@ -49,11 +52,15 @@
   .rv-bar-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); }
   .rv-bar-bg { flex:1; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
   .rv-bar-fill { height:100%; background:var(--yellow); border-radius:3px; }
-  .review-card { border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px; }
+  .review-card { border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; margin-bottom:12px; overflow:hidden; min-width:0; }
   .rv-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
   .rv-name { font-size:14px; font-weight:700; color:var(--text-main); }
   .rv-date { font-size:12px; color:var(--text-muted); }
-  .rv-text { font-size:14px; color:var(--text-sub); line-height:1.6; }
+  .rv-text { font-size:14px; color:var(--text-sub); line-height:1.6; word-break:break-word; overflow-wrap:anywhere; }
+  /* 2026/08/12 장우철 — 사업자 답글 긴 문자열 줄바꿈 */
+  .rv-biz-reply { margin-top:10px; padding:10px 14px; background:var(--bg-page); border-radius:8px; font-size:13px; color:var(--text-sub); max-width:100%; box-sizing:border-box; overflow-wrap:anywhere; word-break:break-word; }
+  .rv-biz-reply-label { font-weight:700; color:var(--primary-dark); display:block; margin-bottom:4px; }
+  .rv-biz-reply-text { white-space:pre-wrap; line-height:1.6; overflow-wrap:anywhere; word-break:break-word; }
   .reserve-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:22px; position:sticky; top:20px; }
   .reserve-card h3 { font-size:16px; font-weight:800; color:var(--text-main); margin:0 0 16px; }
   .rc-price { font-size:22px; font-weight:800; color:var(--text-main); margin-bottom:16px; }
@@ -97,14 +104,88 @@
 
 <c:if test="${not empty stay}">
 <div class="sd-wrap">
-  <div>
-    <%-- 갤러리 --%>
-    <div class="sd-gallery">
-      <c:forEach var="img" items="${imgList}">
-        <img src="${contextPath}/upload/${img.fileUrl}" alt="${stay.name}" alt="${stay.name}">
-      </c:forEach>
-    </div>
+  <%-- 상단: 사진 + 숙박예약 (한 줄) --%>
+  <div class="sd-hero">
+    <c:choose>
+      <c:when test="${not empty imgList}">
+        <div class="sd-gallery">
+          <c:forEach var="img" items="${imgList}" begin="0" end="4">
+            <img src="${contextPath}/upload/${img.fileUrl}" alt="${stay.name}">
+          </c:forEach>
+        </div>
+      </c:when>
+      <c:otherwise>
+        <div class="sd-gallery sd-gallery--empty">등록된 숙소 사진이 없습니다</div>
+      </c:otherwise>
+    </c:choose>
 
+    <%-- 예약 카드 (사진 영역 우측) --%>
+    <div class="reserve-card">
+      <h3>숙박 예약</h3>
+
+      <div class="rc-date-row">
+        <div class="rc-date-group">
+          <label>체크인</label>
+          <input type="date" id="rcCheckin" onchange="onDateChange()">
+        </div>
+        <div class="rc-date-group">
+          <label>체크아웃</label>
+          <input type="date" id="rcCheckout" onchange="onDateChange()">
+        </div>
+      </div>
+
+      <div id="rcAvailMsg"></div>
+
+      <c:choose>
+        <c:when test="${not empty stay.rooms}">
+          <c:forEach var="room" items="${stay.rooms}">
+            <div class="room-card" id="room-${room.roomId}" style="margin-bottom:10px"
+                 data-room-id="${room.roomId}" data-price="${room.pricePerNight}">
+              <div>
+                <div class="room-name">${room.name}</div>
+                <div class="room-meta">수용 ${room.capacity}인 · 반려동물 ${room.petLimit}마리</div>
+                <div class="room-avail" id="roomAvail-${room.roomId}"></div>
+              </div>
+              <div style="text-align:right">
+                <div class="room-price"><fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원</div>
+                <div class="room-price-label">1박 기준</div>
+              </div>
+            </div>
+          </c:forEach>
+        </c:when>
+        <c:otherwise>
+          <p style="font-size:14px;color:var(--text-muted);margin:0 0 12px">등록된 객실이 없습니다.</p>
+        </c:otherwise>
+      </c:choose>
+
+      <div class="rc-divider"></div>
+
+      <div id="rcPriceSummary" style="margin-bottom:12px;display:none">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-bottom:6px">
+          <span id="rcPriceDetail"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:var(--text-main)">
+          <span>합계</span>
+          <span id="rcTotalPrice" style="color:var(--primary-dark)"></span>
+        </div>
+      </div>
+
+      <button class="btn-reserve-big" id="btnReserve" disabled
+              onclick="goReserve()">날짜와 객실을 선택하세요</button>
+
+      <c:choose>
+        <c:when test="${not empty stay.refundPolicy}">
+          <div class="rc-notice" style="white-space:pre-line">${stay.refundPolicy}</div>
+        </c:when>
+        <c:otherwise>
+          <div class="rc-notice">입실일 기준 취소수수료가 적용됩니다. (10일 전 전액 환불 ~ 당일 90%)</div>
+        </c:otherwise>
+      </c:choose>
+    </div>
+  </div>
+
+  <%-- 하단: 숙소 정보 전체 너비 --%>
+  <div class="sd-main">
     <span class="sd-badge">반려동물 동반 숙소</span>
     <div class="sd-title">${stay.name}</div>
     <div class="sd-loc">
@@ -239,82 +320,14 @@
           </div>
           <div class="rv-text"><c:out value="${rv.content}"/></div>
           <c:if test="${not empty rv.bizReply}">
-            <div style="margin-top:10px;padding:10px 14px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-sub)">
-              <span style="font-weight:700;color:var(--primary-dark)">사업자 답변</span><br>
-              <c:out value="${rv.bizReply}"/>
+            <div class="rv-biz-reply">
+              <span class="rv-biz-reply-label">사업자 답변</span>
+              <div class="rv-biz-reply-text"><c:out value="${rv.bizReply}"/></div>
             </div>
           </c:if>
         </div>
       </c:forEach>
     </div>
-  </div>
-
-  <%-- 예약 카드 (우측 사이드바) --%>
-  <div class="reserve-card">
-    <h3>숙박 예약</h3>
-
-    <%-- 날짜 선택 --%>
-    <div class="rc-date-row">
-      <div class="rc-date-group">
-        <label>체크인</label>
-        <input type="date" id="rcCheckin" onchange="onDateChange()">
-      </div>
-      <div class="rc-date-group">
-        <label>체크아웃</label>
-        <input type="date" id="rcCheckout" onchange="onDateChange()">
-      </div>
-    </div>
-
-    <%-- 가용성 메시지 영역 --%>
-    <div id="rcAvailMsg"></div>
-
-    <%-- 객실 목록 (날짜 선택 전) --%>
-    <c:choose>
-      <c:when test="${not empty stay.rooms}">
-        <c:forEach var="room" items="${stay.rooms}">
-          <div class="room-card" id="room-${room.roomId}" style="margin-bottom:10px"
-               data-room-id="${room.roomId}" data-price="${room.pricePerNight}">
-            <div>
-              <div class="room-name">${room.name}</div>
-              <div class="room-meta">수용 ${room.capacity}인 · 반려동물 ${room.petLimit}마리</div>
-              <div class="room-avail" id="roomAvail-${room.roomId}"></div>
-            </div>
-            <div style="text-align:right">
-              <div class="room-price"><fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원</div>
-              <div class="room-price-label">1박 기준</div>
-            </div>
-          </div>
-        </c:forEach>
-      </c:when>
-      <c:otherwise>
-        <p style="font-size:14px;color:var(--text-muted);margin:0 0 12px">등록된 객실이 없습니다.</p>
-      </c:otherwise>
-    </c:choose>
-
-    <div class="rc-divider"></div>
-
-    <%-- 요금 요약 --%>
-    <div id="rcPriceSummary" style="margin-bottom:12px;display:none">
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);margin-bottom:6px">
-        <span id="rcPriceDetail"></span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;color:var(--text-main)">
-        <span>합계</span>
-        <span id="rcTotalPrice" style="color:var(--primary-dark)"></span>
-      </div>
-    </div>
-
-    <button class="btn-reserve-big" id="btnReserve" disabled
-            onclick="goReserve()">날짜와 객실을 선택하세요</button>
-
-    <c:choose>
-      <c:when test="${not empty stay.refundPolicy}">
-        <div class="rc-notice" style="white-space:pre-line">${stay.refundPolicy}</div>
-      </c:when>
-      <c:otherwise>
-        <div class="rc-notice">입실일 기준 취소수수료가 적용됩니다. (10일 전 전액 환불 ~ 당일 90%)</div>
-      </c:otherwise>
-    </c:choose>
   </div>
 </div>
 </c:if>

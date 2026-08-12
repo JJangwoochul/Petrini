@@ -740,14 +740,19 @@
 }
 .biz-review-content { font-size: 14px; color: #555; line-height: 1.55; }
 
+/* 2026/08/12 장우철 — 사업자 답글 긴 문자열 줄바꿈 */
 .biz-review-reply {
     background: #EAF7F2; border-radius: 8px; border-left: 3px solid #2BAB82;
     padding: 14px 16px; margin-top: 14px; font-size: 13px; color: #555;
+    overflow-wrap: anywhere; word-break: break-word; max-width: 100%; box-sizing: border-box;
 }
 
 .biz-review-reply-label { font-size: 13px; font-weight: 700; color: #2BAB82; margin-right: 8px; }
 .biz-review-reply-date { font-size: 12px; color: #aaa; }
-.biz-review-reply-text { margin-top: 6px; line-height: 1.55; }
+.biz-review-reply-text {
+    margin-top: 6px; line-height: 1.55;
+    white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+}
 .biz-review-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 .biz-review-actions .biz-btn { width: 84px; text-align: center; }
 .biz-review-empty { text-align: center; padding: 60px 20px; color: #aaa; font-size: 14px; }
