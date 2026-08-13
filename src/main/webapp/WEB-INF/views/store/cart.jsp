@@ -308,6 +308,8 @@
   });
 
   recalc();
+  //HYJ 26.08.13 재고확인 메시지 초기화
+  hideQtyMessages();
 
   //HYJ 26.08.16 재고확인
   function applyQtyLimit(v) {
