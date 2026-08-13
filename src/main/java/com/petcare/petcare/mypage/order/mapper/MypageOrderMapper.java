@@ -72,7 +72,8 @@ public interface MypageOrderMapper {
     int requestItemRefund(@Param("orderItemId") Long orderItemId,
                           @Param("returnReasonCd") String returnReasonCd,
                           @Param("claimReason") String claimReason,
-                          @Param("returnFeeAmount") Integer returnFeeAmount);
+                          @Param("returnFeeAmount") Integer returnFeeAmount,
+                          @Param("returnFeePayer") String returnFeePayer);
     Long selectBizMemberNoByOrderItemId(@Param("orderItemId") Long orderItemId);
     String selectOrderNoByOrderItemId(@Param("orderItemId") Long orderItemId);
     int confirmPurchaseItems(@Param("orderId") Long orderId);

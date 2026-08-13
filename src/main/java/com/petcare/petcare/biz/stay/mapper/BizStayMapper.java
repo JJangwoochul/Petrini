@@ -94,6 +94,8 @@ public interface BizStayMapper {
 
     List<StayRoomVO> selectRoomList(Long stayId);
 
+    StayRoomVO selectRoomById(@Param("roomId") Long roomId, @Param("stayId") Long stayId);
+
 
 
     int insertRoom(StayRoomVO vo);
@@ -104,7 +106,12 @@ public interface BizStayMapper {
 
 
 
-    int deleteRoom(@Param("roomId") Long roomId, @Param("stayId") Long stayId);
+    int updateRoomStatus(@Param("roomId") Long roomId,
+                         @Param("stayId") Long stayId,
+                         @Param("statusCd") String statusCd);
+
+    // 2026/08/13 장우철 — 진행 중 예약 건수 (객실 삭제 가능 여부)
+    int countActiveReservationsForRoom(@Param("roomId") Long roomId);
 
 
 

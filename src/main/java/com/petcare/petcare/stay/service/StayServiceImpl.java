@@ -100,6 +100,14 @@ public class StayServiceImpl implements StayService {
     // HYJ 26.07.20 가용성 체크 (단순 조회 — 락 없음)
     @Override
     public boolean checkRoomAvailability(Long roomId, Date checkinDate, Date checkoutDate) {
+        StayRoomVO room = stayMapper.selectRoomById(roomId);
+        if (room == null) {
+            return false;
+        }
+        String status = room.getStatusCd() == null || room.getStatusCd().isBlank() ? "APPROVE" : room.getStatusCd();
+        if (!"APPROVE".equals(status)) {
+            return false;
+        }
         Map<String, Object> param = new HashMap<>();
         param.put("roomId", roomId);
         param.put("checkinDate", checkinDate);
@@ -121,6 +129,10 @@ public class StayServiceImpl implements StayService {
         StayRoomVO room = stayMapper.selectRoomForUpdate(vo.getRoomId());
         if (room == null) {
             throw new RuntimeException("존재하지 않는 객실입니다.");
+        }
+        String roomStatus = room.getStatusCd() == null || room.getStatusCd().isBlank() ? "APPROVE" : room.getStatusCd();
+        if (!"APPROVE".equals(roomStatus)) {
+            throw new RuntimeException("현재 예약할 수 없는 객실입니다.");
         }
 
         int petLimit = room.getPetLimit() > 0 ? room.getPetLimit() : 1;

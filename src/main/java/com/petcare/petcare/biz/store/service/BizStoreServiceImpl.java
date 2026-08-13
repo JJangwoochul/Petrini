@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.petcare.petcare.biz.store.mapper.BizStoreMapper;
 import com.petcare.petcare.biz.store.vo.BizDeliveryVO;
+import com.petcare.petcare.biz.store.vo.BizOrderItemVO;
 import com.petcare.petcare.biz.store.vo.BizOrderVO;
 import com.petcare.petcare.biz.store.vo.BizProductVO;
 import com.petcare.petcare.biz.store.vo.BizReturnVO;
@@ -213,9 +214,43 @@ public class BizStoreServiceImpl implements BizStoreService {
     }
 
     //지윤 26.07.20 추가: 사업자 주문 목록 조회
+    // 2026/08/13 장우철 — 유저와 같은 환불완료/부분환불/환불진행중 뱃지
     @Override
     public List<BizOrderVO> getOrderList(Long bizNo, String statusCd) {
-        return bizStoreMapper.selectOrderList(bizNo, statusCd);
+        List<BizOrderVO> list = bizStoreMapper.selectOrderList(bizNo, statusCd);
+        if (list != null) {
+            for (BizOrderVO o : list) {
+                fillOrderStatusBadge(o);
+            }
+        }
+        return list;
+    }
+
+    private void fillOrderStatusBadge(BizOrderVO o) {
+        if (o == null) {
+            return;
+        }
+        if ("PENDING".equals(o.getClaimStatus())) {
+            o.setStatusBadge("CANCEL_REQUEST");
+            return;
+        }
+        int total = o.getItemCount() == null ? 0 : o.getItemCount();
+        int done = o.getDoneReturnCount() == null ? 0 : o.getDoneReturnCount();
+        int active = o.getActiveReturnCount() == null ? 0 : o.getActiveReturnCount();
+        int any = done + active;
+        if (total > 0 && done == total) {
+            o.setStatusBadge("REFUND_DONE");
+            return;
+        }
+        if (any > 0 && any < total) {
+            o.setStatusBadge("PARTIAL_REFUND");
+            return;
+        }
+        if (active > 0) {
+            o.setStatusBadge("REFUND_PROGRESS");
+            return;
+        }
+        o.setStatusBadge(o.getOrderStatus());
     }
 
     //지윤 26.07.20 추가: 상태별 주문 개수를 Map으로 가공 (화면에서 statusCounts.PAID 이런 식으로 바로 꺼내쓰기 위함)
@@ -557,8 +592,14 @@ public class BizStoreServiceImpl implements BizStoreService {
         BizReturnVO vo = bizStoreMapper.selectReturnDetail(orderItemId, bizNo);
         if (vo != null) {
             vo.setPhotoUrls(bizStoreMapper.selectReturnPhotoUrls(orderItemId));
+            fillRefundCalc(vo);
         }
         return vo;
+    }
+
+    private void fillRefundCalc(BizReturnVO vo) {
+        List<BizOrderItemVO> items = bizStoreMapper.selectOrderItems(vo.getOrderId());
+        StoreItemRefundCalculator.fill(vo, items);
     }
 
     @Override
@@ -572,7 +613,8 @@ public class BizStoreServiceImpl implements BizStoreService {
             return "승인 처리에 실패했습니다.";
         }
         mypageNotifyService.sendRefundApproveToBuyerNotification(
-                detail.getMemberNo(), detail.getOrderNo(), detail.getProductName());
+                detail.getMemberNo(), detail.getOrderNo(), detail.getProductName(),
+                detail.getReturnReasonCd());
         return null;
     }
 
@@ -596,7 +638,7 @@ public class BizStoreServiceImpl implements BizStoreService {
 
     /**
      * 회수완료 → 토스 부분환불 → DB DONE + 재고복구
-     * 환불액 = max(0, 상품합계 - 반품택배비)
+     * 2026/08/13 장우철 — 환불액 = 이 상품 실결제 (+ 상품이상이면 반송 3,000, 카드 잔액 한도)
      */
     @Override
     @org.springframework.transaction.annotation.Transactional
@@ -605,25 +647,25 @@ public class BizStoreServiceImpl implements BizStoreService {
         if (detail == null || !"RETURNING".equals(detail.getReturnStatusCd())) {
             return "환불 진행 중인 건이 아닙니다.";
         }
-        if (detail.getTossPaymentKey() == null || detail.getTossPaymentKey().isBlank()) {
-            return "결제 정보를 찾을 수 없습니다.";
-        }
+        fillRefundCalc(detail);
 
-        int itemPrice = detail.getTotalPrice() != null ? detail.getTotalPrice() : 0;
-        int returnFee = detail.getReturnFeeAmount() != null ? detail.getReturnFeeAmount() : 0;
-        int refundAmount = Math.max(0, itemPrice - returnFee);
-        if (refundAmount <= 0) {
-            return "환불 금액이 0원 이하입니다. 반품택배비를 확인해 주세요.";
-        }
+        int refundAmount = detail.getExpectCardRefund() != null ? detail.getExpectCardRefund() : 0;
+        int pointRestore = detail.getItemPointAmount() != null ? detail.getItemPointAmount() : 0;
+        boolean lastItem = Boolean.TRUE.equals(detail.getLastItemRefund());
 
-        // 2026/08/11 장우철 — P9: 결제수단(빌링/토스위젯)에 맞는 시크릿으로 부분환불
-        String tossError = tossPaymentService.cancelPaymentSmart(
-                detail.getTossPaymentKey(),
-                "상품 환불(회수완료)",
-                (long) refundAmount,
-                detail.getPayMethod());
-        if (tossError != null) {
-            return tossError;
+        if (refundAmount > 0) {
+            if (detail.getTossPaymentKey() == null || detail.getTossPaymentKey().isBlank()) {
+                return "결제 정보를 찾을 수 없습니다.";
+            }
+            // 2026/08/11 장우철 — P9: 결제수단(빌링/토스위젯)에 맞는 시크릿으로 부분환불
+            String tossError = tossPaymentService.cancelPaymentSmart(
+                    detail.getTossPaymentKey(),
+                    "상품 환불(회수완료)",
+                    (long) refundAmount,
+                    detail.getPayMethod());
+            if (tossError != null) {
+                return tossError;
+            }
         }
 
         int updated = bizStoreMapper.completeReturn(orderItemId, bizNo, refundAmount);
@@ -631,11 +673,25 @@ public class BizStoreServiceImpl implements BizStoreService {
             return "환불 완료 DB 반영에 실패했습니다. 토스 환불은 이미 되었을 수 있으니 확인해 주세요.";
         }
 
-        bizStoreMapper.addPaymentRefundAmt(detail.getOrderId(), refundAmount);
+        if (refundAmount > 0) {
+            bizStoreMapper.addPaymentRefundAmt(detail.getOrderId(), refundAmount);
+        }
 
         if (detail.getOptionId() != null && detail.getQty() != null) {
             bizStoreMapper.restoreStock(detail.getOptionId(), detail.getQty());
             bizStoreMapper.restoreProductStatusIfNeeded(detail.getProductId());
+        }
+
+        if (pointRestore > 0 && detail.getMemberNo() != null) {
+            int currentBalance = bizStoreMapper.selectMemberPointBalance(detail.getMemberNo());
+            int newBalance = currentBalance + pointRestore;
+            bizStoreMapper.restoreMemberPoint(detail.getMemberNo(), newBalance);
+            bizStoreMapper.insertPointRefundHistory(
+                    detail.getMemberNo(), pointRestore, newBalance, detail.getOrderId());
+        }
+        // 2026/08/13 장우철 — 주문 상품이 모두 환불(DONE)될 때만 쿠폰 복구
+        if (lastItem && detail.getMemberCouponId() != null) {
+            bizStoreMapper.restoreCoupon(detail.getMemberCouponId());
         }
 
         mypageNotifyService.sendRefundDoneToBuyerNotification(

@@ -16,7 +16,7 @@
   <div class="mp-section active">
     <div class="mp-section-head">
       <h2>환불 신청</h2>
-      <p style="font-size:13px;color:var(--text-muted);margin:6px 0 0;">단순변심·상품이상 환불. 반품 택배비는 유저 부담(3,000원)입니다.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin:6px 0 0;">단순변심은 반송 택배비 3,000원을 직접 선불합니다(환불금에서 차감하지 않음). 상품이상은 반송 3,000원을 환불에 더합니다(카드 잔액 한도).</p>
     </div>
 
     <c:if test="${not empty errorMsg}">
@@ -70,10 +70,10 @@
           <p style="font-size:12px;color:#94A3B8;margin-top:6px;">상품 하자·파손 등이 보이도록 촬영해 주세요.</p>
         </div>
 
-        <div style="background:#F8FAFC;border-radius:8px;padding:12px 14px;margin:18px 0;font-size:13px;color:#475569;line-height:1.6;">
-          · 송장 등록 이후 환불은 상품 수령 후 직접 반송하는 방식입니다.<br>
-          · 반품 택배비 <strong>3,000원</strong>은 유저 부담으로 환불금에서 차감됩니다.<br>
-          · 사업자 승인 후 반송 → 회수완료 시 환불됩니다.
+        <div id="refundFeeGuide" style="background:#F8FAFC;border-radius:8px;padding:12px 14px;margin:18px 0;font-size:13px;color:#475569;line-height:1.6;">
+          · 송장 등록 이후 환불은 상품 수령 후 직접 반송하는 방식입니다. 주문 배송비는 환불되지 않습니다.<br>
+          · <span id="refundFeeText">반송 택배비 <strong>3,000원</strong>은 직접 선불합니다. 환불금에서는 차감하지 않으며, 이 상품 실결제만 환불됩니다.</span><br>
+          · 사업자 승인 후 반송 → 회수완료 시 환불됩니다. 쿠폰은 주문 상품을 모두 환불할 때만 복구됩니다.
         </div>
 
         <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -90,6 +90,12 @@
 function toggleDefectPhotos() {
   var defect = document.querySelector('input[name="reasonCd"][value="DEFECT"]').checked;
   document.getElementById('defectPhotoBox').style.display = defect ? 'block' : 'none';
+  var feeText = document.getElementById('refundFeeText');
+  if (feeText) {
+    feeText.innerHTML = defect
+      ? '상품이상은 반송 택배비 <strong>3,000원</strong>을 환불에 더합니다. 직접 선불 반송해 주세요. (카드 실결제 잔액 한도)'
+      : '반송 택배비 <strong>3,000원</strong>은 직접 선불합니다. 환불금에서는 차감하지 않으며, 이 상품 실결제만 환불됩니다.';
+  }
 }
 function validateRefundForm() {
   var content = document.getElementById('refundContent').value.trim();

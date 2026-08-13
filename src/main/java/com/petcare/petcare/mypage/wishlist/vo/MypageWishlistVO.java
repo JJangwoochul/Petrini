@@ -1,15 +1,27 @@
 /**
- * 역할: 마이페이지 찜 데이터 객체
- *
- * 필드 예시
- * - wishlistId, memberId, targetType, targetId, createdAt
- *
- * 참고 테이블
- * - TB_WISHLIST
- *
- * DB 컬럼명은 팀 VO 규칙(camelCase)에 맞게 작성
+ * 역할: 마이페이지 찜 목록 표시용
+ * 2026/08/13 장우철 — TB_FAVORITE (PRODUCT/HOSPITAL/LODGE)
  */
-
 package com.petcare.petcare.mypage.wishlist.vo;
 
-public class MypageWishlistVO {}
+import java.util.Date;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class MypageWishlistVO {
+    private Long favId;
+    private Long memberNo;
+    private String favType;
+    private Long targetId;
+    private Date regDate;
+    private String title;
+    private Integer price;
+    private String imageUrl;
+    private String link;
+    private String wishKey;
+}

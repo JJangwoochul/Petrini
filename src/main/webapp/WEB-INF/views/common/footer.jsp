@@ -92,7 +92,7 @@ if (typeof $ !== 'undefined' && $.ajaxSetup) {
 }
 </script>
 <script src="${contextPath}/resources/js/search.js?v=20260705"></script>
-<script src="${contextPath}/resources/js/wishlist.js?v=20260705"></script>
+<script src="${contextPath}/resources/js/wishlist.js?v=20260813"></script>
 <%-- 지윤 26.07.08 추가: 헤더 장바구니 뱃지 숫자 실시간 갱신. 모든 페이지 로드마다 호출되고, 담기/삭제 후에도 재호출됨 --%>
 <%-- 2026/07/11 장우철 — 헤더 미읽음 알림 배지 (장바구니와 동일 패턴) --%>
 <script>

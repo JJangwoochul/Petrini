@@ -131,12 +131,56 @@ public class BizStayServiceImpl implements BizStayService {
 
     @Override
     public void updateRoom(StayRoomVO vo) {
+        StayRoomVO current = bizStayMapper.selectRoomById(vo.getRoomId(), vo.getStayId());
+        if (current == null) {
+            throw new IllegalStateException("객실을 찾을 수 없습니다.");
+        }
+        String status = current.getStatusCd() == null ? "APPROVE" : current.getStatusCd();
+        if ("CLOSED".equals(status) || "DELETED".equals(status)) {
+            throw new IllegalStateException("운영종료된 객실은 수정할 수 없습니다.");
+        }
         bizStayMapper.updateRoom(vo);
     }
 
     @Override
-    public void deleteRoom(Long roomId, Long stayId) {
-        bizStayMapper.deleteRoom(roomId, stayId);
+    @Transactional
+    public void changeRoomStatus(Long roomId, Long stayId, String statusCd) {
+        // 2026/08/13 장우철 — 운영중(APPROVE) / 운영중지(HOLD) / 운영종료(CLOSED)
+        StayRoomVO room = bizStayMapper.selectRoomById(roomId, stayId);
+        if (room == null) {
+            throw new IllegalStateException("객실을 찾을 수 없습니다.");
+        }
+        String current = room.getStatusCd() == null ? "APPROVE" : room.getStatusCd();
+        if ("DELETED".equals(current)) {
+            current = "CLOSED";
+        }
+
+        if ("HOLD".equals(statusCd)) {
+            if (!"APPROVE".equals(current)) {
+                throw new IllegalStateException("운영중인 객실만 운영중지할 수 있습니다.");
+            }
+            if (bizStayMapper.countActiveReservationsForRoom(roomId) > 0) {
+                throw new IllegalStateException("진행 중인 예약이 있어 운영중지할 수 없습니다.");
+            }
+        } else if ("CLOSED".equals(statusCd)) {
+            if ("CLOSED".equals(current)) {
+                throw new IllegalStateException("이미 운영종료된 객실입니다.");
+            }
+            if (bizStayMapper.countActiveReservationsForRoom(roomId) > 0) {
+                throw new IllegalStateException("진행 중인 예약이 있어 운영종료할 수 없습니다.");
+            }
+        } else if ("APPROVE".equals(statusCd)) {
+            if (!"HOLD".equals(current)) {
+                throw new IllegalStateException("운영중지 상태만 다시 운영중으로 바꿀 수 있습니다.");
+            }
+        } else {
+            throw new IllegalStateException("올바르지 않은 객실 상태입니다.");
+        }
+
+        int updated = bizStayMapper.updateRoomStatus(roomId, stayId, statusCd);
+        if (updated == 0) {
+            throw new IllegalStateException("객실 상태 변경에 실패했습니다.");
+        }
     }
 
     // ── 2026-07-14 예약 관리 ──

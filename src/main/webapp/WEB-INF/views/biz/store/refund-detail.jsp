@@ -35,9 +35,16 @@
   </c:otherwise>
 </c:choose>
 
-<c:set var="feeAmt" value="${empty refund.returnFeeAmount ? 0 : refund.returnFeeAmount}" />
-<c:set var="expectRefund" value="${refund.totalPrice - feeAmt}" />
-<c:if test="${expectRefund < 0}"><c:set var="expectRefund" value="0" /></c:if>
+<c:set var="bizPaysFee" value="${refund.returnReasonCd == 'DEFECT' or refund.returnFeePayer == 'BIZ'}" />
+<c:set var="userFeeAmt" value="${empty refund.userReturnFee ? 0 : refund.userReturnFee}" />
+<c:set var="reimburseAmt" value="${empty refund.returnShipReimburse ? 0 : refund.returnShipReimburse}" />
+<c:set var="itemCouponAmt" value="${empty refund.itemCouponAmount ? 0 : refund.itemCouponAmount}" />
+<c:set var="itemPointAmt" value="${empty refund.itemPointAmount ? 0 : refund.itemPointAmount}" />
+<c:set var="itemPayAmt" value="${empty refund.itemPayAmount ? 0 : refund.itemPayAmount}" />
+<c:set var="cardRefundAmt" value="${empty refund.expectCardRefund ? 0 : refund.expectCardRefund}" />
+<c:set var="orderCouponAmt" value="${empty refund.orderCouponAmount ? 0 : refund.orderCouponAmount}" />
+<c:set var="orderPointAmt" value="${empty refund.pointUsed ? 0 : refund.pointUsed}" />
+<c:set var="paidRefundAmt" value="${empty refund.paidRefundAmt ? 0 : refund.paidRefundAmt}" />
 
 <style>
   .rf-wrap{width:100%;max-width:1100px}
@@ -118,7 +125,24 @@
               </c:choose>
             </span>
           </div>
-          <div class="rf-row"><span>주문 결제액</span><span><fmt:formatNumber value="${refund.payAmount}" pattern="#,###"/>원</span></div>
+          <div class="rf-row"><span>주문 상품합</span><span><fmt:formatNumber value="${refund.orderProductTotal}" pattern="#,###"/>원</span></div>
+          <div class="rf-row"><span>주문 쿠폰</span>
+            <span>
+              <c:if test="${orderCouponAmt > 0}">-</c:if><fmt:formatNumber value="${orderCouponAmt}" pattern="#,###"/>원
+              <c:if test="${not empty refund.couponName}"><span style="font-weight:500;color:#888"> (<c:out value="${refund.couponName}"/>)</span></c:if>
+            </span>
+          </div>
+          <div class="rf-row"><span>주문 포인트</span><span><c:if test="${orderPointAmt > 0}">-</c:if><fmt:formatNumber value="${orderPointAmt}" pattern="#,###"/>P</span></div>
+          <div class="rf-row"><span>주문 배송비</span>
+            <span>
+              <fmt:formatNumber value="${refund.deliveryFee}" pattern="#,###"/>원
+              <span style="font-weight:500;color:#888"> (환불 안 함)</span>
+            </span>
+          </div>
+          <div class="rf-row"><span>주문 실결제</span><span><fmt:formatNumber value="${refund.payAmount}" pattern="#,###"/>원</span></div>
+          <c:if test="${paidRefundAmt > 0}">
+            <div class="rf-row"><span>이미 카드환불</span><span><fmt:formatNumber value="${paidRefundAmt}" pattern="#,###"/>원</span></div>
+          </c:if>
         </div>
         <div>
           <h4>구매자 · 배송</h4>
@@ -160,14 +184,40 @@
           </div>
         </div>
         <div>
-          <h4>금액</h4>
+          <h4>금액 (이 상품 몫)</h4>
           <div class="rf-row"><span>상품금액</span><span><fmt:formatNumber value="${refund.totalPrice}" pattern="#,###"/>원</span></div>
-          <div class="rf-row"><span>반품택배비(유저)</span><span><fmt:formatNumber value="${feeAmt}" pattern="#,###"/>원</span></div>
-          <div class="rf-row"><span>예상 환불액</span>
+          <div class="rf-row"><span>쿠폰 사용</span><span><c:if test="${itemCouponAmt > 0}">-</c:if><fmt:formatNumber value="${itemCouponAmt}" pattern="#,###"/>원</span></div>
+          <div class="rf-row"><span>포인트 사용</span><span><c:if test="${itemPointAmt > 0}">-</c:if><fmt:formatNumber value="${itemPointAmt}" pattern="#,###"/>P</span></div>
+          <div class="rf-row"><span>이 상품 실결제</span><span><fmt:formatNumber value="${itemPayAmt}" pattern="#,###"/>원</span></div>
+          <div class="rf-row"><span>반송택배비</span>
+            <span>
+              <c:choose>
+                <c:when test="${bizPaysFee}">
+                  <fmt:formatNumber value="${reimburseAmt}" pattern="#,###"/>원
+                  <span style="font-weight:500;color:#888"> (사업자 환급)</span>
+                </c:when>
+                <c:otherwise>
+                  <fmt:formatNumber value="${userFeeAmt}" pattern="#,###"/>원
+                  <span style="font-weight:500;color:#888"> (유저 선불, 미차감)</span>
+                </c:otherwise>
+              </c:choose>
+            </span>
+          </div>
+          <c:if test="${refund.lastItemRefund and not empty refund.memberCouponId}">
+            <div class="rf-row"><span>쿠폰 복구</span><span>이 건 완료 시 복구</span></div>
+          </c:if>
+          <div class="rf-row"><span>예상 카드환불</span>
             <span style="color:#E2445C;font-weight:800">
               <c:choose>
-                <c:when test="${not empty refund.refundAmount}"><fmt:formatNumber value="${refund.refundAmount}" pattern="#,###"/>원</c:when>
-                <c:otherwise><fmt:formatNumber value="${expectRefund}" pattern="#,###"/>원</c:otherwise>
+                <c:when test="${not empty refund.refundAmount and refund.returnStatusCd == 'DONE'}">
+                  <fmt:formatNumber value="${refund.refundAmount}" pattern="#,###"/>원
+                </c:when>
+                <c:otherwise>
+                  <fmt:formatNumber value="${cardRefundAmt}" pattern="#,###"/>원
+                  <c:if test="${cardRefundAmt lt (itemPayAmt + reimburseAmt)}">
+                    <span style="font-weight:500;color:#888"> (카드 잔액 한도)</span>
+                  </c:if>
+                </c:otherwise>
               </c:choose>
             </span>
           </div>
@@ -209,8 +259,12 @@
       <div class="biz-card-head"><span>처리</span></div>
       <div style="padding:16px 24px 22px">
         <div class="rf-guide">
-          반려하면 주문은 그대로 진행됩니다. 승인 → 환불진행 → 반송 수령 후 <strong>회수완료</strong> 시 실결제가 취소됩니다.<br>
-          환불액 = 상품금액 − 반품택배비(유저 부담).<br>
+          반려하면 주문은 그대로 진행됩니다. 승인 → 환불진행 → 반송 수령 후 <strong>회수완료</strong> 시 카드 실결제가 취소됩니다.<br>
+          주문 배송비는 환불하지 않습니다. 쿠폰·포인트는 상품금액 비율로만 나눕니다.<br>
+          이 상품 실결제 = 상품금액 − (주문 쿠폰·포인트를 상품금액 비율로 나눈 몫).<br>
+          단순변심: 이 상품 실결제만 카드환불 (반송비는 유저 선불, 환불금 미차감).<br>
+          상품이상: 이 상품 실결제 + 반송 3,000원. 카드 잔액(실결제 − 이미환불)을 넘을 수 없습니다.<br>
+          포인트는 이 상품 몫만큼 복구되고, 쿠폰은 주문 상품이 모두 환불될 때만 복구됩니다.<br>
           이 주문의 결제수단: <strong>${payMethodLabel}</strong>
           <c:if test="${payMethodCd == 'BILLING' || payMethodCd == 'TOSS' || payMethodCd == 'CARD'}">
             → 회수완료 시 <strong>${refundChannelLabel}</strong>로 환불합니다. (둘 다 토스페이먼츠 API, 시크릿만 다름)
@@ -238,7 +292,7 @@
 
         <c:if test="${refund.returnStatusCd == 'RETURNING'}">
           <form method="post" action="${contextPath}/biz/store/refunds/complete"
-                onsubmit="return confirm('회수완료 후 ${refundChannelLabel}을(를) 진행할까요?\n결제수단: ${payMethodLabel}\n예상 환불액: ${expectRefund}원');">
+                onsubmit="return confirm('회수완료 후 ${refundChannelLabel}을(를) 진행할까요?\n결제수단: ${payMethodLabel}\n예상 카드환불: ${cardRefundAmt}원');">
             <input type="hidden" name="_csrf" value="${_csrf}">
             <input type="hidden" name="orderItemId" value="${refund.orderItemId}">
             <button type="submit" class="biz-btn primary">회수완료 (환불 실행)</button>

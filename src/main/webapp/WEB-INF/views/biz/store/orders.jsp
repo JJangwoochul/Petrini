@@ -360,7 +360,7 @@
 <main class="biz-main">
   <div class="biz-page-head">
     <h1 class="biz-page-title">주문 관리</h1>
-    <p class="biz-page-desc">주문 확인·출고 처리 · 환불 완료 조회</p>
+    <p class="biz-page-desc">주문 확인·출고 처리. 배송·송장은 배송 관리, 환불은 환불 신청에서 처리합니다.</p>
   </div>
 
   <%-- 지윤 26.08.07: biz-main은 다른 관리자 화면도 같이 쓰는 공통 클래스라 여기서 못 줄임
@@ -371,45 +371,15 @@
     <div style="padding:20px 20px 0">
       <%-- 지윤 26.07.20 수정: <button onclick="switchTab(...)"> (JS로 배열 필터링) -> <a href="?statusCd=..."> (서버에 GET 요청, statusCd 파라미터로 필터)
            탭 옆 숫자도 JS로 orders.filter().length 세던 것 -> Controller가 넘겨준 statusCounts(Map)로 표시 --%>
+      <%-- 2026/08/13 장우철 — 전체·결제완료·배송준비·배송전취소. 배송중/완료는 배송관리, 환불은 환불신청 --%>
       <div class="biz-tabs">
         <a href="${contextPath}/biz/store/orders" class="biz-tab ${empty selectedStatusCd ? 'active' : ''}">전체<span class="biz-tab-count">${statusCounts.PAID + statusCounts.READY + statusCounts.SHIPPING + statusCounts.DONE + statusCounts.CANCEL}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=PAID" class="biz-tab ${selectedStatusCd == 'PAID' ? 'active' : ''}">결제완료<span class="biz-tab-count">${statusCounts.PAID}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=READY" class="biz-tab ${selectedStatusCd == 'READY' ? 'active' : ''}">배송준비<span class="biz-tab-count">${statusCounts.READY}</span></a>
-        <a href="${contextPath}/biz/store/orders?statusCd=SHIPPING" class="biz-tab ${selectedStatusCd == 'SHIPPING' ? 'active' : ''}">배송중<span class="biz-tab-count">${statusCounts.SHIPPING}</span></a>
-        <a href="${contextPath}/biz/store/orders?statusCd=DONE" class="biz-tab ${selectedStatusCd == 'DONE' ? 'active' : ''}">배송완료<span class="biz-tab-count">${statusCounts.DONE}</span></a>
-        <%-- 2026/08/04 장우철 — 취소/반품 → 환불(완료 조회). 발송전 취소는 배송전취소 탭 유지 --%>
-        <a href="${contextPath}/biz/store/orders?statusCd=RETURN_DONE" class="biz-tab ${selectedStatusCd == 'RETURN_DONE' ? 'active' : ''}">환불<span class="biz-tab-count">${returnDoneCount}</span></a>
         <a href="${contextPath}/biz/store/orders?statusCd=CLAIM_PENDING" class="biz-tab ${selectedStatusCd == 'CLAIM_PENDING' ? 'active' : ''}" style="color:#E2445C;">배송전취소<span class="biz-tab-count">${statusCounts.CLAIM_PENDING}</span></a>
       </div>
     </div>
 
-    <c:choose>
-      <c:when test="${selectedStatusCd == 'RETURN_DONE'}">
-        <table class="biz-table">
-          <thead><tr><th>완료일</th><th>주문번호</th><th>구매자</th><th>상품</th><th>유형</th><th>환불액</th><th>관리</th></tr></thead>
-          <tbody>
-            <c:choose>
-              <c:when test="${empty returnList}">
-                <tr><td colspan="7" style="text-align:center;color:#999;padding:24px 0">환불 완료 건이 없습니다.</td></tr>
-              </c:when>
-              <c:otherwise>
-                <c:forEach var="r" items="${returnList}">
-                  <tr>
-                    <td><fmt:formatDate value="${r.returnDoneAt}" pattern="yyyy-MM-dd"/></td>
-                    <td>#${r.orderNo}</td>
-                    <td>${r.buyerName}</td>
-                    <td>${r.productName}</td>
-                    <td><c:choose><c:when test="${r.returnReasonCd == 'DEFECT'}">상품이상</c:when><c:otherwise>단순변심</c:otherwise></c:choose></td>
-                    <td><fmt:formatNumber value="${r.refundAmount}" pattern="#,###"/>원</td>
-                    <td><a class="biz-btn" style="text-decoration:none" href="${contextPath}/biz/store/refunds/detail?orderItemId=${r.orderItemId}">상세</a></td>
-                  </tr>
-                </c:forEach>
-              </c:otherwise>
-            </c:choose>
-          </tbody>
-        </table>
-      </c:when>
-      <c:otherwise>
     <table class="biz-table">
       <thead><tr><th>주문번호</th><th>구매자</th><th>상품명</th><th>결제금액</th><th>상태</th><th>관리</th></tr></thead>
       <%-- 지윤 26.07.20 수정: <tbody id="orderBody"></tbody> (JS render()가 채워넣던 빈 껍데기)
@@ -431,15 +401,17 @@
                 <td><fmt:formatNumber value="${o.payAmount}" pattern="#,###"/>원</td>
                 <%-- 지윤 26.07.20 수정: JS statusBadgeClass 딕셔너리 조회 -> JSTL c:choose로 상태별 배지 클래스 직접 분기 --%>
                 <td>
-                  <%-- 2026/08/06 장우철: 취소신청(PENDING)이면 ORDER_STATUS가 PAID/READY여도 결제취소신청 표시 --%>
+                  <%-- 2026/08/13 장우철 — 유저와 동일: 환불완료/부분환불/환불진행중/결제취소신청 --%>
                   <c:choose>
-                    <c:when test="${o.activeReturnCount != null && o.activeReturnCount > 0}"><span class="bs-badge bs-cancel">환불진행중</span></c:when>
-                    <c:when test="${o.claimStatus == 'PENDING'}"><span class="bs-badge bs-cancel">결제취소신청</span></c:when>
-                    <c:when test="${o.orderStatus == 'PAID'}"><span class="bs-badge bs-wait">결제완료</span></c:when>
-                    <c:when test="${o.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
-                    <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
-                    <c:when test="${o.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
-                    <c:when test="${o.orderStatus == 'CANCEL'}"><span class="bs-badge bs-cancel">취소완료</span></c:when>
+                    <c:when test="${o.statusBadge == 'CANCEL_REQUEST'}"><span class="bs-badge bs-cancel">결제취소신청</span></c:when>
+                    <c:when test="${o.statusBadge == 'REFUND_DONE'}"><span class="bs-badge bs-cancel">환불완료</span></c:when>
+                    <c:when test="${o.statusBadge == 'PARTIAL_REFUND'}"><span class="bs-badge bs-cancel">부분환불</span></c:when>
+                    <c:when test="${o.statusBadge == 'REFUND_PROGRESS'}"><span class="bs-badge bs-cancel">환불진행중</span></c:when>
+                    <c:when test="${o.statusBadge == 'PAID' || o.orderStatus == 'PAID'}"><span class="bs-badge bs-wait">결제완료</span></c:when>
+                    <c:when test="${o.statusBadge == 'READY' || o.orderStatus == 'READY'}"><span class="bs-badge bs-prep">배송준비</span></c:when>
+                    <c:when test="${o.statusBadge == 'SHIPPING' || o.orderStatus == 'SHIPPING'}"><span class="bs-badge bs-ready">배송중</span></c:when>
+                    <c:when test="${o.statusBadge == 'DONE' || o.orderStatus == 'DONE'}"><span class="bs-badge bs-done">배송완료</span></c:when>
+                    <c:when test="${o.statusBadge == 'CANCEL' || o.orderStatus == 'CANCEL'}"><span class="bs-badge bs-cancel">취소완료</span></c:when>
                     <c:otherwise><span class="bs-badge bs-empty"><c:out value="${o.orderStatus}"/></span></c:otherwise>
                   </c:choose>
                 </td>
@@ -452,8 +424,6 @@
         </c:choose>
       </tbody>
     </table>
-      </c:otherwise>
-    </c:choose>
   </div>
 
   <div class="biz-card" id="detailCard" style="display:none">
@@ -639,13 +609,18 @@ function fmtWon(n){ return (n || 0).toLocaleString('ko-KR') + '원'; }
           return m;
         })(o.payMethod);
         document.getElementById('dStatusLabel').textContent = (function() {
-          var items = o.itemList || [];
-          for (var i = 0; i < items.length; i++) {
-            var rs = items[i].returnStatusCd;
-            if (rs === 'REQUESTED' || rs === 'RETURNING') return '환불진행중';
-          }
-          //2026/08/06 장우철: 취소신청 대기면 결제취소신청 표시
+          // 2026/08/13 장우철 — 목록과 동일: 환불완료/부분환불/환불진행중
           if (o.claimStatus === 'PENDING') return '결제취소신청';
+          var items = o.itemList || [];
+          var total = items.length, done = 0, active = 0;
+          for (var i = 0; i < total; i++) {
+            var rs = items[i].returnStatusCd;
+            if (rs === 'DONE') done++;
+            else if (rs === 'REQUESTED' || rs === 'RETURNING') active++;
+          }
+          if (total > 0 && done === total) return '환불완료';
+          if ((done + active) > 0 && (done + active) < total) return '부분환불';
+          if (active > 0) return '환불진행중';
           return statusLabel[o.orderStatus] || o.orderStatus;
         })();
 

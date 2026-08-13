@@ -13,17 +13,20 @@
         </div>
     </div>
 
+    <%-- 2026/08/13 장우철 — 사이드바 그룹: 대시보드 → 회원 → 쇼핑 → 숙소 → 커뮤니티 → 사업자 → CMS → 고객응대 → 통계 --%>
     <nav class="adm-nav">
         <a href="${contextPath}/admin" class="adm-nav-link ${adminPage eq 'dashboard' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             대시보드
         </a>
 
-        <div class="adm-nav-group">회원 · 상품 · 주문</div>
+        <div class="adm-nav-group">회원</div>
         <a href="${contextPath}/admin/member/list" class="adm-nav-link ${adminPage eq 'member-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             회원 관리
         </a>
+
+        <div class="adm-nav-group">쇼핑</div>
         <a href="${contextPath}/admin/store/product-list" class="adm-nav-link ${adminPage eq 'product-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
             상품 관리
@@ -37,27 +40,11 @@
         </a>
         <%-- 2026/08/11 장우철 — 리뷰관리(/admin/store/review-report) 제거 → 사업자 리뷰로 통합 --%>
 
-        <div class="adm-nav-group">사업자 · 커뮤니티</div>
-        <a href="${contextPath}/admin/biz/list" class="adm-nav-link ${adminPage eq 'biz-list' ? 'active' : ''}">
-            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
-            사업자 승인/관리
-            <%-- 2026/07/11 장우철 — PENDING 승인대기 건수 (더미 3 제거) --%>
-            <c:if test="${pendingBizApproveCount > 0}">
-              <span class="adm-nav-badge">${pendingBizApproveCount}</span>
-            </c:if>
-        </a>
-        <a href="${contextPath}/admin/settlement?tab=STAY" class="adm-nav-link ${adminPage eq 'settlement' ? 'active' : ''}">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            정산 관리
-            <%-- 2026/07/30 장우철 — 숙소 중간정산 REQUESTED 배지 --%>
-            <c:if test="${pendingStaySettleRequestCount > 0}">
-              <span class="adm-nav-badge">
-                <c:choose>
-                  <c:when test="${pendingStaySettleRequestCount > 99}">99+</c:when>
-                  <c:otherwise>${pendingStaySettleRequestCount}</c:otherwise>
-                </c:choose>
-              </span>
-            </c:if>
+        <div class="adm-nav-group">숙소</div>
+        <%-- 2026/08/13 장우철 — 숙소 관리 (전체 숙소·객실 운영 상태) --%>
+        <a href="${contextPath}/admin/stay/list" class="adm-nav-link ${adminPage eq 'stay-list' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            숙소 관리
         </a>
         <%-- 2026/07/31 장우철 — 숙소 예약 관리 (전액 환불 취소) --%>
         <a href="${contextPath}/admin/reservation/list" class="adm-nav-link ${adminPage eq 'reservation-list' ? 'active' : ''}">
@@ -72,12 +59,28 @@
               <span class="adm-nav-badge">${pendingStayRefundCount}</span>
             </c:if>
         </a>
+
+        <div class="adm-nav-group">커뮤니티</div>
+        <a href="${contextPath}/admin/community/list" class="adm-nav-link ${adminPage eq 'community-list' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            커뮤니티 관리
+        </a>
         <a href="${contextPath}/admin/biz/talent?status=PENDING" class="adm-nav-link ${adminPage eq 'biz-talent' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
             재능나눔 승인
             <%-- 2026-07-14 박유정 — PENDING 승인대기 건수 (AdminSidebarAdvice.pendingTalentApproveCount) --%>
             <c:if test="${pendingTalentApproveCount > 0}">
               <span class="adm-nav-badge">${pendingTalentApproveCount}</span>
+            </c:if>
+        </a>
+
+        <div class="adm-nav-group">사업자</div>
+        <a href="${contextPath}/admin/biz/list" class="adm-nav-link ${adminPage eq 'biz-list' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+            사업자 승인/관리
+            <%-- 2026/07/11 장우철 — PENDING 승인대기 건수 (더미 3 제거) --%>
+            <c:if test="${pendingBizApproveCount > 0}">
+              <span class="adm-nav-badge">${pendingBizApproveCount}</span>
             </c:if>
         </a>
         <!--HYJ 26.07.29 쿠폰 승인-->
@@ -97,9 +100,18 @@
               <span class="adm-nav-badge">${pendingReviewDeleteCount}</span>
             </c:if>
         </a>
-        <a href="${contextPath}/admin/community/list" class="adm-nav-link ${adminPage eq 'community-list' ? 'active' : ''}">
-            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            커뮤니티 관리
+        <a href="${contextPath}/admin/settlement?tab=STAY" class="adm-nav-link ${adminPage eq 'settlement' ? 'active' : ''}">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            정산 관리
+            <%-- 2026/07/30 장우철 — 숙소 중간정산 REQUESTED 배지 --%>
+            <c:if test="${pendingStaySettleRequestCount > 0}">
+              <span class="adm-nav-badge">
+                <c:choose>
+                  <c:when test="${pendingStaySettleRequestCount > 99}">99+</c:when>
+                  <c:otherwise>${pendingStaySettleRequestCount}</c:otherwise>
+                </c:choose>
+              </span>
+            </c:if>
         </a>
 
         <div class="adm-nav-group">CMS</div>
@@ -119,6 +131,8 @@
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             FAQ
         </a>
+
+        <div class="adm-nav-group">고객응대</div>
         <%-- 2026-08-11 박유정 — 일반 1:1 문의 답변 (숙소 환불 제외) --%>
         <a href="${contextPath}/admin/inquiry/general?status=WAIT" class="adm-nav-link ${adminPage eq 'general-inquiry' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>

@@ -136,24 +136,21 @@ public class BizStoreController extends BizBaseController {
         return "biz/store/products";
     }
 
-    //지윤 26.07.20 수정: 목업 -> 실데이터 연동 (상태 탭 필터)
-    // 2026/08/04 장우철 — RETURN_DONE 탭은 환불완료(상품단위) 조회 전용
+        //지윤 26.07.20 수정: 목업 -> 실데이터 연동 (상태 탭 필터)
+    // 2026/08/13 장우철 — 환불·배송중·배송완료 탭 제거. 환불 완료는 /biz/store/refunds
     @GetMapping("/orders")
     public String storeOrders(@RequestParam(required = false) String statusCd, HttpSession session, Model model) {
         MemberVO biz = getBizMember(session);
         if (biz == null) return "redirect:/login";
         Long bizNo = bizStoreService.getBizNo(biz.getMemberId());
 
+        if ("RETURN_DONE".equals(statusCd)) {
+            return "redirect:/biz/store/refunds?statusCd=DONE";
+        }
+
         model.addAttribute("statusCounts", bizStoreService.getOrderStatusCounts(bizNo));
         model.addAttribute("selectedStatusCd", statusCd);
-        model.addAttribute("returnDoneCount", bizStoreService.getReturnList(bizNo, "DONE").size());
-
-        if ("RETURN_DONE".equals(statusCd)) {
-            model.addAttribute("returnList", bizStoreService.getReturnList(bizNo, "DONE"));
-            model.addAttribute("orderList", java.util.Collections.emptyList());
-        } else {
-            model.addAttribute("orderList", bizStoreService.getOrderList(bizNo, statusCd));
-        }
+        model.addAttribute("orderList", bizStoreService.getOrderList(bizNo, statusCd));
         return "biz/store/orders";
     }
 
@@ -230,7 +227,7 @@ public class BizStoreController extends BizBaseController {
         rttr.addFlashAttribute(err == null ? "msg" : "errorMsg",
                 err == null ? "회수완료 및 환불이 처리되었습니다." : err);
         return err == null
-                ? "redirect:/biz/store/orders?statusCd=RETURN_DONE"
+                ? "redirect:/biz/store/refunds?statusCd=DONE"
                 : "redirect:/biz/store/refunds/detail?orderItemId=" + orderItemId;
     }
 

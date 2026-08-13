@@ -50,7 +50,8 @@
                 GROUP BY STAY_ID
           ) R ON S.STAY_ID = R.STAY_ID
          WHERE S.STATUS_CD IN ('ACTIVE', 'NORMAL')
-         ORDER BY S.STAY_ID
+         <!-- 2026/08/13 장우철 — 기본 목록도 리뷰 많은 순 -->
+         ORDER BY NVL(reviewCnt, 0) DESC, NVL(avgRating, 0) DESC, S.STAY_ID DESC
     </select>
 
     <!-- 숙소 검색 목록 (필터 조건 적용) -->
@@ -108,7 +109,8 @@
          ORDER BY NVL(R.MIN_PRICE, 999999999) ASC
             </when>
             <otherwise>
-         ORDER BY S.STAY_ID
+         <!-- 2026/08/13 장우철 — 기본/리뷰순 (옛 recommend 포함): 리뷰수 → 평점 -->
+         ORDER BY NVL(reviewCnt, 0) DESC, NVL(avgRating, 0) DESC, S.STAY_ID DESC
             </otherwise>
         </choose>
     </select>
@@ -156,6 +158,19 @@
          WHERE STAY_ID = #{stayId}
            AND STATUS_CD = 'APPROVE'
          ORDER BY PRICE_PER_NIGHT
+    </select>
+
+    <select id="selectRoomById" parameterType="long"
+            resultType="com.petcare.petcare.stay.vo.StayRoomVO">
+        SELECT ROOM_ID,
+               STAY_ID,
+               NAME,
+               PRICE_PER_NIGHT,
+               CAPACITY,
+               PET_LIMIT,
+               STATUS_CD
+          FROM TB_STAY_ROOM
+         WHERE ROOM_ID = #{roomId}
     </select>
 
    <!-- 회원의 반려동물 목록 (예약 폼용) -->
@@ -282,7 +297,8 @@
                NAME,
                PRICE_PER_NIGHT,
                CAPACITY,
-               PET_LIMIT
+               PET_LIMIT,
+               STATUS_CD
           FROM TB_STAY_ROOM
          WHERE ROOM_ID = #{roomId}
            FOR UPDATE

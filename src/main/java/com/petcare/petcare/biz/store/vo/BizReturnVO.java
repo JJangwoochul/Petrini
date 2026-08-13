@@ -52,6 +52,20 @@ public class BizReturnVO {
     private Integer payAmount;
     private Integer pointUsed;
     private Long memberCouponId;
+    // 2026/08/13 장우철 — 주문 결제 내역·이 상품 환불 배분
+    private Integer orderProductTotal;
+    private Integer deliveryFee;
+    private Integer discountAmount;
+    private Integer orderCouponAmount;
+    private String couponName;
+    private Integer itemCouponAmount;
+    private Integer itemPointAmount;
+    private Integer itemPayAmount;
+    private Integer userReturnFee;
+    private Integer returnShipReimburse;
+    private Integer paidRefundAmt;
+    private Boolean lastItemRefund;
+    private Integer expectCardRefund;
 
     private String courierName;
     private String trackingNo;

@@ -47,6 +47,7 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         List<MypageOrderVO> list = mypageOrderMapper.selectOrderList(memberNo, statusCd);
         for (MypageOrderVO o : list) {
             o.setItemList(mypageOrderMapper.selectOrderItems(o.getOrderId()));
+            fillStatusBadge(o);
         }
         return list;
     }
@@ -65,6 +66,7 @@ public class MypageOrderServiceImpl implements MypageOrderService {
             return null;
         }
 
+        // 2026/08/13 장우철 — INSERT에서 구매확정·환불상태 검증. 미확정/환불건은 0건
         int inserted = mypageOrderMapper.insertProductReview(orderItemId, memberNo, rating, content);
         if (inserted == 0) return null;
 
@@ -100,6 +102,7 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         MypageOrderVO order = mypageOrderMapper.selectOrderDetail(orderId, memberNo);
         if (order != null) {
             order.setItemList(mypageOrderMapper.selectOrderItems(order.getOrderId()));
+            fillStatusBadge(order);
         }
         return order;
     }
@@ -121,8 +124,58 @@ public class MypageOrderServiceImpl implements MypageOrderService {
 
         for (MypageOrderVO o : group) {
             o.setItemList(mypageOrderMapper.selectOrderItems(o.getOrderId()));
+            fillStatusBadge(o);
         }
         return group;
+    }
+
+    // 2026/08/13 장우철 — #7: 전부환불완료/부분환불/환불진행중 뱃지
+    private void fillStatusBadge(MypageOrderVO o) {
+        if (o == null) {
+            return;
+        }
+        if ("PENDING".equals(o.getClaimStatus())) {
+            o.setStatusBadge("CANCEL_REQUEST");
+            return;
+        }
+        List<MypageOrderItemVO> items = o.getItemList();
+        int total = items == null ? 0 : items.size();
+        int returnDone = 0;
+        int returnActive = 0;
+        int returnAny = 0;
+        if (items != null) {
+            for (MypageOrderItemVO it : items) {
+                String r = it.getReturnStatusCd();
+                if ("DONE".equals(r)) {
+                    returnDone++;
+                    returnAny++;
+                } else if ("REQUESTED".equals(r) || "RETURNING".equals(r)) {
+                    returnActive++;
+                    returnAny++;
+                }
+            }
+        }
+        if (total > 0 && returnDone == total) {
+            o.setStatusBadge("REFUND_DONE");
+            return;
+        }
+        if (returnAny > 0 && returnAny < total) {
+            o.setStatusBadge("PARTIAL_REFUND");
+            return;
+        }
+        if (returnActive > 0) {
+            o.setStatusBadge("REFUND_PROGRESS");
+            return;
+        }
+        if ("CANCEL".equals(o.getOrderStatus())) {
+            o.setStatusBadge("CANCEL");
+            return;
+        }
+        if ("DONE".equals(o.getOrderStatus()) && "Y".equals(o.getConfirmYn())) {
+            o.setStatusBadge("CONFIRMED");
+            return;
+        }
+        o.setStatusBadge(o.getOrderStatus());
     }
 
 //지윤 26.07.22 추가: 주문취소 신청 (실제 조건 체크는 매퍼 UPDATE의 WHERE절에서 함, 여기선 결과만 판단)
@@ -167,7 +220,7 @@ public class MypageOrderServiceImpl implements MypageOrderService {
         return mypageOrderMapper.selectRefundableItem(orderItemId, memberNo);
     }
 
-    // 2026/08/04 장우철 — 상품단위 환불 신청 (반품택배비 고정 3,000원 유저 부담)
+    // 2026/08/13 장우철 — 반송비 3,000원 기록 (단순변심 USER 선불·환불 미차감 / 상품이상 BIZ 환급)
     private static final int RETURN_FEE_FIXED = 3000;
 
     @Override
@@ -199,8 +252,11 @@ public class MypageOrderServiceImpl implements MypageOrderService {
             return "환불 신청할 수 없는 상품입니다. (배송중·배송완료·미확정만 가능)";
         }
 
+        boolean defect = "DEFECT".equals(reasonCd);
+        int returnFee = RETURN_FEE_FIXED;
+        String feePayer = defect ? "BIZ" : "USER";
         int updated = mypageOrderMapper.requestItemRefund(
-                orderItemId, reasonCd, content.trim(), RETURN_FEE_FIXED);
+                orderItemId, reasonCd, content.trim(), returnFee, feePayer);
         if (updated == 0) {
             return "이미 환불 진행 중이거나 신청할 수 없습니다.";
         }

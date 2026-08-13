@@ -1,22 +1,19 @@
 /**
- * 역할: 마이페이지 찜 목록 비즈니스 로직 (interface)
- *
- * 담당 화면
- * - mypage/wishlist.jsp       찜 목록
- *
- * 구현할 기능 예시
- * - 찜 목록 조회
- * - 찜 추가·삭제
- *
- * 연결
- * - 구현: MypageWishlistServiceImpl
- * - 호출: MypageWishlistController
- * - DB: MypageWishlistMapper
- *
- * 참고 테이블
- * - TB_WISHLIST
+ * 역할: 찜 목록·토글
+ * 2026/08/13 장우철 — TB_FAVORITE
  */
-
 package com.petcare.petcare.mypage.wishlist.service;
 
-public interface MypageWishlistService {}
+import java.util.List;
+
+import com.petcare.petcare.mypage.wishlist.vo.MypageWishlistVO;
+
+public interface MypageWishlistService {
+
+    List<MypageWishlistVO> getMyWishlist(Long memberNo);
+
+    List<String> getMyWishKeys(Long memberNo);
+
+    /** @return true면 찜된 상태, false면 해제 */
+    boolean toggle(Long memberNo, String favType, Long targetId);
+}

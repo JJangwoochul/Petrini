@@ -59,7 +59,7 @@ public class StayVO implements Mapperable {
     // ── 검색 조건 (list 화면용) ──
     private String region;              // 지역 필터 (서울, 경기, 강원, 제주, 부산, 경상, 전라)
     private int    maxPrice;            // 1박 최대 요금 (0이면 제한 없음)
-    private String sort;                // 정렬 (recommend, priceLow)
+    private String sort;                // 정렬 (review/recommend, priceLow) 2026/08/13 장우철
     private String[] facilityFilter;    // 특화 조건 코드 배열 (LARGEPET, PETYARD 등)
 
     // ── 상세용 (객실 목록) ──

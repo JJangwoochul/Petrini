@@ -201,8 +201,9 @@
     <div class="stay-toolbar">
       <span style="font-size:14px;color:var(--text-sub)">총 <strong style="color:var(--text-main)">${stayList.size()}</strong>개 숙소</span>
       <div class="stay-sort">
-        <c:set var="sortVal" value="${empty search.sort ? 'recommend' : search.sort}" />
-        <span class="sort-chip ${sortVal == 'recommend' ? 'on' : ''}" onclick="selSortSearch('recommend')">추천순</span>
+        <%-- 2026/08/13 장우철 — 추천순(ID순) → 리뷰순. 옛 recommend 값도 리뷰순으로 표시 --%>
+        <c:set var="sortVal" value="${empty search.sort ? 'review' : search.sort}" />
+        <span class="sort-chip ${sortVal == 'review' || sortVal == 'recommend' ? 'on' : ''}" onclick="selSortSearch('review')">리뷰순</span>
         <span class="sort-chip ${sortVal == 'priceLow' ? 'on' : ''}" onclick="selSortSearch('priceLow')">낮은 가격순</span>
       </div>
     </div>
@@ -231,7 +232,7 @@
                     <span class="stay-card-badge">반려동물 동반 숙소</span>
                   </c:otherwise>
                 </c:choose>
-                <button class="stay-wish-btn" onclick="event.stopPropagation()">
+                <button type="button" class="stay-wish-btn" data-wish-id="stay:${s.stayId}" onclick="event.stopPropagation()">
                   <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
                 </button>
               </div>

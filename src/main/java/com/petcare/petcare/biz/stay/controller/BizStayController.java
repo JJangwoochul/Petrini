@@ -696,26 +696,41 @@ public class BizStayController extends BizBaseController {
             bizStayService.insertRoom(room);
             rttr.addFlashAttribute("msg", "객실이 등록되었습니다.");
         } else {
-            // 수정
-            bizStayService.updateRoom(room);
-            rttr.addFlashAttribute("msg", "객실 정보가 수정되었습니다.");
+            try {
+                bizStayService.updateRoom(room);
+                rttr.addFlashAttribute("msg", "객실 정보가 수정되었습니다.");
+            } catch (IllegalStateException e) {
+                rttr.addFlashAttribute("errorMsg", e.getMessage());
+            }
         }
         return "redirect:/biz/stay/rooms";
     }
 
-    // ── POST: 객실 삭제 ──
-    @PostMapping("/rooms/delete")
-    public String deleteRoom(@RequestParam Long roomId,
-                             HttpSession session,
-                             RedirectAttributes rttr) {
+    // ── POST: 객실 상태 (운영중/운영중지/운영종료) ──
+    @PostMapping("/rooms/status")
+    public String changeRoomStatus(@RequestParam Long roomId,
+                                   @RequestParam String statusCd,
+                                   HttpSession session,
+                                   RedirectAttributes rttr) {
 
         MemberVO member = getBizMember(session);
         if (member == null) return "redirect:/login";
 
         StayVO stay = bizStayService.resolveStayByBizId(member.getMemberId());
-        bizStayService.deleteRoom(roomId, stay.getStayId());
+        if (stay == null) return "redirect:/mypage/biz";
 
-        rttr.addFlashAttribute("msg", "객실이 삭제되었습니다.");
+        try {
+            bizStayService.changeRoomStatus(roomId, stay.getStayId(), statusCd);
+            if ("HOLD".equals(statusCd)) {
+                rttr.addFlashAttribute("msg", "객실을 운영중지했습니다. 다시 운영할 때까지 예약이 불가합니다.");
+            } else if ("CLOSED".equals(statusCd)) {
+                rttr.addFlashAttribute("msg", "객실을 운영종료했습니다. 유저에게는 더 이상 보이지 않습니다.");
+            } else {
+                rttr.addFlashAttribute("msg", "객실을 다시 운영중으로 변경했습니다.");
+            }
+        } catch (IllegalStateException e) {
+            rttr.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/biz/stay/rooms";
     }
     //

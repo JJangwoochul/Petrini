@@ -28,7 +28,7 @@
         <a href="${contextPath}/mypage/orders?statusCd=READY" class="filter-btn ${selectedStatusCd == 'READY' ? 'on' : ''}">배송준비</a>
         <a href="${contextPath}/mypage/orders?statusCd=SHIPPING" class="filter-btn ${selectedStatusCd == 'SHIPPING' ? 'on' : ''}">배송중</a>
         <a href="${contextPath}/mypage/orders?statusCd=DONE" class="filter-btn ${selectedStatusCd == 'DONE' ? 'on' : ''}">배송완료</a>
-        <a href="${contextPath}/mypage/orders?statusCd=CANCEL" class="filter-btn ${selectedStatusCd == 'CANCEL' ? 'on' : ''}">취소/반품</a>
+        <a href="${contextPath}/mypage/orders?statusCd=CANCEL" class="filter-btn ${selectedStatusCd == 'CANCEL' ? 'on' : ''}">취소/환불</a>
     </div>
 
     <%-- 지윤 26.07.20 수정: 주문 카드 1/2/3 하드코딩 -> <c:forEach>로 ${orderList} 실데이터 반복 렌더링 --%>
@@ -54,26 +54,8 @@
                     <div class="order-subhead">
                         <span><c:out value="${o.bizName}"/></span>
                         <div style="display:flex;align-items:center;gap:10px">
-                            <%-- 지윤 26.07.20 수정: badge-ready/badge-done/badge-cancel 하드코딩 -> 실제 ORDER_STATUS 값에 따라 JSTL로 분기 --%>
-                            <%-- 2026/08/04 장우철 — 환불신청/진행 중이면 '환불진행중' 표시 --%>
-                            <c:set var="refundInProgress" value="false" />
-                            <c:forEach var="itBadge" items="${o.itemList}">
-                              <c:if test="${itBadge.returnStatusCd == 'REQUESTED' || itBadge.returnStatusCd == 'RETURNING'}">
-                                <c:set var="refundInProgress" value="true" />
-                              </c:if>
-                            </c:forEach>
-                            <c:choose>
-                                <c:when test="${refundInProgress}"><span class="badge-status badge-cancel">환불진행중</span></c:when>
-                                <%-- 2026/08/06 장우철: 취소신청 대기면 결제취소신청 (사업자 orders와 동일) --%>
-                                <c:when test="${o.claimStatus == 'PENDING'}"><span class="badge-status badge-cancel">결제취소신청</span></c:when>
-                                <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
-                                <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
-                                <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
-                                <%-- 2026/08/11 장우철 — P2: 구매확정 후 배송완료 대신 구매확정 표시 --%>
-                                <c:when test="${o.orderStatus == 'DONE' && o.confirmYn == 'Y'}"><span class="badge-status badge-done">구매확정</span></c:when>
-                                <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
-                                <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
-                            </c:choose>
+                            <%-- 2026/08/13 장우철 — #7 환불완료/부분환불 뱃지 --%>
+                            <%@ include file="/WEB-INF/views/mypage/orders-status-badge.jsp" %>
                         </div>
                     </div>
 
@@ -132,6 +114,8 @@
                          </c:choose>
                        </c:if>
                        <c:if test="${o.orderStatus == 'DONE'}">
+                                <%-- 2026/08/13 장우철 — 리뷰는 해당 상품 구매확정 후에만 (환불신청/진행/완료는 확정 불가) --%>
+                                <c:if test="${not empty it.confirmedAt}">
                                 <c:choose>
                                     <c:when test="${it.reviewed}">
                                         <button class="btn-sm" disabled>리뷰완료</button>
@@ -140,6 +124,7 @@
                                         <button class="btn-sm" onclick="openReviewModal(${it.orderItemId}, '${fn:escapeXml(it.productName)}', '${fn:escapeXml(it.thumbnailUrl)}', '${fn:escapeXml(it.optionColor)}', '${fn:escapeXml(it.optionSize)}')">리뷰작성</button>
                                     </c:otherwise>
                                 </c:choose>
+                                </c:if>
                                 <button class="btn-sm" onclick="location.href='${contextPath}/store/detail?id=${it.productId}'">재구매</button>
                             </c:if>
                         </div>

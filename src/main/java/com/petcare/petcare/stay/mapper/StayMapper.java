@@ -43,7 +43,10 @@ public interface StayMapper {
     StayVO selectStayById(Long stayId);
 
     // 해당 숙소의 객실 목록
-    List<StayRoomVO> selectRoomsByStayId(Long stayId);   
+    List<StayRoomVO> selectRoomsByStayId(Long stayId);
+
+    // 2026/08/13 장우철 — 객실 상태 확인 (운영중지/종료 예약 차단)
+    StayRoomVO selectRoomById(Long roomId); 
     
     // 예약
     List<StayPetVO> selectPetListByMemberNo(Long memberNo);

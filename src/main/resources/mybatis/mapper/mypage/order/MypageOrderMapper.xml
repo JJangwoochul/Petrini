@@ -32,8 +32,40 @@
     LEFT JOIN TB_ORDER_DELIVERY d ON d.ORDER_ID = o.ORDER_ID
     LEFT JOIN TB_PAYMENT pay ON pay.ORDER_ID = o.ORDER_ID
     WHERE o.MEMBER_NO = #{memberNo}
+    <!-- 2026/08/13 장우철 — #7/#13: 취소/환불 탭은 주문취소+상품환불, 배송중/완료는 전부환불완료 제외 -->
     <if test="statusCd != null and statusCd != ''">
-        AND o.ORDER_STATUS = #{statusCd}
+        <choose>
+            <when test="statusCd == 'CANCEL'">
+                AND (
+                    o.ORDER_STATUS = 'CANCEL'
+                    OR o.CLAIM_STATUS = 'PENDING'
+                    OR EXISTS (
+                        SELECT 1 FROM TB_ORDER_ITEM oi
+                         WHERE oi.ORDER_ID = o.ORDER_ID
+                           AND NVL(oi.RETURN_STATUS_CD, 'NONE') IN ('REQUESTED', 'RETURNING', 'DONE')
+                    )
+                )
+            </when>
+            <when test="statusCd == 'SHIPPING'">
+                AND o.ORDER_STATUS = 'SHIPPING'
+                AND EXISTS (
+                    SELECT 1 FROM TB_ORDER_ITEM oi
+                     WHERE oi.ORDER_ID = o.ORDER_ID
+                       AND NVL(oi.RETURN_STATUS_CD, 'NONE') &lt;&gt; 'DONE'
+                )
+            </when>
+            <when test="statusCd == 'DONE'">
+                AND o.ORDER_STATUS = 'DONE'
+                AND EXISTS (
+                    SELECT 1 FROM TB_ORDER_ITEM oi
+                     WHERE oi.ORDER_ID = o.ORDER_ID
+                       AND NVL(oi.RETURN_STATUS_CD, 'NONE') &lt;&gt; 'DONE'
+                )
+            </when>
+            <otherwise>
+                AND o.ORDER_STATUS = #{statusCd}
+            </otherwise>
+        </choose>
     </if>
     ORDER BY o.ORDER_ID DESC
 </select>
@@ -172,6 +204,7 @@
 <!-- 지윤 26.07.20 추가: 상품 리뷰 작성 (병원 리뷰와 동일하게 시퀀스 없이 MAX+1)
      본인 주문(o.MEMBER_NO=#{memberNo})인지, 이미 리뷰 쓴 상품(NOT EXISTS)인지 SQL에서 같이 검증함
      -> 조건 안 맞으면 0건 INSERT되고 조용히 끝남 (Service에서 영향받은 행수로 성공/실패 판단) -->
+<!-- 2026/08/13 장우철 — 구매확정된 상품만. 환불신청/진행/완료는 확정 불가라 리뷰도 불가. 거절 후 확정하면 가능 -->
 <insert id="insertProductReview">
     <selectKey keyProperty="reviewId" resultType="long" order="BEFORE">
         SELECT NVL(MAX(REVIEW_ID), 0) + 1 FROM TB_REVIEW
@@ -182,6 +215,8 @@
       JOIN TB_ORDER o ON o.ORDER_ID = oi.ORDER_ID
      WHERE oi.ORDER_ITEM_ID = #{orderItemId}
        AND o.MEMBER_NO = #{memberNo}
+       AND oi.CONFIRMED_AT IS NOT NULL
+       AND NVL(oi.RETURN_STATUS_CD, 'NONE') NOT IN ('REQUESTED', 'RETURNING', 'DONE')
        AND NOT EXISTS (SELECT 1 FROM TB_REVIEW r WHERE r.ORDER_ITEM_ID = oi.ORDER_ITEM_ID)
 </insert>
 
@@ -241,7 +276,7 @@
        SET RETURN_STATUS_CD    = 'REQUESTED',
            RETURN_REASON_CD    = #{returnReasonCd},
            CLAIM_REASON        = #{claimReason},
-           RETURN_FEE_PAYER    = 'USER',
+           RETURN_FEE_PAYER    = #{returnFeePayer},
            RETURN_FEE_AMOUNT   = #{returnFeeAmount},
            CONFIRM_HOLD_YN     = 'Y',
            RETURN_REQUESTED_AT = SYSDATE,

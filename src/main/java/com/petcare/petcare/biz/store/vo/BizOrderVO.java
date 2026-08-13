@@ -55,4 +55,7 @@ public class BizOrderVO {
 
     // 2026/08/04 장우철 — 환불신청/진행 상품 수 (목록 뱃지용)
     private Integer activeReturnCount;
+    // 2026/08/13 장우철 — 환불완료 상품 수 / 목록·상세 뱃지
+    private Integer doneReturnCount;
+    private String statusBadge;
 }

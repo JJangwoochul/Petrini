@@ -71,25 +71,8 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <p class="od-section-title" style="margin-bottom:0"><c:out value="${o.bizName}"/></p>
         <div style="display:flex;align-items:center;gap:10px">
-          <%-- 2026/08/04 장우철 — 환불신청/진행 중이면 배송중 대신 환불진행중 --%>
-          <c:set var="refundInProgress" value="false" />
-          <c:forEach var="itBadge" items="${o.itemList}">
-            <c:if test="${itBadge.returnStatusCd == 'REQUESTED' || itBadge.returnStatusCd == 'RETURNING'}">
-              <c:set var="refundInProgress" value="true" />
-            </c:if>
-          </c:forEach>
-          <c:choose>
-            <c:when test="${refundInProgress}"><span class="badge-status badge-cancel">환불진행중</span></c:when>
-            <%-- 2026/08/06 장우철: 취소신청 대기면 결제취소신청 (사업자 orders와 동일) --%>
-            <c:when test="${o.claimStatus == 'PENDING'}"><span class="badge-status badge-cancel">결제취소신청</span></c:when>
-            <c:when test="${o.orderStatus == 'PAID'}"><span class="badge-status badge-ready">결제완료</span></c:when>
-            <c:when test="${o.orderStatus == 'READY'}"><span class="badge-status badge-ready">배송준비</span></c:when>
-            <c:when test="${o.orderStatus == 'SHIPPING'}"><span class="badge-status badge-ready">배송중</span></c:when>
-            <%-- 2026/08/11 장우철 — P2: 구매확정 표시 --%>
-            <c:when test="${o.orderStatus == 'DONE' && o.confirmYn == 'Y'}"><span class="badge-status badge-done">구매확정</span></c:when>
-            <c:when test="${o.orderStatus == 'DONE'}"><span class="badge-status badge-done">배송완료</span></c:when>
-            <c:when test="${o.orderStatus == 'CANCEL'}"><span class="badge-status badge-cancel">취소완료</span></c:when>
-          </c:choose>
+          <%-- 2026/08/13 장우철 — #7 환불완료/부분환불 뱃지 --%>
+          <%@ include file="/WEB-INF/views/mypage/orders-status-badge.jsp" %>
           <%-- 지윤 26.07.30 수정: 주문취소 버튼을 사업자 단위로 이동 (하단 공용 버튼 -> 여기로) --%>
           <%-- 2026/08/04 장우철 — 결제완료·배송준비 = 주문취소 (배송중부터는 환불) --%>
           <c:if test="${(o.orderStatus == 'PAID' || o.orderStatus == 'READY') && empty o.claimStatus}">
@@ -109,6 +92,7 @@
         </div>
       </c:if>
 
+      <c:if test="${o.statusBadge != 'REFUND_DONE' && o.statusBadge != 'CANCEL' && o.statusBadge != 'CANCEL_REQUEST'}">
       <c:choose>
         <c:when test="${not empty o.deliveredAt}"><c:set var="curStep" value="4"/></c:when>
         <c:when test="${not empty o.shippingAt}"><c:set var="curStep" value="3"/></c:when>
@@ -144,6 +128,7 @@
           <p class="od-step-time">${curStep < 4 ? '예정' : ''}<fmt:formatDate value="${o.deliveredAt}" pattern="yyyy.MM.dd HH:mm"/></p>
         </div>
       </div>
+      </c:if>
 
       <div style="margin-top:16px;">
         <c:forEach var="it" items="${o.itemList}">
@@ -164,6 +149,9 @@
                 <c:if test="${not empty it.optionSize}">
                   · 옵션: <c:if test="${not empty it.optionColor && it.optionColor != '기본'}">${it.optionColor} / </c:if>${it.optionSize}
                 </c:if>
+                <c:if test="${it.returnStatusCd == 'REQUESTED'}"> · 환불신청중</c:if>
+                <c:if test="${it.returnStatusCd == 'RETURNING'}"> · 환불진행중</c:if>
+                <c:if test="${it.returnStatusCd == 'DONE'}"> · 환불완료</c:if>
               </div>
             </div>
             <span class="price"><fmt:formatNumber value="${it.totalPrice}" pattern="#,###"/>원</span>

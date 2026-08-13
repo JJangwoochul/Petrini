@@ -476,15 +476,18 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
 
     @Override
     @Transactional
-    public void sendRefundApproveToBuyerNotification(Long memberNo, String orderNo, String productName) {
+    public void sendRefundApproveToBuyerNotification(Long memberNo, String orderNo, String productName, String returnReasonCd) {
         if (memberNo == null) return;
         String safeProduct = productName != null ? productName : "상품";
+        String feeGuide = "DEFECT".equalsIgnoreCase(returnReasonCd)
+                ? "(반송비 3,000원 환급, 카드 잔액 한도)"
+                : "(반송비는 직접 선불, 환불금 미차감)";
         MypageNotifyVO vo = new MypageNotifyVO();
         vo.setMemberNo(memberNo);
         vo.setNotiType("ORDER");
         vo.setTitle("환불이 승인되었습니다");
         vo.setContent("주문 " + orderNo + " / " + safeProduct
-                + "\n상품을 반송해 주세요. 사업자가 회수 확인 후 환불됩니다. (반품택배비 유저 부담)");
+                + "\n상품을 반송해 주세요. 사업자가 회수 확인 후 환불됩니다. " + feeGuide);
         vo.setLinkUrl("/mypage/orders");
         vo.setIsRead("N");
         mypageNotifyMapper.insertNotification(vo);

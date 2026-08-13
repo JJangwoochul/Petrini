@@ -258,6 +258,8 @@ public String payment(@RequestParam(required = false) Long productId,
                     } else {
                         couponDiscount = c.getDiscountValue();
                     }
+                    // 2026/08/13 장우철 — 쿠폰은 상품금액에만, 배송비에는 적용하지 않음
+                    couponDiscount = Math.min(couponDiscount, couponTargetAmt);
                     couponName = c.getCouponName();
                     couponBizNoStr = c.getBizNo();
                 }

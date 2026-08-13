@@ -136,6 +136,13 @@
         ORDER BY ROOM_ID
     </select>
 
+    <select id="selectRoomById" resultType="com.petcare.petcare.stay.vo.StayRoomVO">
+        SELECT  ROOM_ID, STAY_ID, NAME, PRICE_PER_NIGHT, CAPACITY, PET_LIMIT, STATUS_CD
+          FROM  TB_STAY_ROOM
+         WHERE  ROOM_ID = #{roomId}
+           AND  STAY_ID = #{stayId}
+    </select>
+
     <!-- 객실 등록 (PK 수동 채번) -->
     <insert id="insertRoom" parameterType="com.petcare.petcare.stay.vo.StayRoomVO">
         INSERT INTO TB_STAY_ROOM (
@@ -160,12 +167,22 @@
           AND  STAY_ID = #{stayId}
     </update>
 
-    <!-- 객실 삭제 -->
-    <delete id="deleteRoom">
-        DELETE FROM TB_STAY_ROOM
-        WHERE  ROOM_ID = #{roomId}
-          AND  STAY_ID = #{stayId}
-    </delete>
+    <!-- 2026/08/13 장우철 — 객실 상태: APPROVE(운영중) / HOLD(운영중지) / CLOSED(운영종료) -->
+    <update id="updateRoomStatus">
+        UPDATE TB_STAY_ROOM
+           SET STATUS_CD = #{statusCd}
+         WHERE ROOM_ID = #{roomId}
+           AND STAY_ID = #{stayId}
+    </update>
+
+    <!-- 2026/08/13 장우철 — 진행 중 예약이 있으면 객실 삭제 불가 -->
+    <select id="countActiveReservationsForRoom" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE = 'STAY'
+           AND ROOM_ID = #{roomId}
+           AND STATUS_CD IN ('PENDING', 'CONFIRMED', 'CHECKIN', 'CHECKOUT')
+    </select>
 
     <!-- 2026-07-10 장우철 — 사업자 예약 목록 (F4), tab: all / wait / done / cancel -->
     <select id="selectReservationList" resultType="com.petcare.petcare.stay.vo.ReservationVO">

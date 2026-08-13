@@ -107,7 +107,7 @@ public interface MypageNotifyService {
     void sendOrderDeliveredToBuyerNotification(Long memberNo, String orderNo);
 
     // 2026/08/04 장우철 — 환불 승인/거절/완료 → 구매자 알림
-    void sendRefundApproveToBuyerNotification(Long memberNo, String orderNo, String productName);
+    void sendRefundApproveToBuyerNotification(Long memberNo, String orderNo, String productName, String returnReasonCd);
 
     void sendRefundRejectToBuyerNotification(Long memberNo, String orderNo, String productName, String rejectReason);
 

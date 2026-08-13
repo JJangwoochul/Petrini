@@ -118,7 +118,8 @@ public interface BizStayService {
 
 
 
-    void deleteRoom(Long roomId, Long stayId);
+    // 2026/08/13 장우철 — APPROVE / HOLD / CLOSED
+    void changeRoomStatus(Long roomId, Long stayId, String statusCd);
 
 
 

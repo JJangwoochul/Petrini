@@ -14,6 +14,11 @@
   .room-form-actions{display:flex;justify-content:center;gap:10px;margin-top:22px}
   .room-form-actions .biz-btn-primary{min-width:180px}
   .price-cell{text-align:right;font-variant-numeric:tabular-nums}
+  .room-status{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;margin-left:6px}
+  .room-status.approve{background:#ECFDF5;color:#15803D}
+  .room-status.hold{background:#FFFBEB;color:#B45309}
+  .room-status.closed{background:#F3F4F6;color:#6B7280}
+  .room-actions{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 
 <main class="biz-main">
@@ -21,6 +26,9 @@
     <h1 class="biz-page-title">객실 관리</h1>
     <p class="biz-page-desc">객실 타입·가격을 등록하고 관리하세요.</p>
   </div>
+  <c:if test="${not empty errorMsg}">
+    <div style="margin:0 0 12px;padding:12px 16px;background:#FEF2F2;color:#B91C1C;border-radius:8px;font-size:14px;font-weight:600">${errorMsg}</div>
+  </c:if>
 
   <%-- ═══ 객실 목록 ═══ --%>
   <div class="biz-card" style="margin-bottom:16px">
@@ -37,31 +45,55 @@
           <th>1박 요금</th>
           <th>정원</th>
           <th>반려동물 제한</th>
+          <th>상태</th>
           <th>관리</th>
         </tr>
       </thead>
       <tbody>
         <c:choose>
           <c:when test="${empty roomList}">
-            <tr><td colspan="5" style="text-align:center;color:#999;padding:24px 0">등록된 객실이 없습니다.</td></tr>
+            <tr><td colspan="6" style="text-align:center;color:#999;padding:24px 0">등록된 객실이 없습니다.</td></tr>
           </c:when>
           <c:otherwise>
             <c:forEach var="room" items="${roomList}">
+              <c:set var="roomStatus" value="${empty room.statusCd ? 'APPROVE' : room.statusCd}" />
+              <c:if test="${roomStatus eq 'DELETED'}"><c:set var="roomStatus" value="CLOSED" /></c:if>
               <tr>
                 <td>${room.name}</td>
                 <td class="price-cell"><fmt:formatNumber value="${room.pricePerNight}" pattern="#,###"/>원</td>
                 <td>${room.capacity > 0 ? room.capacity : '-'}명</td>
                 <td>${room.petLimit > 0 ? room.petLimit : '-'}마리</td>
                 <td>
-                  <button type="button" class="biz-btn"
-                      data-id="${room.roomId}"
-                      data-name="${room.name}"
-                      data-price="${room.pricePerNight}"
-                      data-capacity="${room.capacity}"
-                      data-petlimit="${room.petLimit}"
-                      onclick="openForm('edit', this)">수정</button>
-                  <button type="button" class="biz-btn danger"
-                      onclick="confirmDelete(${room.roomId})">삭제</button>
+                  <c:choose>
+                    <c:when test="${roomStatus eq 'HOLD'}"><span class="room-status hold">운영중지</span></c:when>
+                    <c:when test="${roomStatus eq 'CLOSED'}"><span class="room-status closed">운영종료</span></c:when>
+                    <c:otherwise><span class="room-status approve">운영중</span></c:otherwise>
+                  </c:choose>
+                </td>
+                <td>
+                  <div class="room-actions">
+                    <c:if test="${roomStatus ne 'CLOSED'}">
+                      <button type="button" class="biz-btn"
+                          data-id="${room.roomId}"
+                          data-name="${room.name}"
+                          data-price="${room.pricePerNight}"
+                          data-capacity="${room.capacity}"
+                          data-petlimit="${room.petLimit}"
+                          onclick="openForm('edit', this)">수정</button>
+                    </c:if>
+                    <c:if test="${roomStatus eq 'APPROVE'}">
+                      <button type="button" class="biz-btn"
+                          onclick="changeRoomStatus(${room.roomId}, 'HOLD', '운영중지하면 다시 운영할 때까지 예약이 불가합니다. 진행할까요?')">운영중지</button>
+                      <button type="button" class="biz-btn danger"
+                          onclick="changeRoomStatus(${room.roomId}, 'CLOSED', '운영종료하면 유저에게 더 이상 보이지 않습니다. 진행할까요?')">운영종료</button>
+                    </c:if>
+                    <c:if test="${roomStatus eq 'HOLD'}">
+                      <button type="button" class="biz-btn-primary"
+                          onclick="changeRoomStatus(${room.roomId}, 'APPROVE', '다시 운영중으로 바꿀까요?')">운영재개</button>
+                      <button type="button" class="biz-btn danger"
+                          onclick="changeRoomStatus(${room.roomId}, 'CLOSED', '운영종료하면 유저에게 더 이상 보이지 않습니다. 진행할까요?')">운영종료</button>
+                    </c:if>
+                  </div>
                 </td>
               </tr>
             </c:forEach>
@@ -108,12 +140,10 @@
     </form>
   </div>
 
-  <%-- 삭제용 히든 폼 --%>
-  <form id="deleteForm" action="${contextPath}/biz/stay/rooms/delete" method="post" style="display:none">
-    <!--HYJ 26.08.05-->
+  <form id="statusForm" action="${contextPath}/biz/stay/rooms/status" method="post" style="display:none">
     <input type="hidden" name="_csrf" value="${_csrf}">
-    
-    <input type="hidden" id="delRoomId" name="roomId" value="">
+    <input type="hidden" id="statusRoomId" name="roomId" value="">
+    <input type="hidden" id="statusCd" name="statusCd" value="">
   </form>
 </main>
 
@@ -151,10 +181,11 @@
     document.getElementById('formCard').style.display = 'none';
   }
 
-  function confirmDelete(roomId) {
-    if (!confirm('선택한 객실을 삭제하시겠습니까?')) return;
-    document.getElementById('delRoomId').value = roomId;
-    document.getElementById('deleteForm').submit();
+  function changeRoomStatus(roomId, statusCd, message) {
+    if (!confirm(message)) return;
+    document.getElementById('statusRoomId').value = roomId;
+    document.getElementById('statusCd').value = statusCd;
+    document.getElementById('statusForm').submit();
   }
 
   window.addEventListener('DOMContentLoaded', function() {

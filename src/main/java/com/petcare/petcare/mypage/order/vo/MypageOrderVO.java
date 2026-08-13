@@ -64,4 +64,7 @@ public class MypageOrderVO {
 
     //지윤 26.07.23 추가: 구매확정 여부 (Y=적립금 지급완료)
     private String confirmYn;
+
+    // 2026/08/13 장우철 — 목록/상세 뱃지 (CANCEL_REQUEST/REFUND_DONE/PARTIAL_REFUND/REFUND_PROGRESS 또는 주문상태)
+    private String statusBadge;
 }
