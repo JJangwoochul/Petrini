@@ -86,8 +86,8 @@ public void claimCoupon(Long memberNo, Long couponId) {
         }
 
         // 3) TB_MEMBER_COUPON INSERT
-        // 동시 클릭/동시 요청 시에도 중복발급이 안 되도록 Mapper 레벨에서 "조건부 INSERT"를 수행
-        int inserted = eventCouponMapper.insertMemberCoupon(memberNo, couponId);
+        // 2026/08/13 장우철 — 예주 만료일(useEndDate) + 우철 조건부 INSERT(중복발급 방지)
+        int inserted = eventCouponMapper.insertMemberCoupon(memberNo, couponId, coupon.getUseEndDate());
         if (inserted == 0) {
             throw new IllegalStateException("ALREADY_CLAIMED");
         }

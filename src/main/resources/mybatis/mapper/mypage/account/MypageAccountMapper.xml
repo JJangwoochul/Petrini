@@ -13,18 +13,21 @@
         UPDATE TB_MEMBER SET STATUS_CD = 'WITHDRAWN' WHERE MEMBER_NO = #{memberNo}
     </update>
 
+    <!--HYJ 26.08.13 탈퇴일자 누락 · 2026/08/13 장우철 — SYSDATE는 SELECT 절에 넣음 (WHERE 뒤에 있으면 SQL 오류)-->
     <insert id="insertMemberWithdraw" parameterType="long">
         INSERT INTO TB_MEMBER_WITHDRAW (
             MEMBER_NO,
             MEMBER_ID,
             MEMBER_NAME,
-            EMAIL
+            EMAIL,
+            WITHDRAW_DATE
         )
         SELECT
             MEMBER_NO,
             MEMBER_ID,
             MEMBER_NAME,
-            EMAIL
+            EMAIL,
+            SYSDATE
         FROM TB_MEMBER
         WHERE MEMBER_NO = #{memberNo}
     </insert>
