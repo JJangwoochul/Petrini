@@ -92,7 +92,7 @@
         p.PRODUCT_NAME    AS productName,
         p.BIZ_NO          AS bizNo,
         b.BIZ_NAME        AS bizName,
-        c.CATEGORY_NAME   AS categoryName,
+        cp.CATEGORY_PATH  AS categoryName,
         TO_NUMBER(p.PRICE) AS price,
         TO_NUMBER(p.SALE_PRICE) AS salePrice,
         NVL(os.STOCK_QTY, 0) AS stockQty,
@@ -101,7 +101,15 @@
         p.REG_DATE        AS regDate
     FROM TB_PRODUCT p
     JOIN TB_BUSINESS b ON b.BIZ_NO = p.BIZ_NO
-    JOIN TB_PRODUCT_CATEGORY c ON c.CATEGORY_ID = p.CATEGORY_ID
+    <!-- 지윤 26.08.13 수정: 최하위 카테고리명만 나오던 문제 -> 동물종류 > 상품종류 > 나이대 전체 경로로 표시 -->
+    LEFT JOIN (
+        SELECT CATEGORY_ID,
+               SUBSTR(SYS_CONNECT_BY_PATH(CATEGORY_NAME, ' > '), 4) AS CATEGORY_PATH
+        FROM TB_PRODUCT_CATEGORY
+        WHERE DEPTH >= 2
+        START WITH DEPTH = 2
+        CONNECT BY PRIOR CATEGORY_ID = PARENT_ID
+    ) cp ON cp.CATEGORY_ID = p.CATEGORY_ID
     LEFT JOIN (
         SELECT PRODUCT_ID, SUM(STOCK_QTY) AS STOCK_QTY
         FROM TB_PRODUCT_OPTION GROUP BY PRODUCT_ID

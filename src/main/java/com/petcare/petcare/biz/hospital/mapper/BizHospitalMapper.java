@@ -137,10 +137,17 @@ public interface BizHospitalMapper {
 
    // ── 대시보드 집계 ──
    int countResvByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
+   int countCancelByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
    int countDoneByDate(@Param("targetId") Long targetId, @Param("dt") String dt);
    long sumMonthRevenue(@Param("targetId") Long targetId, @Param("dt") String dt);
    List<Map<String, Object>> countByStatus(@Param("targetId") Long targetId);
    List<DailyStatVO> selectDailyStats(@Param("targetId") Long targetId, @Param("days") int days);
+
+   // 지윤 26.08.13 추가: 월별 통계 (최근 N개월)
+   List<DailyStatVO> selectMonthlyStats(@Param("targetId") Long targetId, @Param("months") int months);
+
+   // 지윤 26.08.13 추가: 이번 달 진료완료 건수 (매출 대신 상단 카드용)
+   int sumMonthDoneCount(@Param("targetId") Long targetId, @Param("dt") String dt);
    List<ReservationVO> selectTodayResvList(@Param("hospitalId") Long hospitalId);
    List<HospitalReviewVO> selectRecentReviews(@Param("hospitalId") Long hospitalId);
 

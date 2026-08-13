@@ -104,6 +104,9 @@ public interface BizHospitalService {
 
    // ── HYJ 26.08.06 대시보드 ──
    com.petcare.petcare.biz.vo.BizDashboardVO getDashboardData(Long hospitalId, int chartDays) throws Exception;
+
+   // 지윤 26.08.13 추가: 일간/월간 버튼 전환용 - 차트 데이터만 따로 조회
+   java.util.List<com.petcare.petcare.biz.vo.DailyStatVO> getChartData(Long hospitalId, String period);
    java.util.List<com.petcare.petcare.hospital.vo.ReservationVO> getTodayResvList(Long hospitalId);
    java.util.List<com.petcare.petcare.hospital.vo.HospitalReviewVO> getRecentReviews(Long hospitalId);
 

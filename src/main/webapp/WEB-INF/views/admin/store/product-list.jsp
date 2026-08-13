@@ -62,8 +62,8 @@
                                     <td>
                                         <c:choose>
                                             <c:when test="${not empty p.thumbnailUrl}">
-                                                <img src="${p.thumbnailUrl}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" alt=""
-                                                     onerror="this.src='https://placehold.co/44x44/EAF7F2/2BAB82?text=IMG'">
+                                               <img src="${contextPath}/upload/${p.thumbnailUrl}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" alt=""
+                                                    onerror="this.src='https://placehold.co/44x44/EAF7F2/2BAB82?text=IMG'">
                                             </c:when>
                                             <c:otherwise>
                                                 <img src="https://placehold.co/44x44/EAF7F2/2BAB82?text=IMG" style="width:44px;height:44px;border-radius:8px;object-fit:cover" alt="">

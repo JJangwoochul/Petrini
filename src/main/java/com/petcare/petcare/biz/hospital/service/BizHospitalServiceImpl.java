@@ -598,12 +598,17 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         // 요약 카드
         dash.setTodayResvCount(bizHospitalMapper.countResvByDate(hospitalId, today));
         dash.setTodayResvYesterday(bizHospitalMapper.countResvByDate(hospitalId, yesterday));
+        // 지윤 26.08.13 추가: 오늘 예약 카드 옆 괄호용
+        dash.setTodayCancelCount(bizHospitalMapper.countCancelByDate(hospitalId, today));
         dash.setPendingCount(bizHospitalMapper.countPendingReservations(hospitalId));
         dash.setPendingYesterday(0);
         dash.setDoneCount(bizHospitalMapper.countDoneByDate(hospitalId, today));
         dash.setDoneYesterday(bizHospitalMapper.countDoneByDate(hospitalId, yesterday));
         dash.setMonthRevenue(bizHospitalMapper.sumMonthRevenue(hospitalId, today));
         dash.setMonthRevenueYesterday(bizHospitalMapper.sumMonthRevenue(hospitalId, yesterday));
+        // 지윤 26.08.13 추가: 병원은 결제 연동이 없어 매출 대신 이번 달 진료완료 건수 사용
+        dash.setMonthDoneCount(bizHospitalMapper.sumMonthDoneCount(hospitalId, today));
+        dash.setMonthDoneYesterday(bizHospitalMapper.sumMonthDoneCount(hospitalId, yesterday));
 
         // 상태 현황 (도넛)
         java.util.List<java.util.Map<String, Object>> statusList = bizHospitalMapper.countByStatus(hospitalId);
@@ -621,20 +626,34 @@ public class BizHospitalServiceImpl implements BizHospitalService {
         dash.setTotalStatusCount(total);
 
         // 차트 (일별)
+        // 지윤 26.08.13 수정: 매출 대신 진료완료/취소 건수로 변경
         java.util.List<com.petcare.petcare.biz.vo.DailyStatVO> dailyList = bizHospitalMapper.selectDailyStats(hospitalId, chartDays);
         java.util.List<String> labels = new java.util.ArrayList<>();
         java.util.List<Integer> counts = new java.util.ArrayList<>();
-        java.util.List<Long> revenues = new java.util.ArrayList<>();
+        java.util.List<Integer> doneCounts = new java.util.ArrayList<>();
+        java.util.List<Integer> cancelCounts = new java.util.ArrayList<>();
         for (com.petcare.petcare.biz.vo.DailyStatVO d : dailyList) {
             labels.add(d.getDt());
             counts.add(d.getResvCount());
-            revenues.add(d.getRevenue());
+            doneCounts.add(d.getDoneCount());
+            cancelCounts.add(d.getCancelCount());
         }
         dash.setChartLabels(labels);
         dash.setChartResvCounts(counts);
-        dash.setChartRevenues(revenues);
+        dash.setChartDoneCounts(doneCounts);
+        dash.setChartCancelCounts(cancelCounts);
 
         return dash;
+    }
+
+    // 지윤 26.08.13 추가: 일간/월간 버튼 전환용 - 차트 데이터만 따로 조회
+    // period='monthly'면 최근 6개월(월 단위), 그 외(기본 daily)는 최근 7일(일 단위)
+    @Override
+    public java.util.List<com.petcare.petcare.biz.vo.DailyStatVO> getChartData(Long hospitalId, String period) {
+        if ("monthly".equals(period)) {
+            return bizHospitalMapper.selectMonthlyStats(hospitalId, 6);
+        }
+        return bizHospitalMapper.selectDailyStats(hospitalId, 7);
     }
 
     @Override

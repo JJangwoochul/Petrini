@@ -8,44 +8,6 @@
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
 <%@ include file="/WEB-INF/views/biz/common/sidebar_hospital.jsp" %>
 
-<%--7/1, 곽지윤, 사업자(병원)대시보드 ui구성변경(before)--%>
-<%--<main class="biz-main">
-  <div class="biz-page-head">
-    <h1 class="biz-page-title">병원 대시보드</h1>
-    <p class="biz-page-desc">오늘 진료 현황과 주요 지표를 확인하세요.</p>
-  </div>
-  <div class="biz-stats">
-    <div class="biz-stat-card">
-      <div class="bsc-icon appt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div class="bsc-body"><span class="bsc-label">오늘 예약</span><span class="bsc-val">5<span class="bsc-unit">건</span></span></div>
-    </div>
-    <div class="biz-stat-card">
-      <div class="bsc-icon done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div class="bsc-body"><span class="bsc-label">진료 완료</span><span class="bsc-val">3<span class="bsc-unit">건</span></span></div>
-    </div>
-    <div class="biz-stat-card">
-      <div class="bsc-icon revenue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-      <div class="bsc-body"><span class="bsc-label">이번 달 매출</span><span class="bsc-val">3.8<span class="bsc-unit">백만원</span></span></div>
-    </div>
-    <div class="biz-stat-card">
-      <div class="bsc-icon review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-      <div class="bsc-body"><span class="bsc-label">평균 리뷰</span><span class="bsc-val">4.9<span class="bsc-unit">/ 5.0</span></span></div>
-    </div>
-  </div>
-  <div class="biz-card">
-    <div class="biz-card-head"><span>오늘 예약 현황</span><small>2025.06.26 기준</small></div>
-    <table class="biz-table">
-      <thead><tr><th>시간</th><th>보호자</th><th>환자(동물)</th><th>진료 목적</th><th>상태</th><th>처리</th></tr></thead>
-      <tbody>
-        <tr><td>09:30</td><td>김민준</td><td>초코 (말티즈 / 3세)</td><td>예방접종</td><td><span class="bs-badge bs-done">완료</span></td><td>—</td></tr>
-        <tr><td>10:00</td><td>이서연</td><td>나비 (페르시안 / 2세)</td><td>정기검진</td><td><span class="bs-badge bs-done">완료</span></td><td>—</td></tr>
-        <tr><td>11:30</td><td>박지호</td><td>몽이 (골든 / 4세)</td><td>피부 트러블</td><td><span class="bs-badge bs-done">완료</span></td><td>—</td></tr>
-        <tr><td>14:00</td><td>최유나</td><td>루비 (푸들 / 1세)</td><td>중성화 수술</td><td><span class="bs-badge bs-wait">대기</span></td><td><button class="biz-btn">진료 시작</button></td></tr>
-        <tr><td>15:30</td><td>정태양</td><td>별이 (샴 / 5세)</td><td>치석 제거</td><td><span class="bs-badge bs-wait">대기</span></td><td><button class="biz-btn">진료 시작</button></td></tr>
-      </tbody>
-    </table>
-  </div>
-</main>--%>
 
 <%--HYJ 26.08.06 DB 연동--%>
 <%--7/1, 곽지윤, 사업자(병원)대시보드 ui구성변경(after)--%>
@@ -67,6 +29,9 @@
       <div>
         <p>오늘 예약</p>
         <strong>${dash.todayResvCount} <span>건</span></strong>
+        <c:if test="${dash.todayCancelCount > 0}">
+          <span style="font-size:12px;color:#DC2626;margin-left:4px">(취소 ${dash.todayCancelCount}건)</span>
+        </c:if>
         <small>어제 대비
           <c:choose>
             <c:when test="${dash.resvDiff > 0}">▲ ${dash.resvDiff}건</c:when>
@@ -99,37 +64,38 @@
       </div>
     </div>
     <div class="summary-card">
-      <div class="summary-icon orange">₩</div>
-      <div>
-        <p>이번 달 매출</p>
-        <strong><fmt:formatNumber value="${dash.monthRevenue}" type="number"/> <span>원</span></strong>
-        <small>어제 대비
-          <c:choose>
-            <c:when test="${dash.revenueDiff > 0}">▲ <fmt:formatNumber value="${dash.revenueDiff}" type="number"/>원</c:when>
-            <c:when test="${dash.revenueDiff < 0}">▼ <fmt:formatNumber value="${-dash.revenueDiff}" type="number"/>원</c:when>
-            <c:otherwise>동일</c:otherwise>
-          </c:choose>
-        </small>
-      </div>
-    </div>
+  <div class="summary-icon orange">✓</div>
+  <div>
+    <p>이번 달 진료완료</p>
+    <strong><fmt:formatNumber value="${dash.monthDoneCount}" type="number"/> <span>건</span></strong>
+    <small>어제 대비
+      <c:choose>
+        <c:when test="${dash.monthDoneDiff > 0}">▲ <fmt:formatNumber value="${dash.monthDoneDiff}" type="number"/>건</c:when>
+        <c:when test="${dash.monthDoneDiff < 0}">▼ <fmt:formatNumber value="${-dash.monthDoneDiff}" type="number"/>건</c:when>
+        <c:otherwise>동일</c:otherwise>
+      </c:choose>
+    </small>
+  </div>
+</div>
   </section>
 
   <%-- ── 차트 + 도넛 ── --%>
   <section class="dashboard-grid">
     <div class="dash-card chart-card">
       <div class="card-head">
-        <h3>예약 / 매출 통계</h3>
+        <h3>예약 / 진료 현황</h3>
         <div class="tab-btns">
-          <button class="active" data-days="7">일간</button>
-          <button data-days="30">월간</button>
+          <button class="active" data-period="daily">주간</button>
+          <button data-period="monthly">월간</button>
         </div>
       </div>
       <div class="line-chart">
         <div class="chart-legend">
-          <span class="green-dot"></span> 예약 건수(건)
-          <span class="blue-dot"></span> 매출(원)
+          <span class="green-dot"></span> 예약 건수
+          <span class="blue-dot"></span> 진료완료
+          <span class="red-dot"></span> 취소·노쇼
         </div>
-        <canvas id="dashChart" height="220"></canvas>
+        <canvas id="dashChart"></canvas>
       </div>
     </div>
 
@@ -169,6 +135,7 @@
                 <c:when test="${r.statusCd eq 'CONFIRMED'}"><span class="badge confirm">예약 확정</span></c:when>
                 <c:when test="${r.statusCd eq 'PENDING'}"><span class="badge wait">예약 대기</span></c:when>
                 <c:when test="${r.statusCd eq 'DONE'}"><span class="badge confirm">진료 완료</span></c:when>
+                <c:when test="${r.statusCd eq 'CANCEL' || r.statusCd eq 'REJECTED'}"><span class="badge cancel">취소</span></c:when>
                 <c:otherwise><span class="badge">${r.statusCd}</span></c:otherwise>
               </c:choose>
             </td>
@@ -212,28 +179,48 @@
 (function(){
   var labels = [<c:forEach var="l" items="${dash.chartLabels}" varStatus="s">'${l}'<c:if test="${!s.last}">,</c:if></c:forEach>];
   var resvData = [<c:forEach var="c" items="${dash.chartResvCounts}" varStatus="s">${c}<c:if test="${!s.last}">,</c:if></c:forEach>];
-  var revData = [<c:forEach var="r" items="${dash.chartRevenues}" varStatus="s">${r}<c:if test="${!s.last}">,</c:if></c:forEach>];
+  var doneData = [<c:forEach var="c" items="${dash.chartDoneCounts}" varStatus="s">${c}<c:if test="${!s.last}">,</c:if></c:forEach>];
+  var cancelData = [<c:forEach var="c" items="${dash.chartCancelCounts}" varStatus="s">${c}<c:if test="${!s.last}">,</c:if></c:forEach>];
 
   var ctx = document.getElementById('dashChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
+  var chart = new Chart(ctx, {
     data: {
       labels: labels,
       datasets: [
-        { label: '예약 건수', data: resvData, borderColor: '#2BAB82', backgroundColor: 'rgba(43,171,130,0.1)', tension: 0.3, yAxisID: 'y' },
-        { label: '매출(원)', data: revData, borderColor: '#0284C7', backgroundColor: 'rgba(2,132,199,0.1)', tension: 0.3, yAxisID: 'y1' }
+        { type: 'bar', label: '예약 건수', data: resvData, backgroundColor: '#2BAB82', borderRadius: 4, maxBarThickness: 36, order: 2 },
+        { type: 'line', label: '진료완료', data: doneData, borderColor: '#0284C7', backgroundColor: '#0284C7', tension: 0, pointRadius: 4, pointBackgroundColor: '#0284C7', order: 1 },
+        { type: 'line', label: '취소·노쇼', data: cancelData, borderColor: '#E34948', backgroundColor: '#E34948', borderDash: [5, 4], tension: 0, pointRadius: 3, pointBackgroundColor: '#E34948', order: 0 }
       ]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false } },
       scales: {
-        y:  { type: 'linear', position: 'left',  beginAtZero: true, ticks: { precision: 0 } },
-        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false },
-              ticks: { callback: function(v){ return (v/10000).toFixed(0) + '만'; } } }
+        x: { ticks: { maxTicksLimit: 10, padding: 20 } },
+        y: { beginAtZero: true, ticks: { precision: 0 } }
       }
     }
+  });
+
+  var tabBtns = document.querySelectorAll('.tab-btns button');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      var period = btn.getAttribute('data-period');
+      fetch('${contextPath}/biz/hospital/dashboard/chart?period=' + period)
+        .then(function(res){ return res.json(); })
+        .then(function(list){
+          chart.data.labels = list.map(function(d){ return d.dt; });
+          chart.data.datasets[0].data = list.map(function(d){ return d.resvCount; });
+          chart.data.datasets[1].data = list.map(function(d){ return d.doneCount; });
+          chart.data.datasets[2].data = list.map(function(d){ return d.cancelCount; });
+          chart.update();
+        });
+    });
   });
 })();
 </script>
