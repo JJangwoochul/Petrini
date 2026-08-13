@@ -7,6 +7,7 @@
   2. 신규 신청 모달 → POST /biz/hospital/coupon/apply (PENDING)
   3. PENDING 쿠폰 수정/삭제 가능
   4. 관리자 승인 후 사용자 이벤트/쿠폰 게시판 노출
+  2026-08-13 박유정 — validateForm 빈 숫자칸 제거 + Controller @InitBinder (Integer 바인딩 오류 방지)
 
   [model]
   - couponList, msg, errorMsg
@@ -328,7 +329,7 @@
 <div class="cpn-form-row" id="maxDiscountRow" style="display:none">
     <div class="cpn-form-group">
         <label>최대 할인 금액 (원) <span style="color:#DC2626">*</span></label>
-        <input type="number" name="maxDiscountAmt" id="maxDiscountAmt"
+        <input type="number" id="maxDiscountAmt"
                placeholder="0" min="1" oninput="calcTotalBudget()">
     </div>
 </div>
@@ -403,12 +404,14 @@ function toggleDiscountLabel() {
         input.max = 100;
         maxRow.style.display = '';
         maxInput.setAttribute('required', 'required');
+        maxInput.setAttribute('name', 'maxDiscountAmt');
     } else {
         label.innerHTML = '할인 금액 (원) <span style="color:#DC2626">*</span>';
         input.placeholder = '0';
         input.removeAttribute('max');
         maxRow.style.display = 'none';
         maxInput.removeAttribute('required');
+        maxInput.removeAttribute('name');
         maxInput.value = '';
     }
     calcTotalBudget();
@@ -439,6 +442,20 @@ function validateForm() {
         alert('최대 할인 금액을 입력해주세요.');
         return false;
     }
+    // 2026-08-13 박유정 — 빈 숫자칸 "" 전송 방지 (Integer 바인딩 오류)
+    var minOrder = document.getElementById('minOrderAmt');
+    if (!minOrder.value) {
+        minOrder.removeAttribute('name');
+    } else {
+        minOrder.setAttribute('name', 'minOrderAmt');
+    }
+    var maxInput = document.getElementById('maxDiscountAmt');
+    if (document.getElementById('couponType').value === 'RATE') {
+        maxInput.setAttribute('name', 'maxDiscountAmt');
+    } else {
+        maxInput.removeAttribute('name');
+    }
+    calcTotalBudget();
     calcTotalBudget();
     document.getElementById('useStartDate').value = startInput.value.replace(/-/g, '');
     document.getElementById('useEndDate').value   = endInput.value.replace(/-/g, '');

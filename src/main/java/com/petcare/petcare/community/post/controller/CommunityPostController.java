@@ -67,6 +67,8 @@ import java.util.List;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
+import org.springframework.web.multipart.MultipartFile;
+
 @Controller("communityController")
 @RequestMapping("/community")
 public class CommunityPostController {
@@ -400,12 +402,15 @@ public class CommunityPostController {
     /**
      * [게시글 수정 처리] 2026-07-23 HYJ
      * POST /community/edit → updatePost() → 상세 redirect
+     * 2026-08-13 박유정 — photos(추가), removePhotoUrls(선택 삭제) multipart 전달
      */
     @PostMapping("/edit")
     public String editSubmit(
             @RequestParam long postId,
             @RequestParam String title,
             @RequestParam String body,
+            @RequestParam(value = "photos", required = false) MultipartFile[] photos,
+            @RequestParam(value = "removePhotoUrls", required = false) List<String> removePhotoUrls,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
         MemberVO member = getMemberOrNull(session);
@@ -417,7 +422,7 @@ public class CommunityPostController {
             vo.setPostId(postId);
             vo.setTitle(title);
             vo.setBody(body);
-            communityPostService.updatePost(vo, member);
+            communityPostService.updatePost(vo, member, photos, removePhotoUrls);
             redirectAttributes.addFlashAttribute("successMessage", "게시글이 수정되었습니다.");
             return "redirect:/community/detail?id=" + postId;
         } catch (IllegalStateException e) {

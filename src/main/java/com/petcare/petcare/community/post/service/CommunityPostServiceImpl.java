@@ -276,7 +276,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
     }
 
     private void savePhotos(Long postId, MultipartFile[] photos) {
-        if (postId == null || photos == null) {
+        savePhotos(postId, photos, MAX_PHOTOS);
+    }
+
+    // 2026-08-13 박유정 — 수정 시 남은 슬롯만큼만 저장
+    private void savePhotos(Long postId, MultipartFile[] photos, int maxCount) {
+        if (postId == null || photos == null || maxCount <= 0) {
             return;
         }
 
@@ -285,7 +290,7 @@ public class CommunityPostServiceImpl implements CommunityPostService {
             if (file == null || file.isEmpty()) {
                 continue;
             }
-            if (saved >= MAX_PHOTOS) {
+            if (saved >= maxCount) {
                 break;
             }
 
@@ -424,9 +429,12 @@ public class CommunityPostServiceImpl implements CommunityPostService {
      * 2026-07-23 HYJ — 게시글 수정 (본인 글만)
      * 1. 로그인 확인 → MEMBER_NO 매칭
      * 2. UPDATE TB_POST SET TITLE, BODY WHERE POST_ID AND MEMBER_NO
+     * 2026-08-13 박유정 — 3. 기존 사진 선택 삭제 + 새 사진 추가 (전체 5장上限)
      */
     @Override
-    public void updatePost(CommunityPostVO vo, MemberVO loginMember) {
+    @Transactional
+    public void updatePost(CommunityPostVO vo, MemberVO loginMember,
+                           MultipartFile[] photos, List<String> removePhotoUrls) {
         if (loginMember == null) {
             throw new IllegalStateException("LOGIN_REQUIRED");
         }
@@ -448,6 +456,26 @@ public class CommunityPostServiceImpl implements CommunityPostService {
         if (updated == 0) {
             throw new IllegalStateException("UPDATE_FAILED");
         }
+
+        // 2026-08-13 박유정 — 체크한 기존 사진 삭제
+        if (removePhotoUrls != null) {
+            List<String> currentUrls = communityPostMapper.selectFileUrlsByPostId(vo.getPostId());
+            for (String url : removePhotoUrls) {
+                if (url == null || url.isBlank()) {
+                    continue;
+                }
+                String trimmed = url.trim();
+                if (currentUrls != null && currentUrls.contains(trimmed)) {
+                    deleteStoredFile(trimmed);
+                    communityPostMapper.deleteFileByPostIdAndUrl(vo.getPostId(), trimmed);
+                }
+            }
+        }
+
+        // 2026-08-13 박유정 — 새 사진 추가 (전체 5장上限)
+        List<String> remainUrls = communityPostMapper.selectFileUrlsByPostId(vo.getPostId());
+        int remain = MAX_PHOTOS - (remainUrls == null ? 0 : remainUrls.size());
+        savePhotos(vo.getPostId(), photos, remain);
     }
 
     /**

@@ -43,4 +43,8 @@ public interface AdminBizService {
     void approveCoupon(Long couponId);
 
     void rejectCoupon(Long couponId, String rejectReason);
+
+    // 2026-08-13 박유정 — 탭별 목록 (review / published / exhausted)
+    List<BizCouponVO> getCouponListByTab(String tab, String status);
+    Map<String, Integer> getCouponTabCounts();
 }

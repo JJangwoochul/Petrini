@@ -250,14 +250,32 @@ public class AdminBizController extends AdminBaseController {
     // ── 쿠폰 승인 목록 ──
     @GetMapping("/coupon/list")
     public String couponList(HttpSession session,
-                                @RequestParam(defaultValue = "PENDING") String status,
-                                Model model) {
+                             @RequestParam(defaultValue = "review") String tab,
+                             @RequestParam(required = false) String status,
+                             Model model) {
         if (getAdmin(session) == null) return redirectToLogin();
-        List<BizCouponVO> list = adminBizService.getCouponListByStatus(status);
-        Map<String, Integer> statusCounts = adminBizService.getCouponStatusCounts();
+
+        // 2026-08-13 박유정 — review / published(ACTIVE) / exhausted(EXHAUSTED)
+        if (!"published".equals(tab) && !"exhausted".equals(tab)) {
+            tab = "review";
+        }
+
+        List<BizCouponVO> list = adminBizService.getCouponListByTab(tab, status);
+        Map<String, Integer> tabCounts = adminBizService.getCouponTabCounts();
+
+        if ("review".equals(tab)) {
+            if (status == null || status.isBlank()) {
+                status = "PENDING";
+            }
+            if (!"PENDING".equals(status) && !"REJECTED".equals(status)) {
+                status = "PENDING";
+            }
+        }
+
         model.addAttribute("list", list);
-        model.addAttribute("status", status);
-        model.addAttribute("statusCounts", statusCounts);
+        model.addAttribute("tab", tab);
+        model.addAttribute("status", status != null ? status : "PENDING");
+        model.addAttribute("tabCounts", tabCounts);
         return "admin/biz/coupon";
     }
 
@@ -271,7 +289,8 @@ public class AdminBizController extends AdminBaseController {
         try {
             adminBizService.approveCoupon(couponId);
             rttr.addFlashAttribute("successMsg", "쿠폰이 승인되었습니다.");
-            return "redirect:/admin/biz/coupon/list?status=APPROVED";
+            	
+return "redirect:/admin/biz/coupon/list?tab=published";
         } catch (IllegalStateException e) {
             if ("NOT_PENDING".equals(e.getMessage())) {
                 rttr.addFlashAttribute("errorMsg", "이미 처리된 쿠폰입니다.");
@@ -281,7 +300,7 @@ public class AdminBizController extends AdminBaseController {
         } catch (Exception e) {
             rttr.addFlashAttribute("errorMsg", "승인 처리 중 오류가 발생했습니다.");
         }
-        return "redirect:/admin/biz/coupon/list?status=PENDING";
+        return "redirect:/admin/biz/coupon/list?tab=review&status=PENDING";
     }
 
     // ── 쿠폰 반려 POST ──
@@ -295,7 +314,7 @@ public class AdminBizController extends AdminBaseController {
         try {
             adminBizService.rejectCoupon(couponId, rejectReason);
             rttr.addFlashAttribute("successMsg", "쿠폰이 반려되었습니다.");
-            return "redirect:/admin/biz/coupon/list?status=REJECTED";
+            return "redirect:/admin/biz/coupon/list?tab=review&status=REJECTED";
         } catch (IllegalArgumentException e) {
             if ("REJECT_REASON_REQUIRED".equals(e.getMessage())) {
                 rttr.addFlashAttribute("errorMsg", "반려 사유를 입력해 주세요.");
@@ -311,6 +330,7 @@ public class AdminBizController extends AdminBaseController {
         } catch (Exception e) {
             rttr.addFlashAttribute("errorMsg", "반려 처리 중 오류가 발생했습니다.");
         }
-        return "redirect:/admin/biz/coupon/list?status=PENDING";
+        	
+return "redirect:/admin/biz/coupon/list?tab=review&status=PENDING";
     }
 }

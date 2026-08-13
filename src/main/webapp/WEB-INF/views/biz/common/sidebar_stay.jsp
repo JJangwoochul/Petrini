@@ -46,6 +46,7 @@
       </svg>
       예약 관리<c:if test="${pendingReserveCount > 0}"><span class="biz-nav-badge">${pendingReserveCount}</span></c:if>
     </a>
+    <%-- 2026-08-11 박유정 — 환불 신청 메뉴·대기 배지 (승인은 관리자) --%>
     <a href="${contextPath}/biz/stay/refunds" class="biz-nav-link ${bizPage eq 'refunds' ? 'active' : ''}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>

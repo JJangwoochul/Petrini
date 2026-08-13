@@ -44,6 +44,7 @@ public class AdminSidebarAdvice {
     @Autowired
     private AdminCMSService adminCMSService;
 
+    // 2026-08-11 박유정 — 숙소 환불신청·1:1 문의 대기 건수 (AdminInquiryService)
     @Autowired
     private AdminInquiryService adminInquiryService;
 
@@ -129,6 +130,7 @@ public class AdminSidebarAdvice {
         }
     }
 
+    // 2026-08-11 박유정 — sidebar 숙소 환불신청 메뉴 배지 (WAIT 건수)
     @ModelAttribute("pendingStayRefundCount")
     public int pendingStayRefundCount(HttpSession session) {
         MemberVO m = (MemberVO) session.getAttribute("memberInfo");
@@ -142,6 +144,7 @@ public class AdminSidebarAdvice {
         }
     }
 
+    // 2026-08-11 박유정 — sidebar 1:1 문의 메뉴 배지 (WAIT 건수)
     @ModelAttribute("pendingGeneralInquiryCount")
     public int pendingGeneralInquiryCount(HttpSession session) {
         MemberVO m = (MemberVO) session.getAttribute("memberInfo");
