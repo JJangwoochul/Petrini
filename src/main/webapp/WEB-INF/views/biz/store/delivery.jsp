@@ -70,7 +70,8 @@
     <div class="dlv-table-head">
       <%-- 지윤 26.07.20 수정: id="totalCount">0</span> (JS가 채우던 것) -> ${deliveryList.size()} 서버값 바로 출력 --%>
       <div class="biz-card-head" style="padding:20px 0 12px"><span>배송 목록</span><small>총 ${deliveryList.size()}건</small></div>
-      <button type="button" class="biz-btn-primary" onclick="openBulk()">+ 송장 일괄등록</button>
+      <!--HYJ 26.08.13 일괄등록 삭제-->
+      <%-- <button type="button" class="biz-btn-primary" onclick="openBulk()">+ 송장 일괄등록</button> --%>
     </div>
     <table class="biz-table">
       <thead><tr><th>주문번호</th><th>구매자</th><th>택배사</th><th>송장번호</th><th>상태</th><th>발송일</th><th>관리</th></tr></thead>

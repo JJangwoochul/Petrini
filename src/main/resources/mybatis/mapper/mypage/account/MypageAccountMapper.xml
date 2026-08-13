@@ -13,12 +13,14 @@
         UPDATE TB_MEMBER SET STATUS_CD = 'WITHDRAWN' WHERE MEMBER_NO = #{memberNo}
     </update>
 
+    <!--HYJ 26.08.13 탈퇴일자 누락-->
     <insert id="insertMemberWithdraw" parameterType="long">
         INSERT INTO TB_MEMBER_WITHDRAW (
             MEMBER_NO,
             MEMBER_ID,
             MEMBER_NAME,
-            EMAIL
+            EMAIL,
+            WITHDRAW_DATE
         )
         SELECT
             MEMBER_NO,
@@ -26,7 +28,8 @@
             MEMBER_NAME,
             EMAIL
         FROM TB_MEMBER
-        WHERE MEMBER_NO = #{memberNo}
+        WHERE MEMBER_NO = #{memberNo},
+        SYSDATE
     </insert>
 
   <!-- 2026-07-28 박유정 — 회원정보 수정 화면용 프로필 1건 -->

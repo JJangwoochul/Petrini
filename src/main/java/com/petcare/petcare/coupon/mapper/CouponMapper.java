@@ -33,8 +33,10 @@ public interface CouponMapper {
                           @Param("couponId") Long couponId);
 
     // 쿠폰 받기 (TB_MEMBER_COUPON INSERT)
+    //HYJ 26.08.13 만료일자 추가
     int insertMemberCoupon(@Param("memberNo") Long memberNo,
-                           @Param("couponId") Long couponId);
+                           @Param("couponId") Long couponId,
+                           @Param("useEndDate") String useEndDate);
 
     // TB_COUPON 발급수량·예산 갱신
     int updateCouponIssued(@Param("couponId") Long couponId,
@@ -69,4 +71,7 @@ int markMemberCouponUsed(@Param("memberCouponId") Long memberCouponId);
 
     // 2026/08/07 장우철 — 숙소 취소/환불 시 쿠폰 복구 (USED -> UNUSED)
     int restoreMemberCouponUsed(@Param("memberCouponId") Long memberCouponId);
+
+    // HYJ 26.08.13 기간 만료 쿠폰 일괄 EXPIRED 처리 (스케줄러용)
+    int expireOverdueCoupons();
 }

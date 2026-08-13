@@ -86,7 +86,7 @@ public void claimCoupon(Long memberNo, Long couponId) {
         }
 
         // 3) TB_MEMBER_COUPON INSERT
-        eventCouponMapper.insertMemberCoupon(memberNo, couponId);
+        eventCouponMapper.insertMemberCoupon(memberNo, couponId, coupon.getUseEndDate());
 
         // 4) TB_COUPON 발급수량·예산 갱신
         // 지윤 26.08.11 수정: RATE 쿠폰은 discountValue(%)가 아니라 maxDiscountAmt(원)을 예산에 누적해야

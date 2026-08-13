@@ -114,16 +114,19 @@ END AS TARGET_ID,
   </select>
 
   <!-- 쿠폰 받기 (TB_MEMBER_COUPON INSERT) -->
+  <!--HYJ 26.08.13 만료일자 추가-->
   <insert id="insertMemberCoupon">
     INSERT INTO TB_MEMBER_COUPON (
         MEMBER_COUPON_ID,
         MEMBER_NO,
+        USE_END_DATE,
         COUPON_ID,
         STATUS_CD,
         REG_DATE
     ) VALUES (
         SEQ_MEMBER_COUPON.NEXTVAL,
         #{memberNo},
+        #{useEndDate},
         #{couponId},
         'UNUSED',
         TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
@@ -365,5 +368,13 @@ END AS TARGET_ID,
        AND STATUS_CD = 'USED'
   </update>
 
+  <!-- HYJ 26.08.13 기간 만료 쿠폰 자동 EXPIRED 처리 (스케줄러용) -->
+  <update id="expireOverdueCoupons">
+      UPDATE TB_MEMBER_COUPON
+         SET STATUS_CD = 'EXPIRED'
+       WHERE STATUS_CD = 'UNUSED'
+         AND USE_END_DATE IS NOT NULL
+         AND TO_DATE(USE_END_DATE) &lt; SYSDATE
+  </update>
 </mapper>
 
