@@ -78,7 +78,7 @@
            이전/다음 상품의 bizNo와 비교해서 그룹의 시작/끝을 판단함 --%>
       <c:forEach var="item" items="${cartItems}" varStatus="vs">
         <c:if test="${vs.first || item.bizNo != cartItems[vs.index-1].bizNo}">
-          <div class="cart-seller-head" data-biz-no="${item.bizNo}">🏪 ${item.bizName}</div>
+          <div class="cart-seller-head" data-biz-no="${item.bizNo}"> ${item.bizName}</div>
         </c:if>
 
         <%-- 지윤 26.07.30 추가: 로컬 업로드 이미지는 /upload/ 접두사 필요, 외부(목업) URL은 그대로 (list.jsp와 동일 패턴) --%>
@@ -97,10 +97,18 @@
               </c:choose>
             </div>
           </div>
-          <div class="cart-qty-wrap"><button>−</button><input type="number" value="${item.qty}" readonly><button>+</button></div>
+          <div class="cart-qty-wrap">
+            <button >−</button>
+            <!--HYJ 26.08.16-->
+            <input type="number" id="qty" min="1" value="${item.qty}" data-stock="${item.stockQty}" data-option-id="${item.optionId}" readonly>
+            <button >+</button>
+          </div>
           <div class="cart-price"><fmt:formatNumber value="${item.price * item.qty}" pattern="#,###"/>원</div>
           <button class="cart-del">×</button>
         </div>
+        <!--HYJ 26.08.16-->
+        <div id="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
+        <div id="qtyLimitMsg" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;"></div>
 
         <c:if test="${vs.last || item.bizNo != cartItems[vs.index+1].bizNo}">
           <div class="cart-seller-summary" data-biz-no="${item.bizNo}">
@@ -186,6 +194,8 @@
       var val = parseInt(input.value, 10);
       var isPlus = this.textContent.trim() === '+';
       val = isPlus ? val + 1 : Math.max(1, val - 1);
+      //HYJ 26.08.16 재고확인 추가
+      val = applyQtyLimit(val);
       input.value = val;
       recalc();
       //HYJ 26.08.05
@@ -298,5 +308,33 @@
   });
 
   recalc();
+
+  //HYJ 26.08.16 재고확인
+  function applyQtyLimit(v) {
+    hideQtyMessages();
+    const stock = getSelectedStock();
+
+    if (v < 1) {
+      v = 1;
+      document.getElementById('qtyLimitMsg').textContent = '1개 이상부터 구매할 수 있는 상품입니다.';
+      document.getElementById('qtyLimitMsg').style.display = 'block';
+    } else if (v > stock) {
+      v = stock;
+      document.getElementById('stockWarning').textContent = '재고 ' + stock + '개까지만 구매할 수 있습니다.';
+      document.getElementById('stockWarning').style.display = 'block';
+    }
+    return v;
+  }
+
+  function hideQtyMessages() {
+    document.getElementById('stockWarning').style.display = 'none';
+    document.getElementById('qtyLimitMsg').style.display = 'none';
+  }
+
+  function getSelectedStock() {
+    const stock = document.getElementById('qty');
+
+    return parseInt(stock.dataset.stock) || 0;
+  }
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

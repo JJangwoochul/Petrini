@@ -198,4 +198,7 @@ Long selectNextOrderId();
 
     //지윤 26.07.21 추가: 본인이 작성한 상품 리뷰 삭제 (삭제 row 수)
     int deleteProductReview(@Param("reviewId") Long reviewId, @Param("memberNo") Long memberNo);
+
+    // HYJ 26.08.13 옵션 재고를 조회하면서 행 잠금 (SELECT FOR UPDATE)
+    Integer selectOptionStockForUpdate(@Param("optionId") Long optionId);
 }

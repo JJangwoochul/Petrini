@@ -111,6 +111,7 @@ public class StayServiceImpl implements StayService {
     // HYJ 26.07.20 예약 생성 (비관적 락 + 가용성 검증)
     // 2026/08/11 장우철 — PET_CNT·PET_FEE(추가 마리×박) 반영
     @Override
+    @Transactional  //HYJ 26.08.13 누락되있어서 추가
     public Long createStayReservation(ReservationVO vo) {
         // 2026-08-05 박유정 — PET_ID NOT NULL 제약 (반려동물 미선택 시 INSERT 방지)
         if (vo.getPetId() == null) {

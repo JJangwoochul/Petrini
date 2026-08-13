@@ -746,8 +746,9 @@ return json;
             opt.setOptionColor(optionColor != null && optionColor.length > i ? optionColor[i] : null);
             opt.setOptionSize(optionSize[i]);
 
-            opt.setAddPrice(addPrice != null && addPrice.length > i ? addPrice[i] : 0);
-            opt.setStockQty(stockQty != null && stockQty.length > i ? stockQty[i] : 0);
+            //HYJ 26.08.13 null 체크 추가
+            opt.setAddPrice(addPrice != null && addPrice.length > i && addPrice[i] != null ? addPrice[i] : 0);
+            opt.setStockQty(stockQty != null && stockQty.length > i && stockQty[i] != null ? stockQty[i] : 0);
             options.add(opt);
         }
         return options;
