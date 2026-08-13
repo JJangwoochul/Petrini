@@ -278,6 +278,14 @@ public class BizStayServiceImpl implements BizStayService {
 
     @Override
     public void applyCoupon(Long bizNo, BizCouponVO vo) {
+
+         // 2026-08-13 박유정 — 빈 숫자칸 null 처리
+         if (vo.getMinOrderAmt() == null) {
+             vo.setMinOrderAmt(0);
+           }
+          if ("FIXED".equals(vo.getCouponType())) {
+              vo.setMaxDiscountAmt(null);
+          }
         // 쿠폰 코드 자동 생성 (CPN- + UUID 앞 8자리)
         String code = "CPN-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         vo.setCouponCode(code);

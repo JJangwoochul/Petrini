@@ -49,7 +49,7 @@ public class StayFullCancelService {
     }
 
     /**
-     * @param skipCancelNotification true 이면 취소 알림 생략 (관리자 환불승인 시 별도 환불 알림 사용)
+     * 2026-08-11 박유정 — skipCancelNotification: 관리자 환불승인 시 취소 알림 생략(별도 환불 알림)
      */
     @Transactional
     public void cancelWithFullRefund(Long resvId, Long stayId, String cancelReason, String actorLabel,

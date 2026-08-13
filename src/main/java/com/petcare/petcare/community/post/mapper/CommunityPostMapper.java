@@ -103,4 +103,8 @@ public interface CommunityPostMapper {
 
     // 2026-07-23 HYJ — DELETED 게시글 물리 삭제 (스케줄러용)
     int hardDeleteExpiredPost(long postId);
+
+    // 2026-08-13 박유정 — 수정 화면에서 선택 삭제
+    int deleteFileByPostIdAndUrl(@Param("postId") long postId,
+                                 @Param("fileUrl") String fileUrl);
 }

@@ -244,7 +244,9 @@ public String payment(@RequestParam(required = false) Long productId,
     String couponName = null;
     String couponBizNoStr = null;
     if (couponId != null && couponId > 0) {
-        for (CouponVO c : storeShopService.getMemberCoupons(memberNo)) {
+        // 2026-08-13 박유정 — 결제 시에도 주문 사업자(BIZ_NO)에 해당하는 쿠폰만 재검증
+        java.util.List<Long> orderBizNos = new java.util.ArrayList<>(groupSubtotals.keySet());
+        for (CouponVO c : storeShopService.getMemberCouponsForOrder(memberNo, orderBizNos)) {
             if (c.getMemberCouponId().equals(couponId)) {
                 Long couponBizNo = c.getBizNo() != null ? Long.valueOf(c.getBizNo()) : null;
                 int couponTargetAmt = groupSubtotals.getOrDefault(couponBizNo, 0);
@@ -559,24 +561,25 @@ if (defaultAddr != null) {
     model.addAttribute("memberAddr2", memberInfo != null && memberInfo.getAddr2() != null ? memberInfo.getAddr2() : "");
 }
 
-    // 바로구매로 들어온 경우: 상품 1개만 주문서에 넘김
+    // 바로구매 / 장바구니 / 결제 복귀 — orderItems 변수로 통일
+    java.util.List<CartItemVO> orderItems = null;
     if (productId != null) {
-        model.addAttribute("orderItems",
-                storeShopService.getDirectOrderItem(productId, optionId, qty));
+        orderItems = storeShopService.getDirectOrderItem(productId, optionId, qty);
+        model.addAttribute("orderItems", orderItems);
     }
-    // 장바구니에서 주문하기로 들어온 경우: 체크된 항목들만 주문서에 넘김
     else if (cartItemIds != null && !cartItemIds.isEmpty()) {
-        model.addAttribute("orderItems",
-                storeShopService.getCartOrderItems(cartItemIds));
+        orderItems = storeShopService.getCartOrderItems(cartItemIds);
+        model.addAttribute("orderItems", orderItems);
     }
-    // 2026/08/06 장우철: 결제 화면에서 돌아온 경우 — 세션 orderTemp로 상품·배송지 복원
     else {
+        // 2026/08/06 장우철: 결제 화면에서 돌아온 경우 — 세션 orderTemp로 복원
         OrderTempVO orderTemp = (OrderTempVO) session.getAttribute("orderTemp");
         if (orderTemp != null
                 && memberNo.equals(orderTemp.getMemberNo())
                 && orderTemp.getOrderItems() != null
                 && !orderTemp.getOrderItems().isEmpty()) {
-            model.addAttribute("orderItems", orderTemp.getOrderItems());
+            orderItems = orderTemp.getOrderItems();
+            model.addAttribute("orderItems", orderItems);
             if (orderTemp.getRecvName() != null) {
                 model.addAttribute("memberRecvName", orderTemp.getRecvName());
             }
@@ -601,8 +604,17 @@ if (defaultAddr != null) {
         }
     }
 
-    // 기존 쿠폰 조회는 그대로 유지
-    model.addAttribute("memberCoupons", storeShopService.getMemberCoupons(memberNo));
+    // 2026-08-13 박유정 — 주문 상품 사업자(BIZ_NO)에 해당하는 쿠폰만 노출
+    java.util.List<Long> orderBizNos = new java.util.ArrayList<>();
+    if (orderItems != null) {
+        for (CartItemVO item : orderItems) {
+            if (item.getBizNo() != null && !orderBizNos.contains(item.getBizNo())) {
+                orderBizNos.add(item.getBizNo());
+            }
+        }
+    }
+    model.addAttribute("memberCoupons",
+            storeShopService.getMemberCouponsForOrder(memberNo, orderBizNos));
     return "store/order";
 }
 

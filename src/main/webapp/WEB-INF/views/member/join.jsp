@@ -377,8 +377,9 @@
                     <line x1="3" y1="18" x2="3.01" y2="18"/>
                   </svg>
                 </span>
-                <input type="text" id="petBreed" name="petBreed"
-                       class="form-input" placeholder="예) 말티즈, 스코티시폴드">
+                  <select id="petBreed" name="petBreed" class="form-input">
+                   <option value="">종류를 먼저 선택하세요</option>
+                  </select>
               </div>
             </div>
             <div class="form-field">
@@ -531,6 +532,9 @@
 <%-- 2026/07/27 장우철 — 토스 빌링 SDK + 카드등록 Ajax --%>
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script src="${contextPath}/resources/js/billing-card.js"></script>
+<script src="${contextPath}/resources/js/billing-card.js"></script>
+<%-- 2026-08-13 박유정 — 회원가입·마이페이지 공통 품종 목록 --%>
+<script src="${contextPath}/resources/js/pet-breeds.js"></script>
 <script>
 (function () {
 
@@ -1177,11 +1181,14 @@
   ────────────────────────────── */
 
   /* 동물 종류 버튼 */
+  /* 2026-08-13 박유정 — 종류 선택 시 품종 select 갱신 (pet-breeds.js) */
   document.querySelectorAll('.pet-type-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.pet-type-btn').forEach(function (b) { b.classList.remove('selected'); });
       this.classList.add('selected');
-      document.getElementById('petType').value = this.dataset.type;
+      var kind = this.dataset.type;
+      document.getElementById('petType').value = kind;
+      updatePetBreedSelect(null, kind, 'petBreed', null);
     });
   });
 
@@ -1291,6 +1298,20 @@
 
   /* 2026/07/07 장우철 — 가입 완료: 입력한 반려동물 정보가 있으면 함께 등록 */
   document.getElementById('btnSubmit').addEventListener('click', function () {
+    var petName = document.getElementById('petName').value.trim();
+    /* 2026-08-13 박유정 — 펫 정보 입력 시 종류·품종 필수 (마이페이지와 동일) */
+    if (petName) {
+      var petType = document.getElementById('petType').value;
+      var petBreed = document.getElementById('petBreed').value;
+      if (!petType) {
+        alert('반려동물 종류를 선택해 주세요.');
+        return;
+      }
+      if (!petBreed) {
+        alert('품종을 선택해 주세요.');
+        return;
+      }
+    }
     submitJoin(false);
   });
 

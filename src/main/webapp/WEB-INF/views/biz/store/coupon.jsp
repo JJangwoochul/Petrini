@@ -7,6 +7,7 @@
   2. 신규 신청 모달 → POST /biz/store/coupon/apply (PENDING)
   3. PENDING 쿠폰 수정/삭제 가능
   4. 관리자 승인 후 사용자 이벤트/쿠폰 게시판 노출
+  2026-08-13 박유정 — validateForm 빈 숫자칸 제거 + Controller @InitBinder (Integer 바인딩 오류 방지)
 
   [model]
   - couponList, msg, errorMsg
@@ -452,12 +453,14 @@ function toggleDiscountLabel() {
         input.max = 100;
         maxRow.style.display = '';
         maxInput.setAttribute('required', 'required');
+        maxInput.setAttribute('name', 'maxDiscountAmt');
     } else {
         label.innerHTML = '할인 금액 (원) <span style="color:#DC2626">*</span>';
         input.placeholder = '0';
         input.removeAttribute('max');
         maxRow.style.display = 'none';
         maxInput.removeAttribute('required');
+        maxInput.removeAttribute('name');
         maxInput.value = '';
     }
     calcTotalBudget();
@@ -485,29 +488,38 @@ function validateForm() {
         alert('종료일이 시작일보다 빠를 수 없습니다.');
         return false;
     }
-    // 지윤 26.08.11 추가: 정률인데 최대할인금액 비어있으면 막기
     if (document.getElementById('couponType').value === 'RATE'
         && !document.getElementById('maxDiscountAmt').value) {
         alert('최대 할인 금액을 입력해주세요.');
         return false;
     }
-    calcTotalBudget(); // 제출 직전 최종 재계산(안전장치)
+    // 2026-08-13 박유정 — 빈 숫자칸 "" 전송 방지 (Integer 바인딩 오류)
+    var minOrder = document.getElementById('minOrderAmt');
+    if (!minOrder.value) {
+        minOrder.removeAttribute('name');
+    } else {
+        minOrder.setAttribute('name', 'minOrderAmt');
+    }
+    var maxInput = document.getElementById('maxDiscountAmt');
+    if (document.getElementById('couponType').value === 'RATE') {
+        maxInput.setAttribute('name', 'maxDiscountAmt');
+    } else {
+        maxInput.removeAttribute('name');
+    }
+    calcTotalBudget();
     document.getElementById('useStartDate').value = startInput.value.replace(/-/g, '');
     document.getElementById('useEndDate').value   = endInput.value.replace(/-/g, '');
     return true;
 }
-
-// 모달 외부 클릭 닫기
 document.getElementById('applyModal').addEventListener('click', function(e) {
     if (e.target === this) closeApplyModal();
 });
-
-// 숫자칸 타이핑 중 "010"처럼 앞자리 0이 안 지워지는 문제 방지
 ['discountValue', 'maxDiscountAmt', 'totalQty', 'minOrderAmt'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', function() {
         this.value = this.value.replace(/^0+(?=\d)/, '');
     });
 });
 </script>
+
 
 <%@ include file="/WEB-INF/views/biz/common/footer.jsp" %>

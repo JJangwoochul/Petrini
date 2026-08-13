@@ -5,6 +5,7 @@
   [model]
   - availableCoupons : 받을 수 있는 쿠폰 (APPROVED + ACTIVE + 기간 내)
     └ alreadyClaimed : 로그인 사용자가 이미 받았으면 true
+  2026-08-13 박유정 — 소진(EXHAUSTED) 쿠폰 「쿠폰 소진」 표시, 다운 버튼 제거
 --%>
 <%@ taglib prefix="c"   uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
@@ -113,6 +114,7 @@
           지윤 26.08.10 수정
           - 조기마감(INACTIVE), 기간만료는 쿼리 단계에서 이미 제외되어 여기 안 옴
           - isExhausted : 수량 또는 예산 소진 → 목록엔 남고 버튼은 눌리게 둠(클릭 시 서버가 소진 응답)
+          2026-08-13 박유정 — isExhausted 시 「쿠폰 소진」 표시, 다운 버튼 제거
         --%>
         <c:set var="isExhausted" value="${cpn.statusCd eq 'EXHAUSTED'
                                           || cpn.issuedQty >= cpn.totalQty
@@ -179,16 +181,18 @@
 
 </c:choose>
             </div>
-            <c:choose>
-              <c:when test="${cpn.alreadyClaimed}">
-                <button class="cp-ticket-btn claimed" disabled>다운 완료</button>
-              </c:when>
-              <%-- 지윤 26.08.10: 소진(isExhausted)도 버튼은 그대로 둠 →
-                   claimCoupon() 호출 시 서버가 COUPON_EXHAUSTED로 막고 alert로 안내 --%>
-              <c:otherwise>
-                <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">다운</button>
-              </c:otherwise>
-            </c:choose>
+                <c:choose>
+                  <c:when test="${cpn.alreadyClaimed}">
+                   <button class="cp-ticket-btn claimed" disabled>다운 완료</button>
+                  </c:when>
+                  <%-- 2026-08-13 박유정 — 소진 쿠폰: 다운 버튼 없음 --%>
+                 <c:when test="${isExhausted}">
+                    <span class="cp-ticket-btn claimed">쿠폰 소진</span>
+                  </c:when>
+                  <c:otherwise>
+                   <button class="cp-ticket-btn" onclick="claimCoupon(this, ${cpn.couponId})">다운</button>
+                  </c:otherwise>
+                </c:choose>
           </div>
         </div>
       </c:forEach>

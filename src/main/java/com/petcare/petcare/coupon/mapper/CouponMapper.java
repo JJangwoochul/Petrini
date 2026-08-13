@@ -60,6 +60,10 @@ public interface CouponMapper {
 List<CouponVO> selectMemberCouponsByBiz(@Param("memberNo") Long memberNo,
                                         @Param("bizNo") Long bizNo);
 
+// 2026-08-13 박유정 — 쇼핑 주문서: 장바구니 사업자(BIZ_NO)에 해당하는 보유 쿠폰만
+List<CouponVO> selectMemberCouponsByBizNos(@Param("memberNo") Long memberNo,
+                                           @Param("bizNos") List<Long> bizNos);
+
 // 지윤 26.08.07: 결제 확정 시 서버 재검증용 — 본인 소유 + UNUSED 쿠폰 1건 조회
 CouponVO selectMemberCouponForUse(@Param("memberCouponId") Long memberCouponId,
                                   @Param("memberNo") Long memberNo);

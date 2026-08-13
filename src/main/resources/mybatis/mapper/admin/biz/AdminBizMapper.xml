@@ -166,6 +166,46 @@
      WHERE APPROVAL_STATUS = #{approvalStatus}
   </select>
 
+    <!-- 2026-08-13 박유정 — APPROVAL_STATUS + STATUS_CD 필터 (게시중/소진 분리) -->
+  <select id="selectCouponListFiltered"
+          resultType="com.petcare.petcare.biz.vo.BizCouponVO">
+    SELECT C.COUPON_ID,
+           C.COUPON_CODE,
+           C.COUPON_NAME,
+           C.COUPON_TYPE,
+           C.DISCOUNT_VALUE,
+           C.MIN_ORDER_AMT,
+           C.TOTAL_BUDGET,
+           C.ISSUED_BUDGET,
+           C.TOTAL_QTY,
+           C.ISSUED_QTY,
+           C.USE_START_DATE,
+           C.USE_END_DATE,
+           C.BIZ_MEMBER_NO,
+           C.APPROVAL_STATUS,
+           C.REJECT_REASON,
+           C.APPROVAL_DATE,
+           C.STATUS_CD,
+           C.REG_DATE,
+           B.BIZ_NAME
+      FROM TB_COUPON C
+      LEFT JOIN TB_BUSINESS B ON B.BIZ_NO = C.BIZ_MEMBER_NO
+     WHERE C.APPROVAL_STATUS = #{approvalStatus}
+       <if test="statusCd != null and statusCd != ''">
+       AND C.STATUS_CD = #{statusCd}
+       </if>
+     ORDER BY C.REG_DATE DESC
+  </select>
+
+  <select id="countCouponFiltered" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_COUPON
+     WHERE APPROVAL_STATUS = #{approvalStatus}
+       <if test="statusCd != null and statusCd != ''">
+       AND STATUS_CD = #{statusCd}
+       </if>
+  </select>
+
   <!-- 쿠폰 상세 -->
   <select id="selectCouponById"
           parameterType="long"

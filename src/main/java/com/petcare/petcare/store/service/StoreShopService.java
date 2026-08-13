@@ -74,6 +74,9 @@ int getCartItemCount(Long memberNo);
 //지윤 26.07.09 회원 보유쿠폰 목록 조회
 List<CouponVO> getMemberCoupons(Long memberNo);
 
+// 2026-08-13 박유정 — 주문 상품 사업자(BIZ_NO)에 해당하는 보유 쿠폰만
+List<CouponVO> getMemberCouponsForOrder(Long memberNo, java.util.List<Long> bizNos);
+
 //지윤 26.07.09 바로구매 클릭 시 해당 상품 주문페이지 이동
 List<CartItemVO> getDirectOrderItem(Long productId, Long optionId, int qty);
 

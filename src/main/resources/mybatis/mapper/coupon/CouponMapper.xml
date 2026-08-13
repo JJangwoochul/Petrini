@@ -21,6 +21,8 @@
            C.MIN_ORDER_AMT,
            C.TOTAL_QTY,
            C.ISSUED_QTY,
+           C.TOTAL_BUDGET,    <!-- 2026-08-13 박유정 — 회원 목록 예산 소진 표시용 -->
+           C.ISSUED_BUDGET,
            C.USE_START_DATE,
            C.USE_END_DATE,
            C.STATUS_CD,
@@ -136,22 +138,23 @@ END AS TARGET_ID,
        그 순간 소진되면 STATUS_CD를 EXHAUSTED로 바로 전환.
        0건 갱신되면(=동시요청으로 이미 소진) 서비스단에서 롤백 처리 -->
   <!-- 지윤 26.08.10 수정: 예산 소진도 EXHAUSTED로 전환되도록 CASE 조건 추가 -->
+  <!-- 2026-08-13 박유정 — ISSUED_QTY/ISSUED_BUDGET NULL이면 Oracle에서 NULL+N=NULL → 발급 UPDATE 0건 방지 -->
   <update id="updateCouponIssued">
     UPDATE TB_COUPON
-       SET ISSUED_QTY    = ISSUED_QTY + 1,
-           ISSUED_BUDGET = ISSUED_BUDGET + #{discountValue},
+       SET ISSUED_QTY    = NVL(ISSUED_QTY, 0) + 1,
+           ISSUED_BUDGET = NVL(ISSUED_BUDGET, 0) + #{discountValue},
            STATUS_CD     = CASE
-                                WHEN ISSUED_QTY + 1 &gt;= TOTAL_QTY THEN 'EXHAUSTED'
+                                WHEN NVL(ISSUED_QTY, 0) + 1 &gt;= TOTAL_QTY THEN 'EXHAUSTED'
                                 WHEN TOTAL_BUDGET IS NOT NULL
-                                     AND (TOTAL_BUDGET - (ISSUED_BUDGET + #{discountValue})) &lt; #{discountValue}
+                                     AND (TOTAL_BUDGET - (NVL(ISSUED_BUDGET, 0) + #{discountValue})) &lt; #{discountValue}
                                      THEN 'EXHAUSTED'
                                 ELSE STATUS_CD
                             END,
            MOD_DATE      = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
      WHERE COUPON_ID = #{couponId}
        AND STATUS_CD = 'ACTIVE'
-       AND ISSUED_QTY &lt; TOTAL_QTY
-       AND (TOTAL_BUDGET IS NULL OR ISSUED_BUDGET + #{discountValue} &lt;= TOTAL_BUDGET)
+       AND NVL(ISSUED_QTY, 0) &lt; TOTAL_QTY
+       AND (TOTAL_BUDGET IS NULL OR NVL(ISSUED_BUDGET, 0) + #{discountValue} &lt;= TOTAL_BUDGET)
   </update>
 
     <!-- 쿠폰 상세 1건 (발급 가능 여부 검증) -->
@@ -326,6 +329,29 @@ END AS TARGET_ID,
        AND C.USE_END_DATE &gt;= TO_CHAR(SYSDATE, 'YYYYMMDD')
      ORDER BY MC.MEMBER_COUPON_ID
   </select>
+
+<!-- 2026-08-13 박유정 — 쇼핑 주문서: 주문 상품 사업자에 맞는 보유 쿠폰만 -->
+<select id="selectMemberCouponsByBizNos"
+        resultType="com.petcare.petcare.store.vo.CouponVO">
+  SELECT MC.MEMBER_COUPON_ID,
+         C.COUPON_ID,
+         C.COUPON_NAME,
+         C.COUPON_TYPE,
+         C.DISCOUNT_VALUE,
+         C.MAX_DISCOUNT_AMT,
+         C.MIN_ORDER_AMT,
+         TO_CHAR(NVL(C.BIZ_NO, C.BIZ_MEMBER_NO)) AS BIZ_NO
+    FROM TB_MEMBER_COUPON MC
+    JOIN TB_COUPON C ON C.COUPON_ID = MC.COUPON_ID
+   WHERE MC.MEMBER_NO = #{memberNo}
+     AND MC.STATUS_CD = 'UNUSED'
+     AND C.USE_END_DATE &gt;= TO_CHAR(SYSDATE, 'YYYYMMDD')
+     AND NVL(C.BIZ_NO, C.BIZ_MEMBER_NO) IN
+     <foreach collection="bizNos" item="bizNo" open="(" separator="," close=")">
+       #{bizNo}
+     </foreach>
+   ORDER BY MC.MEMBER_COUPON_ID
+</select>
 
   <!--
     지윤 26.08.07

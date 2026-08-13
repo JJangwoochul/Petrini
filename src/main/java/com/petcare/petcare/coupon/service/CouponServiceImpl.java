@@ -72,9 +72,12 @@ public void claimCoupon(Long memberNo, Long couponId) {
         }
 
         // 지윤 26.08.07: 수량 소진된 쿠폰은 발급 불가 (사전 체크, 최종 확정은 UPDATE에서)
-        if ("EXHAUSTED".equals(coupon.getStatusCd())
-                || (coupon.getTotalQty() != null && coupon.getIssuedQty() != null
-                    && coupon.getIssuedQty() >= coupon.getTotalQty())) {
+        // 2026-08-13 박유정 — issuedQty NULL을 0으로 간주
+        if ("EXHAUSTED".equals(coupon.getStatusCd())) {
+            throw new IllegalStateException("COUPON_EXHAUSTED");
+        }
+        int issuedQty = coupon.getIssuedQty() != null ? coupon.getIssuedQty() : 0;
+        if (coupon.getTotalQty() != null && issuedQty >= coupon.getTotalQty()) {
             throw new IllegalStateException("COUPON_EXHAUSTED");
         }
 
@@ -85,16 +88,26 @@ public void claimCoupon(Long memberNo, Long couponId) {
             throw new IllegalStateException("COUPON_EXPIRED");
         }
 
+        // 2026-08-13 박유정 — INSERT 전 예산·RATE 설정 사전 검증
+        int budgetUnit = "RATE".equals(coupon.getCouponType())
+                ? (coupon.getMaxDiscountAmt() != null ? coupon.getMaxDiscountAmt() : 0)
+                : (coupon.getDiscountValue() != null ? coupon.getDiscountValue() : 0);
+
+        if ("RATE".equals(coupon.getCouponType()) && budgetUnit <= 0) {
+            throw new IllegalStateException("INVALID_COUPON_CONFIG");
+        }
+
+        if (coupon.getTotalBudget() != null && coupon.getTotalBudget() > 0) {
+            int issuedBudget = coupon.getIssuedBudget() != null ? coupon.getIssuedBudget() : 0;
+            if (issuedBudget + budgetUnit > coupon.getTotalBudget()) {
+                throw new IllegalStateException("BUDGET_EXHAUSTED");
+            }
+        }
+        
         // 3) TB_MEMBER_COUPON INSERT
         eventCouponMapper.insertMemberCoupon(memberNo, couponId);
 
         // 4) TB_COUPON 발급수량·예산 갱신
-        // 지윤 26.08.11 수정: RATE 쿠폰은 discountValue(%)가 아니라 maxDiscountAmt(원)을 예산에 누적해야
-        // TOTAL_BUDGET(=maxDiscountAmt × 수량)과 실제 소진 체크가 맞아떨어짐
-        int budgetUnit = "RATE".equals(coupon.getCouponType())
-        ? (coupon.getMaxDiscountAmt() != null ? coupon.getMaxDiscountAmt() : 0)
-        : coupon.getDiscountValue();
-
         // 지윤 26.08.07: 동시요청으로 그 사이 소진됐으면 0건 갱신 → 트랜잭션 롤백(2번 INSERT도 취소)
         int updated = eventCouponMapper.updateCouponIssued(couponId, budgetUnit);
         if (updated == 0) {

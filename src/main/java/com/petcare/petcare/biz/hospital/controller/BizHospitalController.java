@@ -53,6 +53,10 @@ import com.petcare.petcare.member.vo.MemberVO;
 
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.beans.propertyeditors.CustomNumberEditor;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+
 @Controller("bizHospitalController")
 @RequestMapping("/biz/hospital")
 public class BizHospitalController extends BizBaseController {
@@ -1044,5 +1048,11 @@ public String hospitalTalentClose(@RequestParam long talentId,
         rttr.addFlashAttribute("errorMsg", "마감할 수 없습니다. (본인 글이 아니거나 이미 마감됨)");
     }
     return "redirect:/biz/hospital/talent";
+}
+
+// 2026-08-13 박유정 — 빈 숫자칸("") → null (Integer 바인딩 오류 방지)
+@InitBinder
+public void initBinder(WebDataBinder binder) {
+    binder.registerCustomEditor(Integer.class, new CustomNumberEditor(Integer.class, true));
 }
 }

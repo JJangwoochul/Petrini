@@ -1,15 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%--
-  역할: 관리자 쿠폰 승인 관리 (admin/coupon/list)
-
-  [화면 흐름]
-  1. GET /admin/coupon/list?status=PENDING|APPROVED|REJECTED
-  2. ${list} + ${statusCounts} — TB_COUPON 상태별 목록
-  3. PENDING 카드 → POST /admin/coupon/approve | /reject
-  4. APPROVED 승인 시 사용자 이벤트/쿠폰 게시판 노출
+  역할: 관리자 쿠폰 승인 관리 (/admin/biz/coupon/list)
 
   [model]
-  - list, status, statusCounts, successMsg, errorMsg
+  - list, tab, status, tabCounts, successMsg, errorMsg
+  1. GET ?tab=review&status=PENDING|REJECTED
+  2. GET ?tab=published (게시중 ACTIVE)
+  3. GET ?tab=exhausted (예산·수량 소진 EXHAUSTED)
+  2026-08-13 박유정 — 3탭 분리 (승인대기 / 게시중 / 소진)
 --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
@@ -35,7 +33,7 @@
     .cpn-tab:link, .cpn-tab:visited { color:#999; text-decoration:none; }
     .cpn-tab:hover { color:#3B5BDB; }
     .cpn-tab.on { color:#3B5BDB; border-bottom-color:#3B5BDB; font-weight:700; }
-    
+
     /* ── 쿠폰 카드 ── */
     .cpn-card {
         background:#fff; border:1px solid #E4E6ED;
@@ -55,7 +53,7 @@
     .cpn-biz-name { font-size:15px; font-weight:800; color:#1A1A2E; }
     .cpn-biz-sub  { font-size:12px; color:#999; margin-top:2px; }
     .cpn-date     { margin-left:auto; font-size:12px; color:#999; flex-shrink:0; }
-    
+
     .cpn-body {
         display:grid; grid-template-columns:repeat(4, 1fr);
         border-bottom:1px solid #E4E6ED;
@@ -64,7 +62,7 @@
     .cpn-field:last-child { border-right:none; }
     .cpn-field label { font-size:11px; color:#999; font-weight:600; display:block; margin-bottom:4px; }
     .cpn-field span  { font-size:13px; color:#1A1A2E; font-weight:500; }
-    
+
     .cpn-foot {
         display:flex; justify-content:space-between; align-items:center;
         padding:12px 18px;
@@ -76,7 +74,7 @@
         outline:none; width:260px; display:block; font-family:inherit;
     }
     .cpn-reject-input:focus { border-color:#3B5BDB; }
-    
+
     /* ── 예산 프로그레스 ── */
     .cpn-progress-bar {
         background:#F1F3F7; border-radius:4px; height:5px; margin-top:4px; overflow:hidden;
@@ -94,24 +92,6 @@
         </div>
     </div>
 
-    <%-- 플로우 안내 --%>
-    <div style="display:flex;align-items:center;gap:0;margin-bottom:24px;background:#fff;border:1px solid #E4E6ED;border-radius:12px;overflow:hidden">
-        <div style="flex:1;padding:14px 16px;text-align:center;border-right:1px solid #E4E6ED">
-            <div style="font-size:11px;color:#999;margin-bottom:3px">STEP 1</div>
-            <div style="font-size:13px;font-weight:700;color:#1A1A2E">사업자 신청</div>
-        </div>
-        <div style="color:#C7D2FE;font-size:18px;padding:0 4px">›</div>
-        <div style="flex:1;padding:14px 16px;text-align:center;border-right:1px solid #E4E6ED;background:#EEF2FF">
-            <div style="font-size:11px;color:#3B5BDB;margin-bottom:3px;font-weight:700">STEP 2 (현재)</div>
-            <div style="font-size:13px;font-weight:800;color:#3B5BDB">관리자 승인</div>
-        </div>
-        <div style="color:#C7D2FE;font-size:18px;padding:0 4px">›</div>
-        <div style="flex:1;padding:14px 16px;text-align:center">
-            <div style="font-size:11px;color:#999;margin-bottom:3px">STEP 3</div>
-            <div style="font-size:13px;font-weight:700;color:#1A1A2E">이벤트/쿠폰 게시판 노출</div>
-        </div>
-    </div>
-
     <%-- 알림 메시지 --%>
     <c:if test="${not empty successMsg}">
         <div style="background:#ECFDF5;border:1px solid #BBF7D0;color:#166534;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px">
@@ -124,33 +104,53 @@
         </div>
     </c:if>
 
-    <%-- 탭 --%>
+    <%-- 2026-08-13 박유정 — 관리자승인 / 승인(게시중) / 예산소진 --%>
     <div class="cpn-tab-bar">
-        <a href="${contextPath}/admin/biz/coupon/list?status=PENDING"
-           class="cpn-tab ${status eq 'PENDING' ? 'on' : ''}">
-            승인 대기
+        <a href="${contextPath}/admin/biz/coupon/list?tab=review&status=PENDING"
+           class="cpn-tab ${tab eq 'review' ? 'on' : ''}">
+            관리자 승인
             <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
-                ${statusCounts.PENDING}
+                ${tabCounts.PENDING}
             </span>
         </a>
-        <a href="${contextPath}/admin/biz/coupon/list?status=APPROVED"
-           class="cpn-tab ${status eq 'APPROVED' ? 'on' : ''}">
+        <a href="${contextPath}/admin/biz/coupon/list?tab=published"
+           class="cpn-tab ${tab eq 'published' ? 'on' : ''}">
             승인 (게시 중)
             <span style="background:#DCFCE7;color:#16A34A;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
-                ${statusCounts.APPROVED}
+                ${tabCounts.PUBLISHED}
             </span>
         </a>
-        <a href="${contextPath}/admin/biz/coupon/list?status=REJECTED"
-           class="cpn-tab ${status eq 'REJECTED' ? 'on' : ''}">
-            반려
+        <a href="${contextPath}/admin/biz/coupon/list?tab=exhausted"
+           class="cpn-tab ${tab eq 'exhausted' ? 'on' : ''}">
+            예산 소진
             <span style="background:#F1F3F7;color:#999;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
-                ${statusCounts.REJECTED}
+                ${tabCounts.EXHAUSTED}
             </span>
         </a>
     </div>
 
+    <%-- 관리자 승인: 승인대기 / 반려 서브탭 --%>
+    <c:if test="${tab eq 'review'}">
+        <div class="cpn-tab-bar" style="margin-top:-8px">
+            <a href="${contextPath}/admin/biz/coupon/list?tab=review&status=PENDING"
+               class="cpn-tab ${status eq 'PENDING' ? 'on' : ''}">
+                승인 대기
+                <span style="background:#EEF2FF;color:#3B5BDB;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
+                    ${tabCounts.PENDING}
+                </span>
+            </a>
+            <a href="${contextPath}/admin/biz/coupon/list?tab=review&status=REJECTED"
+               class="cpn-tab ${status eq 'REJECTED' ? 'on' : ''}">
+                반려
+                <span style="background:#F1F3F7;color:#999;font-size:11px;padding:1px 7px;border-radius:20px;margin-left:4px">
+                    ${tabCounts.REJECTED}
+                </span>
+            </a>
+        </div>
+    </c:if>
+
     <%-- ========== 승인 대기 (PENDING) ========== --%>
-    <c:if test="${status eq 'PENDING'}">
+    <c:if test="${tab eq 'review' and status eq 'PENDING'}">
         <c:choose>
             <c:when test="${empty list}">
                 <p style="text-align:center;color:#999;padding:48px 0">승인 대기 중인 쿠폰이 없습니다.</p>
@@ -241,7 +241,7 @@
                                       onsubmit="return confirm('반려하시겠습니까?')">
                                     <!--HYJ 26.08.05-->
                                     <input type="hidden" name="_csrf" value="${_csrf}">
-                                    
+
                                     <input type="hidden" name="couponId" value="${cpn.couponId}">
                                     <input type="text" name="rejectReason" class="cpn-reject-input"
                                            placeholder="반려 사유 입력" required>
@@ -252,7 +252,7 @@
                                       onsubmit="return confirm('승인하시겠습니까?\n이벤트/쿠폰 게시판에 노출됩니다.')">
                                     <!--HYJ 26.08.05-->
                                     <input type="hidden" name="_csrf" value="${_csrf}">
-                                    
+
                                     <input type="hidden" name="couponId" value="${cpn.couponId}">
                                     <button type="submit" class="adm-btn green">승인</button>
                                 </form>
@@ -264,11 +264,11 @@
         </c:choose>
     </c:if>
 
-    <%-- ========== 승인 (APPROVED) ========== --%>
-    <c:if test="${status eq 'APPROVED'}">
+    <%-- ========== 승인 (게시 중) ========== --%>
+    <c:if test="${tab eq 'published'}">
         <c:choose>
             <c:when test="${empty list}">
-                <p style="text-align:center;color:#999;padding:48px 0">승인된 쿠폰이 없습니다.</p>
+                <p style="text-align:center;color:#999;padding:48px 0">게시 중인 쿠폰이 없습니다.</p>
             </c:when>
             <c:otherwise>
                 <table class="adm-table">
@@ -318,14 +318,71 @@
                                     ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}
                                 </td>
                                 <td>
+                                    <span class="adm-badge active">게시 중</span>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </c:otherwise>
+        </c:choose>
+    </c:if>
+
+    <%-- ========== 예산 소진 (EXHAUSTED) ========== --%>
+    <c:if test="${tab eq 'exhausted'}">
+        <c:choose>
+            <c:when test="${empty list}">
+                <p style="text-align:center;color:#999;padding:48px 0">예산·수량이 소진된 쿠폰이 없습니다.</p>
+            </c:when>
+            <c:otherwise>
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>쿠폰명</th>
+                            <th>사업자</th>
+                            <th>할인</th>
+                            <th>예산 소진</th>
+                            <th>발급 현황</th>
+                            <th>사용 기간</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="cpn" items="${list}">
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600">${cpn.couponName}</div>
+                                    <div style="font-size:11px;color:#999">${cpn.couponCode}</div>
+                                </td>
+                                <td>${cpn.bizName}</td>
+                                <td>
                                     <c:choose>
-                                        <c:when test="${cpn.statusCd eq 'EXHAUSTED'}">
-                                            <span class="adm-badge" style="background:#F1F3F7;color:#999">예산 소진</span>
+                                        <c:when test="${cpn.couponType eq 'FIXED'}">
+                                            <fmt:formatNumber value="${cpn.discountValue}" type="number"/>원
                                         </c:when>
-                                        <c:otherwise>
-                                            <span class="adm-badge active">게시 중</span>
-                                        </c:otherwise>
+                                        <c:when test="${cpn.couponType eq 'RATE'}">
+                                            ${cpn.discountValue}%
+                                        </c:when>
                                     </c:choose>
+                                </td>
+                                <td>
+                                    <fmt:formatNumber value="${cpn.issuedBudget}" type="number"/>
+                                    / <fmt:formatNumber value="${cpn.totalBudget}" type="number"/>원
+                                    <c:if test="${cpn.totalBudget > 0}">
+                                        <div class="cpn-progress-bar">
+                                            <div class="cpn-progress-fill"
+                                                 style="width:100%"></div>
+                                        </div>
+                                    </c:if>
+                                </td>
+                                <td>${cpn.issuedQty} / ${cpn.totalQty}장</td>
+                                <td>
+                                    ${cpn.useStartDate.substring(0,4)}.${cpn.useStartDate.substring(4,6)}.${cpn.useStartDate.substring(6,8)}
+                                    ~
+                                    ${cpn.useEndDate.substring(0,4)}.${cpn.useEndDate.substring(4,6)}.${cpn.useEndDate.substring(6,8)}
+                                </td>
+                                <td>
+                                    <span class="adm-badge" style="background:#F1F3F7;color:#999">예산 소진</span>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -336,7 +393,7 @@
     </c:if>
 
     <%-- ========== 반려 (REJECTED) ========== --%>
-    <c:if test="${status eq 'REJECTED'}">
+    <c:if test="${tab eq 'review' and status eq 'REJECTED'}">
         <c:choose>
             <c:when test="${empty list}">
                 <p style="text-align:center;color:#999;padding:48px 0">반려된 쿠폰이 없습니다.</p>

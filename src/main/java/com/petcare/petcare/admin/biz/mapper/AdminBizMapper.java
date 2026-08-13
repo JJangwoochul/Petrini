@@ -51,8 +51,11 @@ public interface AdminBizMapper {
     Long selectMemberNoByBizId(@Param("bizId") String bizId);
 
     //HYJ 26.07.29 쿠폰 관리
-    // 승인 상태별 쿠폰 목록
-    List<BizCouponVO> selectCouponListByStatus(@Param("approvalStatus") String approvalStatus);
+    // 2026-08-13 박유정 — 승인(ACTIVE) / 소진(EXHAUSTED) 등 STATUS_CD까지 필터
+    List<BizCouponVO> selectCouponListFiltered(@Param("approvalStatus") String approvalStatus,
+                                               @Param("statusCd") String statusCd);
+    int countCouponFiltered(@Param("approvalStatus") String approvalStatus,
+                            @Param("statusCd") String statusCd);
 
     // 상태별 건수
     int countCouponByStatus(@Param("approvalStatus") String approvalStatus);

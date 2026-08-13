@@ -285,14 +285,10 @@
     </div>
   </div>
 </div>
-
+<%-- 2026-08-13 박유정 — 회원가입·마이페이지 공통 품종 목록 --%>
+<script src="${contextPath}/resources/js/pet-breeds.js"></script>
 <script>
 const CTX = '${contextPath}';
-const BREEDS = {
-    dog: ['골든 리트리버','래브라도 리트리버','비숑 프리제','말티즈','푸들','시바이누','진돗개','포메라니안','치와와','코기','불독','허스키','닥스훈트','슈나우저','믹스견 (모름)'],
-    cat: ['코리안숏헤어','페르시안','메인쿤','브리티시숏헤어','러시안블루','스코티시폴드','아비시니안','벵갈','샴','믹스묘 (모름)'],
-    etc: ['토끼','햄스터','앵무새','고슴도치','페럿','기니피그','직접 입력']
-};
 
 const PET_LIST = ${empty petListJson ? '[]' : petListJson};
 const PET_MAP = {};
@@ -356,25 +352,9 @@ function speciesToKind(species) {
     return 'etc';
 }
 
+// 2026-08-13 박유정 — 공통 pet-breeds.js 호출 (마이페이지 모달)
 function updateBreed(selected) {
-    const kind = document.getElementById('pm-kind').value;
-    const sel  = document.getElementById('pm-breed');
-    if (!kind) {
-        sel.innerHTML = '<option value="">종류를 먼저 선택하세요</option>';
-        return;
-    }
-    const list = BREEDS[kind] || [];
-    // 2026/07/11 장우철 — JSP EL 과 충돌하지 않도록 JS 템플릿 리터럴 대신 문자열 연결 사용
-    let html = '<option value="">품종 선택</option>';
-    for (let i = 0; i < list.length; i++) {
-        const b = list[i];
-        html += '<option value="' + b + '">' + b + '</option>';
-    }
-    if (selected && list.indexOf(selected) < 0) {
-        html = '<option value="' + selected + '">' + selected + '</option>' + html;
-    }
-    sel.innerHTML = html;
-    if (selected) sel.value = selected;
+    updatePetBreedSelect('pm-kind', null, 'pm-breed', selected || null);
 }
 
 // 2026-07-28 박유정 — 중성화 선택 + hidden(pm-neuter) 동기화

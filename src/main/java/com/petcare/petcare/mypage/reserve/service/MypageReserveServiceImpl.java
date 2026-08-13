@@ -220,7 +220,7 @@ public class MypageReserveServiceImpl implements MypageReserveService {
             throw new IllegalStateException("예약을 취소할 수 없습니다. 상태를 확인해 주세요.");
         }
 
-        // 3) 알림 (본인)
+        // 3) 알림 (본인) — 2026-08-11 박유정 — 숙소 전용 취소 알림 (병원 문구 분리)
         String stayName = detail.getHospitalName() != null ? detail.getHospitalName() : "숙소";
         // 2026/08/11 장우철 — 숙소 전용 취소 알림 (checkin~checkout 기간 표시)
         mypageNotifyService.sendStayReserveCancelNotification(

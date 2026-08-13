@@ -28,6 +28,9 @@ import com.petcare.petcare.community.post.vo.CommunityPostVO;
 import org.springframework.web.multipart.MultipartFile;
 import com.petcare.petcare.member.vo.MemberVO;
 
+import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
+
 public interface CommunityPostService {
 
     // 게시글 목록 (boardType, keyword, page, LIFE 필터: petSpecies, vetStatus)
@@ -51,7 +54,9 @@ public interface CommunityPostService {
     void markLifeAnswered(long postId);
 
     // 2026-07-23 HYJ — 게시글 수정 (본인 글만)
-    void updatePost(CommunityPostVO vo, MemberVO loginMember);
+    // 2026-08-13 박유정 — 수정 시 사진 삭제·추가
+    void updatePost(CommunityPostVO vo, MemberVO loginMember,
+                    MultipartFile[] photos, List<String> removePhotoUrls);
 
     // 2026-07-23 HYJ — 게시글 삭제 (LIFE: STATUS_CD='DELETED' / TOWN·SHARE: 즉시 물리 삭제)
     void deletePost(long postId, MemberVO loginMember);

@@ -51,6 +51,10 @@ import jakarta.servlet.http.HttpSession;
 import com.petcare.petcare.biz.stay.service.BizStayService;
 import com.petcare.petcare.main.banner.vo.MainBannerVO;
 
+import org.springframework.beans.propertyeditors.CustomNumberEditor;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+
 @Controller("bizStoreController")
 @RequestMapping("/biz/store")
 public class BizStoreController extends BizBaseController {
@@ -1119,6 +1123,12 @@ public String closeCoupon(
     }
 
     return "redirect:/biz/store/coupon";
+}
+
+// 2026-08-13 박유정 — 빈 숫자칸("") → null (Integer 바인딩 오류 방지)
+@InitBinder
+public void initBinder(WebDataBinder binder) {
+    binder.registerCustomEditor(Integer.class, new CustomNumberEditor(Integer.class, true));
 }
 
 }

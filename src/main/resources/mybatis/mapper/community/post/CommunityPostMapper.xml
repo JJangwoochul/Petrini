@@ -269,6 +269,15 @@
       AND REF_ID = #{postId}
   </delete>
 
+  <!-- 2026-08-13 박유정 — 수정 화면에서 선택 삭제 -->
+  <delete id="deleteFileByPostIdAndUrl">
+    DELETE FROM TB_FILE
+     WHERE REF_TYPE = 'POST'
+       AND REF_ID = #{postId}
+       AND FILE_URL = #{fileUrl}
+  </delete>
+
+
   <!-- 2026-07-23 HYJ — 7일 경과 DELETED LIFE 게시글 ID 목록 (스케줄러용) -->
   <select id="selectExpiredDeletedPostIds" resultType="long">
     SELECT POST_ID

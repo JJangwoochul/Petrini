@@ -160,12 +160,14 @@ public class CommunityCommentServiceImpl implements CommunityCommentService {
      * - LIFE + 병원 사업자(BIZ/HOSPITAL): 최상위 댓글·대댓글 모두 허용
      * - LIFE + 질문자(글 작성자): parentId 있는 대댓글만 허용 (추가 질문)
      * - LIFE + 그 외: LIFE_COMMENT_FORBIDDEN
+     * 2026-08-13 박유정 — LOST(분실·보호) 등 selectPostDetail null이면 LIFE 규칙 스킵
      */
     private void validateLifeCommentPermission(
             long postId, MemberVO loginMember, Long memberNo, Long parentId) {
         CommunityPostVO post = communityPostMapper.selectPostDetail(postId);
         if (post == null) {
-            throw new IllegalArgumentException("POST_NOT_FOUND");
+         // 2026-08-13 박유정 — LOST(분실·보호) 등 커뮤니티 외 게시글은 LIFE 규칙 미적용
+            return;
         }
         if (post.getBoardType() == null || !"LIFE".equalsIgnoreCase(post.getBoardType().trim())) {
             return;

@@ -59,6 +59,10 @@ import com.petcare.petcare.hospital.vo.ReviewDeleteRequestVO;
 import com.petcare.petcare.member.inquiry.vo.MemberInquiryVO;
 import com.petcare.petcare.stay.vo.StayReviewVO;
 
+import org.springframework.beans.propertyeditors.CustomNumberEditor;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+
 @Controller("bizStayController")
 @RequestMapping("/biz/stay")
 public class BizStayController extends BizBaseController {
@@ -906,5 +910,10 @@ public class BizStayController extends BizBaseController {
             rttr.addFlashAttribute("errorMsg", "배너 신청 중 오류가 발생했습니다.");
         }
         return "redirect:/biz/stay/banner";
+    }
+    // 2026-08-13 박유정 — 빈 숫자칸("") → null (Integer 바인딩 오류 방지)
+    @InitBinder
+    public void initBinder(WebDataBinder binder) {
+      binder.registerCustomEditor(Integer.class, new CustomNumberEditor(Integer.class, true));
     }
 }

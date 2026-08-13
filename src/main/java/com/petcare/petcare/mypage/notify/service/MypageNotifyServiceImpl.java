@@ -1198,6 +1198,7 @@ public class MypageNotifyServiceImpl implements MypageNotifyService {
         return checkin + " ~ " + checkout;
     }
 
+    // 2026-08-11 박유정 — 숙소 환불 알림 일시 포맷
     private String formatDateTime(java.util.Date date) {
         if (date == null) {
             return "-";

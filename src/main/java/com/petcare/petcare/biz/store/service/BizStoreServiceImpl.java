@@ -651,6 +651,13 @@ public class BizStoreServiceImpl implements BizStoreService {
 
     @Override
     public void applyCoupon(Long bizNo, BizCouponVO vo) {
+        // 2026-08-13 박유정 — 빈 최소주문금액·정액 쿠폰 maxDiscountAmt 서버 기본값 (Integer 바인딩 보완)
+        if (vo.getMinOrderAmt() == null) {
+            vo.setMinOrderAmt(0);
+        }
+        if ("FIXED".equals(vo.getCouponType())) {
+            vo.setMaxDiscountAmt(null);
+        }
         String code = "CPN-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         vo.setCouponCode(code);
         vo.setBizMemberNo(bizNo);

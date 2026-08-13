@@ -156,9 +156,9 @@ public class AdminBizServiceImpl implements AdminBizService {
     //HYJ 26.07.29 쿠폰관리
     @Override
     public List<BizCouponVO> getCouponListByStatus(String approvalStatus) {
-        return adminBizMapper.selectCouponListByStatus(approvalStatus);
+        // 2026-08-13 박유정 — selectCouponListFiltered 재사용 (Mapper Java 선언 통일)
+        return adminBizMapper.selectCouponListFiltered(approvalStatus, null);
     }
-
     @Override
     public BizCouponVO getCouponDetail(Long couponId) {
         return adminBizMapper.selectCouponById(couponId);
@@ -172,6 +172,37 @@ public class AdminBizServiceImpl implements AdminBizService {
         counts.put("REJECTED", adminBizMapper.countCouponByStatus("REJECTED"));
         return counts;
     }
+
+    // 2026-08-13 박유정 — 관리자승인 / 게시중(ACTIVE) / 예산소진(EXHAUSTED)
+    @Override
+    public List<BizCouponVO> getCouponListByTab(String tab, String status) {
+        if ("published".equals(tab)) {
+            return adminBizMapper.selectCouponListFiltered("APPROVED", "ACTIVE");
+        }
+        if ("exhausted".equals(tab)) {
+            return adminBizMapper.selectCouponListFiltered("APPROVED", "EXHAUSTED");
+        }
+        // review (기본): PENDING / REJECTED
+        if (status == null || status.isBlank() || "APPROVED".equals(status)) {
+            status = "PENDING";
+        }
+        if (!"PENDING".equals(status) && !"REJECTED".equals(status)) {
+            status = "PENDING";
+        }
+        return adminBizMapper.selectCouponListFiltered(status, null);
+    }
+
+    @Override
+    public Map<String, Integer> getCouponTabCounts() {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        counts.put("PENDING",   adminBizMapper.countCouponFiltered("PENDING", null));
+        counts.put("REJECTED",  adminBizMapper.countCouponFiltered("REJECTED", null));
+        counts.put("PUBLISHED", adminBizMapper.countCouponFiltered("APPROVED", "ACTIVE"));
+        counts.put("EXHAUSTED", adminBizMapper.countCouponFiltered("APPROVED", "EXHAUSTED"));
+        return counts;
+    }
+
+    
 
     @Override
     public void approveCoupon(Long couponId) {

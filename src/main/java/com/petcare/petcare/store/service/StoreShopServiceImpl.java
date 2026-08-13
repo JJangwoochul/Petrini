@@ -31,12 +31,16 @@ import com.petcare.petcare.store.vo.CouponVO;
 import com.petcare.petcare.store.vo.OrderTempVO;
 import com.petcare.petcare.store.vo.ReviewVO;
 import com.petcare.petcare.store.vo.StoreShopVO;
+import java.util.Collections;
 
 @Service
 public class StoreShopServiceImpl implements StoreShopService {
 
     @Autowired
     private StoreShopMapper storeShopMapper;
+
+    @Autowired
+    private com.petcare.petcare.coupon.mapper.CouponMapper couponMapper;
 
     @Autowired
     private FileService fileService;
@@ -184,7 +188,16 @@ public int getCartItemCount(Long memberNo) {
 @Override
 public List<CouponVO> getMemberCoupons(Long memberNo) {
     return storeShopMapper.selectMemberCoupons(memberNo);
- }
+}
+
+// 2026-08-13 박유정 — 주문 상품 사업자에 맞는 쿠폰만 (숙소 결제와 동일 개념)
+@Override
+public List<CouponVO> getMemberCouponsForOrder(Long memberNo, List<Long> bizNos) {
+    if (memberNo == null || bizNos == null || bizNos.isEmpty()) {
+        return Collections.emptyList();
+    }
+    return couponMapper.selectMemberCouponsByBizNos(memberNo, bizNos);
+}
 
 //지윤 07.09 바로구매 클릭 시 해당상품 주문페이지로 이동
 @Override

@@ -65,6 +65,7 @@
             숙소 예약 관리
         </a>
         <%-- 2026/07/31 장우철 — 숙소 환불신청(1:1) 승인/거절 --%>
+        <%-- 2026-08-11 박유정 — 대기 건수 배지 (AdminSidebarAdvice.pendingStayRefundCount) --%>
         <a href="${contextPath}/admin/inquiry/stay-refund?status=WAIT" class="adm-nav-link ${adminPage eq 'stay-refund' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             숙소 환불 신청
@@ -82,7 +83,8 @@
         </a>
         <!--HYJ 26.07.29 쿠폰 승인-->
         <!-- 지윤 26.08.11 추가: 승인대기 건수 뱃지 (AdminSidebarAdvice.pendingCouponApproveCount) -->
-        <a href="${contextPath}/admin/biz/coupon/list" class="adm-nav-link ${adminPage eq 'coupon-list' ? 'active' : ''}">
+        <%-- 2026-08-13 박유정 — 쿠폰 관리 기본: 관리자 승인 > 승인 대기 --%>
+        <a href="${contextPath}/admin/biz/coupon/list?tab=review&status=PENDING" class="adm-nav-link ${adminPage eq 'coupon-list' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
             쿠폰 승인
             <c:if test="${pendingCouponApproveCount > 0}">
@@ -119,7 +121,7 @@
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             FAQ
         </a>
-        <%-- 2026-08-11 박유정 — 일반 1:1 문의 답변 (숙소 환불 제외) --%>
+        <%-- 2026-08-11 박유정 — 일반 1:1 문의 답변 (숙소 환불 제외) · 대기 배지 --%>
         <a href="${contextPath}/admin/inquiry/general?status=WAIT" class="adm-nav-link ${adminPage eq 'general-inquiry' ? 'active' : ''}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             1:1 문의

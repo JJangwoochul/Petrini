@@ -12,6 +12,7 @@
   [form 필드]
   - boardType : TOWN / SHARE / LIFE
   - title, body, photos(최대 5장)
+  2026-08-13 박유정 — 선택 이미지 미리보기 + X 삭제 (5장 제한)
 --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
@@ -37,6 +38,12 @@
   .btn-submit-write{padding:12px 32px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:var(--transition)}
   .btn-submit-write:hover{background:var(--primary-dark)}
   .write-error{background:#FEE2E2;border:1px solid #FCA5A5;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;font-size:14px;color:#B91C1C;line-height:1.6}
+  .write-photo-list{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+  .write-photo-item{position:relative;width:100px;height:100px}
+  .write-photo-item img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:block}
+  .write-photo-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s}
+  .write-photo-remove:hover{background:#B91C1C}
+  .write-photo-count{font-size:12px;color:var(--text-muted);margin-bottom:8px}
 </style>
 
 <form method="post"
@@ -87,23 +94,18 @@
                 required minlength="5" maxlength="5000">${communityPostVO.body}</textarea>
     </div>
   </div>
-  <div class="write-form-group">
+  <div class="write-form-group" id="write-photo-section">
     <label>이미지 첨부 (최대 5장)</label>
-    <label class="write-img-upload" style="cursor:pointer">
-  <input type="file" name="photos" accept="image/*" multiple style="display:none"
-          onchange="
-            if(this.files.length > 5){
-                alert('사진은 최대 5장까지 업로드 가능합니다.');
-                this.value='';
-                this.closest('.write-form-group').querySelector('.upload-label').textContent='클릭하여 이미지 업로드';
-                return;
-            }
+    <p class="write-photo-count" id="write-photo-count"></p>
 
-            this.closest('.write-form-group').querySelector('.upload-label').textContent =
-            this.files.length ? this.files.length + '장 선택됨' : '클릭하여 이미지 업로드';">
-  <svg viewBox="0 0 24 24">...</svg>
-  <span class="upload-label">클릭하여 이미지 업로드</span>
-  <small>JPG, PNG, GIF (최대 5장)</small>
+    <%-- 2026-08-13 박유정 — 선택 이미지 미리보기 + X 삭제 --%>
+    <div class="write-photo-list" id="write-photo-preview"></div>
+
+    <label class="write-img-upload" id="photo-upload-btn" style="cursor:pointer">
+      <input type="file" id="photo-input" name="photos" accept="image/*" multiple style="display:none">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span class="upload-label">클릭하여 이미지 추가</span>
+      <small>JPG, PNG, GIF</small>
     </label>
   </div>
   <div class="write-btn-row">
@@ -112,5 +114,106 @@
   </div>
 </div>
 </form>
- 
+
+<script>
+(function () {
+  // 2026-08-13 박유정 — 이미지 미리보기 + X 삭제 + 5장 제한
+  var MAX = 5;
+  var section = document.getElementById('write-photo-section');
+  if (!section) return;
+
+  var previewList = document.getElementById('write-photo-preview');
+  var photoInput = document.getElementById('photo-input');
+  var uploadBtn = document.getElementById('photo-upload-btn');
+  var countEl = document.getElementById('write-photo-count');
+  var selectedFiles = [];
+  var previewUrls = [];
+
+  function updateCount() {
+    var total = selectedFiles.length;
+    countEl.textContent = total > 0 ? total + ' / ' + MAX + '장' : '사진 없음 (최대 ' + MAX + '장)';
+    uploadBtn.style.display = total >= MAX ? 'none' : '';
+  }
+
+  function syncInputFiles() {
+    var dt = new DataTransfer();
+    selectedFiles.forEach(function (file) {
+      dt.items.add(file);
+    });
+    photoInput.files = dt.files;
+  }
+
+  function clearPreviewUrls() {
+    previewUrls.forEach(function (url) { URL.revokeObjectURL(url); });
+    previewUrls = [];
+  }
+
+  function renderPreviews() {
+    clearPreviewUrls();
+    previewList.innerHTML = '';
+
+    selectedFiles.forEach(function (file) {
+      var item = document.createElement('div');
+      item.className = 'write-photo-item';
+
+      var img = document.createElement('img');
+      var objectUrl = URL.createObjectURL(file);
+      previewUrls.push(objectUrl);
+      img.src = objectUrl;
+      img.alt = file.name;
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'write-photo-remove';
+      btn.title = '삭제';
+      btn.setAttribute('aria-label', '삭제');
+      btn.innerHTML = '&times;';
+      btn.addEventListener('click', function () {
+        var idx = Array.prototype.indexOf.call(previewList.children, item);
+        if (idx < 0) return;
+        selectedFiles.splice(idx, 1);
+        syncInputFiles();
+        renderPreviews();
+      });
+
+      item.appendChild(img);
+      item.appendChild(btn);
+      previewList.appendChild(item);
+    });
+
+    updateCount();
+  }
+
+  photoInput.addEventListener('change', function () {
+    var allowed = MAX - selectedFiles.length;
+    if (allowed <= 0) {
+      alert('사진은 최대 ' + MAX + '장까지입니다.');
+      this.value = '';
+      return;
+    }
+
+    var incoming = Array.from(this.files || []);
+    var skipped = 0;
+
+    incoming.forEach(function (file) {
+      if (selectedFiles.length >= MAX) {
+        skipped++;
+        return;
+      }
+      selectedFiles.push(file);
+    });
+
+    if (skipped > 0) {
+      alert('사진은 최대 ' + MAX + '장까지입니다. (' + allowed + '장만 추가됩니다)');
+    }
+
+    syncInputFiles();
+    renderPreviews();
+    this.value = '';
+  });
+
+  updateCount();
+})();
+</script>
+
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
