@@ -700,7 +700,7 @@ return json;
                                        @RequestParam(required = false) String description,
                                        @RequestParam String statusCd,
                                        @RequestParam(required = false) String tags,
-                                       @RequestParam(required = false) Long[] optionId,
+                                       @RequestParam(required = false) String[] optionId,
                                        @RequestParam(required = false) String[] optionColor,
                                        @RequestParam String[] optionSize,
                                        @RequestParam Integer[] addPrice,
@@ -734,12 +734,13 @@ return json;
         return buildOptions(null, optionColor, optionSize, addPrice, stockQty);
     }
 
-    private List<OptionVO> buildOptions(Long[] optionId, String[] optionColor, String[] optionSize, Integer[] addPrice, Integer[] stockQty) {
+    private List<OptionVO> buildOptions(String[] optionId, String[] optionColor, String[] optionSize, Integer[] addPrice, Integer[] stockQty) {
         List<OptionVO> options = new ArrayList<>();
         if (optionSize == null) return options;
         for (int i = 0; i < optionSize.length; i++) {
             OptionVO opt = new OptionVO();
-            opt.setOptionId(optionId != null && optionId.length > i ? optionId[i] : null);
+            // 2026/08/13 장우철 — 수정 시 신규 옵션 hidden optionId="" 가 Long[] 바인딩에서 400 나던 것 방지
+            opt.setOptionId(parseLongOrNull(optionId, i));
             opt.setOptionColor(optionColor != null && optionColor.length > i ? optionColor[i] : null);
             opt.setOptionSize(optionSize[i]);
 
@@ -749,6 +750,15 @@ return json;
             options.add(opt);
         }
         return options;
+    }
+
+    private Long parseLongOrNull(String[] arr, int i) {
+        if (arr == null || arr.length <= i || arr[i] == null || arr[i].isBlank()) return null;
+        try {
+            return Long.valueOf(arr[i].trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     // ─────────────────────────────────────────────

@@ -97,18 +97,19 @@
               </c:choose>
             </div>
           </div>
-          <div class="cart-qty-wrap">
-            <button >−</button>
-            <!--HYJ 26.08.16-->
-            <input type="number" id="qty" min="1" value="${item.qty}" data-stock="${item.stockQty}" data-option-id="${item.optionId}" readonly>
-            <button >+</button>
+          <div style="flex-shrink:0">
+            <div class="cart-qty-wrap">
+              <button >−</button>
+              <!--HYJ 26.08.16 · 2026/08/13 장우철 — id 중복 제거, 항목별 data-stock 사용-->
+              <input type="number" class="cart-qty-input" min="1" value="${item.qty}" data-stock="${item.stockQty}" data-option-id="${item.optionId}" readonly>
+              <button >+</button>
+            </div>
+            <div class="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
+            <div class="qtyLimitMsg" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;"></div>
           </div>
           <div class="cart-price"><fmt:formatNumber value="${item.price * item.qty}" pattern="#,###"/>원</div>
           <button class="cart-del">×</button>
         </div>
-        <!--HYJ 26.08.16-->
-        <div id="stockWarning" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;">재고가 부족합니다.</div>
-        <div id="qtyLimitMsg" style="display:none; color:var(--accent); font-size:12px; margin-top:6px;"></div>
 
         <c:if test="${vs.last || item.bizNo != cartItems[vs.index+1].bizNo}">
           <div class="cart-seller-summary" data-biz-no="${item.bizNo}">
@@ -194,8 +195,8 @@
       var val = parseInt(input.value, 10);
       var isPlus = this.textContent.trim() === '+';
       val = isPlus ? val + 1 : Math.max(1, val - 1);
-      //HYJ 26.08.16 재고확인 추가
-      val = applyQtyLimit(val);
+      //HYJ 26.08.16 재고확인 추가 · 2026/08/13 장우철 — 해당 줄 input 기준으로 재고 제한
+      val = applyQtyLimit(val, input);
       input.value = val;
       recalc();
       //HYJ 26.08.05
@@ -309,32 +310,29 @@
 
   recalc();
 
-  //HYJ 26.08.16 재고확인
-  function applyQtyLimit(v) {
-    hideQtyMessages();
-    const stock = getSelectedStock();
+  //HYJ 26.08.16 재고확인 · 2026/08/13 장우철 — getElementById('qty')가 첫 상품만 보던 문제 수정
+  function applyQtyLimit(v, input) {
+    var item = input.closest('.cart-item');
+    var warn = item.querySelector('.stockWarning');
+    var limitMsg = item.querySelector('.qtyLimitMsg');
+    hideQtyMessages(warn, limitMsg);
+    var stock = parseInt(input.dataset.stock, 10) || 0;
 
     if (v < 1) {
       v = 1;
-      document.getElementById('qtyLimitMsg').textContent = '1개 이상부터 구매할 수 있는 상품입니다.';
-      document.getElementById('qtyLimitMsg').style.display = 'block';
+      limitMsg.textContent = '1개 이상부터 구매할 수 있는 상품입니다.';
+      limitMsg.style.display = 'block';
     } else if (v > stock) {
       v = stock;
-      document.getElementById('stockWarning').textContent = '재고 ' + stock + '개까지만 구매할 수 있습니다.';
-      document.getElementById('stockWarning').style.display = 'block';
+      warn.textContent = '재고 ' + stock + '개까지만 구매할 수 있습니다.';
+      warn.style.display = 'block';
     }
     return v;
   }
 
-  function hideQtyMessages() {
-    document.getElementById('stockWarning').style.display = 'none';
-    document.getElementById('qtyLimitMsg').style.display = 'none';
-  }
-
-  function getSelectedStock() {
-    const stock = document.getElementById('qty');
-
-    return parseInt(stock.dataset.stock) || 0;
+  function hideQtyMessages(warn, limitMsg) {
+    if (warn) warn.style.display = 'none';
+    if (limitMsg) limitMsg.style.display = 'none';
   }
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

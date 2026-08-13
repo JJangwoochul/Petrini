@@ -159,12 +159,14 @@ public class BizStoreServiceImpl implements BizStoreService {
             } else {
                 Long optId = bizStoreMapper.selectNextOptionId();
                 bizStoreMapper.insertProductOption(optId, productId, color, opt.getOptionSize(), opt.getAddPrice(), opt.getStockQty());
+                // 2026/08/13 장우철 — INSERT 직후 optionId를 안 넣으면, 아래 정리 루프가 새 옵션을 미제출로 보고 바로 삭제함
+                opt.setOptionId(optId);
             }
         }
 
         List<OptionVO> existing = bizStoreMapper.selectProductOptions(productId);
         for (OptionVO old : existing) {
-            boolean stillSubmitted = options.stream().anyMatch(o -> old.getOptionId().equals(o.getOptionId()));
+            boolean stillSubmitted = options.stream().anyMatch(o -> o.getOptionId() != null && old.getOptionId().equals(o.getOptionId()));
             if (!stillSubmitted) {
                 int orderCount = bizStoreMapper.selectOrderItemCountByOption(old.getOptionId());
                 if (orderCount == 0) {

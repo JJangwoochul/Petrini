@@ -337,15 +337,19 @@
   //지윤 26.07.15 수정: 한 줄 나열 -> 라벨 붙은 4칸 그리드로 변경, 삭제 버튼 제거
   //지윤 26.07.24 수정: optionId 파라미터 추가 (기존 옵션이면 값 있음, 새로 추가한 행이면 빈 값 -> 서버에서 이걸로 UPDATE/INSERT 구분)
   function optRowHtml(color, size, addPrice, stockQty, optionId) {
+    // 2026/08/13 장우철 — 신규 옵션은 optionId 필드를 안 보냄(빈 값이 Long 변환 실패). 추가금액 기본 0
+    var idInput = (optionId != null && optionId !== '')
+      ? '<input type="hidden" name="optionId" value="' + optionId + '">'
+      : '';
     return '<div class="opt-row" style="border:1px solid var(--biz-border);border-radius:8px;padding:14px;margin-bottom:10px">' +
-      '<input type="hidden" name="optionId" value="' + (optionId != null ? optionId : '') + '">' +
+      idInput +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 20px">' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">색상(선택)</label>' +
           '<input type="text" name="optionColor" placeholder="예: 블랙" style="width:100%" value="' + (color || '') + '"></div>' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">사이즈/용량<span class="req">*</span></label>' +
           '<input type="text" name="optionSize" placeholder="예: M, 4kg" style="width:100%" required value="' + (size || '') + '"></div>' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">추가금액</label>' +
-          '<input type="number" name="addPrice" placeholder="0" min="0" style="width:100%" value="' + (addPrice != null ? addPrice : '') + '"></div>' +
+          '<input type="number" name="addPrice" placeholder="0" min="0" style="width:100%" value="' + (addPrice != null && addPrice !== '' ? addPrice : '0') + '"></div>' +
         '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">재고<span class="req">*</span></label>' +
           '<input type="number" name="stockQty" placeholder="수량" style="width:100%" required value="' + (stockQty != null ? stockQty : '') + '" oninput="onStockChange()"></div>' +
       '</div>' +
