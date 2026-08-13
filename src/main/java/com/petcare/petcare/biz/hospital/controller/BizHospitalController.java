@@ -139,6 +139,21 @@ public class BizHospitalController extends BizBaseController {
         return "biz/hospital/dashboard";
     }
 
+    // 지윤 26.08.13 추가: 일간/월간 버튼 전환용 - 차트 데이터만 JSON으로 반환
+    @GetMapping("/dashboard/chart")
+    @ResponseBody
+    public List<com.petcare.petcare.biz.vo.DailyStatVO> hospitalDashboardChart(
+            @RequestParam(defaultValue = "daily") String period,
+            HttpSession session) throws Exception {
+
+        MemberVO member = getBizMember(session);
+        if (member == null)
+            return new ArrayList<>();
+
+        HospitalVO hospital = bizHospitalService.resolveHospitalByBizId(member.getMemberId());
+        return bizHospitalService.getChartData(hospital.getHospitalId(), period);
+    }
+
     // 2026-07-10 장우철 — 사업자 예약 관리 (F4)
     @GetMapping("/reserve")
     public String hospitalReserve(HttpSession session, Model model) throws Exception {

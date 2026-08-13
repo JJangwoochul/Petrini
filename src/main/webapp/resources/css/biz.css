@@ -431,11 +431,12 @@
 .tab-btns button.active { background: #2BAB82; color: #fff; font-weight: 700; }
 
 .chart-legend { display: flex; gap: 16px; font-size: 12px; color: #888; margin-bottom: 10px; }
-.chart-legend .green-dot, .chart-legend .blue-dot {
+.chart-legend .green-dot, .chart-legend .blue-dot, .chart-legend .red-dot {
     display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;
 }
 .chart-legend .green-dot { background: #2BAB82; }
 .chart-legend .blue-dot  { background: #0284C7; }
+.chart-legend .red-dot   { background: #E34948; }
 
 .fake-line-chart { width: 100%; }
 .fake-line-chart svg { width: 100%; height: 220px; display: block; overflow: visible; }
@@ -444,6 +445,10 @@
 .fake-line-chart .line-blue  { fill: none; stroke: #0284C7; stroke-width: 2.5; }
 .fake-line-chart .dot-green  { fill: #2BAB82; stroke: #fff; stroke-width: 2; }
 .fake-line-chart .dot-blue   { fill: #0284C7; stroke: #fff; stroke-width: 2; }
+
+/* 지윤 26.08.13 추가: 실제 Chart.js 캔버스용 - position 없으면 캔버스가 계속 커지는 버그 있음 */
+.line-chart { position: relative; width: 100%; height: 240px; }
+.line-chart canvas { width: 100% !important; height: 100% !important; }
 
 .chart-days {
     display: flex; justify-content: space-between;
@@ -497,6 +502,7 @@
 .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
 .badge.confirm { background: #EAF7F2; color: #1F8464; }
 .badge.wait    { background: #E0F2FE; color: #0284C7; }
+.badge.cancel  { background: #FEE2E2; color: #DC2626; }
 
 .review-item {
     display: flex; align-items: flex-start; gap: 10px;

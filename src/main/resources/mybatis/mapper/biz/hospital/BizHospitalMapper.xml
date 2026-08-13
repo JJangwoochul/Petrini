@@ -694,13 +694,23 @@
     ══════════════════════════════════════════════ -->
 
     <!-- 특정 날짜 예약 건수 -->
-    <select id="countResvByDate" resultType="int">
+   <select id="countResvByDate" resultType="int">
         SELECT COUNT(*)
           FROM TB_RESERVATION
          WHERE RESV_TYPE  = 'HOSPITAL'
            AND TARGET_ID  = TO_CHAR(#{targetId})
            AND TRUNC(RESV_DATE) = TO_DATE(#{dt}, 'YYYY-MM-DD')
            AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
+    </select>
+
+    <!-- 지윤 26.08.13 추가: 오늘 예약 카드 옆 괄호용 - 오늘 취소·노쇼 건수 -->
+    <select id="countCancelByDate" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'HOSPITAL'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND TRUNC(RESV_DATE) = TO_DATE(#{dt}, 'YYYY-MM-DD')
+           AND STATUS_CD IN ('CANCEL', 'REJECTED')
     </select>
 
     <!-- 특정 날짜 진료 완료 건수 -->
@@ -724,6 +734,18 @@
            AND RESV_DATE &lt;= TO_DATE(#{dt}, 'YYYY-MM-DD')
     </select>
 
+    <!-- 지윤 26.08.13 추가: 이번 달 진료완료 건수 (매출 대신 상단 카드에 표시) -->
+    <!-- 지윤 26.08.13 수정: RESV_DATE에 시간까지 저장돼있어서 TRUNC 안 하면 오늘자 DONE 건이 집계에서 빠짐 -->
+    <select id="sumMonthDoneCount" resultType="int">
+        SELECT COUNT(*)
+          FROM TB_RESERVATION
+         WHERE RESV_TYPE  = 'HOSPITAL'
+           AND TARGET_ID  = TO_CHAR(#{targetId})
+           AND STATUS_CD  = 'DONE'
+           AND RESV_DATE >= TRUNC(TO_DATE(#{dt}, 'YYYY-MM-DD'), 'MM')
+           AND TRUNC(RESV_DATE) &lt;= TO_DATE(#{dt}, 'YYYY-MM-DD')
+    </select>
+
     <!-- 예약 상태별 건수 (이번 달 전체) -->
     <select id="countByStatus" resultType="map">
         SELECT STATUS_CD AS "STATUS_CD", COUNT(*) AS "CNT"
@@ -734,11 +756,13 @@
          GROUP BY STATUS_CD
     </select>
 
-    <!-- 일별 예약 건수 + 매출 (최근 N일) -->
+    <!-- 일별 예약 건수 + 진료완료 + 취소·노쇼 (최근 N일) -->
+    <!-- 지윤 26.08.13 수정: 병원은 결제 연동 없어 매출 대신 완료/취소 건수로 변경 -->
     <select id="selectDailyStats" resultType="com.petcare.petcare.biz.vo.DailyStatVO">
         SELECT TO_CHAR(D.DT, 'MM-DD') AS dt,
                NVL(R.CNT, 0)          AS resvCount,
-               NVL(R.REV, 0)          AS revenue
+               NVL(R.DONE_CNT, 0)     AS doneCount,
+               NVL(R.CANCEL_CNT, 0)   AS cancelCount
           FROM (SELECT TRUNC(SYSDATE) - (LEVEL - 1) AS DT
                   FROM DUAL
                CONNECT BY LEVEL &lt;= #{days}
@@ -746,15 +770,39 @@
           LEFT JOIN (
                SELECT TRUNC(RESV_DATE) AS RD,
                       COUNT(*)         AS CNT,
-                      NVL(SUM(TOTAL_AMOUNT), 0) AS REV
+                      SUM(CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END) AS DONE_CNT,
+                      SUM(CASE WHEN STATUS_CD IN ('CANCEL', 'REJECTED') THEN 1 ELSE 0 END) AS CANCEL_CNT
                  FROM TB_RESERVATION
                 WHERE RESV_TYPE  = 'HOSPITAL'
                   AND TARGET_ID  = TO_CHAR(#{targetId})
-                  AND STATUS_CD NOT IN ('CANCEL', 'REJECTED')
                   AND RESV_DATE >= TRUNC(SYSDATE) - #{days} + 1
                 GROUP BY TRUNC(RESV_DATE)
                ) R ON R.RD = D.DT
          ORDER BY D.DT
+    </select>
+
+    <!-- 지윤 26.08.13 수정: 월별 예약 건수 + 진료완료 + 취소·노쇼 (최근 N개월, 한 달 단위 그룹핑) -->
+    <select id="selectMonthlyStats" resultType="com.petcare.petcare.biz.vo.DailyStatVO">
+        SELECT TO_CHAR(M.MN, 'YYYY-MM') AS dt,
+               NVL(R.CNT, 0)            AS resvCount,
+               NVL(R.DONE_CNT, 0)       AS doneCount,
+               NVL(R.CANCEL_CNT, 0)     AS cancelCount
+          FROM (SELECT ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -(LEVEL - 1)) AS MN
+                  FROM DUAL
+               CONNECT BY LEVEL &lt;= #{months}
+               ) M
+          LEFT JOIN (
+               SELECT TRUNC(RESV_DATE, 'MM') AS RM,
+                      COUNT(*)               AS CNT,
+                      SUM(CASE WHEN STATUS_CD = 'DONE' THEN 1 ELSE 0 END) AS DONE_CNT,
+                      SUM(CASE WHEN STATUS_CD IN ('CANCEL', 'REJECTED') THEN 1 ELSE 0 END) AS CANCEL_CNT
+                 FROM TB_RESERVATION
+                WHERE RESV_TYPE  = 'HOSPITAL'
+                  AND TARGET_ID  = TO_CHAR(#{targetId})
+                  AND RESV_DATE >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -(#{months} - 1))
+                GROUP BY TRUNC(RESV_DATE, 'MM')
+               ) R ON R.RM = M.MN
+         ORDER BY M.MN
     </select>
 
     <!-- 오늘 예약 목록 (최대 5건) -->
@@ -776,7 +824,6 @@
          WHERE R.RESV_TYPE  = 'HOSPITAL'
            AND R.TARGET_ID  = TO_CHAR(#{hospitalId})
            AND TRUNC(R.RESV_DATE) = TRUNC(SYSDATE)
-           AND R.STATUS_CD NOT IN ('CANCEL', 'REJECTED')
          ORDER BY R.RESV_TIME
          FETCH FIRST 5 ROWS ONLY
     </select>

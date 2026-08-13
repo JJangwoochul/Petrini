@@ -87,12 +87,12 @@
       </div>
     </div>
     <table class="biz-table">
-      <thead><tr><th>상품이미지</th><th>상품명 / 카테고리</th><th>옵션</th><th>판매가</th><th>재고</th><th>등록일</th><th>상태</th><th>관리</th></tr></thead>
-      <tbody>
-        <c:choose>
-          <c:when test="${empty productList}">
-            <tr><td colspan="8" style="text-align:center;color:#999;padding:24px 0">등록된 상품이 없습니다.</td></tr>
-          </c:when>
+      <thead><tr><th>상품이미지</th><th>상품명</th><th>카테고리</th><th>옵션</th><th>판매가</th><th>재고</th><th>등록일</th><th>상태</th><th>관리</th></tr></thead>
+<tbody>
+<c:choose>
+  <c:when test="${empty productList}">
+    <tr><td colspan="9" style="text-align:center;color:#999;padding:24px 0">등록된 상품이 없습니다.</td></tr>
+  </c:when>
           <c:otherwise>
             <c:forEach var="p" items="${productList}">
               <c:set var="rows" value="${empty p.optionList ? null : p.optionList}"/>
@@ -108,7 +108,8 @@
                       </c:otherwise>
                     </c:choose>
                   </td>
-                  <td><span class="prod-cat">${p.categoryName}</span><br>${p.productName}</td>
+                  <td>${p.productName}</td>
+                  <td>${p.categoryName}</td>
                   <td><c:if test="${not empty opt.optionColor && opt.optionColor != '기본'}">${opt.optionColor} / </c:if>${opt.optionSize}</td>
                   
                   <%-- 지윤 26.07.15 수정: 옵션별 최종가 = 판매가 + 해당 옵션 추가금액 --%>
