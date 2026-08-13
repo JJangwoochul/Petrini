@@ -568,4 +568,12 @@ SELECT
     WHERE B.BIZ_NO = #{bizNo}
 </select>
 
+<!-- HYJ 26.08.13 옵션 재고 조회 + 행 잠금 (동시 주문 방지) -->
+<select id="selectOptionStockForUpdate" resultType="int">
+    SELECT STOCK_QTY
+    FROM TB_PRODUCT_OPTION
+    WHERE OPTION_ID = #{optionId}
+    FOR UPDATE
+</select>
+
 </mapper>

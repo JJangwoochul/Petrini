@@ -297,8 +297,22 @@ public String completeOrder(OrderTempVO p, String tossPaymentKey, String tossOrd
 
             //지윤 26.07.13 추가: 주문 확정된 만큼 재고 차감 (옵션 있으면 옵션 재고, 없으면 상품 재고)
             //지윤 26.07.15 수정: 옵션 재고 깎을 때도 상품 전체 재고를 같이 깎아야 목록/상태 표시가 맞음
+            //HYJ 26.08.13 재고수량 lock
             if (item.getOptionId() != null) {
-                storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
+                if (item.getOptionId() != null) {
+                    // 1) 재고를 조회하면서 행 잠금 (다른 주문은 여기서 대기)
+                    Integer currentStock = storeShopMapper.selectOptionStockForUpdate(item.getOptionId());
+                
+                    // 2) 재고가 부족하면 예외 발생 → @Transactional이 전체 롤백
+                    if (currentStock == null || currentStock < item.getQty()) {
+                        throw new RuntimeException(
+                            "'" + item.getProductName() + "' 상품의 재고가 부족합니다. (남은 재고: "
+                            + (currentStock != null ? currentStock : 0) + "개)");
+                    }
+                
+                    // 3) 재고 충분하면 차감
+                    storeShopMapper.updateOptionStock(item.getOptionId(), item.getQty());
+                }
             }
 
     //지윤 26.07.15 수정: 차감 후 상품 전체 재고가 0이면 자동 품절 처리
