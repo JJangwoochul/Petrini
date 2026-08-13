@@ -309,6 +309,8 @@
   });
 
   recalc();
+  //HYJ 26.08.13 재고확인 메시지 초기화
+  hideQtyMessages();
 
   //HYJ 26.08.16 재고확인 · 2026/08/13 장우철 — getElementById('qty')가 첫 상품만 보던 문제 수정
   function applyQtyLimit(v, input) {
