@@ -2,6 +2,7 @@
  * 역할: MypageAccountService 구현체 (@Service)
  *
  * - 2026-08-04 박유정 — 프로필 사진 로컬 저장 (C:/upload/member/profile/) + DB URL UPDATE
+ * - 2026/08/14 장우철 — gcs.enabled 분기 (로컬 ↔ GCS)
  */
 
 package com.petcare.petcare.mypage.account.service;
@@ -25,8 +26,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 
 @Service
 public class MypageAccountServiceImpl implements MypageAccountService {
@@ -39,6 +45,15 @@ public class MypageAccountServiceImpl implements MypageAccountService {
 
     @Value("${file.upload-dir}")
     private String uploadDir;   // application.properties → C:/upload/
+
+    @Value("${gcs.enabled:false}")
+    private boolean gcsEnabled;
+
+    @Value("${gcs.bucket-name:}")
+    private String gcsBucket;
+
+    @Autowired(required = false)
+    private Storage storage;
 
     public MypageAccountServiceImpl(MypageAccountMapper mypageAccountMapper,
                                      MypageAddressMapper mypageAddressMapper,
@@ -77,17 +92,36 @@ public class MypageAccountServiceImpl implements MypageAccountService {
         throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
     }
 
-    // 2026-08-04 박유정 — [3] 로컬 저장 (분실신고 사진과 동일 uploadDir 패턴)
+    // 2026-08-04 박유정 — [3] 저장 (분실신고와 동일 경로 패턴)
+    // 2026/08/14 장우철 — gcs.enabled 분기
     String savedName = UUID.randomUUID() + resolveExtension(file.getOriginalFilename());
     String objectPath = "member/profile/" + memberNo + "/" + savedName;
     String fileUrl = "/upload/" + objectPath;
 
-    Path dir = Paths.get(uploadDir, "member", "profile", String.valueOf(memberNo));
-    try {
-        Files.createDirectories(dir);
-        file.transferTo(dir.resolve(savedName));
-    } catch (IOException e) {
-        throw new IllegalStateException("FILE_SAVE_FAILED", e);
+    if (gcsEnabled) {
+        if (storage == null) {
+            throw new IllegalStateException("GCS enabled but Storage bean is missing");
+        }
+        try {
+            String gcsContentType = file.getContentType();
+            if (gcsContentType == null || gcsContentType.isBlank()) {
+                gcsContentType = "application/octet-stream";
+            }
+            BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(gcsBucket, objectPath))
+                    .setContentType(gcsContentType)
+                    .build();
+            storage.create(blobInfo, file.getBytes());
+        } catch (IOException e) {
+            throw new IllegalStateException("FILE_SAVE_FAILED", e);
+        }
+    } else {
+        Path dir = Paths.get(uploadDir, "member", "profile", String.valueOf(memberNo));
+        try {
+            Files.createDirectories(dir);
+            file.transferTo(dir.resolve(savedName));
+        } catch (IOException e) {
+            throw new IllegalStateException("FILE_SAVE_FAILED", e);
+        }
     }
 
     // 2026-08-04 박유정 — [4] TB_MEMBER.PROFILE_IMG_URL UPDATE

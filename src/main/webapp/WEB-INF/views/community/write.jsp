@@ -207,9 +207,10 @@
       alert('사진은 최대 ' + MAX + '장까지입니다. (' + allowed + '장만 추가됩니다)');
     }
 
+    // 2026/08/14 장우철 — value='' 를 sync 뒤에 두면 DataTransfer로 넣은 files가 비워져 서버에 사진이 안 감
+    this.value = '';
     syncInputFiles();
     renderPreviews();
-    this.value = '';
   });
 
   updateCount();
