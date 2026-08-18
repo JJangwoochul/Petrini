@@ -165,63 +165,100 @@ public class MemberAuthController {
      */
 
    // HYJ 26.07.15 — 카카오 로그인
+    // 2026/08/18 장우철 — 로그인(/oauth/kakao/login) vs 회원가입(/oauth/kakao/signup) intent 분리
+
+    /** 세션 키 — 카카오 OAuth 진입 경로 (login | signup) */
+    public static final String SESSION_KAKAO_INTENT = "kakaoIntent";
+    public static final String KAKAO_INTENT_LOGIN = "login";
+    public static final String KAKAO_INTENT_SIGNUP = "signup";
 
     /**
-     * 카카오 로그인 — 카카오 인가 페이지로 리다이렉트
-     * login.jsp "카카오로 시작하기" 버튼 → 이 URL 호출
+     * 카카오 로그인 — login.jsp 전용 (미가입 시 가입 페이지로 보내지 않음)
      */
-    @GetMapping("/oauth/kakao")
-    public String kakaoLogin() {
-        return "redirect:" + kakaoOAuthService.buildAuthorizeUrl();
+    @GetMapping({ "/oauth/kakao", "/oauth/kakao/login" })
+    public String kakaoLogin(HttpSession session) {
+        session.setAttribute(SESSION_KAKAO_INTENT, KAKAO_INTENT_LOGIN);
+        return "redirect:" + kakaoOAuthService.buildAuthorizeUrl(KAKAO_INTENT_LOGIN);
     }
 
     /**
-     * 카카오 콜백 — 인가 코드 수신 → 토큰 교환 → 사용자 정보 → 로그인/연동
-     * 카카오 디벨로퍼 > Redirect URI 에 등록한 주소
+     * 카카오 연동 회원가입 — join.jsp 전용 (미가입 시 kakaoUserInfo 담아 /join)
+     * 2026/08/18 장우철 — 가입 진입 시에만 memberInfo 제거 (이전 로그인 잔존으로 가입 폼이 가려지지 않게)
+     */
+    @GetMapping("/oauth/kakao/signup")
+    public String kakaoSignup(HttpSession session) {
+        session.removeAttribute("memberInfo");
+        session.setAttribute(SESSION_KAKAO_INTENT, KAKAO_INTENT_SIGNUP);
+        return "redirect:" + kakaoOAuthService.buildAuthorizeUrl(KAKAO_INTENT_SIGNUP);
+    }
+
+    /**
+     * 카카오 콜백 — 인가 코드 수신 → 토큰 교환 → 사용자 정보 → intent 에 따라 분기
+     * 2026/08/18 장우철 — 카카오가 돌려주는 state 를 우선 사용 (세션 intent 유실 시 로그인으로 오인 방지)
      */
     @GetMapping("/oauth/kakao/callback")
     public String kakaoCallback(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String error,
+            @RequestParam(required = false) String state,
             HttpSession session) {
+
+        String sessionIntent = (String) session.getAttribute(SESSION_KAKAO_INTENT);
+        session.removeAttribute(SESSION_KAKAO_INTENT);
+        String intent = (KAKAO_INTENT_SIGNUP.equals(state) || KAKAO_INTENT_LOGIN.equals(state))
+                ? state : sessionIntent;
+        boolean signupFlow = KAKAO_INTENT_SIGNUP.equals(intent);
 
         // [1] 사용자가 카카오 로그인을 취소한 경우
         if (error != null || code == null || code.isBlank()) {
-            return "redirect:/login?error=kakao_cancel";
+            return signupFlow
+                    ? "redirect:/join?error=kakao_cancel"
+                    : "redirect:/login?error=kakao_cancel";
         }
 
         // [2] 인가 코드 → 액세스 토큰 교환
         String accessToken = kakaoOAuthService.getAccessToken(code);
         if (accessToken == null) {
-            return "redirect:/login?error=kakao_token";
+            return signupFlow
+                    ? "redirect:/join?error=kakao_token"
+                    : "redirect:/login?error=kakao_token";
         }
 
         // [3] 액세스 토큰 → 카카오 사용자 정보 조회
         KakaoUserVO kakaoUser = kakaoOAuthService.getUserInfo(accessToken);
         if (kakaoUser == null) {
-            return "redirect:/login?error=kakao_user";
+            return signupFlow
+                    ? "redirect:/join?error=kakao_user"
+                    : "redirect:/login?error=kakao_user";
         }
 
-        // [4] 기존 회원 조회 + 연동
+        // [4] 기존 회원 조회
         try {
             MemberVO member = memberAuthService.kakaoLogin(kakaoUser);
 
-            // [5] 가입된 회원이 아니면 → 카카오 정보를 세션에 담고 회원가입 페이지로 이동
+            // [5] 미가입 — intent 에 따라 분기
             if (member == null) {
-                session.setAttribute("kakaoUserInfo", kakaoUser);
-                return "redirect:/join";
+                if (signupFlow) {
+                    session.setAttribute("kakaoUserInfo", kakaoUser);
+                    return "redirect:/join";
+                }
+                return "redirect:/login?error=kakao_not_member";
             }
+
+            // [6] 회원가입 경로인데 이미 가입됨 → 로그인 처리하지 않고 로그인 페이지로 안내
+            if (signupFlow) {
+                return "redirect:/login?error=kakao_already_member";
+            }
+
+            // [7] 로그인 경로 — 로그인 성공
             session.setAttribute("memberInfo", member);
-            // HYJ 26.07.20 카카오톡 "나에게 보내기" 알림용 — accessToken 세션 저장
             session.setAttribute("kakaoAccessToken", accessToken);
 
-            // 2026-07-22 박유정 — 정지 회원은 고객센터로
-            if("SUSPENDED".equals(member.getStatus())) {
+            if ("SUSPENDED".equals(member.getStatus())) {
                 return "redirect:/member/cs";
             }
             return "redirect:/";
         } catch (MemberLoginBlockedException e) {
-            // 2026-07-22 박유정 — 카카오 로그인 탈퇴 회원 차단
             return "redirect:/login?error=" + mapLoginBlockedError(e.getErrorCode());
         }
     }

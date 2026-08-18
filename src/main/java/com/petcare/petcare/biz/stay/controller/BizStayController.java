@@ -242,14 +242,14 @@ public class BizStayController extends BizBaseController {
             return "redirect:/mypage/biz";
         }
         List<MemberInquiryVO> refundList = bizStayService.getStayRefundList(stay.getStayId(), status);
-        int waitCount = bizStayService.countPendingStayRefundRequests(stay.getStayId());
-        int doneCount = bizStayService.getStayRefundList(stay.getStayId(), "DONE").size();
+        Map<String, Integer> statusCounts = bizStayService.getStayRefundStatusCounts(stay.getStayId());
         model.addAttribute("stay", stay);
         model.addAttribute("refundList", refundList);
         model.addAttribute("status", status);
-        model.addAttribute("waitCount", waitCount);
-        model.addAttribute("doneCount", doneCount);
-        model.addAttribute("allCount", waitCount + doneCount);
+        model.addAttribute("waitCount", statusCounts.get("WAIT"));
+        model.addAttribute("doneCount", statusCounts.get("DONE"));
+        model.addAttribute("rejectedCount", statusCounts.get("REJECTED"));
+        model.addAttribute("allCount", statusCounts.get("ALL"));
         return "biz/stay/refunds";
     }
 

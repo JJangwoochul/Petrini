@@ -18,6 +18,7 @@ package com.petcare.petcare.biz.stay.service;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -656,5 +657,27 @@ public class BizStayServiceImpl implements BizStayService {
         String status = (statusCd == null || statusCd.isBlank() || "ALL".equalsIgnoreCase(statusCd))
                 ? null : statusCd.trim().toUpperCase();
         return memberInquiryMapper.selectStayRefundListByStayId(stayId, status);
+    }
+
+    // 2026/08/18 장우철 — 사업자 숙소 환불 탭별 건수 (전체·대기·처리완료·거절)
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getStayRefundStatusCounts(Long stayId) {
+        Map<String, Integer> counts = new HashMap<>();
+        if (stayId == null) {
+            counts.put("ALL", 0);
+            counts.put("WAIT", 0);
+            counts.put("DONE", 0);
+            counts.put("REJECTED", 0);
+            return counts;
+        }
+        int wait = memberInquiryMapper.countStayRefundByStayId(stayId, "WAIT");
+        int done = memberInquiryMapper.countStayRefundByStayId(stayId, "DONE");
+        int rejected = memberInquiryMapper.countStayRefundByStayId(stayId, "REJECTED");
+        counts.put("WAIT", wait);
+        counts.put("DONE", done);
+        counts.put("REJECTED", rejected);
+        counts.put("ALL", wait + done + rejected);
+        return counts;
     }
 }

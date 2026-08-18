@@ -221,6 +221,7 @@ public interface BizStayService {
     // 2026-08-11 박유정 — 사업자 숙소 환불신청
     int countPendingStayRefundRequests(Long stayId);
     List<com.petcare.petcare.member.inquiry.vo.MemberInquiryVO> getStayRefundList(Long stayId, String statusCd);
+    java.util.Map<String, Integer> getStayRefundStatusCounts(Long stayId);
 
 }
 

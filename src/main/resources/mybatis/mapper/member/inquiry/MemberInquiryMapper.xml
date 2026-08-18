@@ -83,17 +83,40 @@
   </select>
 
   <!-- 2026-08-11 박유정 — 사업자 숙소 환불신청 대기 건수 -->
+  <!-- 2026/08/18 장우철 — STATUS_CD CHAR 패딩 대비 TRIM -->
   <select id="countPendingStayRefundByStayId" resultType="int">
     SELECT COUNT(*)
       FROM TB_INQUIRY I
       JOIN TB_RESERVATION R ON R.RESV_ID = I.REF_ID AND R.RESV_TYPE = 'STAY'
      WHERE I.REF_TYPE = 'RESV'
        AND I.INQUIRY_TYPE = 'RESERVE'
-       AND I.STATUS_CD = 'WAIT'
+       AND TRIM(I.STATUS_CD) = 'WAIT'
        AND TO_NUMBER(R.TARGET_ID) = #{stayId}
   </select>
 
+  <!-- 2026/08/18 장우철 — 사업자 숙소 환불 탭별 건수 (WAIT / APPROVED+DONE / REJECTED) -->
+  <select id="countStayRefundByStayId" resultType="int">
+    SELECT COUNT(*)
+      FROM TB_INQUIRY I
+      JOIN TB_RESERVATION R ON R.RESV_ID = I.REF_ID AND R.RESV_TYPE = 'STAY'
+     WHERE I.REF_TYPE = 'RESV'
+       AND I.INQUIRY_TYPE = 'RESERVE'
+       AND TO_NUMBER(R.TARGET_ID) = #{stayId}
+    <choose>
+      <when test="statusCd == 'WAIT'">
+       AND TRIM(I.STATUS_CD) = 'WAIT'
+      </when>
+      <when test="statusCd == 'DONE'">
+       AND TRIM(I.STATUS_CD) IN ('APPROVED', 'DONE')
+      </when>
+      <when test="statusCd == 'REJECTED'">
+       AND TRIM(I.STATUS_CD) = 'REJECTED'
+      </when>
+    </choose>
+  </select>
+
   <!-- 2026-08-11 박유정 — 사업자 숙소 환불신청 목록 -->
+  <!-- 2026/08/18 장우철 — DONE=APPROVED/DONE, REJECTED 탭 분리 (관리자 처리상태와 동일) -->
   <select id="selectStayRefundListByStayId" resultType="com.petcare.petcare.member.inquiry.vo.MemberInquiryVO">
     SELECT I.INQUIRY_ID   AS inquiryId,
            I.INQUIRY_TYPE AS inquiryType,
@@ -120,9 +143,19 @@
      WHERE I.REF_TYPE = 'RESV'
        AND I.INQUIRY_TYPE = 'RESERVE'
        AND TO_NUMBER(R.TARGET_ID) = #{stayId}
-    <if test="statusCd != null and statusCd != '' and statusCd != 'ALL'">
-       AND I.STATUS_CD = #{statusCd}
-    </if>
+    <choose>
+      <when test="statusCd == null or statusCd == '' or statusCd == 'ALL'">
+      </when>
+      <when test="statusCd == 'DONE'">
+       AND TRIM(I.STATUS_CD) IN ('APPROVED', 'DONE')
+      </when>
+      <when test="statusCd == 'REJECTED'">
+       AND TRIM(I.STATUS_CD) = 'REJECTED'
+      </when>
+      <otherwise>
+       AND TRIM(I.STATUS_CD) = #{statusCd}
+      </otherwise>
+    </choose>
      ORDER BY I.REG_DATE DESC, I.INQUIRY_ID DESC
   </select>
 

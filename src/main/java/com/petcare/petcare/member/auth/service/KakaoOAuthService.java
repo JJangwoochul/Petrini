@@ -19,6 +19,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -42,13 +44,21 @@ public class KakaoOAuthService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // ── [1단계] 카카오 로그인 페이지 URL 생성 ──
-    // 브라우저가 이 URL 로 이동하면 카카오 로그인 화면이 뜸
+    // 2026/08/18 장우철 — state 로 로그인/회원가입 구분 (카카오 왕복 시 세션 intent 유실 대비)
     public String buildAuthorizeUrl() {
-        return "https://kauth.kakao.com/oauth/authorize"
+        return buildAuthorizeUrl(null);
+    }
+
+    public String buildAuthorizeUrl(String state) {
+        String url = "https://kauth.kakao.com/oauth/authorize"
                 + "?client_id=" + clientId
                 + "&redirect_uri=" + redirectUri
                 + "&response_type=code"
                 + "&scope=talk_message";
+        if (state != null && !state.isBlank()) {
+            url += "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+        }
+        return url;
     }
 
     // ── [2단계] 인가 코드 → 액세스 토큰 교환 ──

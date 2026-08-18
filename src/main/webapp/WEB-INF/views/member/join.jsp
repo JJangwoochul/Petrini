@@ -51,6 +51,24 @@
           <h2 class="join-card-title">약관 동의</h2>
           <p class="join-card-sub">서비스 이용을 위해 약관에 동의해 주세요.</p>
 
+          <%-- 2026/08/18 장우철 — 카카오 연동 회원가입 (로그인 페이지와 intent 분리) --%>
+          <c:if test="${param.error eq 'kakao_cancel'}">
+            <p class="field-error show" style="margin-bottom:12px;">카카오 연동이 취소되었습니다.</p>
+          </c:if>
+          <c:if test="${param.error eq 'kakao_token' or param.error eq 'kakao_user'}">
+            <p class="field-error show" style="margin-bottom:12px;">카카오 연동 중 오류가 발생했습니다. 다시 시도해 주세요.</p>
+          </c:if>
+
+          <div class="social-login-group" style="margin-bottom:16px;">
+            <a href="${contextPath}/oauth/kakao/signup" class="social-btn-full kakao">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.73 5.32 4.35 6.85L5.5 21l4.03-2.12C10.3 19.27 11.14 19.4 12 19.4c5.52 0 10-3.58 10-8.4S17.52 3 12 3z" fill="#3A1D1D"/>
+              </svg>
+              카카오로 회원가입
+            </a>
+          </div>
+          <div class="divider-or" style="margin-bottom:16px;">또는 이메일로 가입</div>
+
           <div class="terms-box">
 
             <!-- 전체 동의 -->

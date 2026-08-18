@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%-- 2026-08-11 박유정 — 사업자 숙소 환불신청 조회 (승인은 관리자) --%>
+<%-- 2026/08/18 장우철 — 탭 건수·처리완료(APPROVED)/거절(REJECTED) 목록 분리 --%>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="bizPage" value="refunds" />
 <%@ include file="/WEB-INF/views/biz/common/header.jsp" %>
@@ -27,6 +28,10 @@
         <a href="${contextPath}/biz/stay/refunds?status=DONE"
            class="biz-tab ${status eq 'DONE' ? 'active' : ''}">
           처리완료<span class="biz-tab-count">${doneCount}</span>
+        </a>
+        <a href="${contextPath}/biz/stay/refunds?status=REJECTED"
+           class="biz-tab ${status eq 'REJECTED' ? 'active' : ''}">
+          거절<span class="biz-tab-count">${rejectedCount}</span>
         </a>
       </div>
     </div>
@@ -63,7 +68,10 @@
                 <td>
                   <c:choose>
                     <c:when test="${r.statusCd eq 'WAIT'}"><span class="bs-badge bs-wait">대기</span></c:when>
-                    <c:otherwise><span class="bs-badge bs-done">처리완료</span></c:otherwise>
+                    <c:when test="${r.statusCd eq 'APPROVED'}"><span class="bs-badge bs-done">승인</span></c:when>
+                    <c:when test="${r.statusCd eq 'REJECTED'}"><span class="bs-badge bs-cancel">거절</span></c:when>
+                    <c:when test="${r.statusCd eq 'DONE'}"><span class="bs-badge bs-done">처리완료</span></c:when>
+                    <c:otherwise><span class="bs-badge bs-empty"><c:out value="${r.statusCd}"/></span></c:otherwise>
                   </c:choose>
                 </td>
               </tr>

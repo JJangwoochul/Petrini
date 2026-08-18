@@ -29,6 +29,9 @@ public interface MemberInquiryMapper {
     // 2026-08-11 박유정 — 사업자 숙소 환불신청 대기 건수
     int countPendingStayRefundByStayId(@Param("stayId") Long stayId);
 
+    // 2026/08/18 장우철 — 사업자 숙소 환불 탭별 건수
+    int countStayRefundByStayId(@Param("stayId") Long stayId, @Param("statusCd") String statusCd);
+
     // 2026-08-11 박유정 — 사업자 숙소 환불신청 목록
     List<MemberInquiryVO> selectStayRefundListByStayId(@Param("stayId") Long stayId,
                                                        @Param("statusCd") String statusCd);
