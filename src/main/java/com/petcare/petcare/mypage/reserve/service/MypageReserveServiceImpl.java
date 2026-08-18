@@ -14,6 +14,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,8 @@ import com.petcare.petcare.stay.vo.StayReviewVO;
 
 @Service
 public class MypageReserveServiceImpl implements MypageReserveService {
+
+    private static final Logger log = LoggerFactory.getLogger(MypageReserveServiceImpl.class);
 
     @Autowired
     private MypageReserveMapper mypageReserveMapper;
@@ -66,8 +70,13 @@ public class MypageReserveServiceImpl implements MypageReserveService {
             String reservationType = "talent".equals(type) ? null : type;
             list.addAll(mypageReserveMapper.selectMyReservationList(memberNo, status, reservationType));
         }
+        // 2026-08-18 박유정 — TB_TALENT_APPLY 미구축 DB에서도 병원·숙소 예약내역은 열리도록
         if (type == null || "talent".equals(type)) {
-            list.addAll(mypageReserveMapper.selectMyTalentApplyList(memberNo, status));
+            try {
+                list.addAll(mypageReserveMapper.selectMyTalentApplyList(memberNo, status));
+            } catch (Exception e) {
+                log.warn("재능나눔 예약내역 조회 생략 (TB_TALENT_APPLY 등 확인): {}", e.getMessage());
+            }
         }
 
         list.sort(Comparator

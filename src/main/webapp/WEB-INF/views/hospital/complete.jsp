@@ -62,8 +62,14 @@
   <div class="complete-notice">
     진료 시간 <strong>10분 전</strong>까지 내원해주세요. 예약 변경·취소는 마이페이지 &gt; 예약내역에서 가능합니다.
   </div>
+  <c:set var="reserveLink" value="${contextPath}/mypage/reserve"/>
+  <c:if test="${not empty reservation and not empty reservation.resvId}">
+    <c:set var="reserveLink" value="${contextPath}/mypage/reserve/detail?resvId=${reservation.resvId}"/>
+  </c:if>
   <div class="complete-btns">
-    <button class="btn-complete-my" onclick="location.href='${contextPath}/mypage/reserve'">예약 내역 보기</button>
+    <%-- 2026-08-18 박유정 — 방금 예약 건 상세로 바로 이동 --%>
+    <button type="button" class="btn-complete-my"
+            onclick="location.href='${reserveLink}'">예약 내역 보기</button>
     <button class="btn-complete-store" onclick="location.href='${contextPath}/hospital'">둘러보기 계속하기</button>
   </div>
 </div>

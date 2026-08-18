@@ -63,7 +63,8 @@
           <c:param name="resvType" value="TALENT"/>
         </c:if>
       </c:url>
-      <a href="${contextPath}${detailUrl}"
+      <%-- 2026-08-18 박유정 — c:url에 contextPath 포함 → contextPath 중복 제거 --%>
+      <a href="${detailUrl}"
          class="resv-card" style="text-decoration:none;color:inherit;display:flex;cursor:pointer">
 
         <%-- 썸네일 --%>
@@ -109,13 +110,25 @@
                   <c:if test="${not empty r.hospitalAddr}">
                     <span><c:out value="${r.hospitalAddr}"/></span>
                   </c:if>
-                  <span>신청일: <fmt:formatDate value="${r.regDate}" pattern="yyyy.MM.dd"/></span>
+                  <span>신청일:
+                    <c:choose>
+                      <c:when test="${not empty r.regDate}">
+                        <fmt:formatDate value="${r.regDate}" pattern="yyyy.MM.dd"/>
+                      </c:when>
+                      <c:otherwise>-</c:otherwise>
+                    </c:choose>
+                  </span>
                 </c:when>
                 <c:when test="${r.resvType eq 'STAY'}">
                   <span>
-                    <fmt:formatDate value="${r.checkinDate}" pattern="yyyy.MM.dd"/>
-                    ~ <fmt:formatDate value="${r.checkoutDate}" pattern="MM.dd"/>
-                    · ${r.nightCnt}박
+                    <c:choose>
+                      <c:when test="${not empty r.checkinDate and not empty r.checkoutDate}">
+                        <fmt:formatDate value="${r.checkinDate}" pattern="yyyy.MM.dd"/>
+                        ~ <fmt:formatDate value="${r.checkoutDate}" pattern="MM.dd"/>
+                        · ${r.nightCnt}박
+                      </c:when>
+                      <c:otherwise>일정 미정</c:otherwise>
+                    </c:choose>
                   </span>
                   <c:if test="${not empty r.totalAmount}">
                     <span><fmt:formatNumber value="${r.totalAmount}" pattern="#,###"/>원</span>
@@ -123,9 +136,14 @@
                 </c:when>
                 <c:otherwise>
                   <span>
-                    <fmt:formatDate value="${r.resvDate}" pattern="yyyy년 M월 d일"/>
-                    <c:if test="${not empty r.resvTime}"> ${r.resvTime}</c:if>
-                    <c:if test="${not empty r.endTime}">~${r.endTime}</c:if>
+                    <c:choose>
+                      <c:when test="${not empty r.resvDate}">
+                        <fmt:formatDate value="${r.resvDate}" pattern="yyyy년 M월 d일"/>
+                        <c:if test="${not empty r.resvTime}"> ${r.resvTime}</c:if>
+                        <c:if test="${not empty r.endTime}">~${r.endTime}</c:if>
+                      </c:when>
+                      <c:otherwise>일정 미정</c:otherwise>
+                    </c:choose>
                   </span>
                   <c:if test="${r.resvType eq 'HOSPITAL' and (not empty r.doctorName or not empty r.treatTypeName)}">
                     <span>
