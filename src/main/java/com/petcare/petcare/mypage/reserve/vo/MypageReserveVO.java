@@ -100,6 +100,6 @@ public class MypageReserveVO {
 
     private String talentTitle;     // TB_TALENT.TITLE — 재능나눔 제목
     private String bizName;         // TB_BUSINESS.BIZ_NAME — 제공 업체명
-    private String thumbUrl;        // TB_TALENT.THUMB_URL — 썸네일 URL
+    private String thumbUrl;        // 재능: TB_TALENT.THUMB_URL / 숙소·병원: TB_FILE.FILE_URL
     private String talentSchedule;    // TB_TALENT.SCHEDULE — 일정
 }

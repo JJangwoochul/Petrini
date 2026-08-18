@@ -52,6 +52,15 @@
     END
   </sql>
 
+  <!-- 2026/08/18 장우철 — 숙소·병원 대표 사진 (TB_FILE.FILE_URL, FileService 상대경로) -->
+  <sql id="stayHospitalThumbExpr">
+    (SELECT F.FILE_URL
+       FROM TB_FILE F
+      WHERE F.REF_TYPE = R.RESV_TYPE
+        AND F.REF_ID   = TO_NUMBER(R.TARGET_ID)
+        AND ROWNUM     = 1)
+  </sql>
+
   <!-- 2026/08/06 장우철 — 환불 승인/거절 관리자 답변 -->
   <sql id="stayRefundAnswerExpr">
     (SELECT I.ANSWER
@@ -108,7 +117,8 @@
             S.ADDR          AS stayAddr,
             SR.NAME         AS roomName,
             <include refid="stayRefundStatusExpr"/> AS stayRefundStatus,
-            <include refid="stayRefundAnswerExpr"/> AS stayRefundAnswer
+            <include refid="stayRefundAnswerExpr"/> AS stayRefundAnswer,
+            <include refid="stayHospitalThumbExpr"/> AS thumbUrl
       FROM  TB_RESERVATION R
       JOIN  TB_PET P ON P.PET_ID = R.PET_ID
       LEFT JOIN TB_HOSPITAL H
@@ -266,7 +276,8 @@
             CASE WHEN RV.REVIEW_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS reviewedYn,
             SR.NAME         AS roomName,
             <include refid="stayRefundStatusExpr"/> AS stayRefundStatus,
-            <include refid="stayRefundAnswerExpr"/> AS stayRefundAnswer
+            <include refid="stayRefundAnswerExpr"/> AS stayRefundAnswer,
+            <include refid="stayHospitalThumbExpr"/> AS thumbUrl
       FROM  TB_RESERVATION R
       JOIN  TB_PET P ON P.PET_ID = R.PET_ID
       LEFT JOIN TB_HOSPITAL H

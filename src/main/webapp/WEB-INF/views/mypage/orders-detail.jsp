@@ -133,9 +133,21 @@
       <div style="margin-top:16px;">
         <c:forEach var="it" items="${o.itemList}">
           <div class="od-item">
+            <%-- 2026/08/18 장우철 — FILE_URL이 /upload/ 포함이어도 경로가 겹치지 않게 --%>
             <c:choose>
               <c:when test="${not empty it.thumbnailUrl}">
-                <img src="${fn:startsWith(it.thumbnailUrl, 'http') ? it.thumbnailUrl : contextPath.concat('/upload/').concat(it.thumbnailUrl)}"
+                <c:choose>
+                  <c:when test="${fn:startsWith(it.thumbnailUrl, 'http')}">
+                    <c:set var="detailThumbSrc" value="${it.thumbnailUrl}" />
+                  </c:when>
+                  <c:when test="${fn:startsWith(it.thumbnailUrl, '/')}">
+                    <c:set var="detailThumbSrc" value="${contextPath}${it.thumbnailUrl}" />
+                  </c:when>
+                  <c:otherwise>
+                    <c:set var="detailThumbSrc" value="${contextPath}/upload/${it.thumbnailUrl}" />
+                  </c:otherwise>
+                </c:choose>
+                <img src="${detailThumbSrc}"
                      alt="${it.productName}" onerror="this.src='https://placehold.co/60x60/EAF7F2/2BAB82?text=IMG'">
               </c:when>
               <c:otherwise>

@@ -65,10 +65,22 @@
                     <c:forEach var="it" items="${o.itemList}">
                         <div class="order-item">
                             <%-- 지윤 26.07.20 수정: unsplash 고정 이미지 URL -> 실제 상품 썸네일 (로컬업로드/외부URL 둘 다 지원하는 store 모듈 공통 패턴) --%>
+                            <%-- 2026/08/18 장우철 — FILE_URL이 /upload/ 포함이어도 경로가 겹치지 않게 --%>
                             <c:choose>
                                 <c:when test="${not empty it.thumbnailUrl}">
+                                    <c:choose>
+                                      <c:when test="${fn:startsWith(it.thumbnailUrl, 'http')}">
+                                        <c:set var="orderThumbSrc" value="${it.thumbnailUrl}" />
+                                      </c:when>
+                                      <c:when test="${fn:startsWith(it.thumbnailUrl, '/')}">
+                                        <c:set var="orderThumbSrc" value="${contextPath}${it.thumbnailUrl}" />
+                                      </c:when>
+                                      <c:otherwise>
+                                        <c:set var="orderThumbSrc" value="${contextPath}/upload/${it.thumbnailUrl}" />
+                                      </c:otherwise>
+                                    </c:choose>
                                     <img class="order-thumb"
-                                         src="${fn:startsWith(it.thumbnailUrl, 'http') ? it.thumbnailUrl : contextPath.concat('/upload/').concat(it.thumbnailUrl)}"
+                                         src="${orderThumbSrc}"
                                          alt="${it.productName}"
                                          onerror="this.src='https://placehold.co/72x72/EAF7F2/2BAB82?text=IMG'">
                                 </c:when>
@@ -261,9 +273,13 @@
     document.getElementById('reviewModalOption').textContent = optText;
 
     var thumb = document.getElementById('reviewModalThumb');
-    thumb.src = (thumbnailUrl && thumbnailUrl !== 'undefined' && thumbnailUrl !== '')
-      ? (thumbnailUrl.indexOf('http') === 0 ? thumbnailUrl : '${contextPath}/upload/' + thumbnailUrl)
-      : 'https://placehold.co/56x56/EAF7F2/2BAB82?text=IMG';
+    var src = '';
+    if (thumbnailUrl && thumbnailUrl !== 'undefined' && thumbnailUrl !== '') {
+      if (thumbnailUrl.indexOf('http://') === 0 || thumbnailUrl.indexOf('https://') === 0) src = thumbnailUrl;
+      else if (thumbnailUrl.charAt(0) === '/') src = contextPath + thumbnailUrl;
+      else src = contextPath + '/upload/' + thumbnailUrl;
+    }
+    thumb.src = src || 'https://placehold.co/56x56/EAF7F2/2BAB82?text=IMG';
 
     document.getElementById('reviewModalContent').value = '';
     document.getElementById('reviewCharCount').textContent = '0';

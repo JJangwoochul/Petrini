@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%-- 2026/08/04 장우철 — 쇼핑 상품단위 환불 신청 (1:1문의 폼 유사) --%>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="mypage" />
@@ -27,7 +28,22 @@
 
     <div style="background:#fff;border:1px solid #E2E8E4;border-radius:12px;padding:24px;max-width:640px;">
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #F1F5F4;">
-        <img src="${empty item.thumbnailUrl ? 'https://placehold.co/72x72/EAF7F2/2BAB82?text=IMG' : item.thumbnailUrl}"
+        <%-- 2026/08/18 장우철 — 환불 신청 상품 사진도 /upload 경로 맞춤 --%>
+        <c:choose>
+          <c:when test="${empty item.thumbnailUrl}">
+            <c:set var="refundThumbSrc" value="https://placehold.co/72x72/EAF7F2/2BAB82?text=IMG" />
+          </c:when>
+          <c:when test="${fn:startsWith(item.thumbnailUrl, 'http')}">
+            <c:set var="refundThumbSrc" value="${item.thumbnailUrl}" />
+          </c:when>
+          <c:when test="${fn:startsWith(item.thumbnailUrl, '/')}">
+            <c:set var="refundThumbSrc" value="${contextPath}${item.thumbnailUrl}" />
+          </c:when>
+          <c:otherwise>
+            <c:set var="refundThumbSrc" value="${contextPath}/upload/${item.thumbnailUrl}" />
+          </c:otherwise>
+        </c:choose>
+        <img src="${refundThumbSrc}"
              alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px;"
              onerror="this.src='https://placehold.co/72x72/EAF7F2/2BAB82?text=IMG'">
         <div>

@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="pageId" value="mypage" />
 <c:set var="sec" value="reserve" />
@@ -66,18 +67,24 @@
       <a href="${contextPath}${detailUrl}"
          class="resv-card" style="text-decoration:none;color:inherit;display:flex;cursor:pointer">
 
-        <%-- 썸네일 --%>
+        <%-- 2026/08/18 장우철 — 숙소·병원도 TB_FILE 썸네일 표시 (재능 THUMB_URL은 /upload/ 포함) --%>
         <c:choose>
-          <c:when test="${r.resvType eq 'TALENT'}">
-            <img class="resv-thumb"
-                 src="${not empty r.thumbUrl ? contextPath.concat(r.thumbUrl) : 'https://placehold.co/88x88/EAF7F2/2BAB82?text=재능'}"
-                 alt="재능나눔">
+          <c:when test="${r.resvType eq 'TALENT'}"><c:set var="thumbFallback" value="https://placehold.co/88x88/EAF7F2/2BAB82?text=재능"/></c:when>
+          <c:when test="${r.resvType eq 'STAY'}"><c:set var="thumbFallback" value="https://placehold.co/88x88/E0F2FE/0284C7?text=숙소"/></c:when>
+          <c:otherwise><c:set var="thumbFallback" value="https://placehold.co/88x88/EAF7F2/2BAB82?text=병원"/></c:otherwise>
+        </c:choose>
+        <c:choose>
+          <c:when test="${empty r.thumbUrl}">
+            <img class="resv-thumb" src="${thumbFallback}" alt="">
           </c:when>
-          <c:when test="${r.resvType eq 'STAY'}">
-            <img class="resv-thumb" src="https://placehold.co/88x88/E0F2FE/0284C7?text=숙소" alt="숙소">
+          <c:when test="${fn:startsWith(r.thumbUrl, 'http://') or fn:startsWith(r.thumbUrl, 'https://')}">
+            <img class="resv-thumb" src="${r.thumbUrl}" alt="" onerror="this.src='${thumbFallback}'">
+          </c:when>
+          <c:when test="${fn:startsWith(r.thumbUrl, '/')}">
+            <img class="resv-thumb" src="${contextPath}${r.thumbUrl}" alt="" onerror="this.src='${thumbFallback}'">
           </c:when>
           <c:otherwise>
-            <img class="resv-thumb" src="https://placehold.co/88x88/EAF7F2/2BAB82?text=병원" alt="병원">
+            <img class="resv-thumb" src="${contextPath}/upload/${r.thumbUrl}" alt="" onerror="this.src='${thumbFallback}'">
           </c:otherwise>
         </c:choose>
 
