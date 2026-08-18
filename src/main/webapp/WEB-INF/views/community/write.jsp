@@ -70,7 +70,6 @@
   <option value="">게시판을 선택하세요</option>
   <option value="TOWN" ${communityPostVO.boardType eq 'TOWN' ? 'selected' : ''}>집사생활</option>
   <option value="SHARE" ${communityPostVO.boardType eq 'SHARE' ? 'selected' : ''}>무료나눔</option>
-  <option value="LIFE" ${communityPostVO.boardType eq 'LIFE' ? 'selected' : ''}>수의사 상담</option>
 </select>
   </div>
   <div class="write-form-group">

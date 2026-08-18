@@ -183,7 +183,9 @@
         <div class="vet-form-grid">
           <div class="vet-form-row">
             <label>품종 <span class="req">*</span></label>
-            <input type="text" class="vet-input" name="breed" placeholder="예) 말티즈, 페르시안" required>
+            <select class="vet-select" id="vet-breed" name="breed" required>
+              <option value="">종류를 먼저 선택하세요</option>
+            </select>
           </div>
           <div class="vet-form-row">
             <label>나이</label>
@@ -356,6 +358,7 @@
   </div><%-- end #vetBoard --%>
   </div><%-- end .comm-content --%>
 </div><%-- end .comm-wrap --%>
+<script src="${contextPath}/resources/js/pet-breeds.js"></script>
 <script>
 function selTab(btn, type) {
   document.querySelectorAll('.comm-tab').forEach(function(t) {
@@ -385,5 +388,28 @@ function toggleAskForm() {
   f.style.display = f.style.display === 'none' ? 'block' : 'none';
   if (f.style.display === 'block') f.scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+// 2026/08/18 장우철 — LIFE(수의사상담) 품종 select 동적 렌더링
+(function initVetBreedSelect() {
+  var breedSel = document.getElementById('vet-breed');
+  if (!breedSel) return;
+
+  function sync() {
+    var checked = document.querySelector('input[name="petType"]:checked');
+    if (!checked) {
+      breedSel.innerHTML = '<option value="">종류를 먼저 선택하세요</option>';
+      return;
+    }
+    // pet-breeds.js는 dog/cat/etc 키를 사용
+    updatePetBreedSelect(null, (checked.value || '').toLowerCase(), 'vet-breed', null);
+  }
+
+  document.querySelectorAll('input[name="petType"]').forEach(function (el) {
+    el.addEventListener('change', sync);
+  });
+
+  // 초기값 반영(DOG 기본 체크)
+  sync();
+})();
 </script>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>
